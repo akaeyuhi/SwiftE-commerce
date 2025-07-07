@@ -12,11 +12,11 @@ import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserDto } from './dto/user.dto';
-import { JwtAuthGuard } from 'src/shared/guards/jwt-auth.guard';
-import { RolesGuard } from 'src/shared/guards/roles.guard';
-import { Roles } from 'src/shared/decorators/roles.decorator';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { Roles } from 'src/common/decorators/roles.decorator';
 import { BaseController } from 'src/common/abstracts/base.controller';
 import { User } from 'src/entities/user.entity';
+import { RolesGuard } from 'src/common/guards/roles.guard';
 
 @Controller('users')
 export class UserController extends BaseController<
@@ -34,7 +34,7 @@ export class UserController extends BaseController<
     return this.userService.create(dto);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Get()
   @Roles('admin')
   async findAll(): Promise<UserDto[]> {
@@ -56,7 +56,7 @@ export class UserController extends BaseController<
     return this.userService.update(id, dto);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Delete(':id')
   @Roles('admin')
   async remove(@Param('id') id: string): Promise<void> {
