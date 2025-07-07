@@ -8,9 +8,10 @@ import {
 } from 'typeorm';
 import { Store } from './store.entity';
 import { User } from './user.entity';
+import { BaseEntity } from 'src/common/interfaces/base-entity.interface';
 
 @Entity({ name: 'news_posts' })
-export class NewsPost {
+export class NewsPost implements BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 

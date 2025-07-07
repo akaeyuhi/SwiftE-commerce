@@ -10,10 +10,11 @@ import {
 import { User } from './user.entity';
 import { Store } from './store.entity';
 import { CartItem } from './cart-item.entity';
+import { BaseEntity } from 'src/common/interfaces/base-entity.interface';
 
 @Entity({ name: 'shopping_carts' })
 @Unique(['user', 'store']) // Each user has one cart per store
-export class ShoppingCart {
+export class ShoppingCart implements BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 

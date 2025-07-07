@@ -1,9 +1,17 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 import { Order } from './order.entity';
 import { ProductVariant } from './variant.entity';
+import { BaseEntity } from 'src/common/interfaces/base-entity.interface';
 
 @Entity({ name: 'order_items' })
-export class OrderItem {
+export class OrderItem implements BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
@@ -20,4 +28,10 @@ export class OrderItem {
 
   @Column({ type: 'numeric' })
   price: number;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
 }

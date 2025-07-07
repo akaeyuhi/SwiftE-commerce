@@ -12,9 +12,10 @@ import { Order } from './order.entity';
 import { Review } from './review.entity';
 import { NewsPost } from './news-post.entity';
 import { AiLog } from './ai-log.entity';
+import { BaseEntity } from 'src/common/interfaces/base-entity.interface';
 
 @Entity({ name: 'users' })
-export class User {
+export class User implements BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 

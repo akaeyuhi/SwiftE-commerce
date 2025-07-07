@@ -11,9 +11,10 @@ import { Product } from './product.entity';
 import { Inventory } from './inventory.entity';
 import { CartItem } from './cart-item.entity';
 import { OrderItem } from './order-item.entity';
+import { BaseEntity } from 'src/common/interfaces/base-entity.interface';
 
 @Entity({ name: 'product_variants' })
-export class ProductVariant {
+export class ProductVariant implements BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 

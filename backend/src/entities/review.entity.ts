@@ -4,12 +4,14 @@ import {
   Column,
   ManyToOne,
   CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { User } from './user.entity';
 import { Product } from './product.entity';
+import { BaseEntity } from 'src/common/interfaces/base-entity.interface';
 
 @Entity({ name: 'reviews' })
-export class Review {
+export class Review implements BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
@@ -29,4 +31,7 @@ export class Review {
 
   @CreateDateColumn()
   createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
 }

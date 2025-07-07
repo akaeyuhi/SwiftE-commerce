@@ -10,9 +10,10 @@ import {
 import { User } from './user.entity';
 import { Store } from './store.entity';
 import { OrderItem } from './order-item.entity';
+import { BaseEntity } from 'src/common/interfaces/base-entity.interface';
 
 @Entity({ name: 'orders' })
-export class Order {
+export class Order implements BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 

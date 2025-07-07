@@ -12,9 +12,10 @@ import { Category } from './category.entity';
 import { ProductVariant } from './variant.entity';
 import { ProductPhoto } from './product-photo.entity';
 import { Review } from './review.entity';
+import { BaseEntity } from 'src/common/interfaces/base-entity.interface';
 
 @Entity({ name: 'products' })
-export class Product {
+export class Product implements BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 

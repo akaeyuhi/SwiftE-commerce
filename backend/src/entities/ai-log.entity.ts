@@ -4,12 +4,14 @@ import {
   Column,
   ManyToOne,
   CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { User } from './user.entity';
 import { Store } from './store.entity';
+import { BaseEntity } from 'src/common/interfaces/base-entity.interface';
 
 @Entity({ name: 'ai_logs' })
-export class AiLog {
+export class AiLog implements BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
@@ -33,4 +35,7 @@ export class AiLog {
 
   @CreateDateColumn()
   createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
 }

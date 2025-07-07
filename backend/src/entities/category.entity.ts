@@ -8,9 +8,10 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Product } from './product.entity';
+import { BaseEntity } from 'src/common/interfaces/base-entity.interface';
 
 @Entity({ name: 'categories' })
-export class Category {
+export class Category implements BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 

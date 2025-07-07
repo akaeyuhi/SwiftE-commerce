@@ -7,9 +7,10 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { ProductVariant } from './variant.entity';
+import { BaseEntity } from 'src/common/interfaces/base-entity.interface';
 
 @Entity({ name: 'inventory' })
-export class Inventory {
+export class Inventory implements BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 

@@ -14,9 +14,10 @@ import { UserRole } from './user-role.entity';
 import { ShoppingCart } from './cart.entity';
 import { NewsPost } from './news-post.entity';
 import { AiLog } from './ai-log.entity';
+import { BaseEntity } from 'src/common/interfaces/base-entity.interface';
 
 @Entity({ name: 'stores' })
-export class Store {
+export class Store implements BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
