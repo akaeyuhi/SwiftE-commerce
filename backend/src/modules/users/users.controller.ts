@@ -2,41 +2,69 @@ import {
   Controller,
   Get,
   Post,
-  Body,
-  Patch,
-  Param,
+  Put,
   Delete,
+  Body,
+  Param,
+  UseGuards,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UserDto } from './dto/user.dto';
+import { JwtAuthGuard } from 'src/shared/guards/jwt-auth.guard';
+import { RolesGuard } from 'src/shared/guards/roles.guard';
+import { Roles } from 'src/shared/decorators/roles.decorator';
+import { BaseController } from 'src/common/abstracts/base.controller';
+import { User } from 'src/entities/user.entity';
 
 @Controller('users')
-export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+export class UserController extends BaseController<
+  User,
+  UserDto,
+  CreateUserDto,
+  UpdateUserDto
+> {
+  constructor(private readonly userService: UsersService) {
+    super(userService);
+  }
 
   @Post()
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
+  async register(@Body() dto: CreateUserDto): Promise<UserDto> {
+    return this.userService.create(dto);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get()
-  findAll() {
-    return this.usersService.findAll();
+  @Roles('admin')
+  async findAll(): Promise<UserDto[]> {
+    return this.userService.findAll();
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.usersService.findOne(+id);
+  async findOne(@Param('id') id: string): Promise<UserDto> {
+    return this.userService.findOne(id);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(+id, updateUserDto);
+  @UseGuards(JwtAuthGuard)
+  @Put(':id')
+  async update(
+    @Param('id') id: string,
+    @Body() dto: UpdateUserDto
+  ): Promise<UserDto> {
+    return this.userService.update(id, dto);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.usersService.remove(+id);
+  @Roles('admin')
+  async remove(@Param('id') id: string): Promise<void> {
+    return this.userService.remove(id);
   }
+
+  // Additional endpoints:
+  // POST /users/:id/roles
+  // POST /users/:id/stores
+  // POST /users/:id/ai-logs
 }
