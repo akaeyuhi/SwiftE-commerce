@@ -1,10 +1,8 @@
 import { Body, Delete, Get, Param, Post, Put } from '@nestjs/common';
 import { BaseService } from './base.service';
 
-export abstract class BaseController<T, CreateDto, UpdateDto> {
-  constructor(
-    protected readonly service: BaseService<T, CreateDto, UpdateDto>
-  ) {}
+export abstract class BaseController<T, Dto> {
+  constructor(protected readonly service: BaseService<T, Dto>) {}
 
   @Get()
   findAll(): Promise<T[]> {
@@ -17,12 +15,12 @@ export abstract class BaseController<T, CreateDto, UpdateDto> {
   }
 
   @Post()
-  create(@Body() dto: CreateDto): Promise<T> {
+  create(@Body() dto: Dto): Promise<T> {
     return this.service.create(dto);
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateDto): Promise<T> {
+  update(@Param('id') id: string, @Body() dto: Partial<Dto>): Promise<T> {
     return this.service.update(id, dto);
   }
 
