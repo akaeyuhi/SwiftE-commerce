@@ -13,6 +13,7 @@ import { Review } from './review.entity';
 import { NewsPost } from './news-post.entity';
 import { AiLog } from './ai-log.entity';
 import { BaseEntity } from 'src/common/interfaces/base-entity.interface';
+import { AdminRoles } from 'src/common/enums/admin.enum';
 
 @Entity({ name: 'users' })
 export class User implements BaseEntity {
@@ -37,7 +38,22 @@ export class User implements BaseEntity {
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
+  @Column({
+    type: 'enum',
+    enum: AdminRoles,
+    default: AdminRoles.USER,
+  })
+  siteRole: AdminRoles;
+
+  @Column({
+    type: 'text',
+    array: true,
+    default: () => `'{}'`,
+  })
+  permissionScopes: string[];
+
   // Relations
+
   @OneToMany(() => UserRole, (ur) => ur.user)
   roles: UserRole[];
 
