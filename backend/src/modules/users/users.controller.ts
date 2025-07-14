@@ -19,7 +19,7 @@ import { User } from 'src/entities/user.entity';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 
 @Controller('users')
-export class UserController extends BaseController<
+export class UsersController extends BaseController<
   User,
   UserDto,
   CreateUserDto,
