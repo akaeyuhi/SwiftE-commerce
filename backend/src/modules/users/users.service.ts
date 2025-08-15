@@ -63,6 +63,21 @@ export class UsersService extends BaseService<
     if (res.affected === 0) throw new NotFoundException('User not found');
   }
 
+  async findByEmail(email: string): Promise<User | null> {
+    return await this.userRepo.findByEmail(email);
+  }
+
+  async findUserWithPassword(email: string) {
+    return this.userRepo.getUserWithPassword(email);
+  }
+
+  async findOneWithRelations(id: string): Promise<User> {
+    const user = await this.userRepo.findOneWithRelations(id);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    return user;
+  }
   // Additional methods:
   async assignRole(userId: string, roleId: string, storeId?: string) {
     // TODO: load user, role, create UserRole entity
