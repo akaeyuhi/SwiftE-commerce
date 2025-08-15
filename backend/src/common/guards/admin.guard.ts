@@ -21,6 +21,7 @@ export class SiteAdminGuard implements CanActivate {
 
     const request = context.switchToHttp().getRequest();
     const userId = request.user.id;
+    return !!userId;
     //TODO return await this.userService.isUserSiteAdmin(userId);
   }
 }

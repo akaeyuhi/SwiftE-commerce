@@ -1,42 +1,38 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-} from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Req } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { CreateAuthDto } from './dto/create-auth.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
+import { LoginDto } from './dto/login.dto';
+import { CreateUserDto } from '../users/dto/create-user.dto';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { RefreshDto } from './dto/refresh.dto';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @Post()
-  create(@Body() createAuthDto: CreateAuthDto) {
-    return this.authService.create(createAuthDto);
+  @Post('register')
+  async register(@Body() dto: CreateUserDto) {
+    return this.authService.register(dto);
   }
 
-  @Get()
-  findAll() {
-    return this.authService.findAll();
+  @Post('login')
+  async login(@Body() dto: LoginDto) {
+    return this.authService.login(dto);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.authService.findOne(+id);
+  @UseGuards(JwtAuthGuard)
+  @Post('refresh')
+  async refresh(@Req() req: any, @Body() dto: RefreshDto) {
+    const user = req.user; // populated by JwtStrategy
+    return this.authService.refreshAccessToken(
+      { id: user.id, email: user.email, sub: user.id },
+      dto.refreshToken
+    );
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateAuthDto: UpdateAuthDto) {
-    return this.authService.update(+id, updateAuthDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.authService.remove(+id);
+  @UseGuards(JwtAuthGuard)
+  @Post('logout')
+  async logout(@Body() dto: RefreshDto) {
+    // ban or remove refresh token
+    return this.authService.banRefresh(dto.refreshToken);
   }
 }
