@@ -1,12 +1,12 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { UsersService } from 'src/modules/users/users.service';
+import { UserService } from 'src/modules/user/user.service';
 import { AdminRoles } from 'src/common/enums/admin.enum';
 
 @Injectable()
 export class SiteAdminGuard implements CanActivate {
   constructor(
-    private readonly userService: UsersService,
+    private readonly userService: UserService,
     private readonly reflector: Reflector
   ) {}
 

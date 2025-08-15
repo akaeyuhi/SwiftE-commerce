@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { BaseMapper } from 'src/common/abstracts/base.mapper';
 import { User } from 'src/entities/user.entity';
-import { UserDto } from 'src/modules/users/dto/user.dto';
+import { UserDto } from 'src/modules/user/dto/user.dto';
 
 @Injectable()
-export class UsersMapper extends BaseMapper<User, UserDto> {
+export class UserMapper extends BaseMapper<User, UserDto> {
   toDto(entity: User): UserDto {
     return {
       id: entity.id,

@@ -8,7 +8,7 @@ import {
   Param,
   UseGuards,
 } from '@nestjs/common';
-import { UsersService } from './users.service';
+import { UserService } from 'src/modules/user/user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserDto } from './dto/user.dto';
@@ -19,13 +19,13 @@ import { User } from 'src/entities/user.entity';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 
 @Controller('users')
-export class UsersController extends BaseController<
+export class UserController extends BaseController<
   User,
   UserDto,
   CreateUserDto,
   UpdateUserDto
 > {
-  constructor(private readonly userService: UsersService) {
+  constructor(private readonly userService: UserService) {
     super(userService);
   }
 

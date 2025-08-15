@@ -3,7 +3,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import { RefreshTokenService } from '../../refresh-token/refresh-token.service';
-import { UsersService } from '../../users/users.service';
+import { UserService } from 'src/modules/user/user.service';
 import { Request } from 'express';
 
 const extractors = [
@@ -47,7 +47,7 @@ export class RefreshTokenStrategy extends PassportStrategy(
   constructor(
     private config: ConfigService,
     private refreshTokenService: RefreshTokenService,
-    private userService: UsersService
+    private userService: UserService
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors(extractors),

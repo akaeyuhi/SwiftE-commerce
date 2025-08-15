@@ -3,26 +3,26 @@ import {
   BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
-import { UsersRepository } from './users.repository';
+import { UserRepository } from 'src/modules/user/user.repository';
 import { BaseService } from 'src/common/abstracts/base.service';
 
 import { User } from 'src/entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserDto } from './dto/user.dto';
-import { UsersMapper } from 'src/modules/users/mappers/users.mapper';
+import { UserMapper } from 'src/modules/user/mappers/user.mapper';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
-export class UsersService extends BaseService<
+export class UserService extends BaseService<
   User,
   UserDto,
   CreateUserDto,
   UpdateUserDto
 > {
   constructor(
-    private readonly userRepo: UsersRepository,
-    protected readonly mapper: UsersMapper
+    private readonly userRepo: UserRepository,
+    protected readonly mapper: UserMapper
   ) {
     super(mapper);
   }
