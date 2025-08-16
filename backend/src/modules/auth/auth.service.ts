@@ -1,12 +1,17 @@
-import {ConflictException, Injectable, NotFoundException, UnauthorizedException,} from '@nestjs/common';
-import {UserService} from '../user/user.service';
-import {JwtService} from '@nestjs/jwt';
-import {CreateUserDto} from '../user/dto/create-user.dto';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { UserService } from '../user/user.service';
+import { JwtService } from '@nestjs/jwt';
+import { CreateUserDto } from '../user/dto/create-user.dto';
 import * as bcrypt from 'bcrypt';
-import {LoginDto} from './dto/login.dto';
-import {RefreshTokenService} from '../refresh-token/refresh-token.service';
-import {Request} from 'express';
-import {randomBytes} from 'crypto';
+import { LoginDto } from './dto/login.dto';
+import { RefreshTokenService } from '../refresh-token/refresh-token.service';
+import { Request } from 'express';
+import { randomBytes } from 'crypto';
 
 export interface JwtPayload {
   id: string;
