@@ -12,11 +12,21 @@ export class RefreshTokenService {
     return crypto.createHash('sha256').update(token).digest('hex');
   }
 
-  async create(payload: { userId: string; token: string }) {
+  async create(payload: {
+    userId: string;
+    token: string;
+    deviceId?: string;
+    ip?: string;
+    userAgent?: string;
+  }) {
     const tokenHash = this.hashToken(payload.token);
     const rt = new RefreshToken();
     rt.tokenHash = tokenHash;
     rt.user = { id: payload.userId } as User;
+    rt.deviceId = payload.deviceId;
+    rt.ip = payload.ip;
+    rt.userAgent = payload.userAgent;
+    rt.lastUsedAt = new Date();
     return this.tokenRepository.save(rt);
   }
 
@@ -45,5 +55,14 @@ export class RefreshTokenService {
     if (!found) return null;
     found.isBanned = !found.isBanned;
     return this.tokenRepository.save(found);
+  }
+
+  // Optionally update lastUsedAt for auditing
+  async touch(token: string): Promise<void> {
+    const tokenHash = this.hashToken(token);
+    await this.tokenRepository.update(
+      { tokenHash } as any,
+      { lastUsedAt: new Date() } as any
+    );
   }
 }

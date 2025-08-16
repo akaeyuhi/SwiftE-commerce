@@ -24,6 +24,19 @@ export class RefreshToken {
   @Column({ type: 'boolean', default: false })
   isBanned: boolean;
 
+  // Device / session metadata
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  deviceId?: string;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  ip?: string;
+
+  @Column({ type: 'text', nullable: true })
+  userAgent?: string;
+
+  @Column({ type: 'timestamp', nullable: true })
+  lastUsedAt?: Date;
+
   @CreateDateColumn()
   createdAt: Date;
 }
