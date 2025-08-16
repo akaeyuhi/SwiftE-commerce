@@ -1,20 +1,16 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
-import { UserService } from 'src/modules/user/user.service';
-import { JwtService } from '@nestjs/jwt';
-import { CreateUserDto } from '../user/dto/create-user.dto';
+import {ConflictException, Injectable, NotFoundException, UnauthorizedException,} from '@nestjs/common';
+import {UserService} from '../user/user.service';
+import {JwtService} from '@nestjs/jwt';
+import {CreateUserDto} from '../user/dto/create-user.dto';
 import * as bcrypt from 'bcrypt';
-import { LoginDto } from './dto/login.dto';
-import { RefreshTokenService } from '../refresh-token/refresh-token.service';
+import {LoginDto} from './dto/login.dto';
+import {RefreshTokenService} from '../refresh-token/refresh-token.service';
+import {Request} from 'express';
+import {randomBytes} from 'crypto';
 
 export interface JwtPayload {
   id: string;
   email: string;
-  // you can add other claims as needed
   sub?: string;
 }
 
@@ -41,7 +37,7 @@ export class AuthService {
     return !!user;
   }
 
-  async login(dto: LoginDto) {
+  async login(dto: LoginDto, req?: Request) {
     const user = await this.userService.findUserWithPassword(dto.email);
     if (!user)
       throw new NotFoundException(`User with such email doesn't exist`);
@@ -54,7 +50,7 @@ export class AuthService {
       email: user.email,
       sub: user.id,
     };
-    const tokens = await this.getTokens(payload);
+    const tokens = await this.getTokens(payload, req);
 
     return {
       ...tokens,
@@ -68,19 +64,22 @@ export class AuthService {
     };
   }
 
-  async register(createUserDto: CreateUserDto) {
+  async register(createUserDto: CreateUserDto, req?: Request) {
     const check = await this.doesUserExists(createUserDto);
     if (check) throw new ConflictException('Such user already exists');
     await this.userService.create(createUserDto);
-    // return tokens (login)
-    return this.login({
-      email: createUserDto.email,
-      password: createUserDto.password,
-    });
+    return this.login(
+      { email: createUserDto.email, password: createUserDto.password },
+      req
+    );
   }
 
-  async refreshAccessToken(payload: JwtPayload, token: string) {
-    // check that the token exists and is not banned and belongs to the user
+  /**
+   * Rotate refresh tokens: check token belongs to user and not banned, delete old token,
+   * create new one.
+   * Returns { accessToken, refreshToken, csrfToken } - controller should set cookies.
+   */
+  async refreshAccessToken(payload: JwtPayload, token: string, req?: Request) {
     const tokenRecord = await this.refreshTokenService.findByToken(token);
     if (
       !tokenRecord ||
@@ -90,11 +89,11 @@ export class AuthService {
       throw new UnauthorizedException('Invalid refresh token');
     }
 
-    // rotate refresh token: remove old one, issue new
+    // remove old token record (rotation)
     await this.refreshTokenService.removeByValue(token);
 
-    const { accessToken, refreshToken } = await this.getTokens(payload);
-    return { accessToken, refreshToken };
+    // issue new tokens
+    return await this.getTokens(payload, req);
   }
 
   async banRefresh(token: string) {
@@ -102,8 +101,9 @@ export class AuthService {
   }
 
   private async getTokens(
-    payload: JwtPayload
-  ): Promise<{ accessToken: string; refreshToken: string }> {
+    payload: JwtPayload,
+    req?: Request
+  ): Promise<{ accessToken: string; refreshToken: string; csrfToken: string }> {
     const accessToken = await this.jwtService.signAsync(payload, {
       expiresIn: '15m',
     });
@@ -111,12 +111,32 @@ export class AuthService {
       expiresIn: '7d',
     });
 
-    // persist refreshToken hashed
+    // create csrf token for double-submit
+    const csrfToken = cryptoRandomHex(16);
+
+    // capture device info from request if present
+    const ip = req
+      ? req.ip ||
+        (req.headers['x-forwarded-for'] as string) ||
+        req.connection?.remoteAddress
+      : undefined;
+    const userAgent = req ? (req.headers['user-agent'] as string) : undefined;
+    const deviceId = req ? (req.headers['x-device-id'] as string) : undefined;
+
+    // persist refresh token (hashed) with metadata
     await this.refreshTokenService.create({
       userId: payload.id,
       token: refreshToken,
+      deviceId,
+      ip,
+      userAgent,
     });
 
-    return { accessToken, refreshToken };
+    return { accessToken, refreshToken, csrfToken };
   }
+}
+
+// helper
+function cryptoRandomHex(length = 16) {
+  return randomBytes(length).toString('hex');
 }
