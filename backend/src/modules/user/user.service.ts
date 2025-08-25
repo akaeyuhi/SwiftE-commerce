@@ -1,6 +1,6 @@
 import {
-  Injectable,
   BadRequestException,
+  Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { UserRepository } from 'src/modules/user/user.repository';
@@ -10,18 +10,26 @@ import { User } from 'src/entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserDto } from './dto/user.dto';
-import { UserMapper } from 'src/modules/user/mappers/user.mapper';
+import { UserMapper } from 'src/modules/user/user.mapper';
 import * as bcrypt from 'bcrypt';
+import { UserRole } from 'src/entities/user-role.entity';
+import { CreateStoreDto } from 'src/modules/store/dto/create-store.dto';
+import { StoreService } from 'src/modules/store/store.service';
+import { StoreDto } from 'src/modules/store/dto/store.dto';
+import { UserRoleService } from 'src/user-role/user-role.service';
+import { StoreRoles } from 'src/common/enums/store-roles.enum';
 
 @Injectable()
 export class UserService extends BaseService<
   User,
-  UserDto,
   CreateUserDto,
-  UpdateUserDto
+  UpdateUserDto,
+  UserDto
 > {
   constructor(
     private readonly userRepo: UserRepository,
+    private readonly userRoleService: UserRoleService,
+    private readonly storeService: StoreService,
     protected readonly mapper: UserMapper
   ) {
     super(mapper);
@@ -63,8 +71,10 @@ export class UserService extends BaseService<
     if (res.affected === 0) throw new NotFoundException('User not found');
   }
 
-  async findByEmail(email: string): Promise<User | null> {
-    return await this.userRepo.findByEmail(email);
+  async findByEmail(email: string): Promise<UserDto> {
+    const user = await this.userRepo.findOneBy({ email });
+    if (!user) throw new NotFoundException('User not found');
+    return this.mapper.toDto(user);
   }
 
   async findUserWithPassword(email: string) {
@@ -78,13 +88,52 @@ export class UserService extends BaseService<
     }
     return user;
   }
-  // Additional methods:
-  async assignRole(userId: string, roleId: string, storeId?: string) {
-    // TODO: load user, role, create UserRole entity
+
+  async getEntityById(id: string): Promise<User | null> {
+    return this.userRepo.findById(id);
   }
 
-  async createStore(userId: string, createStoreDto: any) {
-    // TODO: instantiate and save Store entity with owner user
+  // Additional methods:
+  async assignRole(
+    userId: string,
+    roleName: StoreRoles,
+    storeId: string
+  ): Promise<UserRole> {
+    // validate user & store existence
+    const user = await this.getEntityById(userId);
+    if (!user) throw new NotFoundException('User not found');
+
+    const store = await this.storeService.getEntityById(storeId);
+    if (!store) throw new NotFoundException('Store not found');
+
+    const exists = await this.userRoleService.findByStoreUser(userId, storeId);
+    if (exists) throw new BadRequestException('Role already assigned');
+
+    const userRole = await this.userRoleService.create(roleName, user, store);
+    await this.userRepo.addRoleToUser(user, userRole);
+    return userRole;
+  }
+
+  async revokeRole(
+    userId: string,
+    roleId: string,
+    storeId?: string
+  ): Promise<void> {
+    await this.userRepo.removeRoleFromUser(userId, roleId, storeId);
+  }
+
+  // create a store and give STORE_ADMIN to owner
+  async createStore(ownerId: string, dto: CreateStoreDto): Promise<StoreDto> {
+    const owner = await this.getEntityById(ownerId);
+    if (!owner) throw new NotFoundException('Store owner not found');
+
+    dto.ownerUser = owner;
+
+    const store = await this.storeService.create(dto);
+
+    await this.assignRole(owner.id, StoreRoles.ADMIN, store.id);
+
+    return store;
   }
 
   async logAiUsage(userId: string, feature: string, details: any) {
