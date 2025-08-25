@@ -1,7 +1,7 @@
-export interface ICrudService<Dto, CreateDto, UpdateDto> {
-  findAll(): Promise<Dto[]>;
-  findOne(id: string): Promise<Dto>;
-  create(dto: CreateDto): Promise<Dto>;
-  update(id: string, dto: UpdateDto): Promise<Dto>;
+export interface ICrudService<Entity, CreateDto, UpdateDto> {
+  findAll(): Promise<Entity[]>;
+  findOne(id: string): Promise<Entity>;
+  create(dto: CreateDto): Promise<Entity>;
+  update(id: string, dto: UpdateDto): Promise<Entity>;
   remove(id: string): Promise<void>;
 }
