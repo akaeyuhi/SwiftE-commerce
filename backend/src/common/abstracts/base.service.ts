@@ -2,12 +2,18 @@
 import { ICrudService } from '../interfaces/crud.interface';
 import { BaseMapper } from 'src/common/abstracts/base.mapper';
 
-export abstract class BaseService<Entity, Dto, CreateDto, UpdateDto>
-  implements ICrudService<Dto, CreateDto, UpdateDto> {
-  protected constructor(protected readonly mapper: BaseMapper<Entity, Dto>) {}
-  abstract findAll(): Promise<Dto[]>;
-  abstract findOne(id: string): Promise<Dto>;
-  abstract create(dto: CreateDto): Promise<Dto>;
-  abstract update(id: string, dto: UpdateDto): Promise<Dto>;
+export abstract class BaseService<
+    Entity,
+    CreateDto = Partial<Entity>,
+    UpdateDto = Partial<Entity>,
+    TransferDto = Partial<Entity>
+>
+  implements ICrudService<TransferDto, CreateDto, UpdateDto> {
+  protected constructor(protected readonly mapper?: BaseMapper<Entity, TransferDto>) {}
+  abstract findAll(): Promise<TransferDto[]>;
+  abstract findOne(id: string): Promise<TransferDto>;
+  abstract create(dto: CreateDto): Promise<TransferDto>;
+  abstract update(id: string, dto: UpdateDto): Promise<TransferDto>;
   abstract remove(id: string): Promise<void>;
+  getEntityById?(id: string): Promise<Entity | null>;
 }
