@@ -21,9 +21,9 @@ import { RolesGuard } from 'src/common/guards/roles.guard';
 @Controller('users')
 export class UserController extends BaseController<
   User,
-  UserDto,
   CreateUserDto,
-  UpdateUserDto
+  UpdateUserDto,
+  UserDto
 > {
   constructor(private readonly userService: UserService) {
     super(userService);
