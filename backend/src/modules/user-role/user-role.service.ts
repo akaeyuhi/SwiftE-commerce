@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { UserRoleRepository } from 'src/user-role/user-role.repository';
+import { UserRoleRepository } from 'src/modules/user-role/user-role.repository';
 import { User } from 'src/entities/user.entity';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { Store } from 'src/entities/store.entity';

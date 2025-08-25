@@ -7,7 +7,7 @@ import { UserRole } from 'src/entities/user-role.entity';
 import { Store } from 'src/entities/store.entity';
 import { UserMapper } from 'src/modules/user/user.mapper';
 import { UserRepository } from 'src/modules/user/user.repository';
-import { UserRoleModule } from 'src/user-role/user-role.module';
+import { UserRoleModule } from 'src/modules/user-role/user-role.module';
 import { StoreModule } from 'src/modules/store/store.module';
 
 @Module({
