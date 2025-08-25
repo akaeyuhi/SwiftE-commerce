@@ -4,13 +4,18 @@ import { UserController } from 'src/modules/user/user.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from 'src/entities/user.entity';
 import { UserRole } from 'src/entities/user-role.entity';
-import { Role } from 'src/entities/role.entity';
 import { Store } from 'src/entities/store.entity';
-import { UserMapper } from 'src/modules/user/mappers/user.mapper';
+import { UserMapper } from 'src/modules/user/user.mapper';
 import { UserRepository } from 'src/modules/user/user.repository';
+import { UserRoleModule } from 'src/user-role/user-role.module';
+import { StoreModule } from 'src/modules/store/store.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, UserRole, Role, Store])],
+  imports: [
+    TypeOrmModule.forFeature([User, UserRole, Store]),
+    UserRoleModule,
+    StoreModule,
+  ],
   providers: [UserRepository, UserService, UserMapper],
   controllers: [UserController],
   exports: [UserService],
