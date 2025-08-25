@@ -3,27 +3,32 @@ import {
   PrimaryGeneratedColumn,
   ManyToOne,
   CreateDateColumn,
+  Column,
 } from 'typeorm';
 import { User } from './user.entity';
-import { Role } from './role.entity';
 import { Store } from './store.entity';
+import { StoreRoles } from 'src/common/enums/store-roles.enum';
 
 @Entity({ name: 'user_roles' })
 export class UserRole {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Column({
+    type: 'enum',
+    enum: StoreRoles,
+    default: StoreRoles.GUEST,
+  })
+  roleName: StoreRoles;
+
   @ManyToOne(() => User, (user) => user.roles, { onDelete: 'CASCADE' })
   user: User;
-
-  @ManyToOne(() => Role, (role) => role.userRoles, { onDelete: 'CASCADE' })
-  role: Role;
 
   @ManyToOne(() => Store, (store) => store.userRoles, {
     nullable: true,
     onDelete: 'SET NULL',
   })
-  store?: Store;
+  store: Store;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
