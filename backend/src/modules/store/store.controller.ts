@@ -7,13 +7,13 @@ import {
   Param,
   Delete,
 } from '@nestjs/common';
-import { StoresService } from './stores.service';
+import { StoreService } from 'src/modules/store/store.service';
 import { CreateStoreDto } from './dto/create-store.dto';
 import { UpdateStoreDto } from './dto/update-store.dto';
 
-@Controller('stores')
-export class StoresController {
-  constructor(private readonly storesService: StoresService) {}
+@Controller('store')
+export class StoreController {
+  constructor(private readonly storesService: StoreService) {}
 
   @Post()
   create(@Body() createStoreDto: CreateStoreDto) {
@@ -27,16 +27,16 @@ export class StoresController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.storesService.findOne(+id);
+    return this.storesService.findOne(id);
   }
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateStoreDto: UpdateStoreDto) {
-    return this.storesService.update(+id, updateStoreDto);
+    return this.storesService.update(id, updateStoreDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.storesService.remove(+id);
+    return this.storesService.remove(id);
   }
 }
