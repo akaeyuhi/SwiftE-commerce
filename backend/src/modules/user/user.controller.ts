@@ -65,6 +65,6 @@ export class UserController extends BaseController<
 
   // Additional endpoints:
   // POST /users/:id/roles
-  // POST /users/:id/stores
+  // POST /users/:id/store
   // POST /users/:id/ai-logs
 }
