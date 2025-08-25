@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { User } from 'src/entities/user.entity';
 import { BaseRepository } from 'src/common/abstracts/base.repository';
+import { UserRole } from 'src/entities/user-role.entity';
 
 @Injectable()
 export class UserRepository extends BaseRepository<User> {
@@ -47,5 +48,21 @@ export class UserRepository extends BaseRepository<User> {
 
   assignPermissions(user: User, ...permissions: string[]): Promise<User> {
     return this.save({ ...user, ...permissions });
+  }
+
+  async addRoleToUser(user: User, role: UserRole) {
+    return this.save({ ...user, roles: [...user.roles, role] });
+  }
+
+  async removeRoleFromUser(userId: string, roleId: string, storeId?: string) {
+    const qb = this.manager
+      .getRepository('UserRole')
+      .createQueryBuilder('ur')
+      .delete()
+      .where('ur.userId = :userId', { userId })
+      .andWhere('ur.roleId = :roleId', { roleId });
+
+    if (storeId) qb.andWhere('ur.storeId = :storeId', { storeId });
+    return qb.execute();
   }
 }
