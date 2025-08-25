@@ -16,16 +16,16 @@ import { NewsPost } from './news-post.entity';
 import { AiLog } from './ai-log.entity';
 import { BaseEntity } from 'src/common/interfaces/base-entity.interface';
 
-@Entity({ name: 'stores' })
+@Entity({ name: 'store' })
 export class Store implements BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'varchar', length: 255 })
+  @Column({ type: 'varchar', length: 255, unique: true })
   name: string;
 
-  @Column({ type: 'text', nullable: true })
-  description?: string;
+  @Column({ type: 'text' })
+  description: string;
 
   @ManyToOne(() => User, { onDelete: 'SET NULL' })
   ownerUser: User;
