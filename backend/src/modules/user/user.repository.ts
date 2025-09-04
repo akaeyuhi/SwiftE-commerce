@@ -46,6 +46,10 @@ export class UserRepository extends BaseRepository<User> {
     });
   }
 
+  /** @deprecated
+   * @param user
+   * @param permissions
+   */
   assignPermissions(user: User, ...permissions: string[]): Promise<User> {
     return this.save({ ...user, ...permissions });
   }
