@@ -4,7 +4,7 @@ import { UserService } from 'src/modules/user/user.service';
 import { AdminRoles } from 'src/common/enums/admin.enum';
 
 @Injectable()
-export class SiteAdminGuard implements CanActivate {
+export class AdminGuard implements CanActivate {
   constructor(
     private readonly userService: UserService,
     private readonly reflector: Reflector
