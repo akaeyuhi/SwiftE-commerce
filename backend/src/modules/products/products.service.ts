@@ -14,8 +14,7 @@ import { Category } from 'src/entities/category.entity';
 export class ProductsService extends BaseService<
   Product,
   CreateProductDto,
-  UpdateProductDto,
-  Product
+  UpdateProductDto
 > {
   constructor(
     private readonly productRepo: ProductRepository,
