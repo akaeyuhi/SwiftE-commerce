@@ -1,9 +1,8 @@
+import { IsOptional, IsString, IsUUID } from 'class-validator';
+
 export class CreateProductDto {
-  id: string;
-  name: string;
-  description?: string;
-  storeId: string;
-  categoryId?: string;
-  createdAt: Date;
-  updatedAt: Date;
+  @IsString() name: string;
+  @IsString() @IsOptional() description?: string;
+  @IsUUID() storeId: string;
+  @IsString() categoryId?: string;
 }
