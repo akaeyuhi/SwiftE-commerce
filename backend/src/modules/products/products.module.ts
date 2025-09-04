@@ -5,9 +5,19 @@ import { ProductRepository } from './products.repository';
 import { ProductsService } from './products.service';
 import { ProductsController } from './products.controller';
 import { ProductsMapper } from './mappers/products.mapper';
+import { CategoriesModule } from 'src/modules/categories/categories.module';
+import { ProductPhotoModule } from 'src/modules/product-photo/product-photo.module';
+import { VariantsModule } from 'src/modules/variants/variants.module';
+import { StoreModule } from 'src/modules/store/store.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Product])],
+  imports: [
+    TypeOrmModule.forFeature([Product]),
+    CategoriesModule,
+    ProductPhotoModule,
+    VariantsModule,
+    StoreModule,
+  ],
   providers: [ProductRepository, ProductsService, ProductsMapper],
   controllers: [ProductsController],
 })
