@@ -5,11 +5,11 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { ROLES_KEY } from '../decorators/roles.decorator';
+import { ROLES_KEY } from 'src/common/decorators/store-role.decorator';
 import { UserRole } from 'src/entities/user-role.entity';
 
 @Injectable()
-export class RolesGuard implements CanActivate {
+export class StoreRolesGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
@@ -24,7 +24,7 @@ export class RolesGuard implements CanActivate {
     const user = request.user as any; // assume User & roles loaded
 
     // user.roles is array of UserRole entities with role.name and store context
-    const userRoles: string[] = user.roles.map((ur: UserRole) => ur.role.name);
+    const userRoles: string[] = user.roles.map((ur: UserRole) => ur.roleName);
 
     const hasRole = requiredRoles.some((role) => userRoles.includes(role));
     if (!hasRole) {
