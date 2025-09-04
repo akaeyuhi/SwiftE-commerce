@@ -1,26 +1,17 @@
 import { Injectable } from '@nestjs/common';
-import { CreateAiLogDto } from './dto/create-ai-log.dto';
-import { UpdateAiLogDto } from './dto/update-ai-log.dto';
+import { BaseService } from 'src/common/abstracts/base.service';
+import { AiLog } from 'src/entities/ai-log.entity';
+import { CreateAiLogDto } from 'src/modules/ai-logs/dto/create-ai-log.dto';
+import { UpdateAiLogDto } from 'src/modules/ai-logs/dto/update-ai-log.dto';
+import { AiLogRepository } from 'src/modules/ai-logs/ai-log.repository';
 
 @Injectable()
-export class AiLogsService {
-  create(createAiLogDto: CreateAiLogDto) {
-    return 'This action adds a new aiLog';
-  }
-
-  findAll() {
-    return `This action returns all aiLogs`;
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} aiLog`;
-  }
-
-  update(id: number, updateAiLogDto: UpdateAiLogDto) {
-    return `This action updates a #${id} aiLog`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} aiLog`;
+export class AiLogsService extends BaseService<
+  AiLog,
+  CreateAiLogDto,
+  UpdateAiLogDto
+> {
+  constructor(private readonly logRepo: AiLogRepository) {
+    super(logRepo);
   }
 }
