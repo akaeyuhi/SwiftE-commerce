@@ -1,42 +1,20 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-} from '@nestjs/common';
+import { Controller, UseGuards } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
+import { BaseController } from 'src/common/abstracts/base.controller';
+import { Order } from 'src/entities/order.entity';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { StoreRolesGuard } from 'src/common/guards/store-roles.guard';
 
 @Controller('orders')
-export class OrdersController {
-  constructor(private readonly ordersService: OrdersService) {}
-
-  @Post()
-  create(@Body() createOrderDto: CreateOrderDto) {
-    return this.ordersService.create(createOrderDto);
-  }
-
-  @Get()
-  findAll() {
-    return this.ordersService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.ordersService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateOrderDto: UpdateOrderDto) {
-    return this.ordersService.update(+id, updateOrderDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.ordersService.remove(+id);
+@UseGuards(JwtAuthGuard, StoreRolesGuard)
+export class OrdersController extends BaseController<
+  Order,
+  CreateOrderDto,
+  UpdateOrderDto
+> {
+  constructor(private readonly ordersService: OrdersService) {
+    super(ordersService);
   }
 }

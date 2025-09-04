@@ -1,42 +1,22 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-} from '@nestjs/common';
+import { Controller, UseGuards } from '@nestjs/common';
 import { StoreService } from 'src/modules/store/store.service';
 import { CreateStoreDto } from './dto/create-store.dto';
 import { UpdateStoreDto } from './dto/update-store.dto';
+import { BaseController } from 'src/common/abstracts/base.controller';
+import { Store } from 'src/entities/store.entity';
+import { StoreDto } from 'src/modules/store/dto/store.dto';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { StoreRolesGuard } from 'src/common/guards/store-roles.guard';
 
 @Controller('store')
-export class StoreController {
-  constructor(private readonly storesService: StoreService) {}
-
-  @Post()
-  create(@Body() createStoreDto: CreateStoreDto) {
-    return this.storesService.create(createStoreDto);
-  }
-
-  @Get()
-  findAll() {
-    return this.storesService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.storesService.findOne(id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateStoreDto: UpdateStoreDto) {
-    return this.storesService.update(id, updateStoreDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.storesService.remove(id);
+@UseGuards(JwtAuthGuard, StoreRolesGuard)
+export class StoreController extends BaseController<
+  Store,
+  CreateStoreDto,
+  UpdateStoreDto,
+  StoreDto
+> {
+  constructor(private readonly storeService: StoreService) {
+    super(storeService);
   }
 }

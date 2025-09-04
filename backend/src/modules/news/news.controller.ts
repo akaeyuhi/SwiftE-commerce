@@ -1,42 +1,20 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-} from '@nestjs/common';
+import { Controller, UseGuards } from '@nestjs/common';
 import { NewsService } from './news.service';
 import { CreateNewsDto } from './dto/create-news.dto';
 import { UpdateNewsDto } from './dto/update-news.dto';
+import { BaseController } from 'src/common/abstracts/base.controller';
+import { NewsPost } from 'src/entities/news-post.entity';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { StoreRolesGuard } from 'src/common/guards/store-roles.guard';
 
 @Controller('news')
-export class NewsController {
-  constructor(private readonly newsService: NewsService) {}
-
-  @Post()
-  create(@Body() createNewsDto: CreateNewsDto) {
-    return this.newsService.create(createNewsDto);
-  }
-
-  @Get()
-  findAll() {
-    return this.newsService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.newsService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateNewsDto: UpdateNewsDto) {
-    return this.newsService.update(+id, updateNewsDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.newsService.remove(+id);
+@UseGuards(JwtAuthGuard, StoreRolesGuard)
+export class NewsController extends BaseController<
+  NewsPost,
+  CreateNewsDto,
+  UpdateNewsDto
+> {
+  constructor(private readonly newsService: NewsService) {
+    super(newsService);
   }
 }

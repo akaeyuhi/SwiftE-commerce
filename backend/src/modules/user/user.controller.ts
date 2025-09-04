@@ -5,7 +5,6 @@ import {
   Get,
   Param,
   Post,
-  Put,
   UseGuards,
 } from '@nestjs/common';
 import { UserService } from 'src/modules/user/user.service';
@@ -43,26 +42,8 @@ export class UserController extends BaseController<
 
   @Get()
   @StoreRole(StoreRoles.ADMIN)
-  async findAll(): Promise<UserDto[]> {
+  async findAll(): Promise<UserDto[] | User[]> {
     return this.userService.findAll();
-  }
-
-  @Get(':id')
-  async findOne(@Param('id') id: string): Promise<UserDto> {
-    return this.userService.findOne(id);
-  }
-
-  @Put(':id')
-  async update(
-    @Param('id') id: string,
-    @Body() dto: UpdateUserDto
-  ): Promise<UserDto> {
-    return this.userService.update(id, dto);
-  }
-
-  @Delete(':id')
-  async remove(@Param('id') id: string): Promise<void> {
-    return this.userService.remove(id);
   }
 
   @Post(':id/roles')
