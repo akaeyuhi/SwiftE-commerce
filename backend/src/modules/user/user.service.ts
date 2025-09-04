@@ -32,18 +32,7 @@ export class UserService extends BaseService<
     private readonly storeService: StoreService,
     protected readonly mapper: UserMapper
   ) {
-    super(mapper);
-  }
-
-  async findAll(): Promise<UserDto[]> {
-    const users = await this.userRepo.find();
-    return this.mapper.toDtoList(users);
-  }
-
-  async findOne(id: string): Promise<UserDto> {
-    const user = await this.userRepo.findOneBy({ id });
-    if (!user) throw new NotFoundException('User not found');
-    return this.mapper.toDto(user);
+    super(userRepo, mapper);
   }
 
   async create(dto: CreateUserDto): Promise<UserDto> {
@@ -66,11 +55,6 @@ export class UserService extends BaseService<
     return this.mapper.toDto(updated);
   }
 
-  async remove(id: string): Promise<void> {
-    const res = await this.userRepo.delete(id);
-    if (res.affected === 0) throw new NotFoundException('User not found');
-  }
-
   async findByEmail(email: string): Promise<UserDto> {
     const user = await this.userRepo.findOneBy({ email });
     if (!user) throw new NotFoundException('User not found');
@@ -89,10 +73,6 @@ export class UserService extends BaseService<
     return user;
   }
 
-  async getEntityById(id: string): Promise<User | null> {
-    return this.userRepo.findById(id);
-  }
-
   // Additional methods:
   async assignRole(
     userId: string,
@@ -109,7 +89,11 @@ export class UserService extends BaseService<
     const exists = await this.userRoleService.findByStoreUser(userId, storeId);
     if (exists) throw new BadRequestException('Role already assigned');
 
-    const userRole = await this.userRoleService.create(roleName, user, store);
+    const userRole = await this.userRoleService.create({
+      roleName,
+      user,
+      store,
+    });
     await this.userRepo.addRoleToUser(user, userRole);
     return userRole;
   }

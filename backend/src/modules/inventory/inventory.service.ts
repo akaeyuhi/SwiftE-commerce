@@ -1,9 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InventoryRepository } from 'src/modules/inventory/inventory.repository';
+import { BaseService } from 'src/common/abstracts/base.service';
+import { Inventory } from 'src/entities/inventory.entity';
 
 @Injectable()
-export class InventoryService {
-  constructor(private readonly inventoryRepo: InventoryRepository) {}
+export class InventoryService extends BaseService<Inventory> {
+  constructor(private readonly inventoryRepo: InventoryRepository) {
+    super(inventoryRepo);
+  }
 
   async getQuantity(variantId: string) {
     const inv = await this.inventoryRepo.findOne({

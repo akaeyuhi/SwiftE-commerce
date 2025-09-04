@@ -1,26 +1,17 @@
 import { Injectable } from '@nestjs/common';
-import { CreateCartDto } from './dto/create-cart.dto';
-import { UpdateCartDto } from './dto/update-cart.dto';
+import { BaseService } from 'src/common/abstracts/base.service';
+import { ShoppingCart } from 'src/entities/cart.entity';
+import { CreateCartDto } from 'src/modules/cart/dto/create-cart.dto';
+import { UpdateCartDto } from 'src/modules/cart/dto/update-cart.dto';
+import { CartRepository } from 'src/modules/cart/cart.repository';
 
 @Injectable()
-export class CartService {
-  create(createCartDto: CreateCartDto) {
-    return 'This action adds a new cart';
-  }
-
-  findAll() {
-    return `This action returns all cart`;
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} cart`;
-  }
-
-  update(id: number, updateCartDto: UpdateCartDto) {
-    return `This action updates a #${id} cart`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} cart`;
+export class CartService extends BaseService<
+  ShoppingCart,
+  CreateCartDto,
+  UpdateCartDto
+> {
+  constructor(private readonly cartRepo: CartRepository) {
+    super(cartRepo);
   }
 }

@@ -1,18 +1,18 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { UserRoleRepository } from 'src/modules/user-role/user-role.repository';
-import { User } from 'src/entities/user.entity';
-import { StoreRoles } from 'src/common/enums/store-roles.enum';
-import { Store } from 'src/entities/store.entity';
 import { UserRole } from 'src/entities/user-role.entity';
+import { BaseService } from 'src/common/abstracts/base.service';
+import { CreateUserRoleDto } from 'src/modules/user-role/dto/create-role.dto';
+import { UpdateUserRoleDto } from 'src/modules/user-role/dto/update-user-role.dto';
 
 @Injectable()
-export class UserRoleService {
-  constructor(private readonly userRoleRepo: UserRoleRepository) {}
-  findAll(): Promise<any[]> {
-    return this.userRoleRepo.findAll();
-  }
-  findOne(id: string): Promise<any> {
-    return this.userRoleRepo.findById(id);
+export class UserRoleService extends BaseService<
+  UserRole,
+  CreateUserRoleDto,
+  UpdateUserRoleDto
+> {
+  constructor(private readonly userRoleRepo: UserRoleRepository) {
+    super(userRoleRepo);
   }
 
   async findByStoreUser(
@@ -31,24 +31,10 @@ export class UserRoleService {
     });
   }
 
-  async create(
-    roleName: StoreRoles,
-    user: User,
-    store: Store
-  ): Promise<UserRole> {
-    return this.userRoleRepo.create({
-      user,
-      roleName,
-      store,
-    });
-  }
-
-  async update(user: User, store: Store, newRole: StoreRoles): Promise<any> {
-    const role = await this.findByStoreUser(user.id, store.id);
+  async update(userId: string, dto: UpdateUserRoleDto): Promise<UserRole> {
+    const { store, roleName } = dto;
+    const role = await this.findByStoreUser(userId, store!.id);
     if (!role) throw new NotFoundException(`Such role doesnt exist`);
-    return this.userRoleRepo.save({ ...role, roleName: newRole });
-  }
-  remove(id: string): Promise<void> {
-    return this.remove(id);
+    return await this.userRoleRepo.save({ ...role, roleName });
   }
 }

@@ -1,13 +1,23 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InventoryRepository } from 'src/modules/inventory/inventory.repository';
 import { VariantsRepository } from 'src/modules/variants/variants.repository';
+import { BaseService } from 'src/common/abstracts/base.service';
+import { ProductVariant } from 'src/entities/variant.entity';
+import { CreateVariantDto } from 'src/modules/variants/dto/create-variant.dto';
+import { UpdateVariantDto } from 'src/modules/variants/dto/update-variant.dto';
 
 @Injectable()
-export class VariantsService {
+export class VariantsService extends BaseService<
+  ProductVariant,
+  CreateVariantDto,
+  UpdateVariantDto
+> {
   constructor(
     private readonly inventoryRepo: InventoryRepository,
     private readonly variantRepo: VariantsRepository
-  ) {}
+  ) {
+    super(variantRepo);
+  }
 
   async updatePrice(variantId: string, price: number) {
     const v = await this.variantRepo.findOneBy({ id: variantId });

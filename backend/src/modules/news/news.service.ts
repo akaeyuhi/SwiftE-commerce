@@ -1,26 +1,17 @@
 import { Injectable } from '@nestjs/common';
-import { CreateNewsDto } from './dto/create-news.dto';
-import { UpdateNewsDto } from './dto/update-news.dto';
+import { BaseService } from 'src/common/abstracts/base.service';
+import { NewsPost } from 'src/entities/news-post.entity';
+import { CreateNewsDto } from 'src/modules/news/dto/create-news.dto';
+import { UpdateNewsDto } from 'src/modules/news/dto/update-news.dto';
+import { NewsRepository } from 'src/modules/news/news.repository';
 
 @Injectable()
-export class NewsService {
-  create(createNewsDto: CreateNewsDto) {
-    return 'This action adds a new news';
-  }
-
-  findAll() {
-    return `This action returns all news`;
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} news`;
-  }
-
-  update(id: number, updateNewsDto: UpdateNewsDto) {
-    return `This action updates a #${id} news`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} news`;
+export class NewsService extends BaseService<
+  NewsPost,
+  CreateNewsDto,
+  UpdateNewsDto
+> {
+  constructor(private readonly newsRepo: NewsRepository) {
+    super(newsRepo);
   }
 }

@@ -22,17 +22,7 @@ export class StoreService extends BaseService<
     private readonly storeRepo: StoreRepository,
     protected readonly mapper: StoreMapper
   ) {
-    super(mapper);
-  }
-  async findAll(): Promise<StoreDto[]> {
-    const stores = await this.storeRepo.find();
-    return this.mapper.toDtoList(stores);
-  }
-
-  async findOne(id: string): Promise<StoreDto> {
-    const store = await this.storeRepo.findOneBy({ id });
-    if (!store) throw new NotFoundException('User not found');
-    return this.mapper.toDto(store);
+    super(storeRepo, mapper);
   }
 
   async create(dto: CreateStoreDto): Promise<StoreDto> {
@@ -41,22 +31,5 @@ export class StoreService extends BaseService<
     const store = this.mapper.toEntity(dto as any);
     const saved = await this.storeRepo.save(store);
     return this.mapper.toDto(saved);
-  }
-
-  async update(id: string, dto: UpdateStoreDto): Promise<StoreDto> {
-    const store = await this.storeRepo.findById(id);
-    if (!store) throw new NotFoundException('Store not found');
-    Object.assign(store, dto);
-    const updated = await this.storeRepo.save(store);
-    return this.mapper.toDto(updated);
-  }
-
-  async remove(id: string): Promise<void> {
-    const res = await this.storeRepo.delete(id);
-    if (res.affected === 0) throw new NotFoundException('User not found');
-  }
-
-  async getEntityById(id: string): Promise<Store | null> {
-    return this.storeRepo.findById(id);
   }
 }

@@ -23,10 +23,7 @@ export class ProductsService extends BaseService<
     private readonly photoRepo: ProductPhotoRepository,
     private readonly storeService: StoreService
   ) {
-    super();
-  }
-  async findAll(): Promise<Product[]> {
-    return this.productRepo.find();
+    super(productRepo);
   }
 
   async findProductWithRelations(id: string): Promise<Product | null> {
@@ -34,7 +31,7 @@ export class ProductsService extends BaseService<
   }
 
   async findAllByStore(id: string): Promise<Product[]> {
-    return this.findAllByStore(id);
+    return this.productRepo.findAllByStore(id);
   }
 
   async create(dto: CreateProductDto): Promise<Product> {
@@ -60,17 +57,6 @@ export class ProductsService extends BaseService<
     Object.assign(product, dto);
     if (dto.categoryId) product.category = { id: dto.categoryId } as Category;
     return this.productRepo.save(product);
-  }
-
-  async remove(id: string): Promise<void> {
-    const res = await this.productRepo.delete(id);
-    if (res.affected === 0) throw new NotFoundException('Product not found');
-  }
-
-  async findOne(id: string): Promise<Product> {
-    const product = await this.productRepo.findOneBy({ id });
-    if (!product) throw new NotFoundException('Product not found');
-    return product;
   }
 
   // Photo handling: service expects that file was uploaded to storage and returns URL
