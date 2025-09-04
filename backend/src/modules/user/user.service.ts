@@ -131,7 +131,7 @@ export class UserService extends BaseService<
 
     const store = await this.storeService.create(dto);
 
-    await this.assignRole(owner.id, StoreRoles.ADMIN, store.id);
+    await this.assignRole(owner.id, StoreRoles.ADMIN, store.id!);
 
     return store;
   }
