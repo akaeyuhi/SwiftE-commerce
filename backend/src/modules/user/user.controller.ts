@@ -21,7 +21,7 @@ import { StoreRolesGuard } from 'src/common/guards/store-roles.guard';
 import { CreateStoreDto } from 'src/modules/store/dto/create-store.dto';
 import { AdminGuard } from 'src/common/guards/admin.guard';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
-import { AssignRoleDto } from 'src/modules/user/dto/assign-role.dto';
+import { RoleDto } from 'src/modules/user/dto/role.dto';
 import { AdminRole } from 'src/common/decorators/admin.decorator';
 import { AdminRoles } from 'src/common/enums/admin.enum';
 
@@ -69,19 +69,15 @@ export class UserController extends BaseController<
   @Post(':id/roles')
   @StoreRole(StoreRoles.ADMIN) // only app admins can assign global or arbitrary roles
   @AdminRole(AdminRoles.ADMIN)
-  async assignRole(@Param('id') userId: string, @Body() dto: AssignRoleDto) {
+  async assignRole(@Param('id') userId: string, @Body() dto: RoleDto) {
     return this.userService.assignRole(userId, dto.roleName, dto.storeId);
   }
 
-  @Delete(':id/roles/:roleId')
+  @Delete(':id/roles')
   @StoreRole(StoreRoles.ADMIN)
   @AdminRole(AdminRoles.ADMIN)
-  async revokeStoreRole(
-    @Param('id') userId: string,
-    @Param('roleId') roleId: string,
-    @Query('storeId') storeId?: string
-  ) {
-    return this.userService.revokeRole(userId, roleId, storeId);
+  async revokeStoreRole(@Param('id') userId: string, @Body() dto: RoleDto) {
+    return this.userService.revokeRole(userId, dto.roleName, dto.storeId);
   }
 
   @Post(':id/stores')
@@ -91,7 +87,5 @@ export class UserController extends BaseController<
   }
 
   // Additional endpoints:
-  // POST /users/:id/roles
-  // POST /users/:id/store
   // POST /users/:id/ai-logs
 }
