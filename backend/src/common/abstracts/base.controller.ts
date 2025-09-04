@@ -1,11 +1,12 @@
 import { Body, Delete, Get, Param, Post, Put } from '@nestjs/common';
 import { BaseService } from './base.service';
+import { ObjectLiteral } from 'typeorm';
 
 export abstract class BaseController<
-  Entity,
-  CreateDto,
-  UpdateDto,
-  TransferDto,
+  Entity extends ObjectLiteral,
+  CreateDto = Partial<Entity>,
+  UpdateDto = Partial<Entity>,
+  TransferDto = Entity,
 > {
   protected constructor(
     protected readonly service: BaseService<
@@ -17,17 +18,17 @@ export abstract class BaseController<
   ) {}
 
   @Get()
-  findAll(): Promise<TransferDto[]> {
+  findAll(): Promise<Entity[] | TransferDto[]> {
     return this.service.findAll();
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string): Promise<TransferDto> {
+  findOne(@Param('id') id: string): Promise<Entity | TransferDto> {
     return this.service.findOne(id);
   }
 
   @Post()
-  create(@Body() dto: CreateDto): Promise<TransferDto> {
+  create(@Body() dto: CreateDto): Promise<Entity | TransferDto> {
     return this.service.create(dto);
   }
 
@@ -35,7 +36,7 @@ export abstract class BaseController<
   update(
     @Param('id') id: string,
     @Body() dto: UpdateDto
-  ): Promise<TransferDto> {
+  ): Promise<Entity | TransferDto> {
     return this.service.update(id, dto);
   }
 
