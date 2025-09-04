@@ -45,13 +45,6 @@ export class User implements BaseEntity {
   })
   siteRole: AdminRoles;
 
-  @Column({
-    type: 'text',
-    array: true,
-    default: () => `'{}'`,
-  })
-  permissionScopes: string[];
-
   // Relations
 
   @OneToMany(() => UserRole, (ur) => ur.user)
