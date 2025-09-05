@@ -1,7 +1,7 @@
 import { ICrudService } from '../interfaces/crud.interface';
 import { BaseMapper } from 'src/common/abstracts/base.mapper';
 import { BaseRepository } from 'src/common/abstracts/base.repository';
-import { ObjectLiteral } from 'typeorm';
+import { DeepPartial, ObjectLiteral } from 'typeorm';
 import { NotFoundException } from '@nestjs/common';
 
 export abstract class BaseService<
@@ -17,18 +17,19 @@ export abstract class BaseService<
   ) {}
 
   async create(dto: CreateDto): Promise<TransferDto | Entity> {
-    const newEntity = this.repository.create(dto as any);
-    const saved = (await this.repository.save(newEntity)) as any;
-    return this.mapper?.toDto(saved) ?? saved;
+    const newEntity = await this.repository.createEntity(
+      dto as DeepPartial<Entity>
+    );
+    return this.mapper?.toDto(newEntity) ?? newEntity;
   }
 
   async findAll(): Promise<TransferDto[] | Entity[]> {
-    const entities = await this.repository.find();
+    const entities = await this.repository.findAll();
     return this.mapper?.toDtoList(entities) ?? entities;
   }
 
   async findOne(id: string): Promise<TransferDto | Entity> {
-    const entity = await this.repository.findOneBy({ id } as any);
+    const entity = await this.repository.findById(id);
     if (!entity) throw new NotFoundException('User not found');
     return this.mapper?.toDto(entity) ?? (entity as any);
   }
