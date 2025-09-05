@@ -2,9 +2,9 @@ import { SetMetadata } from '@nestjs/common';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 
 /**
- * Roles decorator to assign required roles to route handlers.
- * Usage: @Roles('admin', 'store-admin')
+ * Store roles decorator to assign required roles to route handlers.
+ * Usage: @StoreRole(StoreRoles.MODERATOR)
  */
-export const ROLES_KEY = 'roles';
+export const STORE_ROLES_META = 'storeRoles';
 export const StoreRole = (...roles: StoreRoles[]) =>
-  SetMetadata(ROLES_KEY, roles);
+  SetMetadata(STORE_ROLES_META, roles);
