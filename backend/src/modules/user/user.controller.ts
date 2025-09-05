@@ -20,7 +20,7 @@ import { CreateStoreDto } from 'src/modules/store/dto/create-store.dto';
 import { AdminGuard } from 'src/common/guards/admin.guard';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { RoleDto } from 'src/modules/user/dto/role.dto';
-import { AdminRole } from 'src/common/decorators/admin.decorator';
+import { AdminRole } from 'src/common/decorators/admin-role.decorator';
 import { AdminRoles } from 'src/common/enums/admin.enum';
 
 @Controller('users')
