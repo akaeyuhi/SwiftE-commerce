@@ -18,6 +18,7 @@ import { StoreService } from 'src/modules/store/store.service';
 import { StoreDto } from 'src/modules/store/dto/store.dto';
 import { UserRoleService } from 'src/modules/user-role/user-role.service';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
+import { AdminRoles } from 'src/common/enums/admin.enum';
 
 @Injectable()
 export class UserService extends BaseService<
@@ -118,6 +119,16 @@ export class UserService extends BaseService<
     await this.assignRole(owner.id, StoreRoles.ADMIN, store.id!);
 
     return store;
+  }
+
+  async getUserStoreRoles(userId: string) {
+    const user = await this.findOneWithRelations(userId);
+    return user.roles;
+  }
+
+  async isUserSiteAdmin(userId: string) {
+    const user = await this.findOneWithRelations(userId);
+    return user.siteRole === AdminRoles.ADMIN;
   }
 
   async logAiUsage(userId: string, feature: string, details: any) {
