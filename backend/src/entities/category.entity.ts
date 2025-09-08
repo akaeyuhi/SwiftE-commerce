@@ -6,6 +6,7 @@ import {
   OneToMany,
   CreateDateColumn,
   UpdateDateColumn,
+  ManyToMany,
 } from 'typeorm';
 import { Product } from './product.entity';
 import { BaseEntity } from 'src/common/interfaces/base-entity.interface';
@@ -30,7 +31,7 @@ export class Category implements BaseEntity {
   @OneToMany(() => Category, (category) => category.parent)
   children: Category[];
 
-  @OneToMany(() => Product, (product) => product.category)
+  @ManyToMany(() => Product, (product) => product.categories)
   products: Product[];
 
   @CreateDateColumn()
