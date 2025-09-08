@@ -159,10 +159,10 @@ export class ProductsService extends BaseService<
     const product = await this.productRepo.findOneBy({ id: productId });
     if (!product) throw new NotFoundException('Product not found');
 
-    // Delegates to photoService which moves files and creates DB rows.
-    await this.photoService.addPhotos(productId, storeId, photos);
-    // NOTE: product.photos may not be populated/updated in-memory — consider refetch.
-    return product.photos;
+    const store = await this.storeService.getEntityById(storeId);
+    if (!store) throw new NotFoundException('Store not found');
+
+    return await this.photoService.addPhotos(product, store, photos);
   }
 
   /**
@@ -189,7 +189,10 @@ export class ProductsService extends BaseService<
     const product = await this.productRepo.findOneBy({ id: productId });
     if (!product) throw new NotFoundException('Product not found');
 
-    return this.photoService.addPhotos(productId, storeId, [photo], true);
+    const store = await this.storeService.getEntityById(storeId);
+    if (!store) throw new NotFoundException('Store not found');
+
+    return this.photoService.addPhotos(product, store, [photo], true);
   }
 
   /**

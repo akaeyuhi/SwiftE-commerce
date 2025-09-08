@@ -9,6 +9,8 @@ import {
   ALLOWED_IMAGE_MIME_PREFIX,
   UPLOADS_PRODUCTS_DIR,
 } from './interceptors/constants';
+import { Store } from 'src/entities/store.entity';
+import { Product } from 'src/entities/product.entity';
 
 /**
  * ProductPhotoService
@@ -49,7 +51,7 @@ export class ProductPhotoService extends BaseService<ProductPhoto> {
    * @returns public URL, e.g. `/uploads/products/<storeId>/<filename>`
    * @throws BadRequestException when file is not an image or lacks `buffer`/`path`
    */
-  async saveFileToStore(
+  private async saveFileToStore(
     file: Express.Multer.File,
     storeId: string
   ): Promise<string> {
@@ -101,39 +103,35 @@ export class ProductPhotoService extends BaseService<ProductPhoto> {
    *    wrapping orchestration in a transaction and cleanup logic if you need strict atomicity.
    *
    * @param file - uploaded file
-   * @param storeId - store id used for final folder
-   * @param productId - product id to attach the photo to
+   * @param store - store id used for final folder
+   * @param product - product to attach the photo to
    * @param altText - optional alt text for the photo
    * @param isMain - if true, this photo will be marked as main and previous mains unset
    * @returns the saved ProductPhoto entity
    */
-  async saveFileAndCreatePhoto(
+  private async saveFileAndCreatePhoto(
     file: Express.Multer.File,
-    storeId: string,
-    productId: string,
+    store: Store,
+    product: Product,
     altText?: string,
     isMain = false
-  ): Promise<ProductPhoto[]> {
+  ): Promise<ProductPhoto> {
     // 1) Save file to disk
-    const publicUrl = await this.saveFileToStore(file, storeId);
+    const publicUrl = await this.saveFileToStore(file, store.id);
 
     // 2) If asked to be main, unset previous mains first
     if (isMain) {
-      await this.photoRepo.update(
-        { product: { id: productId } as any } as any,
-        { isMain: false } as any
-      );
+      const prevMain = this.getProductMainPhoto(product);
+      await this.photoRepo.updateEntity(prevMain.id, { isMain: false });
     }
 
     // 3) Create DB row for the photo
-    const photo = this.photoRepo.create({
-      product: { id: productId } as any,
+    return this.photoRepo.createEntity({
+      product,
       url: publicUrl,
       altText,
       isMain,
-    } as any);
-
-    return await this.photoRepo.save(photo);
+    });
   }
 
   /**
@@ -149,7 +147,6 @@ export class ProductPhotoService extends BaseService<ProductPhoto> {
   async deletePhotoAndFile(photoId: string): Promise<void> {
     const photo = await this.photoRepo.findById(photoId);
     if (!photo) {
-      // nothing to delete
       return;
     }
 
@@ -175,15 +172,15 @@ export class ProductPhotoService extends BaseService<ProductPhoto> {
    *
    * Returns an array of created ProductPhoto entities.
    *
-   * @param productId - product to attach photos to
-   * @param storeId - store id (used to build a filesystem path)
+   * @param product - product to attach photos to
+   * @param store - store id (used to build a filesystem path)
    * @param photos - array of uploaded files to attach
    * @param isMain - optional flag; if true the first uploaded file becomes main
    * @returns array of saved ProductPhoto entities or null when no photos provided
    */
   async addPhotos(
-    productId: string,
-    storeId: string,
+    product: Product,
+    store: Store,
     photos?: Express.Multer.File[],
     isMain?: boolean
   ): Promise<ProductPhoto[] | null> {
@@ -200,14 +197,22 @@ export class ProductPhotoService extends BaseService<ProductPhoto> {
 
       const saved = await this.saveFileAndCreatePhoto(
         file,
-        storeId,
-        productId,
+        store,
+        product,
         altText,
         shouldBeMain
       );
-      dbPhotos.push(...saved);
+      dbPhotos.push(saved);
     }
 
     return dbPhotos;
+  }
+
+  private getProductMainPhoto(product: Product): ProductPhoto {
+    const photo = product.photos.find((photo) => photo.isMain);
+    if (!photo) {
+      throw new BadRequestException('No main photo found');
+    }
+    return photo;
   }
 }
