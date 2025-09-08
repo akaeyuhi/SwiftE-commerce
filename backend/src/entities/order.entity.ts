@@ -12,6 +12,8 @@ import { Store } from './store.entity';
 import { OrderItem } from './order-item.entity';
 import { BaseEntity } from 'src/common/interfaces/base-entity.interface';
 
+//TODO
+// Write an embedded class for order info like shipping address etc
 @Entity({ name: 'orders' })
 export class Order implements BaseEntity {
   @PrimaryGeneratedColumn('uuid')

@@ -9,6 +9,14 @@ import {
 import { ProductVariant } from './variant.entity';
 import { BaseEntity } from 'src/common/interfaces/base-entity.interface';
 
+// TODO
+/**
+ *
+ * Think on the refactoring Inventory entity
+ * Inventory belongs to the store, inventory has product variants with set quantity.
+ * Do we need separate rows for each variant, or one inventory per store?
+ *
+ */
 @Entity({ name: 'inventory' })
 export class Inventory implements BaseEntity {
   @PrimaryGeneratedColumn('uuid')
