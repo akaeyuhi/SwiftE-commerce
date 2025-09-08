@@ -7,7 +7,7 @@ import { Review } from 'src/entities/review.entity';
 import { StoreRolesGuard } from 'src/common/guards/store-roles.guard';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 
-@Controller('reviews')
+@Controller('stores/:storeId/products/:productId/reviews')
 @UseGuards(JwtAuthGuard, StoreRolesGuard)
 export class ReviewsController extends BaseController<
   Review,

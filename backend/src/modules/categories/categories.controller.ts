@@ -7,7 +7,7 @@ import { Category } from 'src/entities/category.entity';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { StoreRolesGuard } from 'src/common/guards/store-roles.guard';
 
-@Controller('categories')
+@Controller('stores/:storeId/products/:productId/categories')
 @UseGuards(JwtAuthGuard, StoreRolesGuard)
 export class CategoriesController extends BaseController<
   Category,

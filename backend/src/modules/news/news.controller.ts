@@ -7,7 +7,7 @@ import { NewsPost } from 'src/entities/news-post.entity';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { StoreRolesGuard } from 'src/common/guards/store-roles.guard';
 
-@Controller('news')
+@Controller('stores/:storeId/news')
 @UseGuards(JwtAuthGuard, StoreRolesGuard)
 export class NewsController extends BaseController<
   NewsPost,

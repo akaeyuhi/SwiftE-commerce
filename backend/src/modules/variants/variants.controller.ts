@@ -7,7 +7,7 @@ import { ProductVariant } from 'src/entities/variant.entity';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { StoreRolesGuard } from 'src/common/guards/store-roles.guard';
 
-@Controller('variants')
+@Controller('stores/:storeId/products/:productId/variants')
 @UseGuards(JwtAuthGuard, StoreRolesGuard)
 export class VariantsController extends BaseController<
   ProductVariant,

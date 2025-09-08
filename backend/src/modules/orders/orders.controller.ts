@@ -7,7 +7,7 @@ import { Order } from 'src/entities/order.entity';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { StoreRolesGuard } from 'src/common/guards/store-roles.guard';
 
-@Controller('orders')
+@Controller('stores/:storeId/orders')
 @UseGuards(JwtAuthGuard, StoreRolesGuard)
 export class OrdersController extends BaseController<
   Order,

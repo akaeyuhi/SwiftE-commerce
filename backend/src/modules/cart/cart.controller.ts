@@ -7,7 +7,7 @@ import { ShoppingCart } from 'src/entities/cart.entity';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { StoreRolesGuard } from 'src/common/guards/store-roles.guard';
 
-@Controller('cart')
+@Controller('stores/:storeId/cart')
 @UseGuards(JwtAuthGuard, StoreRolesGuard)
 export class CartController extends BaseController<
   ShoppingCart,

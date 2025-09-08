@@ -7,7 +7,7 @@ import { AiLog } from 'src/entities/ai-log.entity';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { StoreRolesGuard } from 'src/common/guards/store-roles.guard';
 
-@Controller('ai-logs')
+@Controller('stores/:storeId/ai-logs')
 @UseGuards(JwtAuthGuard, StoreRolesGuard)
 export class AiLogsController extends BaseController<
   AiLog,
