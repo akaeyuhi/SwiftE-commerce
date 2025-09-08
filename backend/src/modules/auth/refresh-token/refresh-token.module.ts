@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { RefreshTokenService } from './refresh-token.service';
+import { RefreshTokenService } from 'src/modules/auth/refresh-token/refresh-token.service';
 
 @Module({
   providers: [RefreshTokenService],
