@@ -111,7 +111,7 @@ export class ProductsController extends BaseController<
    * @param photo - Main photo to upload
    */
   @UseInterceptors(ProductPhotosInterceptor())
-  @Post(':productId/mainPhoto')
+  @Post(':productId/photos/main')
   async addMainPhotoToProduct(
     @Param('storeId', new ParseUUIDPipe()) storeId: string,
     @Param('productId', new ParseUUIDPipe()) productId: string,
