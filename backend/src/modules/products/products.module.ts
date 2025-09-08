@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import {forwardRef, Module} from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Product } from 'src/entities/product.entity';
 import { ProductRepository } from './products.repository';
@@ -16,7 +16,7 @@ import { StoreModule } from 'src/modules/store/store.module';
     CategoriesModule,
     ProductPhotoModule,
     VariantsModule,
-    StoreModule,
+    forwardRef(() => StoreModule),
   ],
   providers: [ProductRepository, ProductsService, ProductsMapper],
   controllers: [ProductsController],
