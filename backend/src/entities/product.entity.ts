@@ -6,6 +6,7 @@ import {
   OneToMany,
   CreateDateColumn,
   UpdateDateColumn,
+  ManyToMany,
 } from 'typeorm';
 import { Store } from './store.entity';
 import { Category } from './category.entity';
@@ -22,11 +23,11 @@ export class Product implements BaseEntity {
   @ManyToOne(() => Store, (store) => store.products, { onDelete: 'CASCADE' })
   store: Store;
 
-  @ManyToOne(() => Category, (category) => category.products, {
+  @ManyToMany(() => Category, (category) => category.products, {
     nullable: true,
     onDelete: 'SET NULL',
   })
-  category?: Category;
+  categories?: Category[];
 
   @Column({ type: 'varchar', length: 255 })
   name: string;
