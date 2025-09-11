@@ -15,6 +15,8 @@ import { ShoppingCart } from './cart.entity';
 import { NewsPost } from './news-post.entity';
 import { AiLog } from './ai-log.entity';
 import { BaseEntity } from 'src/common/interfaces/base-entity.interface';
+import { Inventory } from 'src/entities/inventory.entity';
+import { Category } from 'src/entities/category.entity';
 
 @Entity({ name: 'store' })
 export class Store implements BaseEntity {
@@ -40,8 +42,14 @@ export class Store implements BaseEntity {
   @OneToMany(() => Product, (product) => product.store)
   products: Product[];
 
+  @OneToMany(() => Inventory, (inventory) => inventory.store)
+  inventories: Inventory[];
+
   @OneToMany(() => Order, (order) => order.store)
   orders: Order[];
+
+  @OneToMany(() => Order, (category) => category.store)
+  categories: Category[];
 
   @OneToMany(() => ShoppingCart, (cart) => cart.store)
   carts: ShoppingCart[];
