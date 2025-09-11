@@ -95,6 +95,7 @@ export abstract class BaseController<
    * @returns Promise resolving to the list of entities or transfer objects.
    */
   @Get()
+  @AdminRole(AdminRoles.ADMIN)
   findAll(): Promise<Entity[] | TransferDto[]> {
     return this.service.findAll();
   }
