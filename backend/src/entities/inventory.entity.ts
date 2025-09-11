@@ -8,6 +8,7 @@ import {
 } from 'typeorm';
 import { ProductVariant } from './variant.entity';
 import { BaseEntity } from 'src/common/interfaces/base-entity.interface';
+import { Store } from 'src/entities/store.entity';
 
 // TODO
 /**
@@ -22,10 +23,13 @@ export class Inventory implements BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => ProductVariant, (variant) => variant.inventory, {
+  @ManyToOne(() => ProductVariant, (variant) => variant.inventories, {
     onDelete: 'CASCADE',
   })
   variant: ProductVariant;
+
+  @ManyToOne(() => Store, (store) => store.inventories, { onDelete: 'CASCADE' })
+  store: Store;
 
   @Column({ type: 'int', default: 0 })
   quantity: number;
