@@ -6,4 +6,6 @@ export class CreateVariantDto {
   @IsNumber() price: number;
   @IsOptional() attributes?: Record<string, any>;
   @IsOptional() stock?: number;
+  @IsOptional() initialQuantity?: number = 0;
+  @IsOptional() @IsUUID() storeId?: string;
 }
