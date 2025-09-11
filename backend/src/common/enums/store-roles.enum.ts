@@ -1,5 +1,5 @@
 export enum StoreRoles {
   ADMIN = 'STORE_ADMIN',
-  USER = 'STORE_USER',
+  MODERATOR = 'STORE_MODERATOR',
   GUEST = 'GUEST',
 }
