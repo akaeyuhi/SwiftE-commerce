@@ -2,7 +2,6 @@ import {
   Body,
   Controller,
   Delete,
-  Get,
   Param,
   Post,
   UseGuards,
@@ -40,14 +39,8 @@ export class UserController extends BaseController<
     return this.userService.create(dto);
   }
 
-  @Get()
-  @StoreRole(StoreRoles.ADMIN)
-  async findAll(): Promise<UserDto[] | User[]> {
-    return this.userService.findAll();
-  }
-
   @Post(':id/roles')
-  @StoreRole(StoreRoles.ADMIN) // only app admins can assign global or arbitrary roles
+  @StoreRole(StoreRoles.ADMIN)
   @AdminRole(AdminRoles.ADMIN)
   async assignRole(@Param('id') userId: string, @Body() dto: RoleDto) {
     return this.userService.assignRole(userId, dto.roleName, dto.storeId);
@@ -62,7 +55,6 @@ export class UserController extends BaseController<
 
   @Post(':id/stores')
   async createStore(@Param('id') userId: string, @Body() dto: CreateStoreDto) {
-    // ensure the caller is the same user or app admin
     return this.userService.createStore(userId, dto);
   }
 
