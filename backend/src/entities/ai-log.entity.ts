@@ -28,7 +28,7 @@ export class AiLog implements BaseEntity {
   store?: Store;
 
   @Column({ type: 'varchar', length: 100 })
-  feature: string; // e.g., 'product_description_generator'
+  feature: string;
 
   @Column({ type: 'jsonb', nullable: true })
   details?: Record<string, any>;
