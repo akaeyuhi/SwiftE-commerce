@@ -36,7 +36,7 @@ export class UserRepository extends BaseRepository<User> {
       where: { id },
       relations: [
         'roles', // user_roles join rows
-        'roles.role', // actual Role entity
+        'roles.roleName', // actual Role entity
         'roles.store', // store scope for the user role (if any)
         'carts',
         'orders',

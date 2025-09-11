@@ -6,6 +6,7 @@ import { UserRole } from 'src/entities/user-role.entity';
 import { DeepPartial } from 'typeorm';
 import { User } from 'src/entities/user.entity';
 import { AdminService } from 'src/modules/admin/admin.service';
+import { StoreService } from 'src/modules/store/store.service';
 
 /**
  * PolicyService centralizes async checks for:
@@ -18,7 +19,8 @@ import { AdminService } from 'src/modules/admin/admin.service';
 export class PolicyService {
   constructor(
     private readonly userService: UserService,
-    private readonly adminService: AdminService
+    private readonly adminService: AdminService,
+    private readonly storeService: StoreService
   ) {}
 
   /**
@@ -47,7 +49,6 @@ export class PolicyService {
    *
    * UserRole shape assumed: { roleName: string, storeId?: string } or similar.
    */
-  //TODO Add store-side roel checks when store service implemented
   async userHasStoreRoles(
     user: DeepPartial<User>,
     storeId: string | number,
@@ -60,25 +61,21 @@ export class PolicyService {
 
     if (Array.isArray(userRoles) && userRoles.length > 0) {
       roles = userRoles;
-    } else if (
-      user.id &&
-      typeof this.userService.getUserStoreRoles === 'function'
-    ) {
+    } else if (user.id) {
       roles = await this.userService.getUserStoreRoles(user.id);
     } else {
-      // no role info available
       return false;
     }
 
     for (const ur of roles) {
-      // expected ur to contain roleName and optionally storeId or context
       const hasRoleName = requiredRoles.includes(ur.roleName as StoreRoles);
       const sameStore =
         ur.store === null ||
         String(ur.store.id) === storeId ||
         ur.store.id === storeId;
 
-      if (hasRoleName && sameStore) return true;
+      const storeCheck = await this.storeService.hasUserStoreRole(ur);
+      if (hasRoleName && sameStore && storeCheck) return true;
     }
 
     return false;
