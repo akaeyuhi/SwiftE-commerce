@@ -9,8 +9,6 @@ import {
 } from 'typeorm';
 import { Product } from './product.entity';
 import { Inventory } from './inventory.entity';
-import { CartItem } from './cart-item.entity';
-import { OrderItem } from './order-item.entity';
 import { BaseEntity } from 'src/common/interfaces/base-entity.interface';
 
 @Entity({ name: 'product_variants' })
@@ -33,13 +31,7 @@ export class ProductVariant implements BaseEntity {
   attributes?: Record<string, any>;
 
   @OneToMany(() => Inventory, (inv) => inv.variant)
-  inventory: Inventory[];
-
-  @OneToMany(() => CartItem, (item) => item.variant)
-  cartItems: CartItem[];
-
-  @OneToMany(() => OrderItem, (item) => item.variant)
-  orderItems: OrderItem[];
+  inventories: Inventory[];
 
   @CreateDateColumn()
   createdAt: Date;
