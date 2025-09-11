@@ -10,6 +10,7 @@ import {
 } from 'typeorm';
 import { Product } from './product.entity';
 import { BaseEntity } from 'src/common/interfaces/base-entity.interface';
+import { Store } from 'src/entities/store.entity';
 
 @Entity({ name: 'categories' })
 export class Category implements BaseEntity {
@@ -21,6 +22,9 @@ export class Category implements BaseEntity {
 
   @Column({ type: 'text', nullable: true })
   description?: string;
+
+  @ManyToOne(() => Store, (store) => store.categories, { onDelete: 'CASCADE' })
+  store: Store;
 
   @ManyToOne(() => Category, (category) => category.children, {
     nullable: true,
