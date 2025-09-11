@@ -41,4 +41,10 @@ export class InventoryService extends BaseService<Inventory> {
     }
     return this.inventoryRepo.save(inv);
   }
+
+  async findInventoryByVariantId(variantId: string) {
+    return await this.inventoryRepo.findOne({
+      where: { variant: { id: variantId } },
+    });
+  }
 }
