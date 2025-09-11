@@ -18,9 +18,6 @@ export class CartItem implements BaseEntity {
   @ManyToOne(() => ShoppingCart, (cart) => cart.items, { onDelete: 'CASCADE' })
   cart: ShoppingCart;
 
-  @ManyToOne(() => ProductVariant, (variant) => variant.cartItems, {
-    onDelete: 'CASCADE',
-  })
   variant: ProductVariant;
 
   @Column({ type: 'int' })
