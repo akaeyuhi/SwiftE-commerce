@@ -1,4 +1,3 @@
-// src/modules/analytics/repositories/store-daily-stats.repository.ts
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { StoreDailyStats } from '../entities/store-daily-stats.entity';

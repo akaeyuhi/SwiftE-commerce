@@ -43,9 +43,9 @@ export class AnalyticsController {
   @Get()
   async getStoreStats(
     @Param('storeId', new ParseUUIDPipe()) storeId: string,
-    @Query() q: GetStatsDto
+    @Query() dto: GetStatsDto
   ) {
-    return this.statsService.getStoreStats(storeId, q.from, q.to);
+    return this.statsService.getStoreStats(storeId, dto.from, dto.to);
   }
 
   /**
@@ -55,8 +55,8 @@ export class AnalyticsController {
   async getProductStats(
     @Param('storeId', new ParseUUIDPipe()) _storeId: string,
     @Param('productId', new ParseUUIDPipe()) productId: string,
-    @Query() q: GetStatsDto
+    @Query() dto: GetStatsDto
   ) {
-    return this.statsService.getProductStats(productId, q.from, q.to);
+    return this.statsService.getProductStats(productId, dto.from, dto.to);
   }
 }
