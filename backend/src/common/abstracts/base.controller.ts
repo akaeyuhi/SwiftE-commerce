@@ -7,6 +7,7 @@ import { AccessPolicies } from 'src/modules/auth/policy/policy.types';
 import { AdminGuard } from 'src/common/guards/admin.guard';
 import { StoreRolesGuard } from 'src/common/guards/store-roles.guard';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { EntityOwnerGuard } from 'src/common/guards/entity-owner.guard';
 
 /**
  * Abstract base HTTP controller providing standard CRUD endpoints.
@@ -45,7 +46,7 @@ import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
  * };
  * ```
  */
-@UseGuards(JwtAuthGuard, AdminGuard, StoreRolesGuard)
+@UseGuards(JwtAuthGuard, AdminGuard, StoreRolesGuard, EntityOwnerGuard)
 export abstract class BaseController<
   Entity extends ObjectLiteral,
   CreateDto = Partial<Entity>,
