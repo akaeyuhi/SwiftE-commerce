@@ -24,6 +24,7 @@ import { Product } from 'src/entities/product.entity';
  *  - assign a category to a product (ManyToMany semantics),
  *  - list categories used by a store.
  */
+//TODO finish something i forgor
 @Injectable()
 export class CategoriesService extends BaseService<
   Category,
