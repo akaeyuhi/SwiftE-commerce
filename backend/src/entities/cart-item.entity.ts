@@ -21,7 +21,7 @@ export class CartItem implements BaseEntity {
   variant: ProductVariant;
 
   @Column({ type: 'int' })
-  quantity: number;
+  quantity: number = 1;
 
   @CreateDateColumn()
   createdAt: Date;
