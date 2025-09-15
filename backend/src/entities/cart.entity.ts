@@ -13,7 +13,7 @@ import { CartItem } from './cart-item.entity';
 import { BaseEntity } from 'src/common/interfaces/base-entity.interface';
 
 @Entity({ name: 'shopping_carts' })
-@Unique(['user', 'store']) // Each user has one cart per store
+@Unique(['user', 'store'])
 export class ShoppingCart implements BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
