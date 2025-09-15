@@ -1,18 +1,27 @@
-import {Body, Controller, Get, Param, ParseUUIDPipe, Post, Put, Req, UseGuards,} from '@nestjs/common';
-import {OrdersService} from './orders.service';
-import {CreateOrderDto} from './dto/create-order.dto';
-import {UpdateOrderDto} from './dto/update-order.dto';
-import {BaseController} from 'src/common/abstracts/base.controller';
-import {Order} from 'src/entities/order.entity';
-import {JwtAuthGuard} from 'src/common/guards/jwt-auth.guard';
-import {StoreRolesGuard} from 'src/common/guards/store-roles.guard';
-import {AdminGuard} from 'src/common/guards/admin.guard';
-import {EntityOwnerGuard} from 'src/common/guards/entity-owner.guard';
-import {EntityOwner} from 'src/common/decorators/entity-owner.decorator';
-import {StoreRoles} from 'src/common/enums/store-roles.enum';
-import {AccessPolicies} from 'src/modules/auth/policy/policy.types';
-import {Request} from 'express';
-import {AdminRoles} from "src/common/enums/admin.enum";
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Put,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
+import { OrdersService } from './orders.service';
+import { CreateOrderDto } from './dto/create-order.dto';
+import { UpdateOrderDto } from './dto/update-order.dto';
+import { BaseController } from 'src/common/abstracts/base.controller';
+import { Order } from 'src/entities/order.entity';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { StoreRolesGuard } from 'src/common/guards/store-roles.guard';
+import { AdminGuard } from 'src/common/guards/admin.guard';
+import { EntityOwnerGuard } from 'src/common/guards/entity-owner.guard';
+import { EntityOwner } from 'src/common/decorators/entity-owner.decorator';
+import { StoreRoles } from 'src/common/enums/store-roles.enum';
+import { AccessPolicies } from 'src/modules/auth/policy/policy.types';
+import { Request } from 'express';
 
 /**
  * OrdersController
