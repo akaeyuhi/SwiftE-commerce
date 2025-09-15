@@ -8,10 +8,10 @@ import {
 } from 'typeorm';
 import { User } from './user.entity';
 import { Product } from './product.entity';
-import { BaseEntity } from 'src/common/interfaces/base-entity.interface';
+import { UserOwnedEntity } from 'src/common/interfaces/user-owned.entity.interface';
 
 @Entity({ name: 'reviews' })
-export class Review implements BaseEntity {
+export class Review implements UserOwnedEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 

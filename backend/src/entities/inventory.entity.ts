@@ -7,8 +7,8 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { ProductVariant } from './variant.entity';
-import { BaseEntity } from 'src/common/interfaces/base-entity.interface';
 import { Store } from 'src/entities/store.entity';
+import { StoreOwnedEntity } from 'src/common/interfaces/store-owned.entity.interface';
 
 // TODO
 /**
@@ -19,7 +19,7 @@ import { Store } from 'src/entities/store.entity';
  *
  */
 @Entity({ name: 'inventory' })
-export class Inventory implements BaseEntity {
+export class Inventory implements StoreOwnedEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 

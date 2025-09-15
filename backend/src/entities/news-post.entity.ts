@@ -8,18 +8,18 @@ import {
 } from 'typeorm';
 import { Store } from './store.entity';
 import { User } from './user.entity';
-import { BaseEntity } from 'src/common/interfaces/base-entity.interface';
+import { UserOwnedEntity } from 'src/common/interfaces/user-owned.entity.interface';
+import { StoreOwnedEntity } from 'src/common/interfaces/store-owned.entity.interface';
 
 @Entity({ name: 'news_posts' })
-export class NewsPost implements BaseEntity {
+export class NewsPost implements UserOwnedEntity, StoreOwnedEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @ManyToOne(() => Store, (store) => store.newsPosts, {
-    nullable: true,
     onDelete: 'SET NULL',
   })
-  store?: Store;
+  store: Store;
 
   @ManyToOne(() => User, (user) => user.newsPosts, { onDelete: 'SET NULL' })
   author: User;

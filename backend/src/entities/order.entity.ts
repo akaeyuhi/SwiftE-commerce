@@ -10,12 +10,13 @@ import {
 import { User } from './user.entity';
 import { Store } from './store.entity';
 import { OrderItem } from './order-item.entity';
-import { BaseEntity } from 'src/common/interfaces/base-entity.interface';
+import { UserOwnedEntity } from 'src/common/interfaces/user-owned.entity.interface';
+import { StoreOwnedEntity } from 'src/common/interfaces/store-owned.entity.interface';
 
 //TODO
 // Write an embedded class for order info like shipping address etc
 @Entity({ name: 'orders' })
-export class Order implements BaseEntity {
+export class Order implements UserOwnedEntity, StoreOwnedEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 

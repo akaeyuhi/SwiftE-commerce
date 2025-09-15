@@ -4,13 +4,15 @@ import {
   ManyToOne,
   CreateDateColumn,
   Column,
+  UpdateDateColumn,
 } from 'typeorm';
 import { User } from './user.entity';
 import { Store } from './store.entity';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
+import { UserOwnedEntity } from 'src/common/interfaces/user-owned.entity.interface';
 
 @Entity({ name: 'user_roles' })
-export class UserRole {
+export class UserRole implements UserOwnedEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
@@ -32,4 +34,7 @@ export class UserRole {
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
 }

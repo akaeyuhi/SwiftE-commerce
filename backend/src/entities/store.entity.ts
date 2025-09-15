@@ -14,12 +14,12 @@ import { UserRole } from './user-role.entity';
 import { ShoppingCart } from './cart.entity';
 import { NewsPost } from './news-post.entity';
 import { AiLog } from './ai-log.entity';
-import { BaseEntity } from 'src/common/interfaces/base-entity.interface';
 import { Inventory } from 'src/entities/inventory.entity';
 import { Category } from 'src/entities/category.entity';
+import { UserOwnedEntity } from 'src/common/interfaces/user-owned.entity.interface';
 
 @Entity({ name: 'store' })
-export class Store implements BaseEntity {
+export class Store implements UserOwnedEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
@@ -30,7 +30,7 @@ export class Store implements BaseEntity {
   description: string;
 
   @ManyToOne(() => User, { onDelete: 'SET NULL' })
-  ownerUser: User;
+  owner: User;
 
   @CreateDateColumn()
   createdAt: Date;

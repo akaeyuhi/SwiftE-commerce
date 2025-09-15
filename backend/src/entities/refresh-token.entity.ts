@@ -5,15 +5,16 @@ import {
   ManyToOne,
   CreateDateColumn,
   Index,
+  UpdateDateColumn,
 } from 'typeorm';
 import { User } from './user.entity';
+import { UserOwnedEntity } from 'src/common/interfaces/user-owned.entity.interface';
 
 @Entity({ name: 'refresh_tokens' })
-export class RefreshToken {
+export class RefreshToken implements UserOwnedEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  // store digest (sha256) of token for safety
   @Index({ unique: true })
   @Column({ type: 'varchar', length: 255 })
   tokenHash: string;
@@ -39,4 +40,7 @@ export class RefreshToken {
 
   @CreateDateColumn()
   createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
 }

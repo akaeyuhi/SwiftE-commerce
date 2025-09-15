@@ -13,10 +13,10 @@ import { Category } from './category.entity';
 import { ProductVariant } from './variant.entity';
 import { ProductPhoto } from './product-photo.entity';
 import { Review } from './review.entity';
-import { BaseEntity } from 'src/common/interfaces/base-entity.interface';
+import { StoreOwnedEntity } from 'src/common/interfaces/store-owned.entity.interface';
 
 @Entity({ name: 'products' })
-export class Product implements BaseEntity {
+export class Product implements StoreOwnedEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 

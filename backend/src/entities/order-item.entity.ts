@@ -18,9 +18,6 @@ export class OrderItem implements BaseEntity {
   @ManyToOne(() => Order, (order) => order.items, { onDelete: 'CASCADE' })
   order: Order;
 
-  @ManyToOne(() => ProductVariant, (variant) => variant.orderItems, {
-    onDelete: 'CASCADE',
-  })
   variant: ProductVariant;
 
   @Column({ type: 'int' })

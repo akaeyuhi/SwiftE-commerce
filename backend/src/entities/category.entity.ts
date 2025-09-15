@@ -9,11 +9,11 @@ import {
   ManyToMany,
 } from 'typeorm';
 import { Product } from './product.entity';
-import { BaseEntity } from 'src/common/interfaces/base-entity.interface';
 import { Store } from 'src/entities/store.entity';
+import { StoreOwnedEntity } from 'src/common/interfaces/store-owned.entity.interface';
 
 @Entity({ name: 'categories' })
-export class Category implements BaseEntity {
+export class Category implements StoreOwnedEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
