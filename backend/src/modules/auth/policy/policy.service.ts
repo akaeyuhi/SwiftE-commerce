@@ -7,13 +7,18 @@ import { DeepPartial } from 'typeorm';
 import { User } from 'src/entities/user.entity';
 import { AdminService } from 'src/modules/admin/admin.service';
 import { StoreService } from 'src/modules/store/store.service';
+import { StoreOwnedEntity } from 'src/common/interfaces/store-owned.entity.interface';
+import { UserOwnedEntity } from 'src/common/interfaces/user-owned.entity.interface';
+import { Store } from 'src/entities/store.entity';
 
 /**
  * PolicyService centralizes async checks for:
  * - site admin
  * - store role ownership (store admin / store user)
+ * - entity ownership (user-owned entities)
  *
- * It uses the existing UserService to fetch roles/flags when necessary.
+ * Use the ownership helpers (isOwner*, isStoreAdminForEntity*, isOwnerOrAdmin*) in controllers
+ * when you need to enforce owner-or-admin semantics.
  */
 @Injectable()
 export class PolicyService {
@@ -30,7 +35,6 @@ export class PolicyService {
    */
   async isSiteAdmin(user: DeepPartial<User>): Promise<boolean> {
     if (!user) return false;
-
     if (!user.id) return false;
 
     try {
@@ -45,7 +49,7 @@ export class PolicyService {
   /**
    * Check whether user has any of the store roles for given storeId.
    * - If req.user.roles is already populated with UserRole entities, use that.
-   * - Otherwise call userService.getUserRoles(userId) (you should implement this)
+   * - Otherwise call userService.getUserStoreRoles(userId)
    *
    * UserRole shape assumed: { roleName: string, storeId?: string } or similar.
    */
@@ -113,5 +117,115 @@ export class PolicyService {
 
     // No checks left => allow
     return true;
+  }
+
+  /**
+   * Try to extract a store id from a StoreOwnedEntity.
+   *
+   * Accepts:
+   *  - entity.store may be a Store object or an id-like value
+   *  - entity may itself be a Store (rare)
+   *
+   * Returns string id or undefined.
+   */
+  private getStoreIdFromEntity(
+    entity?: StoreOwnedEntity | Store | any
+  ): string | undefined {
+    if (!entity) return undefined;
+
+    if ((entity as StoreOwnedEntity).store) {
+      const s = (entity as StoreOwnedEntity).store;
+      if (s && typeof s === 'object' && 'id' in s) return s.id;
+    }
+
+    if ((entity as Store).id) return (entity as Store).id;
+
+    return undefined;
+  }
+
+  /**
+   * Returns the owner user id (if any) from a UserOwnedEntity.
+   * Checks `user`, `author`, then `owner` properties.
+   */
+  private getUserIdFromEntity(
+    entity?: UserOwnedEntity | any
+  ): string | undefined {
+    if (!entity) return undefined;
+    if (entity.user && (entity.user as any).id) return (entity.user as any).id;
+    if (entity.author && (entity.author as any).id)
+      return (entity.author as any).id;
+    if (entity.owner && (entity.owner as any).id)
+      return (entity.owner as any).id;
+    return undefined;
+  }
+
+  /**
+   * Check whether the provided user is the owner/author of a UserOwnedEntity.
+   *
+   * @param user - partial user object (from req.user or userService)
+   * @param entity - entity which may contain `user`, `author` or `owner` relation
+   * @returns true when the `user.id` equals entity.{user|author|owner}.id
+   */
+  async isEntityOwner(
+    user: DeepPartial<User>,
+    entity?: UserOwnedEntity | null
+  ): Promise<boolean> {
+    if (!user || !user.id || !entity) return false;
+    const ownerId = this.getUserIdFromEntity(entity);
+    if (!ownerId) return false;
+    return String(user.id) === String(ownerId);
+  }
+
+  /**
+   * Check whether the provided user is a store admin for the store that owns the entity.
+   *
+   * This performs these checks (short-circuiting on success):
+   * 1. If user is site-admin -> true
+   * 2. If entity has a store id, check userHasStoreRoles(user, storeId, [STORE_ADMIN])
+   *
+   * @param user - authenticated user partial
+   * @param entity - entity that implements StoreOwnedEntity or directly a Store
+   */
+  async isStoreAdminForEntity(
+    user: DeepPartial<User>,
+    entity?: StoreOwnedEntity | Store | null
+  ): Promise<boolean> {
+    if (!user || !user.id) return false;
+
+    // site admin has full control
+    if (await this.isSiteAdmin(user)) return true;
+
+    const storeId = this.getStoreIdFromEntity(entity);
+    if (!storeId) return false;
+
+    return this.userHasStoreRoles(user, storeId, [StoreRoles.ADMIN]);
+  }
+
+  /**
+   * Returns true when the user is either:
+   *  - the owner/author of the UserOwnedEntity, OR
+   *  - a site admin, OR
+   *  - a store admin for the store that owns the StoreOwnedEntity (if applicable)
+   *
+   * This is the high-level check controllers can call when enforcing "owner-or-admin" semantics.
+   *
+   * @param user - authenticated user partial (from req.user)
+   * @param entity - an entity that may be UserOwnedEntity, StoreOwnedEntity, or both
+   */
+  async isOwnerOrAdmin(
+    user: DeepPartial<User>,
+    entity?: UserOwnedEntity | StoreOwnedEntity | null
+  ): Promise<boolean> {
+    if (!user || !user.id) return false;
+
+    if (await this.isSiteAdmin(user)) return true;
+
+    if (entity && (await this.isEntityOwner(user, entity as UserOwnedEntity)))
+      return true;
+
+    return !!(
+      entity &&
+      (await this.isStoreAdminForEntity(user, entity as StoreOwnedEntity))
+    );
   }
 }
