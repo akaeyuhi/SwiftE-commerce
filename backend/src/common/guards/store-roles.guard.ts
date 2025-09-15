@@ -1,4 +1,3 @@
-// src/auth/guards/store-roles.guard.ts
 import {
   CanActivate,
   ExecutionContext,
@@ -14,6 +13,17 @@ import {
 } from 'src/modules/auth/policy/policy.types';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 
+/**
+ * StoreRolesGuard
+ *
+ * Responsible for enforcing store-level roles (STORE_ADMIN, STORE_USER, etc).
+ *
+ * Optimization: if the authenticated user is a site admin, we short-circuit
+ * and allow access immediately. We check `request.user.isSiteAdmin` first
+ * (this should be set by AdminGuard). If that flag is missing we fall back to
+ * calling PolicyService.isSiteAdmin(user), cache the result on request.user,
+ * and short-circuit when true.
+ */
 @Injectable()
 export class StoreRolesGuard implements CanActivate {
   constructor(
@@ -27,6 +37,25 @@ export class StoreRolesGuard implements CanActivate {
     const request = context.switchToHttp().getRequest();
     const params = request.params ?? {};
     const user = request.user;
+
+    // --- SHORT-CIRCUIT FOR SITE ADMINS ---
+    // If AdminGuard ran earlier it should have set request.user.isSiteAdmin.
+    // If flag present and true -> bypass store role checks.
+    if (user?.isSiteAdmin === true) {
+      return true;
+    }
+
+    // Defensive fallback: if flag is missing, compute it once and cache on req.user.
+    if (user && typeof user.isSiteAdmin === 'undefined') {
+      try {
+        const isAdmin = await this.policyService.isSiteAdmin(user);
+        request.user = { ...(request.user ?? {}), isSiteAdmin: isAdmin };
+        if (isAdmin) return true;
+      } catch {
+        // If check fails for any reason, set false to avoid repeated attempts
+        request.user = { ...(request.user ?? {}), isSiteAdmin: false };
+      }
+    }
 
     // 1) Read store-roles metadata (method -> class)
     let requiredRoles = this.reflector.getAllAndOverride<
@@ -45,12 +74,11 @@ export class StoreRolesGuard implements CanActivate {
       if (staticEntry?.storeRoles) requiredRoles = staticEntry.storeRoles;
     }
 
-    // If nothing required -> allow
+    // If nothing required -> allow (but honor requireAuthenticated if present)
     if (!requiredRoles || requiredRoles.length === 0) {
-      // However, if staticEntry asks for requireAuthenticated, honor it
       if (staticEntry?.requireAuthenticated) {
         const allowed = await this.policyService.checkPolicy(
-          user,
+          request.user,
           { requireAuthenticated: true },
           params
         );
@@ -66,11 +94,16 @@ export class StoreRolesGuard implements CanActivate {
       requireAuthenticated: staticEntry?.requireAuthenticated,
     };
 
-    const allowed = await this.policyService.checkPolicy(user, policy, params);
-    if (!allowed)
+    const allowed = await this.policyService.checkPolicy(
+      request.user,
+      policy,
+      params
+    );
+    if (!allowed) {
       throw new ForbiddenException(
         'Insufficient store role or not authenticated'
       );
+    }
 
     return true;
   }
