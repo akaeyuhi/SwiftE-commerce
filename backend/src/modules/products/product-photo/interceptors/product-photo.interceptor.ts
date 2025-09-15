@@ -7,7 +7,7 @@ import {
   PRODUCT_PHOTOS_MAX_COUNT,
   PRODUCT_PHOTO_MAX_SIZE,
   UPLOADS_TMP_DIR,
-} from './constants';
+} from 'src/modules/products/product-photo/interceptors/constants';
 import { promises as fs } from 'fs';
 
 /**

@@ -4,11 +4,11 @@ import { promises as fs } from 'fs';
 import { v4 as uuidv4 } from 'uuid';
 import { BaseService } from 'src/common/abstracts/base.service';
 import { ProductPhoto } from 'src/entities/product-photo.entity';
-import { ProductPhotoRepository } from 'src/modules/product-photo/product-photo.repository';
+import { ProductPhotoRepository } from 'src/modules/products/product-photo/product-photo.repository';
 import {
   ALLOWED_IMAGE_MIME_PREFIX,
   UPLOADS_PRODUCTS_DIR,
-} from './interceptors/constants';
+} from 'src/modules/products/product-photo/interceptors/constants';
 import { Store } from 'src/entities/store.entity';
 import { Product } from 'src/entities/product.entity';
 

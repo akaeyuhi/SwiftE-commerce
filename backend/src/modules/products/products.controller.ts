@@ -19,7 +19,7 @@ import { Product } from 'src/entities/product.entity';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { StoreRolesGuard } from 'src/common/guards/store-roles.guard';
 // eslint-disable-next-line max-len
-import { ProductPhotosInterceptor } from 'src/modules/product-photo/interceptors/product-photo.interceptor';
+import { ProductPhotosInterceptor } from 'src/modules/products/product-photo/interceptors/product-photo.interceptor';
 
 /**
  * ProductsController

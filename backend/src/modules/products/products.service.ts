@@ -6,7 +6,7 @@ import { Product } from 'src/entities/product.entity';
 import { StoreService } from 'src/modules/store/store.service';
 import { ProductRepository } from 'src/modules/products/products.repository';
 import { Category } from 'src/entities/category.entity';
-import { ProductPhotoService } from 'src/modules/product-photo/product-photo.service';
+import { ProductPhotoService } from 'src/modules/products/product-photo/product-photo.service';
 import { CategoriesService } from 'src/modules/categories/categories.service';
 import { VariantsService } from 'src/modules/variants/variants.service';
 import { CreateVariantDto } from 'src/modules/variants/dto/create-variant.dto';
