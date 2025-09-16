@@ -1,64 +1,132 @@
+"""
+serve.py
+
+FastAPI predictor for LightGBM/Keras models.
+
+Environment variables:
+  MODEL_TYPE: 'lightgbm' or 'keras'   (optional, autodetected by files)
+  MODEL_PATH: path to model file or directory
+  SCALER_PATH: path to scaler.pkl (contains {'scaler', 'columns'})
+  PREDICTOR_AUTH_TOKEN: optional token to require in header 'X-Internal-Token'
+  MODEL_VERSION: optional string saved with predictions
+"""
+from __future__ import annotations
 import os
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Header, Request
 from pydantic import BaseModel
-from typing import Dict, List, Any, Optional
+from typing import Optional, List, Dict, Any
+import joblib
 import numpy as np
-import pickle
-import tensorflow as tf
+import logging
 
-MODEL_DIR = os.environ.get('MODEL_DIR', './model')
-MODEL_PATH = os.path.join(MODEL_DIR, 'model.h5')
-SCALER_PATH = os.path.join(MODEL_DIR, 'scaler.pkl')
+logger = logging.getLogger("uvicorn.error")
 
-app = FastAPI(title='Store Predictor')
+MODEL_PATH = os.environ.get("MODEL_PATH", "./model/model.bin")
+SCALER_PATH = os.environ.get("SCALER_PATH", "./model/scaler.pkl")
+MODEL_TYPE = os.environ.get("MODEL_TYPE", None)
+PREDICTOR_AUTH_TOKEN = os.environ.get("PREDICTOR_AUTH_TOKEN", None)
+MODEL_VERSION = os.environ.get("MODEL_VERSION", "v1")
+
+app = FastAPI(title="Predictor")
 
 class PredictRequest(BaseModel):
-    features: Dict[str, Any]  # single example
+    features: Dict[str, Any]
     productId: Optional[str] = None
     storeId: Optional[str] = None
 
-class BatchPredictRequest(BaseModel):
-    rows: List[Dict[str, Any]]
+class BatchRow(BaseModel):
+    productId: Optional[str] = None
+    storeId: Optional[str] = None
+    features: Dict[str, Any]
 
-@app.on_event('startup')
-def load_model():
-    global model, scaler_info
-    model = tf.keras.models.load_model(MODEL_PATH)
-    with open(SCALER_PATH, 'rb') as f:
-        scaler_info = pickle.load(f)
-    print('Model and scaler loaded')
+class BatchRequest(BaseModel):
+    rows: List[BatchRow]
 
-def prepare_row(features: Dict[str, Any]):
-    cols = scaler_info['columns']
-    # create vector in the same order
-    x = [features.get(c, 0) for c in cols]
-    return np.array(x, dtype=float)
+@app.on_event("startup")
+def startup():
+    global model, scaler_info, model_type
+    if not os.path.exists(SCALER_PATH):
+        raise RuntimeError(f"scaler.pkl not found: {SCALER_PATH}")
+    scaler_info = joblib.load(SCALER_PATH)
+    cols = scaler_info.get("columns")
+    if not cols:
+        raise RuntimeError("scaler.pkl missing 'columns' list")
+    # detect model type by env or file extension
+    if MODEL_TYPE:
+        model_type = MODEL_TYPE
+    else:
+        if MODEL_PATH.endswith(".h5") or os.path.isdir(MODEL_PATH):
+            model_type = "keras"
+        else:
+            model_type = "lightgbm"
+    if model_type == "lightgbm":
+        try:
+            import lightgbm as lgb
+        except Exception as ex:
+            raise RuntimeError("lightgbm not installed") from ex
+        model = lgb.Booster(model_file=MODEL_PATH)
+    else:
+        try:
+            import tensorflow as tf
+        except Exception as ex:
+            raise RuntimeError("tensorflow not installed") from ex
+        model = tf.keras.models.load_model(MODEL_PATH)
+    logger.info(f"Loaded model_type={model_type}, model='{MODEL_PATH}'")
 
-@app.post('/predict')
-def predict(req: PredictRequest):
-    x = prepare_row(req.features).reshape(1, -1)
-    x = scaler_info['scaler'].transform(x)
-    prob = float(model.predict(x)[0,0])
-    # simple decision
-    risk_label = 'high' if prob > 0.7 else ('medium' if prob > 0.4 else 'low')
-    return {
-        'productId': req.productId,
-        'storeId': req.storeId,
-        'score': prob,
-        'label': risk_label,
-        'modelVersion': os.environ.get('MODEL_VERSION','v1'),
-    }
+def build_feature_array(features: Dict[str, Any]) -> np.ndarray:
+    cols = scaler_info["columns"]
+    row = [features.get(c, 0) for c in cols]
+    arr = np.array(row, dtype=float).reshape(1, -1)
+    arr_scaled = scaler_info["scaler"].transform(arr)
+    return arr_scaled
 
-@app.post('/predict_batch')
-def predict_batch(req: BatchPredictRequest):
-    xs = np.vstack([prepare_row(r) for r in req.rows])
-    xs = scaler_info['scaler'].transform(xs)
-    probs = model.predict(xs).flatten().tolist()
-    res = []
-    for i, p in enumerate(probs):
-        res.append({'index': i, 'score': float(p), 'label': 'high' if p > 0.7 else ('medium' if p > 0.4 else 'low')})
-    return {'results': res}
+@app.post("/predict")
+async def predict(req: PredictRequest, x_internal_token: Optional[str] = Header(None, alias="X-Internal-Token")):
+    if PREDICTOR_AUTH_TOKEN and x_internal_token != PREDICTOR_AUTH_TOKEN:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    try:
+        arr = build_feature_array(req.features)
+        if model_type == "lightgbm":
+            scores = model.predict(arr, num_iteration=model.best_iteration)
+            score = float(scores[0])
+        else:
+            scores = model.predict(arr)
+            score = float(scores[0][0])
+        label = "high" if score > 0.7 else ("medium" if score > 0.4 else "low")
+        return {
+            "productId": req.productId,
+            "storeId": req.storeId,
+            "score": score,
+            "label": label,
+            "modelVersion": MODEL_VERSION,
+        }
+    except Exception as ex:
+        logger.exception("prediction failed")
+        raise HTTPException(status_code=500, detail=str(ex))
 
-if __name__ == '__main__':
-    uvicorn.run(app, host='0.0.0.0', port=int(os.environ.get('PORT', 8080)))
+@app.post("/predict_batch")
+async def predict_batch(req: BatchRequest, x_internal_token: Optional[str] = Header(None, alias="X-Internal-Token")):
+    if PREDICTOR_AUTH_TOKEN and x_internal_token != PREDICTOR_AUTH_TOKEN:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    try:
+        rows = []
+        for r in req.rows:
+            arr = build_feature_array(r.features)
+            rows.append(arr)
+        X = np.vstack(rows)
+        if model_type == "lightgbm":
+            scores = model.predict(X, num_iteration=model.best_iteration).tolist()
+        else:
+            scores = model.predict(X).flatten().tolist()
+        out = []
+        for i, s in enumerate(scores):
+            label = "high" if s > 0.7 else ("medium" if s > 0.4 else "low")
+            out.append({"index": i, "score": float(s), "label": label})
+        return {"results": out, "modelVersion": MODEL_VERSION}
+    except Exception as ex:
+        logger.exception("batch prediction failed")
+        raise HTTPException(status_code=500, detail=str(ex))
+
+if __name__ == "__main__":
+    uvicorn.run("serve:app", host="0.0.0.0", port=int(os.environ.get("PORT", "8080")), log_level="info")
