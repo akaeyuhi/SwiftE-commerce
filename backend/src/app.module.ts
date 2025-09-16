@@ -6,6 +6,7 @@ import { ProductPhotoModule } from 'src/modules/products/product-photo/product-p
 import { AdminModule } from './modules/admin/admin.module';
 import { OrderItemModule } from './modules/orders/order-item/order-item.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { PredictorModule } from './modules/predictor/predictor.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
     AdminModule,
     OrderItemModule,
     AnalyticsModule,
+    PredictorModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { AnalyticsService } from './analytics.service';
 import { EventsController } from './events.controller';
 import { AnalyticsController } from './analytics.controller';
@@ -7,17 +7,20 @@ import { StoreDailyStatsRepository } from './repositories/store-daily-stats.repo
 import { ProductDailyStatsRepository } from './repositories/product-daily-stats.repository';
 import { ScheduleModule } from '@nestjs/schedule';
 import { AdminStatsController } from 'src/modules/analytics/admin-stats.controller';
-import { AiStatsRepository } from 'src/modules/analytics/repositories/ai-stats.repository';
 import { HttpModule } from '@nestjs/axios';
+import { PredictorModule } from 'src/modules/predictor/predictor.module';
 
 @Module({
-  imports: [ScheduleModule.forRoot(), HttpModule],
+  imports: [
+    ScheduleModule.forRoot(),
+    HttpModule,
+    forwardRef(() => PredictorModule),
+  ],
   providers: [
     AnalyticsService,
     AnalyticsEventRepository,
     StoreDailyStatsRepository,
     ProductDailyStatsRepository,
-    AiStatsRepository,
   ],
   controllers: [EventsController, AnalyticsController, AdminStatsController],
   exports: [AnalyticsService],
