@@ -16,7 +16,7 @@ import { DataSource } from 'typeorm';
 import { StoreDailyStatsRepository } from 'src/modules/analytics/repositories/store-daily-stats.repository';
 // eslint-disable-next-line max-len
 import { ProductDailyStatsRepository } from 'src/modules/analytics/repositories/product-daily-stats.repository';
-import { ReviewsRepository } from 'src/modules/reviews/reviews.repository';
+import { ReviewsRepository } from 'src/modules/store/modules/reviews/reviews.repository';
 
 /**
  * PredictorService

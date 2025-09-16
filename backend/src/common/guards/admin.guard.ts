@@ -6,11 +6,11 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ADMIN_ROLE_META } from 'src/common/decorators/admin-role.decorator';
-import { PolicyService } from 'src/modules/auth/policy/policy.service';
+import { PolicyService } from 'src/modules/auth/modules/policy/policy.service';
 import {
   PolicyEntry,
   AccessPolicies,
-} from 'src/modules/auth/policy/policy.types';
+} from 'src/modules/auth/modules/policy/policy.types';
 
 /**
  * AdminGuard

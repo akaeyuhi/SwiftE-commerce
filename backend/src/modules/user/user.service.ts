@@ -16,7 +16,7 @@ import { UserRole } from 'src/entities/user-role.entity';
 import { CreateStoreDto } from 'src/modules/store/dto/create-store.dto';
 import { StoreService } from 'src/modules/store/store.service';
 import { StoreDto } from 'src/modules/store/dto/store.dto';
-import { UserRoleService } from 'src/modules/user-role/user-role.service';
+import { UserRoleService } from 'src/modules/user/modules/user-role.service';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { AdminRoles } from 'src/common/enums/admin.enum';
 

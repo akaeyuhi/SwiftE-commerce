@@ -9,7 +9,7 @@ import { JwtService } from '@nestjs/jwt';
 import { CreateUserDto } from '../user/dto/create-user.dto';
 import * as bcrypt from 'bcrypt';
 import { LoginDto } from './dto/login.dto';
-import { RefreshTokenService } from './refresh-token/refresh-token.service';
+import { RefreshTokenService } from 'src/modules/auth/modules/refresh-token/refresh-token.service';
 import { Request } from 'express';
 import { randomBytes } from 'crypto';
 

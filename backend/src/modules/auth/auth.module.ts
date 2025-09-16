@@ -6,11 +6,12 @@ import { RefreshTokenStrategy } from 'src/modules/auth/strategies/auth-refresh.s
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RefreshToken } from 'src/entities/refresh-token.entity';
-import { RefreshTokenModule } from 'src/modules/auth/refresh-token/refresh-token.module';
+import { RefreshTokenModule } from 'src/modules/auth/modules/refresh-token/refresh-token.module';
 import { ConfigModule } from '@nestjs/config';
-import { PolicyService } from './policy/policy.service';
-import { AdminModule } from 'src/modules/admin/admin.module';
+import { PolicyService } from 'src/modules/auth/modules/policy/policy.service';
+import { AdminModule } from 'src/modules/auth/modules/admin/admin.module';
 import { UserModule } from 'src/modules/user/user.module';
+import { PolicyModule } from 'src/modules/auth/modules/policy/policy.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { UserModule } from 'src/modules/user/user.module';
     ConfigModule,
     AdminModule,
     UserModule,
+    PolicyModule,
   ],
   controllers: [AuthController],
   providers: [

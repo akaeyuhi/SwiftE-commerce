@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { AnalyticsEventRepository } from './repositories/analytics-event.repository';
 import { StoreDailyStatsRepository } from './repositories/store-daily-stats.repository';
 import { ProductDailyStatsRepository } from './repositories/product-daily-stats.repository';
-import { ReviewsRepository } from 'src/modules/reviews/reviews.repository';
+import { ReviewsRepository } from 'src/modules/store/modules/reviews/reviews.repository';
 import { RecordEventDto } from './dto/record-event.dto';
 import { Between } from 'typeorm';
 import { PredictorService } from 'src/modules/predictor/predictor.service';
