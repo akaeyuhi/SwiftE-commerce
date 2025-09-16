@@ -8,9 +8,10 @@ import { ProductDailyStatsRepository } from './repositories/product-daily-stats.
 import { ScheduleModule } from '@nestjs/schedule';
 import { AdminStatsController } from 'src/modules/analytics/admin-stats.controller';
 import { AiStatsRepository } from 'src/modules/analytics/repositories/ai-stats.repository';
+import { HttpModule } from '@nestjs/axios';
 
 @Module({
-  imports: [ScheduleModule.forRoot()],
+  imports: [ScheduleModule.forRoot(), HttpModule],
   providers: [
     AnalyticsService,
     AnalyticsEventRepository,
