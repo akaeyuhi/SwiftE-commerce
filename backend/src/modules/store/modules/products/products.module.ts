@@ -13,9 +13,9 @@ import { StoreModule } from 'src/modules/store/store.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([Product]),
-    CategoriesModule,
     ProductPhotoModule,
     VariantsModule,
+    forwardRef(() => CategoriesModule),
     forwardRef(() => StoreModule),
   ],
   providers: [ProductRepository, ProductsService, ProductsMapper],

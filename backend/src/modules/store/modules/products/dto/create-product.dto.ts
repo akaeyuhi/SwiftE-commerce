@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsUUID } from 'class-validator';
+import { IsString, IsOptional, IsUUID, IsArray } from 'class-validator';
 
 export class CreateProductDto {
   @IsString()
@@ -14,6 +14,10 @@ export class CreateProductDto {
   /**
    * Optional category id (UUID) to assign product to a category.
    */
+  @IsOptional()
+  @IsArray()
+  categoryIds?: string[];
+
   @IsOptional()
   @IsUUID()
   categoryId?: string;

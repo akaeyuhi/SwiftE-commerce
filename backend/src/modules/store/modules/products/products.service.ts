@@ -5,11 +5,9 @@ import { BaseService } from 'src/common/abstracts/base.service';
 import { Product } from 'src/entities/product.entity';
 import { StoreService } from 'src/modules/store/store.service';
 import { ProductRepository } from 'src/modules/store/modules/products/products.repository';
-import { Category } from 'src/entities/category.entity';
 import { ProductPhotoService } from 'src/modules/store/modules/products/modules/product-photo/product-photo.service';
 import { CategoriesService } from 'src/modules/store/modules/categories/categories.service';
 import { VariantsService } from 'src/modules/store/modules/products/modules/variants/variants.service';
-import { CreateVariantDto } from 'src/modules/store/modules/products/modules/variants/dto/create-variant.dto';
 import { ProductPhoto } from 'src/entities/product-photo.entity';
 
 /**
@@ -106,25 +104,28 @@ export class ProductsService extends BaseService<
     const store = await this.storeService.getEntityById(dto.storeId);
     if (!store) throw new NotFoundException('Store not found');
 
-    const product = this.productRepo.create({
+    const product = await this.productRepo.createEntity({
       name: dto.name,
       description: dto.description,
       store,
-      category: dto.categoryId
-        ? ({ id: dto.categoryId } as Category)
-        : undefined,
     });
 
-    const savedProduct = await this.productRepo.save(product);
-
+    if (dto.categoryIds && dto.categoryIds.length > 1) {
+      await this.attachMultipleCategories(product.id, dto.categoryIds);
+    } else if (dto.categoryIds?.length === 1 || dto.categoryId) {
+      await this.attachCategoryToProduct(
+        product.id,
+        dto.categoryIds?.pop() ?? dto.categoryId!
+      );
+    }
     if (photos && photos.length > 0) {
       const savePhotos = [...photos];
       const firstPhoto = savePhotos.shift()! ?? mainPhoto;
-      await this.addMainPhoto(savedProduct.id, store.id, firstPhoto);
-      await this.addPhotos(savedProduct.id, store.id, photos);
+      await this.addMainPhoto(product.id, store.id, firstPhoto);
+      await this.addPhotos(product.id, store.id, photos);
     }
 
-    return savedProduct;
+    return product;
   }
 
   /**
@@ -208,22 +209,70 @@ export class ProductsService extends BaseService<
   }
 
   /**
-   * Create a product variant for a given product.
+   * Find products linked to a category. Delegates to repository query builder.
    *
-   * Delegates to VariantsService.create (which should handle persistence).
-   * Validates that the product exists first.
-   *
-   * @param dto - CreateVariantDto describing the variant (must include productId)
-   * @returns the created variant
-   * @throws NotFoundException when referenced product does not exist
+   * @param categoryId - category uuid
+   * @param storeId - optional store id to filter
    */
-  async createVariant(dto: CreateVariantDto) {
-    const product = await this.productRepo.findOneBy({ id: dto.productId });
+  async findProductsByCategory(
+    categoryId: string,
+    storeId?: string
+  ): Promise<Product[]> {
+    return this.productRepo.findProductsByCategory(categoryId, storeId);
+  }
+
+  /**
+   * Attach (assign) an existing category to a product (ManyToMany).
+   * Loads the product with categories, pushes new category if not present and saves.
+   *
+   * @param productId - product uuid
+   * @param categoryId - category uuid
+   */
+  async attachCategoryToProduct(
+    productId: string,
+    categoryId: string
+  ): Promise<Product> {
+    const product = await this.productRepo.findOne({
+      where: { id: productId },
+      relations: ['categories', 'store'],
+    });
+
     if (!product) throw new NotFoundException('Product not found');
-    const variant = await this.variantsService.create(dto);
-    if (dto.stock !== undefined) {
-      // TODO: create inventory record if separate table exists
+
+    const category = await this.categoriesService.findOne(categoryId);
+    if (!category) throw new NotFoundException('Category not found');
+
+    product.categories = product.categories ?? [];
+    const already = product.categories.some((c) => c.id === category.id);
+    if (!already) {
+      product.categories.push(category);
+      await this.productRepo.save(product);
     }
-    return variant;
+    return product;
+  }
+
+  async attachMultipleCategories(
+    productId: string,
+    categoryIds: string[]
+  ): Promise<Product> {
+    const product = await this.productRepo.findOne({
+      where: { id: productId },
+      relations: ['categories', 'store'],
+    });
+
+    if (!product) throw new NotFoundException('Product not found');
+
+    for (const categoryId of categoryIds) {
+      const category = await this.categoriesService.findOne(categoryId);
+      if (!category) throw new NotFoundException('Category not found');
+
+      product.categories = product.categories ?? [];
+      const already = product.categories.some((c) => c.id === category.id);
+      if (!already) {
+        product.categories.push(category);
+        await this.productRepo.save(product);
+      }
+    }
+    return product;
   }
 }

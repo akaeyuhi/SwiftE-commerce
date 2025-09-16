@@ -3,10 +3,11 @@ import { VariantsService } from 'src/modules/store/modules/products/modules/vari
 import { VariantsController } from 'src/modules/store/modules/products/modules/variants/variants.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ProductVariant } from 'src/entities/variant.entity';
+import { VariantsRepository } from 'src/modules/store/modules/products/modules/variants/variants.repository';
 
 @Module({
   imports: [TypeOrmModule.forFeature([ProductVariant])],
   controllers: [VariantsController],
-  providers: [VariantsService],
+  providers: [VariantsService, VariantsRepository],
 })
 export class VariantsModule {}
