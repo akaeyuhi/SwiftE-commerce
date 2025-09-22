@@ -6,7 +6,7 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 import { VariantsRepository } from 'src/modules/store/modules/products/modules/variants/variants.repository';
 import { BaseService } from 'src/common/abstracts/base.service';
-import { ProductVariant } from 'src/entities/variant.entity';
+import { ProductVariant } from 'src/entities/store/variant.entity';
 import { CreateVariantDto } from 'src/modules/store/modules/products/modules/variants/dto/create-variant.dto';
 import { UpdateVariantDto } from 'src/modules/store/modules/products/modules/variants/dto/update-variant.dto';
 import { InventoryService } from 'src/modules/store/modules/inventory/inventory.service';

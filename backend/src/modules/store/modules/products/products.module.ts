@@ -1,6 +1,6 @@
 import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Product } from 'src/entities/product.entity';
+import { Product } from 'src/entities/store/product.entity';
 import { ProductRepository } from 'src/modules/store/modules/products/products.repository';
 import { ProductsService } from 'src/modules/store/modules/products/products.service';
 import { ProductsController } from 'src/modules/store/modules/products/products.controller';

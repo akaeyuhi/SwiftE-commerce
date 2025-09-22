@@ -13,7 +13,7 @@ import { OrdersService } from 'src/modules/store/modules/orders/orders.service';
 import { CreateOrderDto } from 'src/modules/store/modules/orders/dto/create-order.dto';
 import { UpdateOrderDto } from 'src/modules/store/modules/orders/dto/update-order.dto';
 import { BaseController } from 'src/common/abstracts/base.controller';
-import { Order } from 'src/entities/order.entity';
+import { Order } from 'src/entities/store/order.entity';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { StoreRolesGuard } from 'src/common/guards/store-roles.guard';
 import { AdminGuard } from 'src/common/guards/admin.guard';

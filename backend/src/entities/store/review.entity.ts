@@ -6,8 +6,8 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { User } from './user.entity';
-import { Product } from './product.entity';
+import { User } from 'src/entities/user/user.entity';
+import { Product } from 'src/entities/store/product.entity';
 import { UserOwnedEntity } from 'src/common/interfaces/user-owned.entity.interface';
 
 @Entity({ name: 'reviews' })

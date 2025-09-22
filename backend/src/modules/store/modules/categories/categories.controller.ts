@@ -10,13 +10,13 @@ import { CategoriesService } from 'src/modules/store/modules/categories/categori
 import { CreateCategoryDto } from 'src/modules/store/modules/categories/dto/create-category.dto';
 import { UpdateCategoryDto } from 'src/modules/store/modules/categories/dto/update-category.dto';
 import { BaseController } from 'src/common/abstracts/base.controller';
-import { Category } from 'src/entities/category.entity';
+import { Category } from 'src/entities/store/category.entity';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { StoreRolesGuard } from 'src/common/guards/store-roles.guard';
 import { CategoryDto } from 'src/modules/store/modules/categories/dto/category.dto';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { AccessPolicies } from 'src/modules/auth/modules/policy/policy.types';
-import { Product } from 'src/entities/product.entity';
+import { Product } from 'src/entities/store/product.entity';
 
 /**
  * CategoriesController

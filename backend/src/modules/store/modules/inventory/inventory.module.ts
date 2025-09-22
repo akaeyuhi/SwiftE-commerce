@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { InventoryRepository } from 'src/modules/store/modules/inventory/inventory.repository';
-import { Inventory } from 'src/entities/inventory.entity';
+import { Inventory } from 'src/entities/store/inventory.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 @Module({

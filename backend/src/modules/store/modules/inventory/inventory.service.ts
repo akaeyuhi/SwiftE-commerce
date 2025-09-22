@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InventoryRepository } from 'src/modules/store/modules/inventory/inventory.repository';
 import { BaseService } from 'src/common/abstracts/base.service';
-import { Inventory } from 'src/entities/inventory.entity';
+import { Inventory } from 'src/entities/store/inventory.entity';
 
 @Injectable()
 export class InventoryService extends BaseService<Inventory> {

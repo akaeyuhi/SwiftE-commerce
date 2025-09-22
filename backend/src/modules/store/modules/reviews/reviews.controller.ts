@@ -11,7 +11,7 @@ import { ReviewsService } from 'src/modules/store/modules/reviews/reviews.servic
 import { CreateReviewDto } from 'src/modules/store/modules/reviews/dto/create-review.dto';
 import { UpdateReviewDto } from 'src/modules/store/modules/reviews/dto/update-review.dto';
 import { BaseController } from 'src/common/abstracts/base.controller';
-import { Review } from 'src/entities/review.entity';
+import { Review } from 'src/entities/store/review.entity';
 import { StoreRolesGuard } from 'src/common/guards/store-roles.guard';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { ReviewDto } from 'src/modules/store/modules/reviews/dto/review.dto';

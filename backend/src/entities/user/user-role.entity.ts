@@ -6,8 +6,8 @@ import {
   Column,
   UpdateDateColumn,
 } from 'typeorm';
-import { User } from './user.entity';
-import { Store } from './store.entity';
+import { User } from 'src/entities/user/user.entity';
+import { Store } from 'src/entities/store/store.entity';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { UserOwnedEntity } from 'src/common/interfaces/user-owned.entity.interface';
 

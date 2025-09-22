@@ -6,8 +6,8 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { Store } from './store.entity';
-import { User } from './user.entity';
+import { Store } from 'src/entities/store/store.entity';
+import { User } from 'src/entities/user/user.entity';
 import { UserOwnedEntity } from 'src/common/interfaces/user-owned.entity.interface';
 import { StoreOwnedEntity } from 'src/common/interfaces/store-owned.entity.interface';
 

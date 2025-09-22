@@ -2,11 +2,11 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateStoreDto } from './dto/create-store.dto';
 import { UpdateStoreDto } from './dto/update-store.dto';
 import { BaseService } from 'src/common/abstracts/base.service';
-import { Store } from 'src/entities/store.entity';
+import { Store } from 'src/entities/store/store.entity';
 import { StoreRepository } from 'src/modules/store/store.repository';
 import { StoreDto } from 'src/modules/store/dto/store.dto';
 import { StoreMapper } from 'src/modules/store/store.mapper';
-import { UserRole } from 'src/entities/user-role.entity';
+import { UserRole } from 'src/entities/user/user-role.entity';
 
 @Injectable()
 export class StoreService extends BaseService<

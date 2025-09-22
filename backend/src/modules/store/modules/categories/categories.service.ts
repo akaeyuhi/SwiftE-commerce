@@ -5,10 +5,10 @@ import {
 } from '@nestjs/common';
 import { CategoriesRepository } from 'src/modules/store/modules/categories/categories.repository';
 import { BaseService } from 'src/common/abstracts/base.service';
-import { Category } from 'src/entities/category.entity';
+import { Category } from 'src/entities/store/category.entity';
 import { UpdateCategoryDto } from 'src/modules/store/modules/categories/dto/update-category.dto';
 import { CreateCategoryDto } from 'src/modules/store/modules/categories/dto/create-category.dto';
-import { Product } from 'src/entities/product.entity';
+import { Product } from 'src/entities/store/product.entity';
 import { ProductsService } from 'src/modules/store/modules/products/products.service';
 
 /**

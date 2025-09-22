@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { BaseService } from 'src/common/abstracts/base.service';
-import { NewsPost } from 'src/entities/news-post.entity';
+import { NewsPost } from 'src/entities/store/news-post.entity';
 import { CreateNewsDto } from 'src/modules/store/modules/news/dto/create-news.dto';
 import { UpdateNewsDto } from 'src/modules/store/modules/news/dto/update-news.dto';
 import { NewsRepository } from 'src/modules/store/modules/news/news.repository';

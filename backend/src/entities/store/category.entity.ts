@@ -8,8 +8,8 @@ import {
   UpdateDateColumn,
   ManyToMany,
 } from 'typeorm';
-import { Product } from './product.entity';
-import { Store } from 'src/entities/store.entity';
+import { Product } from 'src/entities/store/product.entity';
+import { Store } from 'src/entities/store/store.entity';
 import { StoreOwnedEntity } from 'src/common/interfaces/store-owned.entity.interface';
 
 @Entity({ name: 'categories' })

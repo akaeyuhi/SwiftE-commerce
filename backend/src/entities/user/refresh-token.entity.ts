@@ -7,7 +7,7 @@ import {
   Index,
   UpdateDateColumn,
 } from 'typeorm';
-import { User } from './user.entity';
+import { User } from 'src/entities/user/user.entity';
 import { UserOwnedEntity } from 'src/common/interfaces/user-owned.entity.interface';
 
 @Entity({ name: 'refresh_tokens' })

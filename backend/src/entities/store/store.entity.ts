@@ -7,15 +7,15 @@ import {
   ManyToOne,
   OneToMany,
 } from 'typeorm';
-import { User } from './user.entity';
-import { Product } from './product.entity';
-import { Order } from './order.entity';
-import { UserRole } from './user-role.entity';
-import { ShoppingCart } from './cart.entity';
-import { NewsPost } from './news-post.entity';
-import { AiLog } from './ai-log.entity';
-import { Inventory } from 'src/entities/inventory.entity';
-import { Category } from 'src/entities/category.entity';
+import { User } from 'src/entities/user/user.entity';
+import { Product } from 'src/entities/store/product.entity';
+import { Order } from 'src/entities/store/order.entity';
+import { UserRole } from 'src/entities/user/user-role.entity';
+import { ShoppingCart } from 'src/entities/store/cart.entity';
+import { NewsPost } from 'src/entities/store/news-post.entity';
+import { AiLog } from 'src/entities/store/ai-log.entity';
+import { Inventory } from 'src/entities/store/inventory.entity';
+import { Category } from 'src/entities/store/category.entity';
 import { UserOwnedEntity } from 'src/common/interfaces/user-owned.entity.interface';
 
 @Entity({ name: 'store' })

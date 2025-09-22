@@ -6,12 +6,12 @@ import {
   UpdateDateColumn,
   OneToMany,
 } from 'typeorm';
-import { UserRole } from './user-role.entity';
-import { ShoppingCart } from './cart.entity';
-import { Order } from './order.entity';
-import { Review } from './review.entity';
-import { NewsPost } from './news-post.entity';
-import { AiLog } from './ai-log.entity';
+import { UserRole } from 'src/entities/user/user-role.entity';
+import { ShoppingCart } from 'src/entities/store/cart.entity';
+import { Order } from 'src/entities/store/order.entity';
+import { Review } from 'src/entities/store/review.entity';
+import { NewsPost } from 'src/entities/store/news-post.entity';
+import { AiLog } from 'src/entities/store/ai-log.entity';
 import { BaseEntity } from 'src/common/interfaces/base-entity.interface';
 import { AdminRoles } from 'src/common/enums/admin.enum';
 

@@ -6,8 +6,8 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { User } from './user.entity';
-import { Store } from './store.entity';
+import { User } from 'src/entities/user/user.entity';
+import { Store } from 'src/entities/store/store.entity';
 import { BaseEntity } from 'src/common/interfaces/base-entity.interface';
 
 @Entity({ name: 'ai_logs' })

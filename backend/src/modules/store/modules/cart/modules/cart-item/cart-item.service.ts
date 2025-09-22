@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { BaseService } from 'src/common/abstracts/base.service';
-import { CartItem } from 'src/entities/cart-item.entity';
+import { CartItem } from 'src/entities/store/cart-item.entity';
 import { CartItemRepository } from 'src/modules/store/modules/cart/modules/cart-item/cart-item.repository';
 import { CartItemDto } from 'src/modules/store/modules/cart/modules/cart-item/dto/cart-item.dto';
 

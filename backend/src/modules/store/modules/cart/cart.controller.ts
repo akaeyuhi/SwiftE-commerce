@@ -11,7 +11,7 @@ import { CartService } from 'src/modules/store/modules/cart/cart.service';
 import { CreateCartDto } from 'src/modules/store/modules/cart/dto/create-cart.dto';
 import { UpdateCartDto } from 'src/modules/store/modules/cart/dto/update-cart.dto';
 import { BaseController } from 'src/common/abstracts/base.controller';
-import { ShoppingCart } from 'src/entities/cart.entity';
+import { ShoppingCart } from 'src/entities/store/cart.entity';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { StoreRolesGuard } from 'src/common/guards/store-roles.guard';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';

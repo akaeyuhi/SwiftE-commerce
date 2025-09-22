@@ -7,9 +7,9 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { User } from './user.entity';
-import { Store } from './store.entity';
-import { OrderItem } from './order-item.entity';
+import { User } from 'src/entities/user/user.entity';
+import { Store } from 'src/entities/store/store.entity';
+import { OrderItem } from 'src/entities/store/order-item.entity';
 import { UserOwnedEntity } from 'src/common/interfaces/user-owned.entity.interface';
 import { StoreOwnedEntity } from 'src/common/interfaces/store-owned.entity.interface';
 import { OrderInfo } from 'src/common/embeddables/order-info.embeddable';

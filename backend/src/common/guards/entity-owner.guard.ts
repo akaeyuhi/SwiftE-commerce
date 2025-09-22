@@ -1,4 +1,3 @@
-// src/common/guards/entity-owner.guard.ts
 import {
   CanActivate,
   ExecutionContext,

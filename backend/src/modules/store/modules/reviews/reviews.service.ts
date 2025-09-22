@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { BaseService } from 'src/common/abstracts/base.service';
-import { Review } from 'src/entities/review.entity';
+import { Review } from 'src/entities/store/review.entity';
 import { CreateReviewDto } from 'src/modules/store/modules/reviews/dto/create-review.dto';
 import { UpdateReviewDto } from 'src/modules/store/modules/reviews/dto/update-review.dto';
 import { ReviewsRepository } from 'src/modules/store/modules/reviews/reviews.repository';

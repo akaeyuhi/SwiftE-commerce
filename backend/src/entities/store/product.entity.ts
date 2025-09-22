@@ -8,11 +8,11 @@ import {
   UpdateDateColumn,
   ManyToMany,
 } from 'typeorm';
-import { Store } from './store.entity';
-import { Category } from './category.entity';
-import { ProductVariant } from './variant.entity';
-import { ProductPhoto } from './product-photo.entity';
-import { Review } from './review.entity';
+import { Store } from 'src/entities/store/store.entity';
+import { Category } from 'src/entities/store/category.entity';
+import { ProductVariant } from 'src/entities/store/variant.entity';
+import { ProductPhoto } from 'src/entities/store/product-photo.entity';
+import { Review } from 'src/entities/store/review.entity';
 import { StoreOwnedEntity } from 'src/common/interfaces/store-owned.entity.interface';
 
 @Entity({ name: 'products' })

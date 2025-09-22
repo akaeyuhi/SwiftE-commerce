@@ -13,7 +13,7 @@ import { UserDto } from './dto/user.dto';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { StoreRole } from 'src/common/decorators/store-role.decorator';
 import { BaseController } from 'src/common/abstracts/base.controller';
-import { User } from 'src/entities/user.entity';
+import { User } from 'src/entities/user/user.entity';
 import { StoreRolesGuard } from 'src/common/guards/store-roles.guard';
 import { CreateStoreDto } from 'src/modules/store/dto/create-store.dto';
 import { AdminGuard } from 'src/common/guards/admin.guard';

@@ -6,8 +6,8 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { ShoppingCart } from './cart.entity';
-import { ProductVariant } from './variant.entity';
+import { ShoppingCart } from 'src/entities/store/cart.entity';
+import { ProductVariant } from 'src/entities/store/variant.entity';
 import { BaseEntity } from 'src/common/interfaces/base-entity.interface';
 
 @Entity({ name: 'cart_items' })

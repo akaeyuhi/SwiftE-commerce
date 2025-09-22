@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { BaseMapper } from 'src/common/abstracts/base.mapper';
 import { StoreDto } from 'src/modules/store/dto/store.dto';
-import { Store } from 'src/entities/store.entity';
+import { Store } from 'src/entities/store/store.entity';
 
 @Injectable()
 export class StoreMapper extends BaseMapper<Store, StoreDto> {

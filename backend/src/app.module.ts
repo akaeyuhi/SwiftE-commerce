@@ -7,6 +7,7 @@ import { AdminModule } from 'src/modules/auth/modules/admin/admin.module';
 import { OrderItemModule } from 'src/modules/store/modules/orders/modules/order-item/order-item.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { PredictorModule } from './modules/predictor/predictor.module';
+import { AiGeneratorModule } from './modules/ai-generator/ai-generator.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { PredictorModule } from './modules/predictor/predictor.module';
     OrderItemModule,
     AnalyticsModule,
     PredictorModule,
+    AiGeneratorModule,
   ],
   controllers: [AppController],
   providers: [AppService],

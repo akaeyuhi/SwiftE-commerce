@@ -6,13 +6,13 @@ import {
 import { UserRepository } from 'src/modules/user/user.repository';
 import { BaseService } from 'src/common/abstracts/base.service';
 
-import { User } from 'src/entities/user.entity';
+import { User } from 'src/entities/user/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserDto } from './dto/user.dto';
 import { UserMapper } from 'src/modules/user/user.mapper';
 import * as bcrypt from 'bcrypt';
-import { UserRole } from 'src/entities/user-role.entity';
+import { UserRole } from 'src/entities/user/user-role.entity';
 import { CreateStoreDto } from 'src/modules/store/dto/create-store.dto';
 import { StoreService } from 'src/modules/store/store.service';
 import { StoreDto } from 'src/modules/store/dto/store.dto';

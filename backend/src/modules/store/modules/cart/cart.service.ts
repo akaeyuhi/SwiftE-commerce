@@ -1,11 +1,11 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { BaseService } from 'src/common/abstracts/base.service';
-import { ShoppingCart } from 'src/entities/cart.entity';
+import { ShoppingCart } from 'src/entities/store/cart.entity';
 import { CreateCartDto } from 'src/modules/store/modules/cart/dto/create-cart.dto';
 import { UpdateCartDto } from 'src/modules/store/modules/cart/dto/update-cart.dto';
 import { CartRepository } from 'src/modules/store/modules/cart/cart.repository';
 import { CartItemService } from 'src/modules/store/modules/cart/modules/cart-item/cart-item.service';
-import { CartItem } from 'src/entities/cart-item.entity';
+import { CartItem } from 'src/entities/store/cart-item.entity';
 
 /**
  * CartService

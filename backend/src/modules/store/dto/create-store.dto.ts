@@ -1,5 +1,5 @@
 import { IsString, IsOptional, MinLength } from 'class-validator';
-import { User } from 'src/entities/user.entity';
+import { User } from 'src/entities/user/user.entity';
 
 export class CreateStoreDto {
   @IsString()

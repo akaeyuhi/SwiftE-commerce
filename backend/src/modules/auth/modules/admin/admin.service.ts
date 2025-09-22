@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { BaseService } from 'src/common/abstracts/base.service';
-import { Admin } from 'src/entities/admin.entity';
+import { Admin } from 'src/entities/user/admin.entity';
 import { AdminRepository } from 'src/modules/auth/modules/admin/admin.repository';
 
 @Injectable()

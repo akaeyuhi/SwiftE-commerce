@@ -1,5 +1,5 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
-import { User } from 'src/entities/user.entity';
+import { User } from 'src/entities/user/user.entity';
 
 /**
  * Extracts the current authenticated user from the request.

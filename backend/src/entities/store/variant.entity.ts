@@ -7,8 +7,8 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { Product } from './product.entity';
-import { Inventory } from './inventory.entity';
+import { Product } from 'src/entities/store/product.entity';
+import { Inventory } from 'src/entities/store/inventory.entity';
 import { BaseEntity } from 'src/common/interfaces/base-entity.interface';
 
 @Entity({ name: 'product_variants' })
