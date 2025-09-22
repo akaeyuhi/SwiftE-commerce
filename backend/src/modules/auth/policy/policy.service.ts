@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { UserService } from 'src/modules/user/user.service';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { PolicyEntry } from 'src/modules/auth/policy/policy.types';
@@ -10,6 +10,14 @@ import { StoreService } from 'src/modules/store/store.service';
 import { StoreOwnedEntity } from 'src/common/interfaces/store-owned.entity.interface';
 import { UserOwnedEntity } from 'src/common/interfaces/user-owned.entity.interface';
 import { Store } from 'src/entities/store/store.entity';
+import {
+  ADMIN_SERVICE,
+  IAdminService,
+  IStoreService,
+  IUserService,
+  STORE_SERVICE,
+  USER_SERVICE,
+} from 'src/common/contracts/policy.contract';
 
 /**
  * PolicyService centralizes async checks for:
@@ -23,9 +31,9 @@ import { Store } from 'src/entities/store/store.entity';
 @Injectable()
 export class PolicyService {
   constructor(
-    private readonly userService: UserService,
-    private readonly adminService: AdminService,
-    private readonly storeService: StoreService
+    @Inject(USER_SERVICE) private readonly userService: IUserService,
+    @Inject(ADMIN_SERVICE) private readonly adminService: IAdminService,
+    @Inject(STORE_SERVICE) private readonly storeService: IStoreService
   ) {}
 
   /**

@@ -10,7 +10,7 @@ import { AdminStatsController } from 'src/modules/analytics/controllers/admin-st
 import { HttpModule } from '@nestjs/axios';
 import { ReviewsModule } from 'src/modules/products/reviews/reviews.module';
 import { AiModule } from 'src/modules/ai/ai.module';
-import { AuthModule } from 'src/modules/auth/auth.module';
+import { PolicyModule } from 'src/modules/auth/policy/policy.module';
 
 @Module({
   imports: [
@@ -18,7 +18,7 @@ import { AuthModule } from 'src/modules/auth/auth.module';
     HttpModule,
     AiModule,
     ReviewsModule,
-    AuthModule,
+    PolicyModule,
   ],
   providers: [
     AnalyticsService,

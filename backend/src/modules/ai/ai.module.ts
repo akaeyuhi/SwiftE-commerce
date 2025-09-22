@@ -15,6 +15,7 @@ import { HuggingFaceProvider } from 'src/modules/ai/ai-generator/providers/huggi
 import { HttpModule } from '@nestjs/axios';
 import { AnalyticsModule } from 'src/modules/analytics/analytics.module';
 import { ReviewsModule } from 'src/modules/products/reviews/reviews.module';
+import { PolicyModule } from 'src/modules/auth/policy/policy.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { ReviewsModule } from 'src/modules/products/reviews/reviews.module';
     AiLogsModule,
     AiGeneratorModule,
     AiPredictorModule,
+    PolicyModule,
   ],
   providers: [
     AiAuditService,

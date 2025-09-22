@@ -6,9 +6,9 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { AiGeneratorService } from 'src/modules/ai/ai-generator/ai-generator.service';
-import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
-import { AdminGuard } from 'src/common/guards/admin.guard';
-import { StoreRolesGuard } from 'src/common/guards/store-roles.guard';
+import { JwtAuthGuard } from 'src/modules/auth/policy/guards/jwt-auth.guard';
+import { AdminGuard } from 'src/modules/auth/policy/guards/admin.guard';
+import { StoreRolesGuard } from 'src/modules/auth/policy/guards/store-roles.guard';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { StoreRole } from 'src/common/decorators/store-role.decorator';
 

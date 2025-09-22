@@ -7,9 +7,9 @@ import {
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { AnalyticsService } from 'src/modules/analytics/analytics.service';
-import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
-import { AdminGuard } from 'src/common/guards/admin.guard';
-import { StoreRolesGuard } from 'src/common/guards/store-roles.guard';
+import { JwtAuthGuard } from 'src/modules/auth/policy/guards/jwt-auth.guard';
+import { AdminGuard } from 'src/modules/auth/policy/guards/admin.guard';
+import { StoreRolesGuard } from 'src/modules/auth/policy/guards/store-roles.guard';
 import { GetStatsDto } from 'src/modules/analytics/dto/get-stats.dto';
 import { AccessPolicies } from 'src/modules/auth/policy/policy.types';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';

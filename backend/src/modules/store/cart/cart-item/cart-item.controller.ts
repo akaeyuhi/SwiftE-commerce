@@ -11,8 +11,8 @@ import { CartItemService } from 'src/modules/store/cart/cart-item/cart-item.serv
 import { CartItemDto } from 'src/modules/store/cart/cart-item/dto/cart-item.dto';
 import { BaseController } from 'src/common/abstracts/base.controller';
 import { CartItem } from 'src/entities/store/cart/cart-item.entity';
-import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
-import { StoreRolesGuard } from 'src/common/guards/store-roles.guard';
+import { JwtAuthGuard } from 'src/modules/auth/policy/guards/jwt-auth.guard';
+import { StoreRolesGuard } from 'src/modules/auth/policy/guards/store-roles.guard';
 import { AccessPolicies } from 'src/modules/auth/policy/policy.types';
 
 /**

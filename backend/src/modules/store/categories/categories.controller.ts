@@ -8,8 +8,8 @@ import { CreateCategoryDto } from 'src/modules/store/categories/dto/create-categ
 import { UpdateCategoryDto } from 'src/modules/store/categories/dto/update-category.dto';
 import { BaseController } from 'src/common/abstracts/base.controller';
 import { Category } from 'src/entities/store/product/category.entity';
-import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
-import { StoreRolesGuard } from 'src/common/guards/store-roles.guard';
+import { JwtAuthGuard } from 'src/modules/auth/policy/guards/jwt-auth.guard';
+import { StoreRolesGuard } from 'src/modules/auth/policy/guards/store-roles.guard';
 import { CategoryDto } from 'src/modules/store/categories/dto/category.dto';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { AccessPolicies } from 'src/modules/auth/policy/policy.types';

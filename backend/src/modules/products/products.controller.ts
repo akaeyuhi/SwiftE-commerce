@@ -17,8 +17,8 @@ import { CreateProductDto } from 'src/modules/products/dto/create-product.dto';
 import { UpdateProductDto } from 'src/modules/products/dto/update-product.dto';
 import { BaseController } from 'src/common/abstracts/base.controller';
 import { Product } from 'src/entities/store/product/product.entity';
-import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
-import { StoreRolesGuard } from 'src/common/guards/store-roles.guard';
+import { JwtAuthGuard } from 'src/modules/auth/policy/guards/jwt-auth.guard';
+import { StoreRolesGuard } from 'src/modules/auth/policy/guards/store-roles.guard';
 import { ProductPhotosInterceptor } from 'src/modules/products/product-photo/interceptors/product-photo.interceptor';
 
 /**

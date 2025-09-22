@@ -14,8 +14,8 @@ import { CreateVariantDto } from 'src/modules/products/variants/dto/create-varia
 import { UpdateVariantDto } from 'src/modules/products/variants/dto/update-variant.dto';
 import { BaseController } from 'src/common/abstracts/base.controller';
 import { ProductVariant } from 'src/entities/store/product/variant.entity';
-import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
-import { StoreRolesGuard } from 'src/common/guards/store-roles.guard';
+import { JwtAuthGuard } from 'src/modules/auth/policy/guards/jwt-auth.guard';
+import { StoreRolesGuard } from 'src/modules/auth/policy/guards/store-roles.guard';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { AccessPolicies } from 'src/modules/auth/policy/policy.types';
 

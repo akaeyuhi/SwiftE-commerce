@@ -9,17 +9,26 @@ import { UserMapper } from 'src/modules/user/user.mapper';
 import { UserRepository } from 'src/modules/user/user.repository';
 import { UserRoleModule } from 'src/modules/user/user-role/user-role.module';
 import { StoreModule } from 'src/modules/store/store.module';
-import { PolicyModule } from 'src/modules/auth/policy/policy.module';
+import { USER_SERVICE } from 'src/common/contracts/policy.contract';
+import { AuthModule } from 'src/modules/auth/auth.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([User, UserRole, Store]),
     UserRoleModule,
     StoreModule,
-    forwardRef(() => PolicyModule),
+    AuthModule,
   ],
-  providers: [UserRepository, UserService, UserMapper],
+  providers: [
+    UserRepository,
+    UserService,
+    {
+      provide: USER_SERVICE,
+      useExisting: UserService,
+    },
+    UserMapper,
+  ],
   controllers: [UserController],
-  exports: [UserService],
+  exports: [UserService, USER_SERVICE],
 })
 export class UserModule {}

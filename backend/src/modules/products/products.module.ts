@@ -1,4 +1,4 @@
-import { forwardRef, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Product } from 'src/entities/store/product/product.entity';
 import { ProductRepository } from 'src/modules/products/products.repository';
@@ -17,7 +17,7 @@ import { PolicyModule } from 'src/modules/auth/policy/policy.module';
     TypeOrmModule.forFeature([Product]),
     ProductPhotoModule,
     StoreModule,
-    forwardRef(() => PolicyModule),
+    PolicyModule,
     InventoryModule,
     CategoriesModule,
     VariantsModule,

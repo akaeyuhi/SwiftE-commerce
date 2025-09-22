@@ -11,7 +11,7 @@ import { PolicyModule } from 'src/modules/auth/policy/policy.module';
   imports: [
     TypeOrmModule.forFeature([ProductVariant]),
     InventoryModule,
-    forwardRef(() => PolicyModule),
+    PolicyModule,
   ],
   controllers: [VariantsController],
   providers: [VariantsService, VariantsRepository],

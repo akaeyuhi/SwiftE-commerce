@@ -11,11 +11,13 @@ import { InventoryModule } from 'src/modules/store/inventory/inventory.module';
 import { NewsModule } from 'src/modules/store/news/news.module';
 import { OrdersModule } from 'src/modules/store/orders/orders.module';
 import { CategoriesModule } from 'src/modules/store/categories/categories.module';
+import { STORE_SERVICE } from 'src/common/contracts/policy.contract';
+import { AuthModule } from 'src/modules/auth/auth.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Store]),
-    forwardRef(() => PolicyModule),
+    AuthModule,
     CartModule,
     CategoriesModule,
     InventoryModule,
@@ -23,7 +25,12 @@ import { CategoriesModule } from 'src/modules/store/categories/categories.module
     OrdersModule,
   ],
   controllers: [StoreController],
-  providers: [StoreService, StoreRepository, StoreMapper],
-  exports: [StoreService],
+  providers: [
+    StoreService,
+    { provide: STORE_SERVICE, useExisting: StoreService },
+    StoreRepository,
+    StoreMapper,
+  ],
+  exports: [StoreService, STORE_SERVICE],
 })
 export class StoreModule {}

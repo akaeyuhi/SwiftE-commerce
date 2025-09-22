@@ -11,11 +11,11 @@ import {
 } from '@nestjs/common';
 import { AiPredictorService } from 'src/modules/ai/ai-predictor/ai-predictor.service';
 import { AiPredictRow } from 'src/modules/ai/ai-predictor/dto/ai-predict.dto';
-import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
-import { AdminGuard } from 'src/common/guards/admin.guard';
+import { JwtAuthGuard } from 'src/modules/auth/policy/guards/jwt-auth.guard';
+import { AdminGuard } from 'src/modules/auth/policy/guards/admin.guard';
 import { StoreRole } from 'src/common/decorators/store-role.decorator';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
-import { StoreRolesGuard } from 'src/common/guards/store-roles.guard';
+import { StoreRolesGuard } from 'src/modules/auth/policy/guards/store-roles.guard';
 
 /**
  * AiPredictorController

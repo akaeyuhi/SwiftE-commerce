@@ -5,8 +5,8 @@ import { UpdateStoreDto } from './dto/update-store.dto';
 import { BaseController } from 'src/common/abstracts/base.controller';
 import { Store } from 'src/entities/store/store.entity';
 import { StoreDto } from 'src/modules/store/dto/store.dto';
-import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
-import { StoreRolesGuard } from 'src/common/guards/store-roles.guard';
+import { JwtAuthGuard } from 'src/modules/auth/policy/guards/jwt-auth.guard';
+import { StoreRolesGuard } from 'src/modules/auth/policy/guards/store-roles.guard';
 
 @Controller('stores')
 @UseGuards(JwtAuthGuard, StoreRolesGuard)

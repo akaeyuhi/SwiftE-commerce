@@ -1,16 +1,26 @@
-import { forwardRef, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { PolicyService } from 'src/modules/auth/policy/policy.service';
-import { UserModule } from 'src/modules/user/user.module';
-import { AdminModule } from 'src/modules/auth/admin/admin.module';
-import { StoreModule } from 'src/modules/store/store.module';
+import { AuthAdapterModule } from 'src/modules/auth-adapter/auth-adapter.module';
+import { AdminGuard } from 'src/modules/auth/policy/guards/admin.guard';
+import { EntityOwnerGuard } from 'src/modules/auth/policy/guards/entity-owner.guard';
+import { JwtAuthGuard } from 'src/modules/auth/policy/guards/jwt-auth.guard';
+import { StoreRolesGuard } from 'src/modules/auth/policy/guards/store-roles.guard';
 
 @Module({
-  imports: [
-    UserModule,
-    forwardRef(() => AdminModule),
-    forwardRef(() => StoreModule),
+  imports: [AuthAdapterModule],
+  providers: [
+    PolicyService,
+    AdminGuard,
+    EntityOwnerGuard,
+    JwtAuthGuard,
+    StoreRolesGuard,
   ],
-  providers: [PolicyService],
-  exports: [PolicyService],
+  exports: [
+    PolicyService,
+    AdminGuard,
+    EntityOwnerGuard,
+    JwtAuthGuard,
+    StoreRolesGuard,
+  ],
 })
 export class PolicyModule {}
