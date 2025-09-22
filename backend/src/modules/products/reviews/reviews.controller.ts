@@ -62,7 +62,7 @@ export class ReviewsController extends BaseController<
   /**
    * Create a review for a product. Authenticated user becomes the review author.
    */
-  @Post()
+  @Post('create')
   async createWithRelations(
     @Param('storeId', new ParseUUIDPipe()) _storeId: string,
     @Param('productId', new ParseUUIDPipe()) productId: string,

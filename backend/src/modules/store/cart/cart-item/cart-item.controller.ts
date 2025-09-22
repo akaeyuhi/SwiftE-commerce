@@ -56,7 +56,7 @@ export class CartItemController extends BaseController<
    * @param dto - CartItemDto containing cartId, variantId, quantity
    * @returns created or updated CartItem
    */
-  @Post()
+  @Post('add')
   async addOrIncrement(
     @Param('storeId', new ParseUUIDPipe()) _storeId: string,
     @Param('userId', new ParseUUIDPipe()) _userId: string,

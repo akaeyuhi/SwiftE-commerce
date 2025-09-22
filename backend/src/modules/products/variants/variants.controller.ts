@@ -103,30 +103,11 @@ export class VariantsController extends BaseController<
    * @param productId - product id for which to list variants
    * @returns array of ProductVariant
    */
-  @Get()
+  @Get('product-variants')
   async findAllProductVariants(
     @Param('productId', new ParseUUIDPipe()) productId: string
   ): Promise<ProductVariant[]> {
     return this.variantsService.listByProduct(productId);
-  }
-
-  /**
-   * Override base findOne — get variant by id.
-   *
-   * @param _storeId - store id (kept for route grouping)
-   * @param _productId - product id (kept for route grouping)
-   * @param id - variant id
-   * @returns ProductVariant
-   */
-  @Get(':id')
-  async findOneVariant(
-    @Param('storeId', new ParseUUIDPipe()) _storeId: string,
-    @Param('productId', new ParseUUIDPipe()) _productId: string,
-    @Param('id', new ParseUUIDPipe()) id: string
-  ): Promise<ProductVariant> {
-    const found = await this.variantsService.getEntityById(id);
-    if (!found) throw new NotFoundException('Variant not found');
-    return found;
   }
 
   /**

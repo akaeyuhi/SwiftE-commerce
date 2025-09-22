@@ -80,7 +80,7 @@ export class NewsController extends BaseController<
    *
    * @param storeId - store id (UUID)
    */
-  @Get()
+  @Get('store-all')
   async findAllByStore(
     @Param('storeId', new ParseUUIDPipe()) storeId: string
   ): Promise<NewsPost[]> {
@@ -93,7 +93,7 @@ export class NewsController extends BaseController<
    * Create a news post.
    * Author is taken from the authenticated request (req.user.id) when available.
    */
-  @Post()
+  @Post('/create')
   async createWithRelations(
     @Param('storeId', new ParseUUIDPipe()) storeId: string,
     @Body() dto: CreateNewsDto,

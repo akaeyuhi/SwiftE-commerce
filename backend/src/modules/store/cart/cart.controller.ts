@@ -66,7 +66,7 @@ export class CartController extends BaseController<
    * @param userId - UUID of the user
    * @returns the ShoppingCart for the (user, store)
    */
-  @Get()
+  @Get('user-cart')
   async findOneByUserAndStore(
     @Param('storeId', new ParseUUIDPipe()) storeId: string,
     @Param('userId', new ParseUUIDPipe()) userId: string
@@ -83,7 +83,7 @@ export class CartController extends BaseController<
    * @param userId - UUID of the user
    * @returns the existing or created ShoppingCart
    */
-  @Post()
+  @Post('get-or-create')
   async getOrCreateCart(
     @Param('storeId', new ParseUUIDPipe()) storeId: string,
     @Param('userId', new ParseUUIDPipe()) userId: string,

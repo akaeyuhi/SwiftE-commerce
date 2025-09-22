@@ -69,7 +69,7 @@ export class OrdersController extends BaseController<
       requireAuthenticated: true,
       storeRoles: [StoreRoles.ADMIN],
     },
-    createOrder: { requireAuthenticated: true },
+    createUserOrder: { requireAuthenticated: true },
     findByUser: { requireAuthenticated: true },
     updateStatus: {
       requireAuthenticated: true,
@@ -88,7 +88,7 @@ export class OrdersController extends BaseController<
    *
    * @param storeId store UUID from route
    */
-  @Get()
+  @Get('all')
   async findAllByStore(
     @Param('storeId', new ParseUUIDPipe()) storeId: string
   ): Promise<Order[]> {
@@ -105,8 +105,8 @@ export class OrdersController extends BaseController<
    * @param dto - order creation DTO
    * @param req - express request (for current user)
    */
-  @Post()
-  async createOrder(
+  @Post('create')
+  async createUserOrder(
     @Param('storeId', new ParseUUIDPipe()) storeId: string,
     @Body() dto: CreateOrderDto,
     @Req() req: Request
