@@ -24,8 +24,6 @@ import { AccessPolicies } from 'src/modules/auth/policy/policy.types';
  *
  * Path: /stores/:storeId/:userId/cart
  *
- * Important: we use both JwtAuthGuard and StoreRolesGuard across the controller.
- * Authorization rules are declared in static accessPolicies.
  */
 @Controller('stores/:storeId/:userId/cart')
 @UseGuards(JwtAuthGuard, StoreRolesGuard)
