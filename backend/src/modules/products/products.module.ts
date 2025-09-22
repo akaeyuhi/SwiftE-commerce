@@ -16,7 +16,7 @@ import { PolicyModule } from 'src/modules/auth/policy/policy.module';
   imports: [
     TypeOrmModule.forFeature([Product]),
     ProductPhotoModule,
-    forwardRef(() => StoreModule),
+    StoreModule,
     forwardRef(() => PolicyModule),
     InventoryModule,
     CategoriesModule,
