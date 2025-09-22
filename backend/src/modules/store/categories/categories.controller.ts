@@ -2,9 +2,6 @@ import {
   Controller,
   UseGuards,
   Get,
-  Post,
-  Param,
-  ParseUUIDPipe,
 } from '@nestjs/common';
 import { CategoriesService } from 'src/modules/store/categories/categories.service';
 import { CreateCategoryDto } from 'src/modules/store/categories/dto/create-category.dto';
@@ -16,7 +13,6 @@ import { StoreRolesGuard } from 'src/common/guards/store-roles.guard';
 import { CategoryDto } from 'src/modules/store/categories/dto/category.dto';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { AccessPolicies } from 'src/modules/auth/policy/policy.types';
-import { Product } from 'src/entities/store/product/product.entity';
 
 /**
  * CategoriesController

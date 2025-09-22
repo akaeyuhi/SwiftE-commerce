@@ -10,7 +10,6 @@ import { AiPredictRow } from 'src/modules/ai/ai-predictor/dto/ai-predict.dto';
 
 @Injectable()
 export class AnalyticsService {
-  private readonly logger = new Logger(AnalyticsService.name);
 
   constructor(
     private readonly predictorService: AiPredictorService,

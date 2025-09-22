@@ -8,7 +8,6 @@ import { BaseService } from 'src/common/abstracts/base.service';
 import { Category } from 'src/entities/store/product/category.entity';
 import { UpdateCategoryDto } from 'src/modules/store/categories/dto/update-category.dto';
 import { CreateCategoryDto } from 'src/modules/store/categories/dto/create-category.dto';
-import { ProductsService } from 'src/modules/products/products.service';
 
 /**
  * CategoriesService

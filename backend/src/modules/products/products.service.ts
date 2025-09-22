@@ -7,7 +7,6 @@ import { StoreService } from 'src/modules/store/store.service';
 import { ProductRepository } from 'src/modules/products/products.repository';
 import { ProductPhotoService } from 'src/modules/products/product-photo/product-photo.service';
 import { CategoriesService } from 'src/modules/store/categories/categories.service';
-import { VariantsService } from 'src/modules/products/variants/variants.service';
 import { ProductPhoto } from 'src/entities/store/product/product-photo.entity';
 
 /**

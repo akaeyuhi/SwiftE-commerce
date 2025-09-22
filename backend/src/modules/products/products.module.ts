@@ -9,8 +9,6 @@ import { ProductPhotoModule } from 'src/modules/products/product-photo/product-p
 import { VariantsModule } from 'src/modules/products/variants/variants.module';
 import { StoreModule } from 'src/modules/store/store.module';
 import { CategoriesModule } from 'src/modules/store/categories/categories.module';
-import { ReviewsService } from 'src/modules/products/reviews/reviews.service';
-import { ReviewsRepository } from 'src/modules/products/reviews/reviews.repository';
 import { InventoryModule } from 'src/modules/store/inventory/inventory.module';
 import { PolicyModule } from 'src/modules/auth/policy/policy.module';
 
