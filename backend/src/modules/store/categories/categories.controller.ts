@@ -15,7 +15,7 @@ import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { StoreRolesGuard } from 'src/common/guards/store-roles.guard';
 import { CategoryDto } from 'src/modules/store/categories/dto/category.dto';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
-import { AccessPolicies } from 'src/modules/auth/modules/policy/policy.types';
+import { AccessPolicies } from 'src/modules/auth/policy/policy.types';
 import { Product } from 'src/entities/store/product/product.entity';
 
 /**
@@ -81,36 +81,36 @@ export class CategoriesController extends BaseController<
    * @param id - UUID of the category to list products for.
    * @returns Promise resolving to an array of Product entities associated with the category (optionally store-filtered).
    */
-  @Get(':id/products')
-  async findProductsByCategory(
-    @Param('storeId', new ParseUUIDPipe()) storeId: string,
-    @Param('productId', new ParseUUIDPipe()) _productId: string,
-    @Param('id', new ParseUUIDPipe()) id: string
-  ): Promise<Product[]> {
-    return this.categoriesService.findProductsByCategory(id, storeId);
-  }
-
-  /**
-   * Assign a category to the product identified by :productId.
-   *
-   * Route: POST /stores/:storeId/products/:productId/categories/assign/:categoryId
-   *
-   * This endpoint allows store admins to attach an existing category to a product.
-   *
-   * @param _storeId - UUID of the store (used for authorization context).
-   * @param productId - UUID of the product which will receive the category.
-   * @param categoryId - UUID of the existing category to assign to the product.
-   * @returns Promise resolving to the updated Product entity with the category assigned.
-   */
-  @Post('assign/:categoryId')
-  async assignCategoryToProduct(
-    @Param('storeId', new ParseUUIDPipe()) _storeId: string,
-    @Param('productId', new ParseUUIDPipe()) productId: string,
-    @Param('categoryId', new ParseUUIDPipe()) categoryId: string
-  ): Promise<Product> {
-    return this.categoriesService.assignCategoryToProduct(
-      categoryId,
-      productId
-    );
-  }
+  // @Get(':id/products')
+  // async findProductsByCategory(
+  //   @Param('storeId', new ParseUUIDPipe()) storeId: string,
+  //   @Param('productId', new ParseUUIDPipe()) _productId: string,
+  //   @Param('id', new ParseUUIDPipe()) id: string
+  // ): Promise<Product[]> {
+  //   return this.categoriesService.findProductsByCategory(id, storeId);
+  // }
+  //
+  // /**
+  //  * Assign a category to the product identified by :productId.
+  //  *
+  //  * Route: POST /stores/:storeId/products/:productId/categories/assign/:categoryId
+  //  *
+  //  * This endpoint allows store admins to attach an existing category to a product.
+  //  *
+  //  * @param _storeId - UUID of the store (used for authorization context).
+  //  * @param productId - UUID of the product which will receive the category.
+  //  * @param categoryId - UUID of the existing category to assign to the product.
+  //  * @returns Promise resolving to the updated Product entity with the category assigned.
+  //  */
+  // @Post('assign/:categoryId')
+  // async assignCategoryToProduct(
+  //   @Param('storeId', new ParseUUIDPipe()) _storeId: string,
+  //   @Param('productId', new ParseUUIDPipe()) productId: string,
+  //   @Param('categoryId', new ParseUUIDPipe()) categoryId: string
+  // ): Promise<Product> {
+  //   return this.categoriesService.assignCategoryToProduct(
+  //     categoryId,
+  //     productId
+  //   );
+  // }
 }

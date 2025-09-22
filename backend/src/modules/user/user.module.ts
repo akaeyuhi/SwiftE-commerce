@@ -7,9 +7,9 @@ import { UserRole } from 'src/entities/user/policy/user-role.entity';
 import { Store } from 'src/entities/store/store.entity';
 import { UserMapper } from 'src/modules/user/user.mapper';
 import { UserRepository } from 'src/modules/user/user.repository';
-import { UserRoleModule } from 'src/modules/user/modules/user-role.module';
+import { UserRoleModule } from 'src/modules/user/user-role/user-role.module';
 import { StoreModule } from 'src/modules/store/store.module';
-import { PolicyModule } from 'src/modules/auth/modules/policy/policy.module';
+import { PolicyModule } from 'src/modules/auth/policy/policy.module';
 
 @Module({
   imports: [

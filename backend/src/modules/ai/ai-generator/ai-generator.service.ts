@@ -15,7 +15,7 @@ import { AiAuditService } from 'src/modules/ai/ai-audit/ai-audit.service';
 /**
  * DI token name to bind chosen provider in AiModule
  */
-export const AI_PROVIDER = 'AI_PROVIDER';
+export const AI_PROVIDER = 'hf';
 
 /**
  * AiService

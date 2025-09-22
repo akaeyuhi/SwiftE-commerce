@@ -15,7 +15,7 @@ import { ShoppingCart } from 'src/entities/store/cart/cart.entity';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { StoreRolesGuard } from 'src/common/guards/store-roles.guard';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
-import { AccessPolicies } from 'src/modules/auth/modules/policy/policy.types';
+import { AccessPolicies } from 'src/modules/auth/policy/policy.types';
 
 /**
  * CartController

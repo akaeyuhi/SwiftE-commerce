@@ -8,17 +8,17 @@ import { ProductDailyStatsRepository } from './repositories/product-daily-stats.
 import { ScheduleModule } from '@nestjs/schedule';
 import { AdminStatsController } from 'src/modules/analytics/controllers/admin-stats.controller';
 import { HttpModule } from '@nestjs/axios';
-import { AiPredictorModule } from 'src/modules/ai/ai-predictor/ai-predictor.module';
-import { ReviewsModule } from 'src/modules/store/products/reviews/reviews.module';
-import { PolicyModule } from 'src/modules/auth/modules/policy/policy.module';
+import { ReviewsModule } from 'src/modules/products/reviews/reviews.module';
+import { AiModule } from 'src/modules/ai/ai.module';
+import { AuthModule } from 'src/modules/auth/auth.module';
 
 @Module({
   imports: [
     ScheduleModule.forRoot(),
     HttpModule,
-    forwardRef(() => AiPredictorModule),
+    AiModule,
     ReviewsModule,
-    PolicyModule,
+    AuthModule,
   ],
   providers: [
     AnalyticsService,

@@ -8,6 +8,7 @@ import { UserModule } from 'src/modules/user/user.module';
 import { AuthModule } from 'src/modules/auth/auth.module';
 import { StoreModule } from 'src/modules/store/store.module';
 import { AiModule } from './modules/ai/ai.module';
+import { ProductsModule } from 'src/modules/products/products.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { AiModule } from './modules/ai/ai.module';
     UserModule,
     AuthModule,
     StoreModule,
+    ProductsModule,
     AnalyticsModule,
     AiModule,
   ],

@@ -1,0 +1,19 @@
+import { forwardRef, Module } from '@nestjs/common';
+import { VariantsService } from 'src/modules/products/variants/variants.service';
+import { VariantsController } from 'src/modules/products/variants/variants.controller';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ProductVariant } from 'src/entities/store/product/variant.entity';
+import { VariantsRepository } from 'src/modules/products/variants/variants.repository';
+import { InventoryModule } from 'src/modules/store/inventory/inventory.module';
+import { PolicyModule } from 'src/modules/auth/policy/policy.module';
+
+@Module({
+  imports: [
+    TypeOrmModule.forFeature([ProductVariant]),
+    InventoryModule,
+    forwardRef(() => PolicyModule),
+  ],
+  controllers: [VariantsController],
+  providers: [VariantsService, VariantsRepository],
+})
+export class VariantsModule {}

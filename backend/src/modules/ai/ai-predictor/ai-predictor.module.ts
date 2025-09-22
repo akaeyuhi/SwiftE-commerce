@@ -6,20 +6,20 @@ import { AiLogsModule } from 'src/modules/ai/ai-logs/ai-logs.module';
 import { AiPredictorRepository } from 'src/modules/ai/ai-predictor/ai-predictor.repository';
 import { HttpModule } from '@nestjs/axios';
 import { AnalyticsModule } from 'src/modules/analytics/analytics.module';
-import { ReviewsModule } from 'src/modules/store/products/reviews/reviews.module';
-import { PolicyModule } from 'src/modules/auth/modules/policy/policy.module';
+import { ReviewsModule } from 'src/modules/products/reviews/reviews.module';
+import { PolicyModule } from 'src/modules/auth/policy/policy.module';
 
 @Module({
   imports: [
+    forwardRef(() => AnalyticsModule),
     AiAuditsModule,
     AiLogsModule,
     HttpModule,
-    forwardRef(() => AnalyticsModule),
     ReviewsModule,
     PolicyModule,
   ],
   controllers: [AiPredictorController],
   providers: [AiPredictorService, AiPredictorRepository],
-  exports: [AiPredictorService],
+  exports: [AiPredictorService, AiPredictorRepository],
 })
 export class AiPredictorModule {}

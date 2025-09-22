@@ -16,7 +16,7 @@ import { DataSource } from 'typeorm';
 import { StoreDailyStatsRepository } from 'src/modules/analytics/repositories/store-daily-stats.repository';
 
 import { ProductDailyStatsRepository } from 'src/modules/analytics/repositories/product-daily-stats.repository';
-import { ReviewsRepository } from 'src/modules/store/products/reviews/reviews.repository';
+import { ReviewsRepository } from 'src/modules/products/reviews/reviews.repository';
 import { AiLogsService } from 'src/modules/ai/ai-logs/ai-logs.service';
 import { AiAuditService } from 'src/modules/ai/ai-audit/ai-audit.service';
 import { AxiosResponse } from 'axios';

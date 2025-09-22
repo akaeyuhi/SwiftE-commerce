@@ -8,8 +8,7 @@ import { BaseService } from 'src/common/abstracts/base.service';
 import { Category } from 'src/entities/store/product/category.entity';
 import { UpdateCategoryDto } from 'src/modules/store/categories/dto/update-category.dto';
 import { CreateCategoryDto } from 'src/modules/store/categories/dto/create-category.dto';
-import { Product } from 'src/entities/store/product/product.entity';
-import { ProductsService } from 'src/modules/store/products/products.service';
+import { ProductsService } from 'src/modules/products/products.service';
 
 /**
  * CategoriesService
@@ -29,7 +28,6 @@ export class CategoriesService extends BaseService<
 > {
   constructor(
     private readonly categoriesRepo: CategoriesRepository,
-    private readonly productService: ProductsService
   ) {
     super(categoriesRepo);
   }
@@ -107,42 +105,5 @@ export class CategoriesService extends BaseService<
       }
     }
     return roots;
-  }
-
-  /**
-   * Find products for a category (ManyToMany). Delegates to ProductsService.
-   *
-   * @param categoryId - category id
-   * @param storeId - optional store id to limit to a store
-   */
-  async findProductsByCategory(
-    categoryId: string,
-    storeId?: string
-  ): Promise<Product[]> {
-    // Delegate to ProductsService which encapsulates repository access
-    return this.productService.findProductsByCategory(categoryId, storeId);
-  }
-
-  /**
-   * Assign (attach) an existing category to a product (ManyToMany).
-   *
-   * @param categoryId
-   * @param productId
-   */
-  async assignCategoryToProduct(
-    categoryId: string,
-    productId: string
-  ): Promise<Product> {
-    // Delegate to ProductsService to mutate product.categories in one place
-    return this.productService.attachCategoryToProduct(productId, categoryId);
-  }
-
-  /**
-   * Find categories referenced by products in a store (distinct).
-   *
-   * @param storeId - store id
-   */
-  async findCategoriesByStore(storeId: string): Promise<Category[]> {
-    return this.categoriesRepo.findCategoriesByStore(storeId);
   }
 }

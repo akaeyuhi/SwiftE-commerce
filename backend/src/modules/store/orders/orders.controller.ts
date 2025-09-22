@@ -20,7 +20,7 @@ import { AdminGuard } from 'src/common/guards/admin.guard';
 import { EntityOwnerGuard } from 'src/common/guards/entity-owner.guard';
 import { EntityOwner } from 'src/common/decorators/entity-owner.decorator';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
-import { AccessPolicies } from 'src/modules/auth/modules/policy/policy.types';
+import { AccessPolicies } from 'src/modules/auth/policy/policy.types';
 import { Request } from 'express';
 
 /**

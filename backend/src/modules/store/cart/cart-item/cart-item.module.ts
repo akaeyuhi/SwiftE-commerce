@@ -4,7 +4,7 @@ import { CartItemController } from 'src/modules/store/cart/cart-item/cart-item.c
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CartItem } from 'src/entities/store/cart/cart-item.entity';
 import { CartItemRepository } from 'src/modules/store/cart/cart-item/cart-item.repository';
-import { PolicyModule } from 'src/modules/auth/modules/policy/policy.module';
+import { PolicyModule } from 'src/modules/auth/policy/policy.module';
 
 @Module({
   imports: [

@@ -5,6 +5,6 @@ import { AiAuditService } from 'src/modules/ai/ai-audit/ai-audit.service';
 @Module({
   imports: [],
   providers: [AiAuditRepository, AiAuditService],
-  exports: [AiAuditService],
+  exports: [AiAuditService, AiAuditRepository],
 })
 export class AiAuditsModule {}

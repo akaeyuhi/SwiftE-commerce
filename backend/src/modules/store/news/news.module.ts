@@ -4,7 +4,7 @@ import { NewsController } from 'src/modules/store/news/news.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { NewsPost } from 'src/entities/store/news-post.entity';
 import { NewsRepository } from 'src/modules/store/news/news.repository';
-import { PolicyModule } from 'src/modules/auth/modules/policy/policy.module';
+import { PolicyModule } from 'src/modules/auth/policy/policy.module';
 
 @Module({
   imports: [

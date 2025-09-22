@@ -3,7 +3,7 @@ import { BaseService } from './base.service';
 import { ObjectLiteral } from 'typeorm';
 import { AdminRole } from 'src/common/decorators/admin-role.decorator';
 import { AdminRoles } from 'src/common/enums/admin.enum';
-import { AccessPolicies } from 'src/modules/auth/modules/policy/policy.types';
+import { AccessPolicies } from 'src/modules/auth/policy/policy.types';
 import { AdminGuard } from 'src/common/guards/admin.guard';
 import { StoreRolesGuard } from 'src/common/guards/store-roles.guard';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
