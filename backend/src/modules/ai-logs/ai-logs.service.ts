@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { BaseService } from 'src/common/abstracts/base.service';
-import { AiLog } from 'src/entities/store/ai-log.entity';
+import { AiLog } from 'src/entities/ai/ai-log.entity';
 import { CreateAiLogDto } from './dto/create-ai-log.dto';
 import { UpdateAiLogDto } from './dto/update-ai-log.dto';
 import { AiLogRepository } from './ai-log.repository';

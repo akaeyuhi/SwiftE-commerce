@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { BaseRepository } from 'src/common/abstracts/base.repository';
-import { AiLog } from 'src/entities/store/ai-log.entity';
+import { AiLog } from 'src/entities/ai/ai-log.entity';
 
 /**
  * AiLogRepository

@@ -3,7 +3,7 @@ import { AiLogsService } from './ai-logs.service';
 import { AiLogsController } from './ai-logs.controller';
 import { AiLogRepository } from './ai-log.repository';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AiLog } from 'src/entities/store/ai-log.entity';
+import { AiLog } from 'src/entities/ai/ai-log.entity';
 
 @Module({
   imports: [TypeOrmModule.forFeature([AiLog])],

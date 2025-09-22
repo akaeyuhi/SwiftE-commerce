@@ -1,7 +1,7 @@
 import {
+  BadRequestException,
   Injectable,
   NotFoundException,
-  BadRequestException,
 } from '@nestjs/common';
 import { CreateOrderDto } from 'src/modules/store/modules/orders/dto/create-order.dto';
 import { UpdateOrderDto } from 'src/modules/store/modules/orders/dto/update-order.dto';
@@ -141,7 +141,6 @@ export class OrdersService extends BaseService<
     const order = await this.orderRepo.findById(id);
     if (!order) throw new NotFoundException('Order not found');
     order.status = status;
-    const saved = await this.orderRepo.save(order);
-    return saved;
+    return await this.orderRepo.save(order);
   }
 }
