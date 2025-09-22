@@ -2,10 +2,8 @@ import {
   Controller,
   UseGuards,
   Get,
-  Post,
   Param,
   Query,
-  Body,
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
@@ -47,44 +45,6 @@ export class AdminStatsController {
       q.from,
       q.to,
       limit
-    );
-  }
-
-  /**
-   * Save AI stat coming from an external model (UI or service).
-   * Example body:
-   * { scope: 'product', productId: '...', features: { ... }, prediction: { trend: 'up', score: 0.8 }, modelVersion: 'v1' }
-   */
-  @Post('ai-stats')
-  async recordAiStat(
-    @Param('storeId', new ParseUUIDPipe()) storeId: string,
-    @Body()
-    body: {
-      scope: 'store' | 'product';
-      productId?: string;
-      features: Record<string, any>;
-      prediction: Record<string, any>;
-      modelVersion?: string;
-    }
-  ) {
-    return this.statsService.recordAiStat({
-      scope: body.scope,
-      storeId,
-      productId: body.productId,
-      features: body.features,
-      prediction: body.prediction,
-      modelVersion: body.modelVersion,
-    });
-  }
-
-  @Get('ai-stats')
-  async listAiStats(
-    @Param('storeId', new ParseUUIDPipe()) storeId: string,
-    @Query('limit') limit?: string
-  ) {
-    return this.statsService.getAiStatsForStore(
-      storeId,
-      limit ? Number(limit) : 50
     );
   }
 }

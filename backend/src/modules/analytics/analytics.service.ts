@@ -5,18 +5,18 @@ import { ProductDailyStatsRepository } from './repositories/product-daily-stats.
 import { ReviewsRepository } from 'src/modules/store/modules/reviews/reviews.repository';
 import { RecordEventDto } from './dto/record-event.dto';
 import { Between } from 'typeorm';
-import { PredictorService } from 'src/modules/predictor/predictor.service';
-import { PredictRow } from 'src/modules/predictor/dto/predict.dto';
+import { AiPredictorService } from 'src/modules/ai-predictor/ai-predictor.service';
+import { AiPredictRow } from 'src/modules/ai-predictor/dto/ai-predict.dto';
 
 @Injectable()
 export class AnalyticsService {
   private readonly logger = new Logger(AnalyticsService.name);
 
   constructor(
+    private readonly predictorService: AiPredictorService,
     private readonly eventsRepo: AnalyticsEventRepository,
     private readonly storeStatsRepo: StoreDailyStatsRepository,
     private readonly productStatsRepo: ProductDailyStatsRepository,
-    private readonly predictorService: PredictorService,
     private readonly reviewsRepo: ReviewsRepository
   ) {}
 
@@ -263,7 +263,7 @@ export class AnalyticsService {
    * @param modelVersion - optional modelVersion string
    * @returns array of persisted AiStat + predictions (see PredictorService return)
    */
-  async predictorClient(rows: PredictRow[], modelVersion?: string) {
+  async predictorClient(rows: AiPredictRow[], modelVersion?: string) {
     // Defensive: ensure features are shaped correctly (optional)
     if (!rows || rows.length === 0) return [];
     // Delegate to PredictorService which calls predictor and persists results

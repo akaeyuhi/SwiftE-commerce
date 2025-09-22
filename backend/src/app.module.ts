@@ -9,17 +9,19 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { AiGeneratorModule } from './modules/ai-generator/ai-generator.module';
 import { AiAuditsModule } from './modules/ai-audit/ai-audit.module';
 import { AiPredictorModule } from './modules/ai-predictor/ai-predictor.module';
+import { DatabaseModule } from 'src/database/database.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot(),
+    DatabaseModule,
     ProductPhotoModule,
     AdminModule,
     OrderItemModule,
+    AiPredictorModule,
     AnalyticsModule,
     AiGeneratorModule,
     AiAuditsModule,
-    AiPredictorModule,
   ],
   controllers: [AppController],
   providers: [AppService],
