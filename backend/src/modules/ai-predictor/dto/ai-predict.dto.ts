@@ -1,17 +1,17 @@
 /**
- * DTOs used by PredictorService
+ * DTOs used by AiPredictorService
  */
-export interface PredictRow {
+export interface AiPredictRow {
   productId?: string | null;
   storeId?: string | null;
   features: Record<string, any>;
 }
 
-export interface PredictBatchRequest {
-  rows: PredictRow[];
+export interface AiPredictBatchRequest {
+  rows: AiPredictRow[];
 }
 
-export interface PredictResult {
+export interface AiPredictResult {
   index: number;
   score: number;
   label?: string;

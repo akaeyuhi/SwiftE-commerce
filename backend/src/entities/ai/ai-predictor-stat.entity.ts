@@ -11,7 +11,7 @@ import {
  * Adjust fields to match your DB schema (jsonb maps assumed).
  */
 @Entity({ name: 'predictor_stats' })
-export class PredictorStat {
+export class AiPredictorStat {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 

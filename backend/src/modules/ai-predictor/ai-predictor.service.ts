@@ -2,24 +2,24 @@ import { Injectable, Logger } from '@nestjs/common';
 import { lastValueFrom } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
 import {
-  PredictRow,
-  PredictBatchRequest,
-  PredictResult,
-} from './dto/predict.dto';
-import { PredictorRepository } from './predictor.repository';
-import { PredictorStat } from './entities/predictor-stats.entity';
+  AiPredictRow,
+  AiPredictBatchRequest,
+  AiPredictResult,
+} from './dto/ai-predict.dto';
+import { AiPredictorRepository } from './ai-predictor.repository';
+import { AiPredictorStat } from 'src/entities/ai/ai-predictor-stat.entity';
 import { subDays } from 'date-fns';
 import { ProductVariant } from 'src/entities/store/product/variant.entity';
 import { Inventory } from 'src/entities/store/product/inventory.entity';
 import { DataSource } from 'typeorm';
-// eslint-disable-next-line max-len
+
 import { StoreDailyStatsRepository } from 'src/modules/analytics/repositories/store-daily-stats.repository';
-// eslint-disable-next-line max-len
+
 import { ProductDailyStatsRepository } from 'src/modules/analytics/repositories/product-daily-stats.repository';
 import { ReviewsRepository } from 'src/modules/store/modules/reviews/reviews.repository';
 
 /**
- * PredictorService
+ * AiPredictorService
  *
  * Responsibilities:
  *  - Build a numeric feature vector for a product (buildFeatureVector)
@@ -38,15 +38,15 @@ import { ReviewsRepository } from 'src/modules/store/modules/reviews/reviews.rep
  *  Keeping data-logic inside repository keeps the service easy to test and the SQL centralized.
  */
 @Injectable()
-export class PredictorService {
-  private readonly logger = new Logger(PredictorService.name);
+export class AiPredictorService {
+  private readonly logger = new Logger(AiPredictorService.name);
   private readonly predictorUrl: string;
   private readonly token?: string;
   private readonly chunkSize: number;
 
   constructor(
     private readonly httpService: HttpService,
-    private readonly predictorRepo: PredictorRepository,
+    private readonly predictorRepo: AiPredictorRepository,
     private readonly dataSource: DataSource,
     private readonly storeStatsRepo: StoreDailyStatsRepository,
     private readonly productStatsRepo: ProductDailyStatsRepository,
@@ -235,10 +235,12 @@ export class PredictorService {
    * The `features` field is always included so callers can persist the full snapshot.
    */
   async predictBatch(
-    items: Array<string | { productId: string; storeId?: string } | PredictRow>
+    items: Array<
+      string | { productId: string; storeId?: string } | AiPredictRow
+    >
   ): Promise<
     Array<
-      PredictResult & {
+      AiPredictResult & {
         productId?: string;
         storeId?: string;
         features?: Record<string, number>;
@@ -250,7 +252,7 @@ export class PredictorService {
     if (!items || items.length === 0) return [];
 
     // Normalize items -> PredictRow[] placeholders
-    const normalized: PredictRow[] = [];
+    const normalized: AiPredictRow[] = [];
     const meta: Array<{ productId?: string; storeId?: string }> = [];
 
     for (const it of items) {
@@ -262,10 +264,10 @@ export class PredictorService {
           features: {} as any,
         });
       } else if (
-        (it as PredictRow).features &&
-        Object.keys((it as PredictRow).features).length
+        (it as AiPredictRow).features &&
+        Object.keys((it as AiPredictRow).features).length
       ) {
-        const row = it as PredictRow;
+        const row = it as AiPredictRow;
         meta.push({ productId: row.productId!, storeId: row.storeId! });
         normalized.push(row);
       } else {
@@ -306,7 +308,7 @@ export class PredictorService {
     }
 
     const resultsOut: Array<
-      PredictResult & {
+      AiPredictResult & {
         productId?: string;
         storeId?: string;
         features?: Record<string, number>;
@@ -318,7 +320,7 @@ export class PredictorService {
     // Send to external predictor in chunks
     for (let i = 0; i < normalized.length; i += this.chunkSize) {
       const chunk = normalized.slice(i, i + this.chunkSize);
-      const payload: PredictBatchRequest = { rows: chunk };
+      const payload: AiPredictBatchRequest = { rows: chunk };
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
       };
@@ -426,12 +428,16 @@ export class PredictorService {
    * returns array: [{ predictorStat: PredictorStatEntity, prediction: rawPrediction }]
    */
   async predictBatchAndPersist(
-    items: Array<string | { productId: string; storeId?: string } | PredictRow>,
+    items: Array<
+      string | { productId: string; storeId?: string } | AiPredictRow
+    >,
     modelVersion?: string
-  ): Promise<Array<{ predictorStat: PredictorStat; prediction: any }>> {
+  ): Promise<Array<{ predictorStat: AiPredictorStat; prediction: any }>> {
     const results = await this.predictBatch(items);
-    const persisted: Array<{ predictorStat: PredictorStat; prediction: any }> =
-      [];
+    const persisted: Array<{
+      predictorStat: AiPredictorStat;
+      prediction: any;
+    }> = [];
 
     for (const r of results) {
       // skip items that had build errors or predictor errors
@@ -454,7 +460,7 @@ export class PredictorService {
           modelVersion: modelVersion ?? null,
         } as any);
         persisted.push({
-          predictorStat: created as PredictorStat,
+          predictorStat: created as AiPredictorStat,
           prediction: r.rawPrediction ?? { score: r.score, label: r.label },
         });
       } catch (err: any) {

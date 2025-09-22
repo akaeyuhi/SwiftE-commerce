@@ -9,13 +9,13 @@ import {
   UseGuards,
   BadRequestException,
 } from '@nestjs/common';
-import { PredictorService } from './predictor.service';
-import { PredictRow } from './dto/predict.dto';
+import { AiPredictorService } from './ai-predictor.service';
+import { AiPredictRow } from './dto/ai-predict.dto';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { AdminGuard } from 'src/common/guards/admin.guard';
 
 /**
- * PredictorController
+ * AiPredictorController
  *
  * Routes:
  *  - GET  /predictor/feature/:productId?storeId=...         -> builds and returns features
@@ -25,9 +25,9 @@ import { AdminGuard } from 'src/common/guards/admin.guard';
  * Controller guarded by JwtAuthGuard + AdminGuard by default (adjust as needed).
  */
 @UseGuards(JwtAuthGuard, AdminGuard)
-@Controller('predictor')
+@Controller('ai-predictor')
 export class PredictorController {
-  constructor(private readonly predictor: PredictorService) {}
+  constructor(private readonly predictor: AiPredictorService) {}
 
   /**
    * Build feature vector (no prediction).
@@ -66,7 +66,7 @@ export class PredictorController {
       // object like { productId, storeId? }
       items = [{ productId: payload.productId, storeId: payload.storeId }];
     } else if (payload.features || payload.productId) {
-      items = [payload as PredictRow];
+      items = [payload as AiPredictRow];
     } else {
       // fallback - attempt to treat as single row
       items = [payload];
@@ -88,7 +88,7 @@ export class PredictorController {
     @Body()
     body: {
       items: Array<
-        string | { productId: string; storeId?: string } | PredictRow
+        string | { productId: string; storeId?: string } | AiPredictRow
       >;
       persist?: boolean;
       modelVersion?: string;
