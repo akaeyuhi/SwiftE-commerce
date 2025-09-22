@@ -15,7 +15,7 @@ import { ProductsService } from 'src/modules/store/modules/products/products.ser
 import { CreateProductDto } from 'src/modules/store/modules/products/dto/create-product.dto';
 import { UpdateProductDto } from 'src/modules/store/modules/products/dto/update-product.dto';
 import { BaseController } from 'src/common/abstracts/base.controller';
-import { Product } from 'src/entities/store/product.entity';
+import { Product } from 'src/entities/store/product/product.entity';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { StoreRolesGuard } from 'src/common/guards/store-roles.guard';
 // eslint-disable-next-line max-len

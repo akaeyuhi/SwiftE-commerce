@@ -1,6 +1,6 @@
 import { Controller } from '@nestjs/common';
 import { AdminService } from 'src/modules/auth/modules/admin/admin.service';
-import { Admin } from 'src/entities/user/admin.entity';
+import { Admin } from 'src/entities/user/policy/admin.entity';
 import { BaseController } from 'src/common/abstracts/base.controller';
 
 @Controller()

@@ -6,7 +6,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { ProductVariant } from 'src/entities/store/variant.entity';
+import { ProductVariant } from 'src/entities/store/product/variant.entity';
 import { Store } from 'src/entities/store/store.entity';
 import { StoreOwnedEntity } from 'src/common/interfaces/store-owned.entity.interface';
 

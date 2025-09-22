@@ -8,7 +8,7 @@ import {
   UpdateDateColumn,
   ManyToMany,
 } from 'typeorm';
-import { Product } from 'src/entities/store/product.entity';
+import { Product } from 'src/entities/store/product/product.entity';
 import { Store } from 'src/entities/store/store.entity';
 import { StoreOwnedEntity } from 'src/common/interfaces/store-owned.entity.interface';
 

@@ -5,7 +5,7 @@ import { AuthJwtStrategy } from 'src/modules/auth/strategies/auth-jwt.strategy';
 import { RefreshTokenStrategy } from 'src/modules/auth/strategies/auth-refresh.strategy';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { RefreshToken } from 'src/entities/user/refresh-token.entity';
+import { RefreshToken } from 'src/entities/user/policy/refresh-token.entity';
 import { RefreshTokenModule } from 'src/modules/auth/modules/refresh-token/refresh-token.module';
 import { ConfigModule } from '@nestjs/config';
 import { PolicyService } from 'src/modules/auth/modules/policy/policy.service';

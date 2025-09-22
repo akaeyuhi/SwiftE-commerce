@@ -1,10 +1,10 @@
 import { User } from 'src/entities/user/user.entity';
-import { Product } from 'src/entities/store/product.entity';
-import { Order } from 'src/entities/store/order.entity';
-import { ShoppingCart } from 'src/entities/store/cart.entity';
+import { Product } from 'src/entities/store/product/product.entity';
+import { Order } from 'src/entities/store/product/order.entity';
+import { ShoppingCart } from 'src/entities/store/cart/cart.entity';
 import { NewsPost } from 'src/entities/store/news-post.entity';
 import { AiLog } from 'src/entities/store/ai-log.entity';
-import { UserRole } from 'src/entities/user/user-role.entity';
+import { UserRole } from 'src/entities/user/policy/user-role.entity';
 
 export class StoreDto {
   id?: string;

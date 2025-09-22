@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { UserRoleRepository } from 'src/modules/user/modules/user-role.repository';
-import { UserRole } from 'src/entities/user/user-role.entity';
+import { UserRole } from 'src/entities/user/policy/user-role.entity';
 import { BaseService } from 'src/common/abstracts/base.service';
 import { CreateUserRoleDto } from 'src/modules/user/modules/dto/create-role.dto';
 import { UpdateUserRoleDto } from 'src/modules/user/modules/dto/update-user-role.dto';

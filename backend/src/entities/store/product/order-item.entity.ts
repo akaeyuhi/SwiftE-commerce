@@ -6,9 +6,9 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { Order } from 'src/entities/store/order.entity';
-import { Product } from 'src/entities/store/product.entity';
-import { ProductVariant } from 'src/entities/store/variant.entity';
+import { Order } from 'src/entities/store/product/order.entity';
+import { Product } from 'src/entities/store/product/product.entity';
+import { ProductVariant } from 'src/entities/store/product/variant.entity';
 import { BaseEntity } from 'src/common/interfaces/base-entity.interface';
 
 /**

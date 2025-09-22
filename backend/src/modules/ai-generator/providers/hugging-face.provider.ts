@@ -58,7 +58,7 @@ export class HuggingFaceProvider implements AiProvider {
       const data = resp.data;
 
       // Hugging Face may return an array or object depending on model
-      let text = '';
+      let text: string;
       if (
         Array.isArray(data) &&
         data.length > 0 &&

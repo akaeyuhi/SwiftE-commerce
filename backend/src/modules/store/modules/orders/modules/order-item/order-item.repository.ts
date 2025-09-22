@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { BaseRepository } from 'src/common/abstracts/base.repository';
-import { OrderItem } from 'src/entities/store/order-item.entity';
+import { OrderItem } from 'src/entities/store/product/order-item.entity';
 
 /**
  * OrderItemRepository

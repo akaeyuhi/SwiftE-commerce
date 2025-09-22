@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { BaseMapper } from 'src/common/abstracts/base.mapper';
-import { Product } from 'src/entities/store/product.entity';
+import { Product } from 'src/entities/store/product/product.entity';
 import { CreateProductDto } from 'src/modules/products/dto/create-product.dto';
 
 @Injectable()

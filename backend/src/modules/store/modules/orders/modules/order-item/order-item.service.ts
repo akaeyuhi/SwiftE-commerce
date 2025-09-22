@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { BaseService } from 'src/common/abstracts/base.service';
-import { OrderItem } from 'src/entities/store/order-item.entity';
+import { OrderItem } from 'src/entities/store/product/order-item.entity';
 import { OrderItemRepository } from 'src/modules/store/modules/orders/modules/order-item/order-item.repository';
 import { CreateOrderItemDto } from 'src/modules/store/modules/orders/modules/order-item/dto/create-order-item.dto';
 

@@ -9,8 +9,8 @@ import {
 import { PredictorRepository } from './predictor.repository';
 import { PredictorStat } from './entities/predictor-stats.entity';
 import { subDays } from 'date-fns';
-import { ProductVariant } from 'src/entities/store/variant.entity';
-import { Inventory } from 'src/entities/store/inventory.entity';
+import { ProductVariant } from 'src/entities/store/product/variant.entity';
+import { Inventory } from 'src/entities/store/product/inventory.entity';
 import { DataSource } from 'typeorm';
 // eslint-disable-next-line max-len
 import { StoreDailyStatsRepository } from 'src/modules/analytics/repositories/store-daily-stats.repository';

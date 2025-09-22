@@ -8,14 +8,14 @@ import {
   OneToMany,
 } from 'typeorm';
 import { User } from 'src/entities/user/user.entity';
-import { Product } from 'src/entities/store/product.entity';
-import { Order } from 'src/entities/store/order.entity';
-import { UserRole } from 'src/entities/user/user-role.entity';
-import { ShoppingCart } from 'src/entities/store/cart.entity';
+import { Product } from 'src/entities/store/product/product.entity';
+import { Order } from 'src/entities/store/product/order.entity';
+import { UserRole } from 'src/entities/user/policy/user-role.entity';
+import { ShoppingCart } from 'src/entities/store/cart/cart.entity';
 import { NewsPost } from 'src/entities/store/news-post.entity';
 import { AiLog } from 'src/entities/store/ai-log.entity';
-import { Inventory } from 'src/entities/store/inventory.entity';
-import { Category } from 'src/entities/store/category.entity';
+import { Inventory } from 'src/entities/store/product/inventory.entity';
+import { Category } from 'src/entities/store/product/category.entity';
 import { UserOwnedEntity } from 'src/common/interfaces/user-owned.entity.interface';
 
 @Entity({ name: 'store' })

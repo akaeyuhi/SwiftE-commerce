@@ -1,5 +1,5 @@
 import { IsArray, IsUUID } from 'class-validator';
-import { ProductVariant } from 'src/entities/store/variant.entity';
+import { ProductVariant } from 'src/entities/store/product/variant.entity';
 
 /**
  * DTO to create a ShoppingCart.

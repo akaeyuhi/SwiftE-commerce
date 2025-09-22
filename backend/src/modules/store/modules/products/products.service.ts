@@ -2,13 +2,13 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateProductDto } from 'src/modules/store/modules/products/dto/create-product.dto';
 import { UpdateProductDto } from 'src/modules/store/modules/products/dto/update-product.dto';
 import { BaseService } from 'src/common/abstracts/base.service';
-import { Product } from 'src/entities/store/product.entity';
+import { Product } from 'src/entities/store/product/product.entity';
 import { StoreService } from 'src/modules/store/store.service';
 import { ProductRepository } from 'src/modules/store/modules/products/products.repository';
 import { ProductPhotoService } from 'src/modules/store/modules/products/modules/product-photo/product-photo.service';
 import { CategoriesService } from 'src/modules/store/modules/categories/categories.service';
 import { VariantsService } from 'src/modules/store/modules/products/modules/variants/variants.service';
-import { ProductPhoto } from 'src/entities/store/product-photo.entity';
+import { ProductPhoto } from 'src/entities/store/product/product-photo.entity';
 
 /**
  * ProductsService
