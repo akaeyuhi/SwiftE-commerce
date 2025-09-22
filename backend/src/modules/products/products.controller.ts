@@ -2,7 +2,8 @@ import {
   BadRequestException,
   Body,
   Controller,
-  Delete, Get,
+  Delete,
+  Get,
   Param,
   ParseUUIDPipe,
   Post,
@@ -18,7 +19,6 @@ import { BaseController } from 'src/common/abstracts/base.controller';
 import { Product } from 'src/entities/store/product/product.entity';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { StoreRolesGuard } from 'src/common/guards/store-roles.guard';
-// eslint-disable-next-line max-len
 import { ProductPhotosInterceptor } from 'src/modules/products/product-photo/interceptors/product-photo.interceptor';
 
 /**
