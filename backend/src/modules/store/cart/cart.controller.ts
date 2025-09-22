@@ -84,7 +84,7 @@ export class CartController extends BaseController<
   @Post('get-or-create')
   async getOrCreateCart(
     @Param('storeId', new ParseUUIDPipe()) storeId: string,
-    @Param('userId', new ParseUUIDPipe()) userId: string,
+    @Param('userId', new ParseUUIDPipe()) userId: string
   ): Promise<ShoppingCart> {
     return this.cartService.getOrCreateCart(userId, storeId);
   }
