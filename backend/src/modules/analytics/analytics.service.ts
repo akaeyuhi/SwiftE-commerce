@@ -2,11 +2,11 @@ import { Injectable, Logger } from '@nestjs/common';
 import { AnalyticsEventRepository } from './repositories/analytics-event.repository';
 import { StoreDailyStatsRepository } from './repositories/store-daily-stats.repository';
 import { ProductDailyStatsRepository } from './repositories/product-daily-stats.repository';
-import { ReviewsRepository } from 'src/modules/store/modules/reviews/reviews.repository';
+import { ReviewsRepository } from 'src/modules/store/products/reviews/reviews.repository';
 import { RecordEventDto } from './dto/record-event.dto';
 import { Between } from 'typeorm';
-import { AiPredictorService } from 'src/modules/ai-predictor/ai-predictor.service';
-import { AiPredictRow } from 'src/modules/ai-predictor/dto/ai-predict.dto';
+import { AiPredictorService } from 'src/modules/ai/ai-predictor/ai-predictor.service';
+import { AiPredictRow } from 'src/modules/ai/ai-predictor/dto/ai-predict.dto';
 
 @Injectable()
 export class AnalyticsService {

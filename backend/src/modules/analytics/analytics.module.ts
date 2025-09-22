@@ -8,10 +8,18 @@ import { ProductDailyStatsRepository } from './repositories/product-daily-stats.
 import { ScheduleModule } from '@nestjs/schedule';
 import { AdminStatsController } from 'src/modules/analytics/controllers/admin-stats.controller';
 import { HttpModule } from '@nestjs/axios';
-import { AiPredictorModule } from 'src/modules/ai-predictor/ai-predictor.module';
+import { AiPredictorModule } from 'src/modules/ai/ai-predictor/ai-predictor.module';
+import { ReviewsModule } from 'src/modules/store/products/reviews/reviews.module';
+import { PolicyModule } from 'src/modules/auth/modules/policy/policy.module';
 
 @Module({
-  imports: [ScheduleModule.forRoot(), HttpModule, AiPredictorModule],
+  imports: [
+    ScheduleModule.forRoot(),
+    HttpModule,
+    forwardRef(() => AiPredictorModule),
+    ReviewsModule,
+    PolicyModule,
+  ],
   providers: [
     AnalyticsService,
     AnalyticsEventRepository,
@@ -19,5 +27,10 @@ import { AiPredictorModule } from 'src/modules/ai-predictor/ai-predictor.module'
     ProductDailyStatsRepository,
   ],
   controllers: [EventsController, AnalyticsController, AdminStatsController],
+  exports: [
+    AnalyticsService,
+    StoreDailyStatsRepository,
+    ProductDailyStatsRepository,
+  ],
 })
 export class AnalyticsModule {}
