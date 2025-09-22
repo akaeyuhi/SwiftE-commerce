@@ -13,6 +13,10 @@ import { AiLogsService } from 'src/modules/ai/ai-logs/ai-logs.service';
 import { CreateAiLogDto } from 'src/modules/ai/ai-logs/dto/create-ai-log.dto';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { Request } from 'express';
+import {AdminGuard} from "src/common/guards/admin.guard";
+import {StoreRolesGuard} from "src/common/guards/store-roles.guard";
+import {StoreRole} from "src/common/decorators/store-role.decorator";
+import {StoreRoles} from "src/common/enums/store-roles.enum";
 
 /**
  * AiLogsController
@@ -24,6 +28,8 @@ import { Request } from 'express';
  * Protected by JwtAuthGuard; internal services can call AiLogsService.record(...) directly.
  */
 @UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, AdminGuard, StoreRolesGuard)
+@StoreRole(StoreRoles.ADMIN)
 @Controller('ai-logs')
 export class AiLogsController {
   constructor(private readonly logs: AiLogsService) {}

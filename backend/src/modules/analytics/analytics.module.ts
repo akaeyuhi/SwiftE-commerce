@@ -1,4 +1,4 @@
-import { forwardRef, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { AnalyticsService } from './analytics.service';
 import { EventsController } from 'src/modules/analytics/controllers/events.controller';
 import { AnalyticsController } from 'src/modules/analytics/controllers/analytics.controller';
