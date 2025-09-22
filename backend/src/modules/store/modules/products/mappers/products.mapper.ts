@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { BaseMapper } from 'src/common/abstracts/base.mapper';
 import { Product } from 'src/entities/store/product/product.entity';
-import { CreateProductDto } from 'src/modules/products/dto/create-product.dto';
+import { CreateProductDto } from 'src/modules/store/modules/products/dto/create-product.dto';
 
 @Injectable()
 export class ProductsMapper extends BaseMapper<Product, CreateProductDto> {
@@ -11,9 +11,7 @@ export class ProductsMapper extends BaseMapper<Product, CreateProductDto> {
       name: entity.name,
       description: entity.description,
       storeId: entity.store?.id,
-      categoryId: entity.category?.id,
-      createdAt: entity.createdAt,
-      updatedAt: entity.updatedAt,
+      categoryIds: entity.categories!.map((category) => category.id),
     };
   }
 

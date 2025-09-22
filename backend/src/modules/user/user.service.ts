@@ -112,7 +112,7 @@ export class UserService extends BaseService<
     const owner = await this.getEntityById(ownerId);
     if (!owner) throw new NotFoundException('Store owner not found');
 
-    dto.ownerUser = owner;
+    dto.owner = owner;
 
     const store = await this.storeService.create(dto);
 

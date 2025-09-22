@@ -10,5 +10,5 @@ export class CreateStoreDto {
   @IsString()
   description?: string;
 
-  ownerUser: User;
+  owner: User;
 }

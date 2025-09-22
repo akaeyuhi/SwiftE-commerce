@@ -10,7 +10,7 @@ export class StoreMapper extends BaseMapper<Store, StoreDto> {
       id: entity.id,
       name: entity.name,
       description: entity.description,
-      ownerUser: entity.ownerUser,
+      owner: entity.owner,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
       products: entity.products,
@@ -27,7 +27,7 @@ export class StoreMapper extends BaseMapper<Store, StoreDto> {
     if (dto.id) store.id = dto.id;
     store.name = dto.name!;
     store.description = dto.description;
-    store.ownerUser = dto.ownerUser;
+    store.owner = dto.owner;
     return store;
   }
 }
