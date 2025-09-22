@@ -5,8 +5,12 @@ import {
   UseGuards,
   BadRequestException,
 } from '@nestjs/common';
-import { AiService } from './ai-generator.service';
+import { AiGeneratorService } from './ai-generator.service';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { AdminGuard } from 'src/common/guards/admin.guard';
+import { StoreRolesGuard } from 'src/common/guards/store-roles.guard';
+import { StoreRoles } from 'src/common/enums/store-roles.enum';
+import { StoreRole } from 'src/common/decorators/store-role.decorator';
 
 /**
  * AiController
@@ -14,10 +18,11 @@ import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
  * Simple endpoints for generating product names, descriptions, and ideas.
  * Protected by JwtAuthGuard by default; adjust as needed.
  */
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, AdminGuard, StoreRolesGuard)
+@StoreRole(StoreRoles.ADMIN, StoreRoles.MODERATOR)
 @Controller('ai')
 export class AiController {
-  constructor(private readonly ai: AiService) {}
+  constructor(private readonly ai: AiGeneratorService) {}
 
   @Post('generate/names')
   async names(

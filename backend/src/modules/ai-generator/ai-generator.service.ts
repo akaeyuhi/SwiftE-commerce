@@ -4,8 +4,13 @@ import {
   Logger,
   BadRequestException,
 } from '@nestjs/common';
-import { AiProvider } from 'src/common/interfaces/ai.interface';
-import { TokenBucket } from './rate-limiter';
+import {
+  AiGenerateResult,
+  AiProvider,
+} from 'src/common/interfaces/ai.interface';
+import { TokenBucket } from 'src/modules/ai-generator/utils/rate-limiter';
+import { AiLogsService } from 'src/modules/ai-logs/ai-logs.service';
+import { AiAuditService } from 'src/modules/ai-audit/ai-audit.service';
 
 /**
  * DI token name to bind chosen provider in AiModule
@@ -21,15 +26,19 @@ export const AI_PROVIDER = 'AI_PROVIDER';
  *  - centralizes prompt templates.
  */
 @Injectable()
-export class AiService {
-  private readonly logger = new Logger(AiService.name);
+export class AiGeneratorService {
+  private readonly logger = new Logger(AiGeneratorService.name);
   private readonly limiter: TokenBucket;
 
   /**
    * rateLimitCapacity & refill can be configured via env:
    *  AI_RATE_CAPACITY (tokens), AI_RATE_REFILL_PER_SEC (tokens/second)
    */
-  constructor(@Inject(AI_PROVIDER) private readonly provider: AiProvider) {
+  constructor(
+    @Inject(AI_PROVIDER) private readonly provider: AiProvider,
+    private readonly aiLogs: AiLogsService,
+    private readonly aiAudit: AiAuditService
+  ) {
     const cap = Number(process.env.AI_RATE_CAPACITY ?? 30); // default 30 requests capacity
     const refill = Number(process.env.AI_RATE_REFILL_PER_SEC ?? 0.5); // ~30/min
     this.limiter = new TokenBucket(cap, refill);
@@ -40,8 +49,6 @@ export class AiService {
       throw new BadRequestException('AI request rate limit exceeded');
     }
   }
-
-  // ---------------- prompt templates ----------------
 
   private buildNamePrompt(
     storeStyle: string | undefined,
@@ -84,23 +91,27 @@ Generate ${count} product ideas that would fit this store. For each idea provide
     );
   }
 
-  // ---------------- public generation APIs ----------------
-
-  /**
-   * Generate several product name candidates.
-   *
-   * @param storeStyle - optional high-level description of the store's style/voice
-   * @param seed - optional seed word(s)
-   * @param opts provider options override
-   */
   async generateProductNames(
     storeStyle?: string,
     seed?: string,
-    opts: any = {}
+    opts: any = {},
+    userId?: string,
+    storeId?: string
   ) {
     await this.checkRate();
     const prompt = this.buildNamePrompt(storeStyle, seed);
     const res = await this.provider.generate(prompt, opts);
+
+    await this.storeResult(
+      'generator-name',
+      opts,
+      prompt,
+      res,
+      userId,
+      storeId
+    );
+
+    // try parse JSON as before
     try {
       return JSON.parse(res.text);
     } catch {
@@ -108,18 +119,27 @@ Generate ${count} product ideas that would fit this store. For each idea provide
     }
   }
 
-  /**
-   * Generate product description for a product name/spec.
-   */
   async generateProductDescription(
     name: string,
     productSpec?: string,
     tone?: string,
-    opts: any = {}
+    opts: any = {},
+    userId?: string,
+    storeId?: string
   ) {
     await this.checkRate();
     const prompt = this.buildDescriptionPrompt(name, productSpec, tone);
     const res = await this.provider.generate(prompt, opts);
+
+    await this.storeResult(
+      'generator-description',
+      opts,
+      prompt,
+      res,
+      userId,
+      storeId
+    );
+
     try {
       return JSON.parse(res.text);
     } catch {
@@ -127,23 +147,67 @@ Generate ${count} product ideas that would fit this store. For each idea provide
     }
   }
 
-  /**
-   * Generate product ideas list.
-   * Optional `count` selection
-   */
   async generateProductIdeas(
     storeStyle?: string,
     seed?: string,
     count = 6,
-    opts: any = {}
+    opts: any = {},
+    userId?: string,
+    storeId?: string
   ) {
     await this.checkRate();
     const prompt = this.buildIdeasPrompt(storeStyle, seed, count);
     const res = await this.provider.generate(prompt, opts);
+
+    await this.storeResult(
+      'generator-ideas',
+      opts,
+      prompt,
+      res,
+      userId,
+      storeId
+    );
+
     try {
       return JSON.parse(res.text);
     } catch {
       return { raw: res.text };
+    }
+  }
+
+  private async storeResult(
+    feature: string,
+    opts = {} as any,
+    prompt: string,
+    res: AiGenerateResult,
+    userId?: string,
+    storeId?: string
+  ) {
+    try {
+      await this.aiLogs.record({
+        userId: userId ?? null,
+        storeId: storeId ?? null,
+        feature,
+        prompt,
+        details: { model: opts?.model ?? undefined },
+      });
+    } catch (err) {
+      this.logger.warn(err ?? 'AiLogs.record failed: ' + (err as any)?.message);
+    }
+
+    try {
+      await this.aiAudit.storeEncryptedResponse({
+        feature,
+        provider: opts?.providerName ?? process.env.AI_PROVIDER ?? 'unknown',
+        model: opts?.model ?? undefined,
+        rawResponse: res.raw ?? res,
+        userId: userId ?? null,
+        storeId: storeId ?? null,
+      });
+    } catch (err) {
+      this.logger.warn(
+        err ?? 'AiAudit.storeEncryptedResponse failed: ' + (err as any)?.message
+      );
     }
   }
 }

@@ -17,6 +17,9 @@ import { StoreDailyStatsRepository } from 'src/modules/analytics/repositories/st
 
 import { ProductDailyStatsRepository } from 'src/modules/analytics/repositories/product-daily-stats.repository';
 import { ReviewsRepository } from 'src/modules/store/modules/reviews/reviews.repository';
+import { AiLogsService } from 'src/modules/ai-logs/ai-logs.service';
+import { AiAuditService } from 'src/modules/ai-audit/ai-audit.service';
+import { AxiosResponse } from 'axios';
 
 /**
  * AiPredictorService
@@ -50,7 +53,9 @@ export class AiPredictorService {
     private readonly dataSource: DataSource,
     private readonly storeStatsRepo: StoreDailyStatsRepository,
     private readonly productStatsRepo: ProductDailyStatsRepository,
-    private readonly reviewsRepo: ReviewsRepository
+    private readonly reviewsRepo: ReviewsRepository,
+    private readonly aiLogs: AiLogsService,
+    private readonly aiAudit: AiAuditService
   ) {
     this.predictorUrl =
       process.env.PREDICTOR_URL ?? 'http://predictor:8080/predict_batch';
@@ -327,12 +332,18 @@ export class AiPredictorService {
       if (this.token) headers['X-Internal-Token'] = this.token;
 
       try {
-        const resp$ = this.httpService.post(this.predictorUrl, payload, {
-          headers,
-        });
+        const resp$ = this.httpService.post<AiPredictResult>(
+          this.predictorUrl,
+          payload,
+          {
+            headers,
+          }
+        );
         const resp = await lastValueFrom(resp$);
         const data = resp?.data;
         const preds = Array.isArray(data?.results) ? data.results : [];
+
+        await this.storeResult(chunk, resp, data);
 
         for (let j = 0; j < chunk.length; j++) {
           const globalIndex = i + j;
@@ -471,5 +482,45 @@ export class AiPredictorService {
     }
 
     return persisted;
+  }
+
+  private async storeResult(
+    chunk: AiPredictRow[],
+    resp: AxiosResponse<AiPredictResult>,
+    data: AiPredictResult
+  ) {
+    try {
+      await this.aiLogs.record({
+        userId: undefined, // caller may pass user context if available — you can extend predictBatch signature
+        storeId: undefined,
+        feature: 'predictor',
+        prompt: null,
+        details: {
+          requestRowsCount: chunk.length,
+          requestSample: chunk[0] ? { productId: chunk[0].productId } : null,
+        },
+      });
+    } catch (err) {
+      this.logger.warn(
+        'AiLogs.record failed for predictor: ' + (err as any)?.message
+      );
+    }
+
+    // store the raw predictor response encrypted
+    try {
+      await this.aiAudit.storeEncryptedResponse({
+        feature: 'predictor',
+        provider: 'predictor',
+        model: undefined,
+        rawResponse: resp.data ?? data,
+        userId: null,
+        storeId: null,
+      });
+    } catch (err) {
+      this.logger.warn(
+        'AiAudit.storeEncryptedResponse failed for predictor: ' +
+          (err as any)?.message
+      );
+    }
   }
 }

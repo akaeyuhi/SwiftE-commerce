@@ -13,6 +13,9 @@ import { AiPredictorService } from './ai-predictor.service';
 import { AiPredictRow } from './dto/ai-predict.dto';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { AdminGuard } from 'src/common/guards/admin.guard';
+import { StoreRole } from 'src/common/decorators/store-role.decorator';
+import { StoreRoles } from 'src/common/enums/store-roles.enum';
+import { StoreRolesGuard } from 'src/common/guards/store-roles.guard';
 
 /**
  * AiPredictorController
@@ -24,9 +27,10 @@ import { AdminGuard } from 'src/common/guards/admin.guard';
  *
  * Controller guarded by JwtAuthGuard + AdminGuard by default (adjust as needed).
  */
-@UseGuards(JwtAuthGuard, AdminGuard)
+@UseGuards(JwtAuthGuard, AdminGuard, StoreRolesGuard)
+@StoreRole(StoreRoles.ADMIN, StoreRoles.MODERATOR)
 @Controller('ai-predictor')
-export class PredictorController {
+export class AiPredictorController {
   constructor(private readonly predictor: AiPredictorService) {}
 
   /**
@@ -56,7 +60,7 @@ export class PredictorController {
   async predict(@Body() payload: any) {
     if (!payload) throw new BadRequestException('Empty body');
 
-    let items: any[] = [];
+    let items: any[];
     if (typeof payload === 'string') items = [payload];
     else if (
       payload.productId &&

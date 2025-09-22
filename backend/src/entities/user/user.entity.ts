@@ -11,7 +11,7 @@ import { ShoppingCart } from 'src/entities/store/cart/cart.entity';
 import { Order } from 'src/entities/store/product/order.entity';
 import { Review } from 'src/entities/store/review.entity';
 import { NewsPost } from 'src/entities/store/news-post.entity';
-import { AiLog } from 'src/entities/store/ai-log.entity';
+import { AiLog } from 'src/entities/ai/ai-log.entity';
 import { BaseEntity } from 'src/common/interfaces/base-entity.interface';
 import { AdminRoles } from 'src/common/enums/admin.enum';
 

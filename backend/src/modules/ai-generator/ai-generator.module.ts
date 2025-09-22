@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AI_PROVIDER } from './ai-generator.service';
-import { AiService } from './ai-generator.service';
+import { AiGeneratorService } from './ai-generator.service';
 import { AiController } from './ai-generator.controller';
 import { HuggingFaceProvider } from './providers/hugging-face.provider';
 import { OpenAiProvider } from './providers/open-ai.provider';
@@ -26,6 +26,6 @@ import { HttpModule as NestHttpModule } from '@nestjs/axios';
       inject: [HuggingFaceProvider, OpenAiProvider],
     },
   ],
-  exports: [AiService],
+  exports: [AiGeneratorService],
 })
-export class AiModule {}
+export class AiGeneratorModule {}
