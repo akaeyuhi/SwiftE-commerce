@@ -1,6 +1,10 @@
 import { IsString, IsOptional, IsUUID, IsArray } from 'class-validator';
 
 export class CreateProductDto {
+  @IsOptional()
+  @IsUUID()
+  id?: string;
+
   @IsString()
   name: string;
 
