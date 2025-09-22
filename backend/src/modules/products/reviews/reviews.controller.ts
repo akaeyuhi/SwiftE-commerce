@@ -26,7 +26,8 @@ import { AdminRoles } from 'src/common/enums/admin.enum';
  * Routes:
  *  - GET    /stores/:storeId/products/:productId/reviews  -> list reviews for product
  *  - GET    /stores/:storeId/products/:productId/reviews/:id -> get review
- *  - POST   /stores/:storeId/products/:productId/reviews  -> create review (auth)
+ *  - POST   /stores/:storeId/products/:productId/reviews/create  -> create review (auth)
+ *  - POST   /stores/:storeId/products/:productId/reviews/  -> create review (admin)
  *  - PUT    /stores/:storeId/products/:productId/reviews/:id -> update review (store-admin)
  *  - DELETE /stores/:storeId/products/:productId/reviews/:id -> delete review (store-admin)
  *

@@ -3,7 +3,6 @@ import {
   Controller,
   Delete,
   Get,
-  NotFoundException,
   Param,
   ParseUUIDPipe,
   Patch,
@@ -98,12 +97,12 @@ export class VariantsController extends BaseController<
   }
 
   /**
-   * Override base findAll — list variants for a product.
+   *  List variants for a product.
    *
    * @param productId - product id for which to list variants
    * @returns array of ProductVariant
    */
-  @Get('product-variants')
+  @Get()
   async findAllProductVariants(
     @Param('productId', new ParseUUIDPipe()) productId: string
   ): Promise<ProductVariant[]> {
