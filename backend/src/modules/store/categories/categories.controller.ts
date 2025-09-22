@@ -1,8 +1,4 @@
-import {
-  Controller,
-  UseGuards,
-  Get,
-} from '@nestjs/common';
+import { Controller, UseGuards, Get } from '@nestjs/common';
 import { CategoriesService } from 'src/modules/store/categories/categories.service';
 import { CreateCategoryDto } from 'src/modules/store/categories/dto/create-category.dto';
 import { UpdateCategoryDto } from 'src/modules/store/categories/dto/update-category.dto';

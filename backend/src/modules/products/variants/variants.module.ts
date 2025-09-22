@@ -1,4 +1,4 @@
-import { forwardRef, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { VariantsService } from 'src/modules/products/variants/variants.service';
 import { VariantsController } from 'src/modules/products/variants/variants.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';

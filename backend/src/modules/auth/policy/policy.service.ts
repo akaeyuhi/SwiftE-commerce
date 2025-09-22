@@ -1,12 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { UserService } from 'src/modules/user/user.service';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { PolicyEntry } from 'src/modules/auth/policy/policy.types';
 import { UserRole } from 'src/entities/user/policy/user-role.entity';
 import { DeepPartial } from 'typeorm';
 import { User } from 'src/entities/user/user.entity';
-import { AdminService } from 'src/modules/auth/admin/admin.service';
-import { StoreService } from 'src/modules/store/store.service';
 import { StoreOwnedEntity } from 'src/common/interfaces/store-owned.entity.interface';
 import { UserOwnedEntity } from 'src/common/interfaces/user-owned.entity.interface';
 import { Store } from 'src/entities/store/store.entity';
