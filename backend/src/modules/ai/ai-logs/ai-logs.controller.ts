@@ -30,7 +30,7 @@ import {StoreRoles} from "src/common/enums/store-roles.enum";
 @UseGuards(JwtAuthGuard)
 @UseGuards(JwtAuthGuard, AdminGuard, StoreRolesGuard)
 @StoreRole(StoreRoles.ADMIN)
-@Controller('ai-logs')
+@Controller('ai/logs')
 export class AiLogsController {
   constructor(private readonly logs: AiLogsService) {}
 
