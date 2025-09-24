@@ -53,7 +53,6 @@ describe('UserRoleRepository (unit)', () => {
     };
     repo.manager = managerMock;
 
-    // call the method defined on BaseRepository via the concrete repo instance
     await repo.removeRoleFromUser('u1', 'r1', 's1');
 
     expect(managerMock.getRepository).toHaveBeenCalledWith('UserRole');

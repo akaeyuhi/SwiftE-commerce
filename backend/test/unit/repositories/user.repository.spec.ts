@@ -12,10 +12,8 @@ describe('UserRepository (unit)', () => {
   });
 
   it('findByEmail delegates to findOne', async () => {
-    (repo as any).findOne = jest
-      .fn()
-      .mockResolvedValue({ id: 'u1', email: 'a@b' } as any);
-    const res = await (repo as any).findByEmail('a@b');
+    repo.findOne = jest.fn().mockResolvedValue({ id: 'u1', email: 'a@b' });
+    const res = await repo.findByEmail('a@b');
     expect((repo as any).findOne).toHaveBeenCalledWith({
       where: { email: 'a@b' },
     });
@@ -32,9 +30,9 @@ describe('UserRepository (unit)', () => {
         .fn()
         .mockResolvedValue({ id: 'u1', password: 'h', email: 'a@b' }),
     };
-    (repo as any).createQueryBuilder = jest.fn().mockReturnValue(qb);
+    repo.createQueryBuilder = jest.fn().mockReturnValue(qb);
 
-    const res = await (repo as any).getUserWithPassword('a@b');
+    const res = await repo.getUserWithPassword('a@b');
     expect((repo as any).createQueryBuilder).toHaveBeenCalledWith('user');
     expect(qb.where).toHaveBeenCalledWith('user.email = :email', {
       email: 'a@b',
@@ -57,7 +55,7 @@ describe('UserRepository (unit)', () => {
     };
     (repo as any).manager = repoManagerMock;
 
-    await (repo as any).removeRoleFromUser('u1', 'r1', 's1');
+    await repo.removeRoleFromUser('u1', 'r1', 's1');
     expect(repoManagerMock.getRepository).toHaveBeenCalledWith('UserRole');
     expect(deleteQb.where).toHaveBeenCalled();
     expect(deleteQb.andWhere).toHaveBeenCalled();

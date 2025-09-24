@@ -9,8 +9,8 @@ import { mockMapper, mockRepository } from 'test/unit/utils/test-helpers';
 
 describe('StoreService', () => {
   let service: StoreService;
-  let repo: jest.Mocked<Partial<StoreRepository>> & any;
-  let mapper: jest.Mocked<Partial<StoreMapper>> & any;
+  let repo: jest.Mocked<Partial<StoreRepository>>;
+  let mapper: jest.Mocked<Partial<StoreMapper>>;
 
   beforeEach(async () => {
     repo = mockRepository<StoreRepository>([
@@ -47,12 +47,12 @@ describe('StoreService', () => {
     });
 
     it('creates store when name unused and returns dto', async () => {
-      repo.findStoreByName.mockResolvedValue(null);
+      (repo.findStoreByName as jest.Mock).mockResolvedValue(null as never);
       const dto = { name: 'New' } as any;
       const entity = { name: 'New' } as any;
       (mapper.toEntity as jest.Mock).mockReturnValue(entity);
       const saved = { id: 's2', name: 'New' } as any;
-      repo.save.mockResolvedValue(saved);
+      (repo.save as jest.Mock).mockResolvedValue(saved as never);
       (mapper.toDto as jest.Mock).mockReturnValue({
         id: 's2',
         name: 'New',
@@ -69,7 +69,7 @@ describe('StoreService', () => {
 
   describe('hasUserStoreRole', () => {
     it('throws when store not found', async () => {
-      repo.findById.mockResolvedValue(null);
+      (repo.findById as jest.Mock).mockResolvedValue(null as never);
       const fakeRole = { store: { id: 's1' } } as any;
       await expect(service.hasUserStoreRole(fakeRole)).rejects.toThrow(
         BadRequestException
@@ -88,7 +88,7 @@ describe('StoreService', () => {
         id: 's1',
         userRoles: [{ user: { id: 'u1' }, roleName: 'STORE_ADMIN' } as any],
       };
-      repo.findById.mockResolvedValue(storeEntity);
+      (repo.findById as jest.Mock).mockResolvedValue(storeEntity as never);
       const res = await service.hasUserStoreRole(userRole as any);
       expect(repo.findById).toHaveBeenCalledWith('s1');
       expect(res).toBe(true);
@@ -107,7 +107,7 @@ describe('StoreService', () => {
           { user: { id: 'someone' }, roleName: 'STORE_ADMIN' } as any,
         ],
       };
-      repo.findById.mockResolvedValue(storeEntity);
+      (repo.findById as jest.Mock).mockResolvedValue(storeEntity as never);
       const res = await service.hasUserStoreRole(userRole as any);
       expect(res).toBe(false);
     });

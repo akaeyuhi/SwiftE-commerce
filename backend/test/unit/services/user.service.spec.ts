@@ -12,10 +12,10 @@ import { mockRepository, mockService, mockMapper } from '../utils/test-helpers';
 
 describe('UserService', () => {
   let service: UserService;
-  let userRepo: jest.Mocked<Partial<UserRepository>> & any;
-  let userRoleService: jest.Mocked<Partial<UserRoleService>> & any;
-  let storeService: jest.Mocked<Partial<StoreService>> & any;
-  let mapper: jest.Mocked<Partial<UserMapper>> & any;
+  let userRepo: jest.Mocked<Partial<UserRepository>>;
+  let userRoleService: jest.Mocked<Partial<UserRoleService>>;
+  let storeService: jest.Mocked<Partial<StoreService>>;
+  let mapper: jest.Mocked<Partial<UserMapper>>;
 
   beforeEach(async () => {
     userRepo = mockRepository<UserRepository>([
@@ -62,12 +62,15 @@ describe('UserService', () => {
         username: 'u',
       } as any;
 
-      userRepo.findByEmail!.mockResolvedValue(null);
+      (userRepo.findByEmail as jest.Mock).mockResolvedValue(null);
       const entity = { email: dto.email, username: dto.username } as any;
-      mapper.toEntity!.mockReturnValue(entity);
+      (mapper.toEntity as jest.Mock).mockReturnValue(entity);
       const saved = { id: 'u1', ...entity, passwordHash: 'h' } as any;
-      userRepo.save!.mockResolvedValue(saved);
-      mapper.toDto!.mockReturnValue({ id: 'u1', email: dto.email });
+      (userRepo.save as jest.Mock).mockResolvedValue(saved);
+      (mapper.toDto as jest.Mock).mockReturnValue({
+        id: 'u1',
+        email: dto.email,
+      });
 
       jest.spyOn(bcrypt, 'hash').mockResolvedValue('hashed-pass' as never);
 
@@ -83,7 +86,9 @@ describe('UserService', () => {
 
     it('throws when email already used', async () => {
       const dto = { email: 'x@x.com', password: 'p' } as any;
-      userRepo.findByEmail!.mockResolvedValue({ id: 'exists' } as any);
+      (userRepo.findByEmail as jest.Mock).mockResolvedValue({
+        id: 'exists',
+      } as any);
       await expect(service.create(dto)).rejects.toThrow(BadRequestException);
       expect(userRepo.findByEmail).toHaveBeenCalledWith(dto.email);
     });
@@ -98,13 +103,13 @@ describe('UserService', () => {
         passwordHash: 'old',
       } as any;
 
-      userRepo.findOneBy!.mockResolvedValue(existing);
+      (userRepo.findOneBy as jest.Mock).mockResolvedValue(existing);
       jest.spyOn(bcrypt, 'hash').mockResolvedValue('new-hash' as never);
 
       // emulate save returning the updated entity
-      userRepo.save!.mockImplementation(async (u) => ({ ...u }));
+      (userRepo.save as jest.Mock).mockImplementation(async (u) => ({ ...u }));
 
-      mapper.toDto!.mockImplementation((u) => ({
+      (mapper.toDto as jest.Mock).mockImplementation((u) => ({
         id: u.id,
         username: u.username,
       }));
@@ -118,7 +123,7 @@ describe('UserService', () => {
     });
 
     it('throws when user not found', async () => {
-      userRepo.findOneBy!.mockResolvedValue(null);
+      (userRepo.findOneBy as jest.Mock).mockResolvedValue(null);
       await expect(service.update('no', {} as any)).rejects.toThrow(
         NotFoundException
       );
@@ -128,8 +133,8 @@ describe('UserService', () => {
   describe('findByEmail', () => {
     it('returns dto when found', async () => {
       const user = { id: 'u1', email: 'a@b' } as any;
-      userRepo.findOneBy!.mockResolvedValue(user);
-      mapper.toDto!.mockReturnValue({ id: 'u1', email: 'a@b' });
+      (userRepo.findOneBy as jest.Mock).mockResolvedValue(user);
+      (mapper.toDto as jest.Mock).mockReturnValue({ id: 'u1', email: 'a@b' });
 
       const res = await service.findByEmail('a@b');
 
@@ -138,7 +143,7 @@ describe('UserService', () => {
     });
 
     it('throws when not found', async () => {
-      userRepo.findOneBy!.mockResolvedValue(null);
+      (userRepo.findOneBy as jest.Mock).mockResolvedValue(null);
       await expect(service.findByEmail('nobody')).rejects.toThrow(
         NotFoundException
       );
@@ -147,7 +152,7 @@ describe('UserService', () => {
 
   describe('findUserWithPassword', () => {
     it('delegates to repository', async () => {
-      userRepo.getUserWithPassword!.mockResolvedValue({
+      (userRepo.getUserWithPassword as jest.Mock).mockResolvedValue({
         id: 'u1',
         password: 'h',
       } as any);
@@ -161,7 +166,7 @@ describe('UserService', () => {
   describe('findOneWithRelations / getUserStoreRoles', () => {
     it('returns relations when found', async () => {
       const u = { id: 'u1', roles: [{ roleName: 'X' }] } as any;
-      userRepo.findOneWithRelations!.mockResolvedValue(u);
+      (userRepo.findOneWithRelations as jest.Mock).mockResolvedValue(u);
 
       const res = await service.findOneWithRelations('u1');
       expect(userRepo.findOneWithRelations).toHaveBeenCalledWith('u1');
@@ -172,7 +177,7 @@ describe('UserService', () => {
     });
 
     it('throws when not found', async () => {
-      userRepo.findOneWithRelations!.mockResolvedValue(null);
+      (userRepo.findOneWithRelations as jest.Mock).mockResolvedValue(null);
       await expect(service.findOneWithRelations('no')).rejects.toThrow(
         NotFoundException
       );
@@ -186,8 +191,8 @@ describe('UserService', () => {
 
       // mock getEntityById (BaseService) via spy on service instance
       jest.spyOn(service as any, 'getEntityById').mockResolvedValue(user);
-      storeService.getEntityById!.mockResolvedValue(store);
-      userRoleService.findByStoreUser!.mockResolvedValue(null);
+      (storeService.getEntityById as jest.Mock).mockResolvedValue(store);
+      (userRoleService.findByStoreUser as jest.Mock).mockResolvedValue(null);
 
       const savedRole = {
         id: 'r1',
@@ -196,8 +201,8 @@ describe('UserService', () => {
         store,
       } as any;
 
-      userRoleService.create!.mockResolvedValue(savedRole);
-      userRepo.addRoleToUser!.mockResolvedValue({
+      (userRoleService.create as jest.Mock).mockResolvedValue(savedRole);
+      (userRepo.addRoleToUser as jest.Mock).mockResolvedValue({
         ...user,
         roles: [savedRole],
       });
@@ -213,7 +218,7 @@ describe('UserService', () => {
     });
 
     it('revokeRole calls repository to remove', async () => {
-      userRepo.removeRoleFromUser!.mockResolvedValue(undefined);
+      (userRepo.removeRoleFromUser as jest.Mock).mockResolvedValue(undefined);
       await service.revokeRole('u1', 'r1', 's1');
       expect(userRepo.removeRoleFromUser).toHaveBeenCalledWith(
         'u1',
@@ -233,7 +238,7 @@ describe('UserService', () => {
       jest
         .spyOn(service as any, 'getEntityById')
         .mockResolvedValue({ id: 'u1' });
-      storeService.getEntityById!.mockResolvedValue(null);
+      (storeService.getEntityById as jest.Mock).mockResolvedValue(null);
       await expect(
         service.assignRole('u1', StoreRoles.GUEST, 'missing')
       ).rejects.toThrow(NotFoundException);
@@ -243,8 +248,8 @@ describe('UserService', () => {
       jest
         .spyOn(service as any, 'getEntityById')
         .mockResolvedValue({ id: 'u1' });
-      storeService.getEntityById!.mockResolvedValue({ id: 's1' });
-      userRoleService.findByStoreUser!.mockResolvedValue({
+      (storeService.getEntityById as jest.Mock).mockResolvedValue({ id: 's1' });
+      (userRoleService.findByStoreUser as jest.Mock).mockResolvedValue({
         id: 'already',
       } as any);
       await expect(
@@ -260,7 +265,7 @@ describe('UserService', () => {
 
       const dto = { name: 'StoreX' } as any;
       const created = { id: 'store1', name: 'StoreX' } as any;
-      storeService.create!.mockResolvedValue(created);
+      (storeService.create as jest.Mock).mockResolvedValue(created);
 
       // spy assignRole to avoid internal logic execution
       jest
@@ -288,7 +293,7 @@ describe('UserService', () => {
 
   describe('isUserSiteAdmin', () => {
     it('returns true when user siteRole is ADMIN', async () => {
-      userRepo.findOneWithRelations!.mockResolvedValue({
+      (userRepo.findOneWithRelations as jest.Mock).mockResolvedValue({
         id: 'u1',
         siteRole: AdminRoles.ADMIN,
       } as any);
@@ -297,7 +302,7 @@ describe('UserService', () => {
     });
 
     it('returns false when not admin', async () => {
-      userRepo.findOneWithRelations!.mockResolvedValue({
+      (userRepo.findOneWithRelations as jest.Mock).mockResolvedValue({
         id: 'u1',
         siteRole: undefined,
       } as any);

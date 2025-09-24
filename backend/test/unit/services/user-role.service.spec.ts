@@ -7,10 +7,10 @@ import { mockRepository } from 'test/unit/utils/test-helpers';
 
 describe('UserRoleService', () => {
   let service: UserRoleService;
-  let repo: jest.Mocked<Partial<UserRoleRepository>> & any;
+  let repo: jest.Mocked<Partial<UserRoleRepository>>;
 
   beforeEach(async () => {
-    const repo = mockRepository<UserRoleRepository>(['findOne', 'save']);
+    repo = mockRepository<UserRoleRepository>(['findOne', 'save']);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -32,7 +32,7 @@ describe('UserRoleService', () => {
         id: 'r1',
         roleName: 'STORE_ADMIN' as any,
       };
-      repo.findOne.mockResolvedValue(expected);
+      (repo.findOne as jest.Mock).mockResolvedValue(expected);
 
       const res = await service.findByStoreUser('user1', 'store1');
       expect(repo.findOne).toHaveBeenCalledWith({
@@ -45,7 +45,7 @@ describe('UserRoleService', () => {
     });
 
     it('returns null when repository returns null', async () => {
-      repo.findOne.mockResolvedValue(null);
+      (repo.findOne as jest.Mock).mockResolvedValue(null);
       const res = await service.findByStoreUser('u', 's');
       expect(res).toBeNull();
     });
@@ -58,9 +58,9 @@ describe('UserRoleService', () => {
         roleName: 'STORE_USER' as any,
         store: { id: 's1' } as any,
       } as any;
-      repo.findOne.mockResolvedValue(existing);
+      (repo.findOne as jest.Mock).mockResolvedValue(existing);
       const saved = { ...existing, roleName: 'STORE_ADMIN' } as any;
-      repo.save.mockResolvedValue(saved);
+      (repo.save as jest.Mock).mockResolvedValue(saved);
 
       const res = await service.update('user1', {
         store: { id: 's1' } as any,
@@ -80,7 +80,7 @@ describe('UserRoleService', () => {
     });
 
     it('throws NotFoundException when role does not exist', async () => {
-      repo.findOne.mockResolvedValue(null);
+      (repo.findOne as jest.Mock).mockResolvedValue(null);
       await expect(
         service.update('user1', {
           store: { id: 's1' } as any,

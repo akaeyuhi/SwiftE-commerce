@@ -17,7 +17,7 @@ describe('CartRepository (unit)', () => {
 
   it('findByUserAndStore should call findOne with where + relations', async () => {
     const expected: Partial<ShoppingCart> = { id: 'c1' };
-    (repo.findOne as jest.Mock).mockResolvedValue(expected);
+    repo.findOne.mockResolvedValue(expected);
 
     const res = await repo.findByUserAndStore('user-1', 'store-1');
     expect(repo.findOne).toHaveBeenCalledWith({
@@ -31,7 +31,7 @@ describe('CartRepository (unit)', () => {
   });
 
   it('findAllByUser should call find with where + relations + order', async () => {
-    (repo.find as jest.Mock).mockResolvedValue([]);
+    repo.find.mockResolvedValue([]);
     const res = await repo.findAllByUser('user-1');
     expect(repo.find).toHaveBeenCalledWith({
       where: { user: { id: 'user-1' } },
@@ -43,7 +43,7 @@ describe('CartRepository (unit)', () => {
 
   it('findWithItems should call findOne with items, variant, store and user relation', async () => {
     const cart: Partial<ShoppingCart> = { id: 'cart1' };
-    (repo.findOne as jest.Mock).mockResolvedValue(cart);
+    repo.findOne.mockResolvedValue(cart);
     const res = await repo.findWithItems('cart1');
     expect(repo.findOne).toHaveBeenCalledWith({
       where: { id: 'cart1' },
