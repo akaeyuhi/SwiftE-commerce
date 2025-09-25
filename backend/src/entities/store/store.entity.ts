@@ -29,7 +29,7 @@ export class Store implements UserOwnedEntity {
   @Column({ type: 'text' })
   description: string;
 
-  @ManyToOne(() => User, { onDelete: 'SET NULL' })
+  @ManyToOne(() => User, (user) => user.ownedStores, { onDelete: 'SET NULL' })
   owner: User;
 
   @CreateDateColumn()
@@ -48,7 +48,7 @@ export class Store implements UserOwnedEntity {
   @OneToMany(() => Order, (order) => order.store)
   orders: Order[];
 
-  @OneToMany(() => Order, (category) => category.store)
+  @OneToMany(() => Category, (category) => category.store)
   categories: Category[];
 
   @OneToMany(() => ShoppingCart, (cart) => cart.store)

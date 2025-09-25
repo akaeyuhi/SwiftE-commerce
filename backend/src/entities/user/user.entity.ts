@@ -14,6 +14,7 @@ import { NewsPost } from 'src/entities/store/news-post.entity';
 import { AiLog } from 'src/entities/ai/ai-log.entity';
 import { BaseEntity } from 'src/common/interfaces/base-entity.interface';
 import { AdminRoles } from 'src/common/enums/admin.enum';
+import { Store } from 'src/entities/store/store.entity';
 
 @Entity({ name: 'users' })
 export class User implements BaseEntity {
@@ -46,6 +47,9 @@ export class User implements BaseEntity {
   siteRole: AdminRoles;
 
   // Relations
+
+  @OneToMany(() => Store, (store) => store.owner)
+  ownedStores: Store[];
 
   @OneToMany(() => UserRole, (ur) => ur.user)
   roles: UserRole[];
