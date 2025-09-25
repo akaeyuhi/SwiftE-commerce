@@ -1,23 +1,17 @@
 module.exports = {
     preset: 'ts-jest',
     testEnvironment: 'node',
+    testPathIgnorePatterns: ["<rootDir>/dist/"],
     rootDir: './',
     testTimeout: 30000,
-    setupFiles: [
-        "<rootDir>config.ts"
-    ],
     moduleFileExtensions: ['js', 'json', 'ts'],
     testRegex: '(/test/.*|(\\.|/)(spec|test))\\.ts$',
     transform: {
-        '^.+\\.(t|j)s$': [
-            "ts-jest",
-            {
-                "compiler": "ttypescript"
-            }
-        ],
+        '^.+\\.ts$': 'ts-jest',
     },
     moduleNameMapper: {
-        '^src/(.*)$': '<rootDir>/src/$1'
+        '^src/(.*)$': '<rootDir>/src/$1',
+        '^test/(.*)$': '<rootDir>/test/$1'
     },
     coverageDirectory: '<rootDir>/coverage',
     collectCoverageFrom: [
