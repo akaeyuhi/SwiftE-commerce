@@ -39,9 +39,12 @@ export function createMockExecutionContext(
     controller,
   } = opts;
 
+  // Create a single request object that will be reused
+  const mockRequest = { user, params, body, headers };
+
   return {
     switchToHttp: () => ({
-      getRequest: () => ({ user, params, body, headers }),
+      getRequest: () => mockRequest, // ← Returns the SAME object every time
       getResponse: () => ({}),
       getNext: () => ({}),
     }),
@@ -146,6 +149,7 @@ export function createGuardMock(result: boolean = true) {
 /**
  * PolicyService mock factory.
  */
+/* eslint-disable @typescript-eslint/no-unused-vars*/
 export function createPolicyMock(
   overrides: Partial<Record<keyof PolicyService, jest.Mock>> = {}
 ): Partial<MockedMethods<PolicyService>> {

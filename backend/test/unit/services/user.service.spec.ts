@@ -1,21 +1,26 @@
-import {Test, TestingModule} from '@nestjs/testing';
-import {UserService} from 'src/modules/user/user.service';
-import {UserRepository} from 'src/modules/user/user.repository';
-import {UserRoleService} from 'src/modules/user/user-role/user-role.service';
-import {StoreService} from 'src/modules/store/store.service';
-import {UserMapper} from 'src/modules/user/user.mapper';
+import { Test, TestingModule } from '@nestjs/testing';
+import { UserService } from 'src/modules/user/user.service';
+import { UserRepository } from 'src/modules/user/user.repository';
+import { UserRoleService } from 'src/modules/user/user-role/user-role.service';
+import { StoreService } from 'src/modules/store/store.service';
+import { UserMapper } from 'src/modules/user/user.mapper';
 import * as bcrypt from 'bcrypt';
-import {BadRequestException, NotFoundException} from '@nestjs/common';
-import {StoreRoles} from 'src/common/enums/store-roles.enum';
-import {AdminRoles} from 'src/common/enums/admin.enum';
-import {createMapperMock, createRepositoryMock, createServiceMock, MockedMethods,} from '../utils/helpers';
-import {CreateUserDto} from 'src/modules/user/dto/create-user.dto';
-import {User} from 'src/entities/user/user.entity';
-import {UserDto} from 'src/modules/user/dto/user.dto';
-import {DeleteResult} from 'typeorm';
-import {Store} from 'src/entities/store/store.entity';
-import {UserRole} from "src/entities/user/policy/user-role.entity";
-import {CreateStoreDto} from "src/modules/store/dto/create-store.dto";
+import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { StoreRoles } from 'src/common/enums/store-roles.enum';
+import { AdminRoles } from 'src/common/enums/admin.enum';
+import {
+  createMapperMock,
+  createRepositoryMock,
+  createServiceMock,
+  MockedMethods,
+} from '../utils/helpers';
+import { CreateUserDto } from 'src/modules/user/dto/create-user.dto';
+import { User } from 'src/entities/user/user.entity';
+import { UserDto } from 'src/modules/user/dto/user.dto';
+import { DeleteResult } from 'typeorm';
+import { Store } from 'src/entities/store/store.entity';
+import { UserRole } from 'src/entities/user/policy/user-role.entity';
+import { CreateStoreDto } from 'src/modules/store/dto/create-store.dto';
 
 describe('UserService', () => {
   let service: UserService;
@@ -111,7 +116,7 @@ describe('UserService', () => {
       } as CreateUserDto;
       const existing = {
         id: 'u1',
-        username: 'old',
+        email: 'old',
         passwordHash: 'old',
       } as unknown as User;
 
@@ -134,7 +139,7 @@ describe('UserService', () => {
       expect(userRepo.findOneBy).toHaveBeenCalledWith({ id: 'u1' });
       expect(bcrypt.hash).toHaveBeenCalledWith(dto.password, 10);
       expect(userRepo.save).toHaveBeenCalled();
-      expect(res).toEqual({ id: existing.id, username: 'newname' });
+      expect(res).toEqual({ id: existing.id, email: 'newname@email' });
     });
 
     it('throws when user not found', async () => {

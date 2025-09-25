@@ -24,16 +24,16 @@ describe('EntityOwnerGuard', () => {
   beforeEach(async () => {
     reflector = new Reflector();
     policyMock = createPolicyMock();
+    moduleRefMock = createMock(['get']);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         EntityOwnerGuard,
         { provide: PolicyService, useValue: policyMock },
-        Reflector,
+        { provide: ModuleRef, useValue: moduleRefMock },
+        { provide: Reflector, useValue: reflector },
       ],
     }).compile();
-
-    moduleRefMock = createMock(['get']);
 
     guard = module.get<EntityOwnerGuard>(EntityOwnerGuard);
 
@@ -48,7 +48,10 @@ describe('EntityOwnerGuard', () => {
   });
 
   it('throws UnauthorizedException when metadata present but no user', async () => {
-    jest.spyOn(reflector, 'get').mockReturnValue({ serviceToken: undefined });
+    jest
+      .spyOn(reflector, 'get')
+      .mockReturnValueOnce({ serviceToken: 'SomeService' })
+      .mockReturnValueOnce(undefined);
 
     const ctx = createMockExecutionContext({ user: null, params: { id: 'x' } });
     await expect(guard.canActivate(ctx)).rejects.toThrow(UnauthorizedException);
@@ -66,9 +69,12 @@ describe('EntityOwnerGuard', () => {
   });
 
   it(`computes isSiteAdmin when missing and allows when policyService.isSiteAdmin returns true`, async () => {
-    jest.spyOn(reflector, 'get').mockReturnValue({});
+    jest
+      .spyOn(reflector, 'get')
+      .mockReturnValueOnce({ serviceToken: 'SomeService' })
+      .mockReturnValueOnce(undefined);
 
-    policyMock.isSiteAdmin!.mockResolvedValue(true as never);
+    policyMock.isSiteAdmin!.mockResolvedValue(true);
 
     const ctx = createMockExecutionContext({
       user: { id: 'maybeAdmin' },
@@ -86,9 +92,11 @@ describe('EntityOwnerGuard', () => {
 
   it(`loads entity using serviceToken and allows when policyService.isOwnerOrAdmin returns true`, async () => {
     const opts = { serviceToken: 'SomeService', idParam: 'id' };
-    jest.spyOn(reflector, 'get').mockReturnValueOnce(opts as any);
+    jest
+      .spyOn(reflector, 'get')
+      .mockReturnValueOnce(opts)
+      .mockReturnValueOnce(undefined);
 
-    // provider that exposes getEntityById
     const provider = {
       getEntityById: jest
         .fn()
@@ -96,7 +104,7 @@ describe('EntityOwnerGuard', () => {
     };
     moduleRefMock.get!.mockReturnValue(provider);
 
-    policyMock.isOwnerOrAdmin!.mockResolvedValue(true as never);
+    policyMock.isOwnerOrAdmin!.mockResolvedValue(true);
 
     const ctx = createMockExecutionContext({
       user: { id: 'owner1' },
@@ -121,7 +129,10 @@ describe('EntityOwnerGuard', () => {
 
   it('throws when provider not found', async () => {
     const opts = { serviceToken: 'MissingService', idParam: 'id' };
-    jest.spyOn(reflector, 'get').mockReturnValue(opts as any);
+    jest
+      .spyOn(reflector, 'get')
+      .mockReturnValueOnce(opts)
+      .mockReturnValueOnce(undefined);
     moduleRefMock.get!.mockReturnValue(undefined);
 
     const ctx = createMockExecutionContext({

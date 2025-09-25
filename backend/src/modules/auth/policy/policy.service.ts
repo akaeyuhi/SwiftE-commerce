@@ -71,7 +71,11 @@ export class PolicyService {
     if (Array.isArray(userRoles) && userRoles.length > 0) {
       roles = userRoles;
     } else if (user.id) {
-      roles = await this.userService.getUserStoreRoles(user.id);
+      try {
+        roles = await this.userService.getUserStoreRoles(user.id);
+      } catch {
+        return false;
+      }
     } else {
       return false;
     }

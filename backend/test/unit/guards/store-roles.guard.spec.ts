@@ -9,6 +9,7 @@ import {
 import { jest } from '@jest/globals';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { StoreRolesGuard } from 'src/modules/auth/policy/guards/store-roles.guard';
+import { log } from 'console';
 
 describe('StoreRolesGuard', () => {
   let guard: StoreRolesGuard;
@@ -57,8 +58,9 @@ describe('StoreRolesGuard', () => {
 
     // simulate policySvc.isSiteAdmin returning true -> should short-circuit and allow
     policyMock.isSiteAdmin!.mockResolvedValue(true);
+    const result = await guard.canActivate(ctx);
 
-    await expect(guard.canActivate(ctx)).resolves.toBe(true);
+    expect(result).toBe(true);
     expect(policyMock.isSiteAdmin).toHaveBeenCalledWith({ id: 'u1' });
 
     // verify cached flag written to request.user
@@ -76,15 +78,12 @@ describe('StoreRolesGuard', () => {
       },
     };
 
-    const ctx = {
-      switchToHttp: () => ({
-        getRequest: () => ({ user: { id: 'u1' }, params: { storeId: 's1' } }),
-        getResponse: () => ({}),
-        getNext: () => ({}),
-      }),
-      getHandler: () => handlerFn,
-      getClass: () => ({ accessPolicies: staticAccessPolicies }),
-    };
+    const ctx = createMockExecutionContext({
+      user: { id: 'u1' },
+      params: { storeId: 's1' },
+      handler: handlerFn,
+      controller: { accessPolicies: staticAccessPolicies },
+    });
 
     // make reflector return undefined (no explicit decorator metadata)
     jest
@@ -117,15 +116,12 @@ describe('StoreRolesGuard', () => {
       },
     };
 
-    const ctx: any = {
-      switchToHttp: () => ({
-        getRequest: () => ({ user: null, params: {} }),
-        getResponse: () => ({}),
-        getNext: () => ({}),
-      }),
-      getHandler: () => handlerFn,
-      getClass: () => ({ accessPolicies: staticAccessPolicies }),
-    };
+    const ctx = createMockExecutionContext({
+      user: null,
+      params: { storeId: 's1' },
+      handler: handlerFn,
+      controller: { accessPolicies: staticAccessPolicies },
+    });
 
     jest
       .spyOn(reflector, 'getAllAndOverride')

@@ -41,12 +41,12 @@ export class StoreRolesGuard implements CanActivate {
     // --- SHORT-CIRCUIT FOR SITE ADMINS ---
     // If AdminGuard ran earlier it should have set request.user.isSiteAdmin.
     // If flag present and true -> bypass store role checks.
-    if (user?.isSiteAdmin === true) {
+    if (user && user?.isSiteAdmin === true) {
       return true;
     }
 
     // Defensive fallback: if flag is missing, compute it once and cache on req.user.
-    if (user && typeof user.isSiteAdmin === 'undefined') {
+    if (user && (user.isSiteAdmin === undefined || user.isSiteAdmin === null)) {
       try {
         const isAdmin = await this.policyService.isSiteAdmin(user);
         request.user = { ...(request.user ?? {}), isSiteAdmin: isAdmin };
