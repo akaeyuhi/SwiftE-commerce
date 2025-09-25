@@ -4,14 +4,31 @@ import { UserService } from 'src/modules/user/user.service';
 import { CreateUserDto } from 'src/modules/user/dto/create-user.dto';
 import { RoleDto } from 'src/modules/user/dto/role.dto';
 import { CreateStoreDto } from 'src/modules/store/dto/create-store.dto';
-import { mockService } from 'test/unit/utils/test-helpers';
+import {
+  createGuardMock,
+  createPolicyMock,
+  createServiceMock,
+  MockedMethods,
+} from '../utils/helpers';
+import { JwtAuthGuard } from 'src/modules/auth/policy/guards/jwt-auth.guard';
+import { StoreRolesGuard } from 'src/modules/auth/policy/guards/store-roles.guard';
+import { AdminGuard } from 'src/modules/auth/policy/guards/admin.guard';
+import { PolicyService } from 'src/modules/auth/policy/policy.service';
+import { jest } from '@jest/globals';
+import { StoreRoles } from 'src/common/enums/store-roles.enum';
+import { UserRole } from 'src/entities/user/policy/user-role.entity';
+import { Store } from 'src/entities/store/store.entity';
 
 describe('UserController', () => {
   let controller: UserController;
-  let service: jest.Mocked<Partial<UserService>>;
+  let service: Partial<MockedMethods<UserService>>;
+  let policyMock: Partial<MockedMethods<PolicyService>>;
 
   beforeEach(async () => {
-    service = mockService<UserService>([
+    policyMock = createPolicyMock();
+    const guardMock = createGuardMock();
+
+    service = createServiceMock<UserService>([
       'create',
       'assignRole',
       'revokeRole',
@@ -19,7 +36,22 @@ describe('UserController', () => {
     ]);
     const module: TestingModule = await Test.createTestingModule({
       controllers: [UserController],
-      providers: [{ provide: UserService, useValue: service }],
+      providers: [
+        { provide: UserService, useValue: service },
+        { provide: PolicyService, useValue: policyMock },
+        {
+          provide: JwtAuthGuard,
+          useValue: guardMock,
+        },
+        {
+          provide: StoreRolesGuard,
+          useValue: guardMock,
+        },
+        {
+          provide: AdminGuard,
+          useValue: guardMock,
+        },
+      ],
     }).compile();
 
     controller = module.get<UserController>(UserController);
@@ -31,10 +63,11 @@ describe('UserController', () => {
     const dto: CreateUserDto = {
       email: 'a@b.com',
       password: 'p',
-      username: 'u',
-    } as any;
+      firstName: 'f',
+      lastName: 'f',
+    };
     const out = { id: 'u1', email: dto.email } as any;
-    (service.create as jest.Mock).mockResolvedValue(out);
+    service.create!.mockResolvedValue(out as never);
 
     const res = await controller.register(dto);
     expect(service.create).toHaveBeenCalledWith(dto);
@@ -43,12 +76,12 @@ describe('UserController', () => {
 
   it('assignRole should call userService.assignRole with provided params', async () => {
     const roleDto: RoleDto = {
-      roleName: 'STORE_ADMIN' as any,
+      roleName: StoreRoles.ADMIN,
       storeId: 's1',
-    } as any;
-    (service.assignRole as jest.Mock).mockResolvedValue({
+    };
+    service.assignRole!.mockResolvedValue({
       id: 'r1',
-    } as any);
+    } as UserRole);
 
     const res = await controller.assignRole('u1', roleDto);
     expect(service.assignRole).toHaveBeenCalledWith(
@@ -61,10 +94,10 @@ describe('UserController', () => {
 
   it('revokeStoreRole should call userService.revokeRole', async () => {
     const roleDto: RoleDto = {
-      roleName: 'STORE_ADMIN' as any,
+      roleName: StoreRoles.ADMIN,
       storeId: 's1',
-    } as any;
-    (service.revokeRole as jest.Mock).mockResolvedValue(undefined);
+    };
+    service.revokeRole!.mockResolvedValue(undefined);
 
     const res = await controller.revokeStoreRole('u1', roleDto);
     expect(service.revokeRole).toHaveBeenCalledWith(
@@ -76,9 +109,9 @@ describe('UserController', () => {
   });
 
   it('createStore should call userService.createStore', async () => {
-    const dto: CreateStoreDto = { name: 'MyStore' } as any;
-    const created = { id: 'store1', name: 'MyStore' } as any;
-    (service.createStore as jest.Mock).mockResolvedValue(created);
+    const dto: CreateStoreDto = { name: 'MyStore' } as CreateStoreDto;
+    const created = { id: 'store1', name: 'MyStore' } as Store;
+    service.createStore!.mockResolvedValue(created);
 
     const res = await controller.createStore('owner1', dto);
     expect(service.createStore).toHaveBeenCalledWith('owner1', dto);

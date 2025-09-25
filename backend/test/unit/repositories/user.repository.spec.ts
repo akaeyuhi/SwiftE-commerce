@@ -14,7 +14,7 @@ describe('UserRepository (unit)', () => {
   it('findByEmail delegates to findOne', async () => {
     repo.findOne = jest.fn().mockResolvedValue({ id: 'u1', email: 'a@b' });
     const res = await repo.findByEmail('a@b');
-    expect((repo as any).findOne).toHaveBeenCalledWith({
+    expect(repo.findOne).toHaveBeenCalledWith({
       where: { email: 'a@b' },
     });
     expect(res).toEqual({ id: 'u1', email: 'a@b' });

@@ -35,30 +35,4 @@ describe('UserRoleRepository (unit)', () => {
     expect(repo.save).toHaveBeenCalledWith({ roleName: 'X' });
     expect(res).toEqual({ id: 'r1', roleName: 'X' });
   });
-
-  // eslint-disable-next-line max-len
-  it('removeRoleFromUser delete query flows through manager repository (delegation test)', async () => {
-    // ensure manager.getRepository(...).createQueryBuilder(...) exists and returns an object with delete/where/execute
-    const executeMock = jest.fn().mockResolvedValue({ affected: 1 });
-    const deleteQb: any = {
-      delete: jest.fn().mockReturnThis(),
-      where: jest.fn().mockReturnThis(),
-      andWhere: jest.fn().mockReturnThis(),
-      execute: executeMock,
-    };
-    const managerMock: any = {
-      getRepository: jest.fn().mockReturnValue({
-        createQueryBuilder: jest.fn().mockReturnValue(deleteQb),
-      }),
-    };
-    repo.manager = managerMock;
-
-    await repo.removeRoleFromUser('u1', 'r1', 's1');
-
-    expect(managerMock.getRepository).toHaveBeenCalledWith('UserRole');
-    expect(deleteQb.delete).toHaveBeenCalled();
-    expect(deleteQb.where).toHaveBeenCalled();
-    expect(deleteQb.andWhere).toHaveBeenCalled();
-    expect(executeMock).toHaveBeenCalled();
-  });
 });

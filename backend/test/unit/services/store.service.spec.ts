@@ -5,21 +5,28 @@ import { StoreMapper } from 'src/modules/store/store.mapper';
 import { BadRequestException } from '@nestjs/common';
 import { UserRole } from 'src/entities/user/policy/user-role.entity';
 import { jest } from '@jest/globals';
-import { mockMapper, mockRepository } from 'test/unit/utils/test-helpers';
+import {
+  createMapperMock,
+  createRepositoryMock,
+  MockedMethods,
+} from '../utils/helpers';
+import { Store } from 'src/entities/store/store.entity';
+import { CreateStoreDto } from 'src/modules/store/dto/create-store.dto';
+import { StoreRoles } from 'src/common/enums/store-roles.enum';
 
 describe('StoreService', () => {
   let service: StoreService;
-  let repo: jest.Mocked<Partial<StoreRepository>>;
-  let mapper: jest.Mocked<Partial<StoreMapper>>;
+  let repo: Partial<MockedMethods<StoreRepository>>;
+  let mapper: Partial<MockedMethods<StoreMapper>>;
 
   beforeEach(async () => {
-    repo = mockRepository<StoreRepository>([
+    repo = createRepositoryMock<StoreRepository>([
       'findStoreByName',
       'save',
       'findById',
     ]);
 
-    mapper = mockMapper<StoreMapper>();
+    mapper = createMapperMock<StoreMapper>();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -36,9 +43,9 @@ describe('StoreService', () => {
 
   describe('create', () => {
     it('throws when store name already in use', async () => {
-      (repo.findStoreByName as jest.Mock).mockResolvedValue({
+      repo.findStoreByName!.mockResolvedValue({
         id: 's1',
-      } as never);
+      } as Store);
 
       await expect(service.create({ name: 'X' } as any)).rejects.toThrow(
         BadRequestException
@@ -47,30 +54,27 @@ describe('StoreService', () => {
     });
 
     it('creates store when name unused and returns dto', async () => {
-      (repo.findStoreByName as jest.Mock).mockResolvedValue(null as never);
-      const dto = { name: 'New' } as any;
-      const entity = { name: 'New' } as any;
-      (mapper.toEntity as jest.Mock).mockReturnValue(entity);
-      const saved = { id: 's2', name: 'New' } as any;
-      (repo.save as jest.Mock).mockResolvedValue(saved as never);
-      (mapper.toDto as jest.Mock).mockReturnValue({
-        id: 's2',
-        name: 'New',
-      } as any);
+      repo.findStoreByName!.mockResolvedValue(null);
+      const dto = { name: 'New' } as CreateStoreDto;
+      const entity = { name: 'New' } as Store;
+      mapper.toEntity!.mockReturnValue(entity);
+      const saved = { id: 's2', name: 'New' } as Store;
+      repo.save!.mockResolvedValue(saved);
+      mapper.toDto!.mockReturnValue(saved);
 
       const res = await service.create(dto);
       expect(repo.findStoreByName).toHaveBeenCalledWith('New');
       expect(mapper.toEntity).toHaveBeenCalledWith(dto);
       expect(repo.save).toHaveBeenCalledWith(entity);
       expect(mapper.toDto).toHaveBeenCalledWith(saved);
-      expect(res).toEqual({ id: 's2', name: 'New' });
+      expect(res).toEqual(saved);
     });
   });
 
   describe('hasUserStoreRole', () => {
     it('throws when store not found', async () => {
-      (repo.findById as jest.Mock).mockResolvedValue(null as never);
-      const fakeRole = { store: { id: 's1' } } as any;
+      repo.findById!.mockResolvedValue(null);
+      const fakeRole = { store: { id: 's1' } } as UserRole;
       await expect(service.hasUserStoreRole(fakeRole)).rejects.toThrow(
         BadRequestException
       );
@@ -78,37 +82,37 @@ describe('StoreService', () => {
     });
 
     it('returns true when matching role exists', async () => {
-      const userRole: UserRole = {
+      const userRole = {
         id: 'r1',
-        roleName: 'STORE_ADMIN' as any,
-        user: { id: 'u1' } as any,
-        store: { id: 's1' } as any,
-      } as any;
-      const storeEntity: any = {
+        roleName: StoreRoles.ADMIN,
+        user: { id: 'u1' },
+        store: { id: 's1' },
+      } as UserRole;
+      const storeEntity = {
         id: 's1',
-        userRoles: [{ user: { id: 'u1' }, roleName: 'STORE_ADMIN' } as any],
-      };
-      (repo.findById as jest.Mock).mockResolvedValue(storeEntity as never);
-      const res = await service.hasUserStoreRole(userRole as any);
+        userRoles: [
+          { user: { id: 'u1' }, roleName: StoreRoles.ADMIN },
+        ] as UserRole[],
+      } as Store;
+      repo.findById!.mockResolvedValue(storeEntity);
+      const res = await service.hasUserStoreRole(userRole);
       expect(repo.findById).toHaveBeenCalledWith('s1');
       expect(res).toBe(true);
     });
 
     it('returns false when no matching role present', async () => {
-      const userRole: UserRole = {
+      const userRole = {
         id: 'r2',
-        roleName: 'STORE_USER' as any,
-        user: { id: 'u2' } as any,
-        store: { id: 's2' } as any,
-      } as any;
-      const storeEntity: any = {
+        roleName: StoreRoles.GUEST,
+        user: { id: 'u2' },
+        store: { id: 's2' },
+      } as UserRole;
+      const storeEntity = {
         id: 's2',
-        userRoles: [
-          { user: { id: 'someone' }, roleName: 'STORE_ADMIN' } as any,
-        ],
-      };
-      (repo.findById as jest.Mock).mockResolvedValue(storeEntity as never);
-      const res = await service.hasUserStoreRole(userRole as any);
+        userRoles: [{ user: { id: 'someone' }, roleName: StoreRoles.ADMIN }],
+      } as Store;
+      repo.findById!.mockResolvedValue(storeEntity);
+      const res = await service.hasUserStoreRole(userRole);
       expect(res).toBe(false);
     });
   });

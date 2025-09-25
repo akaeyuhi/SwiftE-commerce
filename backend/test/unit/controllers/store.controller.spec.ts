@@ -3,18 +3,52 @@ import { StoreController } from 'src/modules/store/store.controller';
 import { StoreService } from 'src/modules/store/store.service';
 import { CreateStoreDto } from 'src/modules/store/dto/create-store.dto';
 import { UpdateStoreDto } from 'src/modules/store/dto/update-store.dto';
-import { mockService } from 'test/unit/utils/test-helpers';
+import {
+  createGuardMock,
+  createPolicyMock,
+  createServiceMock,
+  MockedMethods,
+} from '../utils/helpers';
+import { JwtAuthGuard } from 'src/modules/auth/policy/guards/jwt-auth.guard';
+import { StoreRolesGuard } from 'src/modules/auth/policy/guards/store-roles.guard';
+import { AdminGuard } from 'src/modules/auth/policy/guards/admin.guard';
+import { PolicyService } from 'src/modules/auth/policy/policy.service';
+import { jest } from '@jest/globals';
 
 describe('StoreController', () => {
   let controller: StoreController;
-  let service: jest.Mocked<Partial<StoreService>>;
+  let service: Partial<MockedMethods<StoreService>>;
+  let policyMock: Partial<MockedMethods<PolicyService>>;
 
   beforeEach(async () => {
-    service = mockService(['create', 'findOne', 'findAll', 'update', 'remove']);
+    service = createServiceMock<StoreService>([
+      'create',
+      'findOne',
+      'findAll',
+      'update',
+      'remove',
+    ]);
+    policyMock = createPolicyMock();
+    const guardMock = createGuardMock();
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [StoreController],
-      providers: [{ provide: StoreService, useValue: service }],
+      providers: [
+        { provide: StoreService, useValue: service },
+        { provide: PolicyService, useValue: policyMock },
+        {
+          provide: JwtAuthGuard,
+          useValue: guardMock,
+        },
+        {
+          provide: StoreRolesGuard,
+          useValue: guardMock,
+        },
+        {
+          provide: AdminGuard,
+          useValue: guardMock,
+        },
+      ],
     }).compile();
 
     controller = module.get<StoreController>(StoreController);
@@ -25,7 +59,7 @@ describe('StoreController', () => {
   it('create should delegate to service.create', async () => {
     const dto: CreateStoreDto = { name: 'S' } as any;
     const out = { id: 's1', name: 'S' } as any;
-    (service.create as jest.Mock).mockResolvedValue(out);
+    service.create!.mockResolvedValue(out);
 
     const res = await controller.create(dto);
     expect(service.create).toHaveBeenCalledWith(dto);
@@ -34,7 +68,7 @@ describe('StoreController', () => {
 
   it('findAll delegates to service.findAll', async () => {
     const items = [{ id: 's1' }] as any;
-    (service.findAll as jest.Mock).mockResolvedValue(items);
+    service.findAll!.mockResolvedValue(items as never);
     const res = await controller.findAll();
     expect(service.findAll).toHaveBeenCalled();
     expect(res).toEqual(items);
@@ -42,7 +76,7 @@ describe('StoreController', () => {
 
   it('findOne delegates to service.findOne', async () => {
     const out = { id: 's1', name: 'X' } as any;
-    (service.findOne as jest.Mock).mockResolvedValue(out);
+    service.findOne!.mockResolvedValue(out);
     const res = await controller.findOne('s1');
     expect(service.findOne).toHaveBeenCalledWith('s1');
     expect(res).toEqual(out);
@@ -51,7 +85,7 @@ describe('StoreController', () => {
   it('update delegates to service.update', async () => {
     const dto: UpdateStoreDto = { name: 'Updated' } as any;
     const updated = { id: 's1', name: 'Updated' } as any;
-    (service.update as jest.Mock).mockResolvedValue(updated);
+    service.update!.mockResolvedValue(updated);
 
     const res = await controller.update('s1', dto);
     expect(service.update).toHaveBeenCalledWith('s1', dto);
@@ -59,7 +93,7 @@ describe('StoreController', () => {
   });
 
   it('remove delegates to service.remove', async () => {
-    (service.remove as jest.Mock).mockResolvedValue(undefined);
+    service.remove!.mockResolvedValue(undefined);
     const res = await controller.remove('s1');
     expect(service.remove).toHaveBeenCalledWith('s1');
     expect(res).toBeUndefined();

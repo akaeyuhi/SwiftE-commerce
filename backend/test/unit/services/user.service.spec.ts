@@ -1,24 +1,31 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { UserService } from 'src/modules/user/user.service';
-import { UserRepository } from 'src/modules/user/user.repository';
-import { UserRoleService } from 'src/modules/user/user-role/user-role.service';
-import { StoreService } from 'src/modules/store/store.service';
-import { UserMapper } from 'src/modules/user/user.mapper';
+import {Test, TestingModule} from '@nestjs/testing';
+import {UserService} from 'src/modules/user/user.service';
+import {UserRepository} from 'src/modules/user/user.repository';
+import {UserRoleService} from 'src/modules/user/user-role/user-role.service';
+import {StoreService} from 'src/modules/store/store.service';
+import {UserMapper} from 'src/modules/user/user.mapper';
 import * as bcrypt from 'bcrypt';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
-import { StoreRoles } from 'src/common/enums/store-roles.enum';
-import { AdminRoles } from 'src/common/enums/admin.enum';
-import { mockRepository, mockService, mockMapper } from '../utils/test-helpers';
+import {BadRequestException, NotFoundException} from '@nestjs/common';
+import {StoreRoles} from 'src/common/enums/store-roles.enum';
+import {AdminRoles} from 'src/common/enums/admin.enum';
+import {createMapperMock, createRepositoryMock, createServiceMock, MockedMethods,} from '../utils/helpers';
+import {CreateUserDto} from 'src/modules/user/dto/create-user.dto';
+import {User} from 'src/entities/user/user.entity';
+import {UserDto} from 'src/modules/user/dto/user.dto';
+import {DeleteResult} from 'typeorm';
+import {Store} from 'src/entities/store/store.entity';
+import {UserRole} from "src/entities/user/policy/user-role.entity";
+import {CreateStoreDto} from "src/modules/store/dto/create-store.dto";
 
 describe('UserService', () => {
   let service: UserService;
-  let userRepo: jest.Mocked<Partial<UserRepository>>;
-  let userRoleService: jest.Mocked<Partial<UserRoleService>>;
-  let storeService: jest.Mocked<Partial<StoreService>>;
-  let mapper: jest.Mocked<Partial<UserMapper>>;
+  let userRepo: Partial<MockedMethods<UserRepository>>;
+  let userRoleService: Partial<MockedMethods<UserRoleService>>;
+  let storeService: Partial<MockedMethods<StoreService>>;
+  let mapper: Partial<MockedMethods<UserMapper>>;
 
   beforeEach(async () => {
-    userRepo = mockRepository<UserRepository>([
+    userRepo = createRepositoryMock<UserRepository>([
       'findByEmail',
       'save',
       'findOneBy',
@@ -28,14 +35,14 @@ describe('UserService', () => {
       'removeRoleFromUser',
     ]);
 
-    userRoleService = mockService<UserRoleService>([
+    userRoleService = createServiceMock<UserRoleService>([
       'findByStoreUser',
       'create',
     ]);
 
-    storeService = mockService<StoreService>(['getEntityById', 'create']);
+    storeService = createServiceMock<StoreService>(['getEntityById', 'create']);
 
-    mapper = mockMapper<UserMapper>(['toEntity', 'toDto']);
+    mapper = createMapperMock<UserMapper>();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -59,18 +66,20 @@ describe('UserService', () => {
       const dto = {
         email: 'a@b.com',
         password: 'pass',
-        username: 'u',
-      } as any;
+      } as CreateUserDto;
 
-      (userRepo.findByEmail as jest.Mock).mockResolvedValue(null);
-      const entity = { email: dto.email, username: dto.username } as any;
-      (mapper.toEntity as jest.Mock).mockReturnValue(entity);
-      const saved = { id: 'u1', ...entity, passwordHash: 'h' } as any;
-      (userRepo.save as jest.Mock).mockResolvedValue(saved);
-      (mapper.toDto as jest.Mock).mockReturnValue({
+      userRepo.findByEmail!.mockResolvedValue(null);
+      const entity = {
+        email: dto.email,
+        password: dto.password,
+      } as unknown as User;
+      mapper.toEntity!.mockReturnValue(entity);
+      const saved = { ...entity, id: 'u1', passwordHash: 'h' };
+      userRepo.save!.mockResolvedValue(saved);
+      mapper.toDto!.mockReturnValue({
         id: 'u1',
         email: dto.email,
-      });
+      } as UserDto);
 
       jest.spyOn(bcrypt, 'hash').mockResolvedValue('hashed-pass' as never);
 
@@ -85,10 +94,10 @@ describe('UserService', () => {
     });
 
     it('throws when email already used', async () => {
-      const dto = { email: 'x@x.com', password: 'p' } as any;
-      (userRepo.findByEmail as jest.Mock).mockResolvedValue({
+      const dto = { email: 'x@x.com', password: 'p' } as CreateUserDto;
+      userRepo.findByEmail!.mockResolvedValue({
         id: 'exists',
-      } as any);
+      } as User);
       await expect(service.create(dto)).rejects.toThrow(BadRequestException);
       expect(userRepo.findByEmail).toHaveBeenCalledWith(dto.email);
     });
@@ -96,23 +105,29 @@ describe('UserService', () => {
 
   describe('update', () => {
     it('updates user and hashes new password', async () => {
-      const dto = { password: 'newpass', username: 'newname' } as any;
+      const dto = {
+        password: 'newpass',
+        email: 'newname@email',
+      } as CreateUserDto;
       const existing = {
         id: 'u1',
         username: 'old',
         passwordHash: 'old',
-      } as any;
+      } as unknown as User;
 
-      (userRepo.findOneBy as jest.Mock).mockResolvedValue(existing);
+      userRepo.findOneBy!.mockResolvedValue(existing);
       jest.spyOn(bcrypt, 'hash').mockResolvedValue('new-hash' as never);
 
       // emulate save returning the updated entity
-      (userRepo.save as jest.Mock).mockImplementation(async (u) => ({ ...u }));
+      userRepo.save!.mockImplementation(async (u) => ({ ...u }) as any);
 
-      (mapper.toDto as jest.Mock).mockImplementation((u) => ({
-        id: u.id,
-        username: u.username,
-      }));
+      mapper.toDto!.mockImplementation(
+        (u) =>
+          ({
+            id: u.id,
+            email: u.email,
+          }) as any
+      );
 
       const res = await service.update('u1', dto);
 
@@ -123,7 +138,7 @@ describe('UserService', () => {
     });
 
     it('throws when user not found', async () => {
-      (userRepo.findOneBy as jest.Mock).mockResolvedValue(null);
+      userRepo.findOneBy!.mockResolvedValue(null);
       await expect(service.update('no', {} as any)).rejects.toThrow(
         NotFoundException
       );
@@ -132,9 +147,9 @@ describe('UserService', () => {
 
   describe('findByEmail', () => {
     it('returns dto when found', async () => {
-      const user = { id: 'u1', email: 'a@b' } as any;
-      (userRepo.findOneBy as jest.Mock).mockResolvedValue(user);
-      (mapper.toDto as jest.Mock).mockReturnValue({ id: 'u1', email: 'a@b' });
+      const user = { id: 'u1', email: 'a@b' } as User;
+      userRepo.findOneBy!.mockResolvedValue(user);
+      mapper.toDto!.mockReturnValue({ id: 'u1', email: 'a@b' } as UserDto);
 
       const res = await service.findByEmail('a@b');
 
@@ -143,7 +158,7 @@ describe('UserService', () => {
     });
 
     it('throws when not found', async () => {
-      (userRepo.findOneBy as jest.Mock).mockResolvedValue(null);
+      userRepo.findOneBy!.mockResolvedValue(null);
       await expect(service.findByEmail('nobody')).rejects.toThrow(
         NotFoundException
       );
@@ -152,10 +167,10 @@ describe('UserService', () => {
 
   describe('findUserWithPassword', () => {
     it('delegates to repository', async () => {
-      (userRepo.getUserWithPassword as jest.Mock).mockResolvedValue({
+      userRepo.getUserWithPassword!.mockResolvedValue({
         id: 'u1',
         password: 'h',
-      } as any);
+      } as unknown as User);
 
       const res = await service.findUserWithPassword('a@b');
       expect(userRepo.getUserWithPassword).toHaveBeenCalledWith('a@b');
@@ -166,7 +181,7 @@ describe('UserService', () => {
   describe('findOneWithRelations / getUserStoreRoles', () => {
     it('returns relations when found', async () => {
       const u = { id: 'u1', roles: [{ roleName: 'X' }] } as any;
-      (userRepo.findOneWithRelations as jest.Mock).mockResolvedValue(u);
+      userRepo.findOneWithRelations!.mockResolvedValue(u);
 
       const res = await service.findOneWithRelations('u1');
       expect(userRepo.findOneWithRelations).toHaveBeenCalledWith('u1');
@@ -177,7 +192,7 @@ describe('UserService', () => {
     });
 
     it('throws when not found', async () => {
-      (userRepo.findOneWithRelations as jest.Mock).mockResolvedValue(null);
+      userRepo.findOneWithRelations!.mockResolvedValue(null);
       await expect(service.findOneWithRelations('no')).rejects.toThrow(
         NotFoundException
       );
@@ -191,25 +206,24 @@ describe('UserService', () => {
 
       // mock getEntityById (BaseService) via spy on service instance
       jest.spyOn(service as any, 'getEntityById').mockResolvedValue(user);
-      (storeService.getEntityById as jest.Mock).mockResolvedValue(store);
-      (userRoleService.findByStoreUser as jest.Mock).mockResolvedValue(null);
+      storeService.getEntityById!.mockResolvedValue(store);
+      userRoleService.findByStoreUser!.mockResolvedValue(null);
 
       const savedRole = {
         id: 'r1',
         roleName: StoreRoles.ADMIN,
         user,
         store,
-      } as any;
-
-      (userRoleService.create as jest.Mock).mockResolvedValue(savedRole);
-      (userRepo.addRoleToUser as jest.Mock).mockResolvedValue({
+      } as UserRole;
+      userRoleService.create!.mockResolvedValue(savedRole);
+      userRepo.addRoleToUser!.mockResolvedValue({
         ...user,
         roles: [savedRole],
       });
 
       const res = await service.assignRole('u1', StoreRoles.ADMIN, 's1');
 
-      expect((service as any).getEntityById).toHaveBeenCalledWith('u1');
+      expect(service.getEntityById).toHaveBeenCalledWith('u1');
       expect(storeService.getEntityById).toHaveBeenCalledWith('s1');
       expect(userRoleService.findByStoreUser).toHaveBeenCalledWith('u1', 's1');
       expect(userRoleService.create).toHaveBeenCalled();
@@ -218,7 +232,9 @@ describe('UserService', () => {
     });
 
     it('revokeRole calls repository to remove', async () => {
-      (userRepo.removeRoleFromUser as jest.Mock).mockResolvedValue(undefined);
+      userRepo.removeRoleFromUser!.mockResolvedValue(
+        true as unknown as DeleteResult
+      );
       await service.revokeRole('u1', 'r1', 's1');
       expect(userRepo.removeRoleFromUser).toHaveBeenCalledWith(
         'u1',
@@ -228,7 +244,7 @@ describe('UserService', () => {
     });
 
     it('assignRole throws if user not found', async () => {
-      jest.spyOn(service as any, 'getEntityById').mockResolvedValue(null);
+      jest.spyOn(service, 'getEntityById').mockResolvedValue(null);
       await expect(
         service.assignRole('no', StoreRoles.GUEST, 's1')
       ).rejects.toThrow(NotFoundException);
@@ -236,9 +252,9 @@ describe('UserService', () => {
 
     it('assignRole throws if store not found', async () => {
       jest
-        .spyOn(service as any, 'getEntityById')
-        .mockResolvedValue({ id: 'u1' });
-      (storeService.getEntityById as jest.Mock).mockResolvedValue(null);
+        .spyOn(service, 'getEntityById')
+        .mockResolvedValue({ id: 'u1' } as User);
+      storeService.getEntityById!.mockResolvedValue(null);
       await expect(
         service.assignRole('u1', StoreRoles.GUEST, 'missing')
       ).rejects.toThrow(NotFoundException);
@@ -246,12 +262,12 @@ describe('UserService', () => {
 
     it('assignRole throws if already exists', async () => {
       jest
-        .spyOn(service as any, 'getEntityById')
-        .mockResolvedValue({ id: 'u1' });
-      (storeService.getEntityById as jest.Mock).mockResolvedValue({ id: 's1' });
-      (userRoleService.findByStoreUser as jest.Mock).mockResolvedValue({
+        .spyOn(service, 'getEntityById')
+        .mockResolvedValue({ id: 'u1' } as User);
+      storeService.getEntityById!.mockResolvedValue({ id: 's1' } as Store);
+      userRoleService.findByStoreUser!.mockResolvedValue({
         id: 'already',
-      } as any);
+      } as UserRole);
       await expect(
         service.assignRole('u1', StoreRoles.GUEST, 's1')
       ).rejects.toThrow(BadRequestException);
@@ -260,22 +276,22 @@ describe('UserService', () => {
 
   describe('createStore', () => {
     it('creates store and assigns owner role', async () => {
-      const owner = { id: 'owner1' } as any;
-      jest.spyOn(service as any, 'getEntityById').mockResolvedValue(owner);
+      const owner = { id: 'owner1' } as User;
+      jest.spyOn(service, 'getEntityById').mockResolvedValue(owner);
 
-      const dto = { name: 'StoreX' } as any;
-      const created = { id: 'store1', name: 'StoreX' } as any;
-      (storeService.create as jest.Mock).mockResolvedValue(created);
+      const dto = { name: 'StoreX' } as CreateStoreDto;
+      const created = { id: 'store1', name: 'StoreX' } as Store;
+      storeService.create!.mockResolvedValue(created);
 
       // spy assignRole to avoid internal logic execution
       jest
-        .spyOn(service as any, 'assignRole')
-        .mockResolvedValue({ id: 'role1' } as any);
+        .spyOn(service, 'assignRole')
+        .mockResolvedValue({ id: 'role1' } as UserRole);
 
       const res = await service.createStore(owner.id, dto);
-      expect((service as any).getEntityById).toHaveBeenCalledWith(owner.id);
+      expect(service.getEntityById).toHaveBeenCalledWith(owner.id);
       expect(storeService.create).toHaveBeenCalledWith({ ...dto, owner });
-      expect((service as any).assignRole).toHaveBeenCalledWith(
+      expect(service.assignRole).toHaveBeenCalledWith(
         owner.id,
         StoreRoles.ADMIN,
         created.id
@@ -284,28 +300,28 @@ describe('UserService', () => {
     });
 
     it('throws when owner not found', async () => {
-      jest.spyOn(service as any, 'getEntityById').mockResolvedValue(null);
+      jest.spyOn(service, 'getEntityById').mockResolvedValue(null);
       await expect(
-        service.createStore('no', { name: 'x' } as any)
+        service.createStore('no', { name: 'x' } as Store)
       ).rejects.toThrow(NotFoundException);
     });
   });
 
   describe('isUserSiteAdmin', () => {
     it('returns true when user siteRole is ADMIN', async () => {
-      (userRepo.findOneWithRelations as jest.Mock).mockResolvedValue({
+      userRepo.findOneWithRelations!.mockResolvedValue({
         id: 'u1',
         siteRole: AdminRoles.ADMIN,
-      } as any);
+      } as User);
       const res = await service.isUserSiteAdmin('u1');
       expect(res).toBe(true);
     });
 
     it('returns false when not admin', async () => {
-      (userRepo.findOneWithRelations as jest.Mock).mockResolvedValue({
+      userRepo.findOneWithRelations!.mockResolvedValue({
         id: 'u1',
-        siteRole: undefined,
-      } as any);
+        siteRole: AdminRoles.USER,
+      } as User);
       const res = await service.isUserSiteAdmin('u1');
       expect(res).toBe(false);
     });
