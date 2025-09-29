@@ -21,10 +21,10 @@ export class CartItemRepository extends BaseRepository<CartItem> {
    */
   async findByCart(cartId: string): Promise<CartItem[]> {
     return this.find({
-      where: { cart: { id: cartId } as any } as any,
+      where: { cart: { id: cartId } },
       relations: ['variant'],
       order: { createdAt: 'ASC' },
-    } as any);
+    });
   }
 
   /**
@@ -34,9 +34,9 @@ export class CartItemRepository extends BaseRepository<CartItem> {
    */
   async findWithRelations(itemId: string): Promise<CartItem | null> {
     return this.findOne({
-      where: { id: itemId } as any,
+      where: { id: itemId },
       relations: ['cart', 'variant'],
-    } as any);
+    });
   }
 
   /**
@@ -51,6 +51,6 @@ export class CartItemRepository extends BaseRepository<CartItem> {
   ): Promise<CartItem | null> {
     return this.findOne({
       where: { cart: { id: cartId }, variant: { id: variantId } },
-    } as any);
+    });
   }
 }
