@@ -1,33 +1,35 @@
-import {
-  IsEnum,
-  IsOptional,
-  IsUUID,
-  IsNumber,
-  IsObject,
-} from 'class-validator';
-import { AnalyticsEventType } from 'src/modules/analytics/entities/analytics-event.entity';
+import { IsOptional, IsEnum, IsUUID, IsNumber, IsIn } from 'class-validator';
+import { AnalyticsEventType } from '../entities/analytics-event.entity';
+
+export type Maybe<T> = T | undefined | null;
 
 export class RecordEventDto {
   @IsOptional()
   @IsUUID()
-  storeId?: string;
+  storeId?: Maybe<string>;
 
   @IsOptional()
   @IsUUID()
-  productId?: string;
+  productId?: Maybe<string>;
 
   @IsOptional()
   @IsUUID()
-  userId?: string;
+  userId?: Maybe<string>;
 
   @IsEnum(AnalyticsEventType)
   eventType: AnalyticsEventType;
 
-  @IsOptional()
-  @IsNumber()
-  value?: number;
+  @IsIn(['store', 'product'])
+  invokedOn: 'store' | 'product';
 
   @IsOptional()
-  @IsObject()
-  meta?: Record<string, any>;
+  @IsIn(['before', 'after'])
+  when?: 'before' | 'after';
+
+  @IsOptional()
+  @IsNumber()
+  value?: Maybe<number>;
+
+  @IsOptional()
+  meta?: Maybe<Record<string, any>>;
 }
