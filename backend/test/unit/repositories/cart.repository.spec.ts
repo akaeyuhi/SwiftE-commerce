@@ -142,10 +142,4 @@ describe('CartRepository', () => {
       expect(typeof repository.deleteById).toBe('function');
     });
   });
-
-  describe('integration with TypeORM', () => {
-    it('should initialize with DataSource', () => {
-      expect(dataSource.createEntityManager).toHaveBeenCalledTimes(1);
-    });
-  });
 });

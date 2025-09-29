@@ -5,7 +5,6 @@ import { createRepositoryMock, MockedMethods } from '../utils/helpers';
 import { NotFoundException } from '@nestjs/common';
 import { CreateAdminDto } from 'src/modules/auth/admin/dto/create-admin.dto';
 import { Test, TestingModule } from '@nestjs/testing';
-import { CartItemService } from 'src/modules/store/cart/cart-item/cart-item.service';
 
 describe('AdminService', () => {
   let service: AdminService;
@@ -41,7 +40,7 @@ describe('AdminService', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        CartItemService,
+        AdminService,
         { provide: AdminRepository, useValue: adminRepo },
       ],
     }).compile();

@@ -42,6 +42,7 @@ describe('ProductsService', () => {
     prodRepo = createRepositoryMock<ProductRepository>([
       'createEntity',
       'findOne',
+      'findOneBy',
       'save',
       'findAllByStore',
       'findWithRelations',
@@ -89,12 +90,17 @@ describe('ProductsService', () => {
     prodRepo.createEntity!.mockResolvedValue(mockProd);
     catSvc.findOne!.mockResolvedValue({ id: 'c1' } as any);
     prodRepo.save!.mockResolvedValue(mockProd);
+    prodRepo.findOneBy!.mockResolvedValue(mockProd);
     photoSvc.addPhotos!.mockResolvedValue([{ id: 'y' }] as any);
 
     const files = [
       { buffer: Buffer.from(''), originalname: 'a.png', mimetype: 'image/png' },
     ] as any[];
-    const res = await svc.create({ ...dto }, files, files[0]);
+    const res = await svc.create(
+      { ...dto, categoryIds: undefined },
+      files,
+      files[0]
+    );
     expect(prodRepo.createEntity).toHaveBeenCalled();
     expect(res).toEqual(mockProd);
   });

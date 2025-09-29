@@ -3,24 +3,27 @@ import { RefreshTokenService } from 'src/modules/auth/refresh-token/refresh-toke
 import { RefreshTokenRepository } from 'src/modules/auth/refresh-token/refresh-token.repository';
 import { createRepositoryMock, MockedMethods } from '../utils/helpers';
 import { RefreshToken } from 'src/entities/user/policy/refresh-token.entity';
+import { User } from 'src/entities/user/user.entity';
 
-describe('RefreshTokenService', async () => {
+describe('RefreshTokenService', () => {
   let svc: RefreshTokenService;
   let repo: Partial<MockedMethods<RefreshTokenRepository>>;
-
+  let mockRT: RefreshToken;
+  let hash: string;
   const rawToken = 'tok123';
-  const hash = (await import('crypto'))
-    .createHash('sha256')
-    .update(rawToken)
-    .digest('hex');
-  const mockRT: RefreshToken = {
-    id: 'r1',
-    tokenHash: hash,
-    user: { id: 'u1' } as any,
-    lastUsedAt: new Date(),
-  } as any;
 
   beforeEach(async () => {
+    hash = (await import('crypto'))
+      .createHash('sha256')
+      .update(rawToken)
+      .digest('hex');
+    mockRT = {
+      id: 'r1',
+      tokenHash: hash,
+      user: { id: 'u1' } as User,
+      lastUsedAt: new Date(),
+    } as RefreshToken;
+
     repo = createRepositoryMock<RefreshTokenRepository>([
       'save',
       'findOne',

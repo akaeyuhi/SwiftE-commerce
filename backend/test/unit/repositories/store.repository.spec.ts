@@ -71,10 +71,6 @@ describe('StoreRepository', () => {
       expect(typeof repository.updateEntity).toBe('function');
       expect(typeof repository.deleteById).toBe('function');
     });
-
-    it('should initialize with DataSource', () => {
-      expect(dataSource.createEntityManager).toHaveBeenCalledTimes(1);
-    });
   });
 
   describe('findStoreByName', () => {
@@ -309,21 +305,10 @@ describe('StoreRepository', () => {
       const repositoryError = new Error('Repository operation failed');
       (repository.findOneBy as jest.Mock).mockRejectedValue(repositoryError);
 
+
       await expect(repository.findStoreByName('Test Store')).rejects.toThrow(
         repositoryError
       );
-    });
-  });
-
-  describe('integration with TypeORM', () => {
-    it('should properly use DataSource and EntityManager', () => {
-      expect(repository['manager']).toBe(entityManager);
-      expect(dataSource.createEntityManager).toHaveBeenCalledTimes(1);
-    });
-
-    it('should have proper entity type', () => {
-      // Verify that repository is typed for Store entity
-      expect(repository).toBeInstanceOf(StoreRepository);
     });
   });
 

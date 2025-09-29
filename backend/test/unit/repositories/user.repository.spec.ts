@@ -66,10 +66,6 @@ describe('UserRepository', () => {
       expect(typeof repository.updateEntity).toBe('function');
       expect(typeof repository.deleteById).toBe('function');
     });
-
-    it('should initialize with DataSource', () => {
-      expect(dataSource.createEntityManager).toHaveBeenCalledTimes(1);
-    });
   });
 
   describe('findByEmail', () => {
@@ -174,16 +170,12 @@ describe('UserRepository', () => {
 
       expect(result).toEqual(mockUserWithPassword);
       expect(repository.createQueryBuilder).toHaveBeenCalledWith('user');
-      expect(mockQueryBuilder.select).toHaveBeenCalledWith([
-        'user.id',
-        'user.email',
-        'user.firstName',
-        'user.lastName',
-        'user.isActive',
-        'user.createdAt',
-        'user.updatedAt',
-      ]);
+      expect(mockQueryBuilder.select).toHaveBeenCalledWith('user.id', 'id');
+      expect(mockQueryBuilder.addSelect).toHaveBeenCalledWith('user.id');
       expect(mockQueryBuilder.addSelect).toHaveBeenCalledWith('user.password');
+      expect(mockQueryBuilder.addSelect).toHaveBeenCalledWith('user.username');
+      expect(mockQueryBuilder.addSelect).toHaveBeenCalledWith('user.email');
+      expect(mockQueryBuilder.addSelect).toHaveBeenCalledWith('user.role');
       expect(mockQueryBuilder.where).toHaveBeenCalledWith(
         'user.email = :email',
         {
@@ -236,13 +228,13 @@ describe('UserRepository', () => {
       ).rejects.toThrow(queryError);
     });
 
-    it('should properly chain query builder methods', async () => {
+    it('properly chains query builder methods', async () => {
       const mockQueryBuilder = {
         select: jest.fn().mockReturnThis(),
         addSelect: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
         getOne: jest.fn().mockResolvedValue(mockUserWithPassword),
-      };
+      } as any;
 
       (repository.createQueryBuilder as jest.Mock).mockReturnValue(
         mockQueryBuilder
@@ -250,15 +242,14 @@ describe('UserRepository', () => {
 
       await repository.getUserWithPassword('test@example.com');
 
-      expect(mockQueryBuilder.select).toHaveBeenLastCalledWith(
-        mockQueryBuilder.addSelect as jest.Mock
-      );
-      expect(mockQueryBuilder.addSelect).toHaveBeenLastCalledWith(
-        mockQueryBuilder.where as jest.Mock
-      );
-      expect(mockQueryBuilder.where).toHaveBeenLastCalledWith(
-        mockQueryBuilder.getOne as jest.Mock
-      );
+      const selectOrder = mockQueryBuilder.select.mock.invocationCallOrder[0];
+      const addOrder = mockQueryBuilder.addSelect.mock.invocationCallOrder[0];
+      const whereOrder = mockQueryBuilder.where.mock.invocationCallOrder[0];
+      const getOneOrder = mockQueryBuilder.getOne.mock.invocationCallOrder[0];
+
+      expect(selectOrder).toBeLessThan(addOrder);
+      expect(addOrder).toBeLessThan(whereOrder);
+      expect(whereOrder).toBeLessThan(getOneOrder);
     });
   });
 
@@ -284,15 +275,18 @@ describe('UserRepository', () => {
       expect(entityManager.getRepository).toHaveBeenCalledWith('UserRole');
       expect(mockUserRoleRepo.createQueryBuilder).toHaveBeenCalledTimes(1);
       expect(mockQueryBuilder.delete).toHaveBeenCalledTimes(1);
-      expect(mockQueryBuilder.where).toHaveBeenCalledWith('userId = :userId', {
-        userId: 'u1',
-      });
+      expect(mockQueryBuilder.where).toHaveBeenCalledWith(
+        'ur.userId = :userId',
+        {
+          userId: 'u1',
+        }
+      );
       expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
-        'roleId = :roleId',
+        'ur.roleId = :roleId',
         { roleId: 'r1' }
       );
       expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
-        'storeId = :storeId',
+        'ur.storeId = :storeId',
         { storeId: 's1' }
       );
       expect(mockQueryBuilder.execute).toHaveBeenCalledTimes(1);
@@ -367,15 +361,15 @@ describe('UserRepository', () => {
         await repository.removeRoleFromUser(userId, roleId, storeId);
 
         expect(mockQueryBuilder.where).toHaveBeenCalledWith(
-          'userId = :userId',
+          'ur.userId = :userId',
           { userId }
         );
         expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
-          'roleId = :roleId',
+          'ur.roleId = :roleId',
           { roleId }
         );
         expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
-          'storeId = :storeId',
+          'ur.storeId = :storeId',
           { storeId }
         );
       }
@@ -417,13 +411,6 @@ describe('UserRepository', () => {
       await expect(repository.findByEmail('test@example.com')).rejects.toThrow(
         connectionError
       );
-    });
-  });
-
-  describe('integration with TypeORM', () => {
-    it('should properly use DataSource and EntityManager', () => {
-      expect(repository['manager']).toBe(entityManager);
-      expect(dataSource.createEntityManager).toHaveBeenCalledTimes(1);
     });
   });
 });

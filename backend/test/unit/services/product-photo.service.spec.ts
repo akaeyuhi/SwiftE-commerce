@@ -8,6 +8,13 @@ import { Store } from 'src/entities/store/store.entity';
 import { Product } from 'src/entities/store/product/product.entity';
 import { ProductPhoto } from 'src/entities/store/product/product-photo.entity';
 
+jest.mock(
+  'src/modules/products/product-photo/product-photo.repository',
+  () => ({
+    ProductPhotoRepository: class {},
+  })
+);
+
 jest.mock('fs', () => ({
   promises: {
     mkdir: jest.fn(),

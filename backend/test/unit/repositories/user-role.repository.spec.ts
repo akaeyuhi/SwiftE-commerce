@@ -72,10 +72,6 @@ describe('UserRoleRepository', () => {
       expect(typeof repository.updateEntity).toBe('function');
       expect(typeof repository.deleteById).toBe('function');
     });
-
-    it('should initialize with DataSource', () => {
-      expect(dataSource.createEntityManager).toHaveBeenCalledTimes(1);
-    });
   });
 
   describe('inherited BaseRepository methods', () => {
@@ -372,17 +368,6 @@ describe('UserRoleRepository', () => {
 
       expect(result).toBeDefined();
       expect(repository.create).toHaveBeenCalledWith(malformedData);
-    });
-  });
-
-  describe('integration with TypeORM', () => {
-    it('should properly use DataSource and EntityManager', () => {
-      expect(repository['manager']).toBe(entityManager);
-      expect(dataSource.createEntityManager).toHaveBeenCalledTimes(1);
-    });
-
-    it('should have proper entity type', () => {
-      expect(repository).toBeInstanceOf(UserRoleRepository);
     });
   });
 

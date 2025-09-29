@@ -60,7 +60,7 @@ describe('ProductsController', () => {
     expect(svc.create).toHaveBeenCalledWith(
       { ...dto, storeId: 's1' },
       files,
-      null
+      undefined
     );
     expect(res).toEqual(mockProd);
   });

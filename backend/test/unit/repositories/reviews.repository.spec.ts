@@ -23,10 +23,11 @@ describe('ReviewsRepository', () => {
   });
 
   it('getRatingAggregate returns zeroes when none', async () => {
+    const raw = { count: null, avg: null };
     const qb = {
       select: jest.fn().mockReturnThis(),
       where: jest.fn().mockReturnThis(),
-      getRawOne: jest.fn().mockResolvedValue(null),
+      getRawOne: jest.fn().mockResolvedValue(raw),
     } as any as SelectQueryBuilder<Review>;
     (repo.createQueryBuilder as jest.Mock).mockReturnValue(qb);
 

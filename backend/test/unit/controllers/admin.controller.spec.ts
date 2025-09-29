@@ -63,7 +63,7 @@ describe('AdminController', () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AdminController],
       providers: [
-        { provide: AdminService, useValue: mockAdmin },
+        { provide: AdminService, useValue: adminService },
         { provide: PolicyService, useValue: policyMock },
         {
           provide: JwtAuthGuard,

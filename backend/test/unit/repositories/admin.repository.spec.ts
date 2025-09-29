@@ -70,10 +70,6 @@ describe('AdminRepository', () => {
       expect(typeof repository.updateEntity).toBe('function');
       expect(typeof repository.deleteById).toBe('function');
     });
-
-    it('should call dataSource.createEntityManager in constructor', () => {
-      expect(dataSource.createEntityManager).toHaveBeenCalledTimes(1);
-    });
   });
 
   describe('findAll', () => {

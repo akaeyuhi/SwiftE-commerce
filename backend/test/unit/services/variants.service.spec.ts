@@ -35,6 +35,7 @@ describe('VariantsService', () => {
       'save',
       'findById',
       'find',
+      'findOneBy',
     ]);
     invSvc = createServiceMock<InventoryService>([
       'create',

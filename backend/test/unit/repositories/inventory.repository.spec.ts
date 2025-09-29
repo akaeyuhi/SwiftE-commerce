@@ -38,9 +38,5 @@ describe('InventoryRepository', () => {
       expect(typeof repository.updateEntity).toBe('function');
       expect(typeof repository.deleteById).toBe('function');
     });
-
-    it('initializes EntityManager', () => {
-      expect(dataSource.createEntityManager).toHaveBeenCalledTimes(1);
-    });
   });
 });

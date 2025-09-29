@@ -49,22 +49,25 @@ describe('OrdersService', () => {
   } as unknown as Order;
 
   beforeEach(async () => {
-    orderRepo = createRepositoryMock<OrdersRepository>(['findById', 'find']);
+    orderRepo = createRepositoryMock<OrdersRepository>([
+      'findById',
+      'find',
+      'save',
+      'findOne',
+      'findByUser',
+      'findWithItems',
+    ]);
+    txOrderRepo = createMock<Repository<Order>>(['create', 'save', 'findOne']);
+    txItemRepo = createMock<Repository<any>>(['create', 'save']);
     itemRepo = createRepositoryMock<OrderItemRepository>([]);
+    (itemRepo as any).metadata = { target: {} };
     manager = createMock<EntityManager>(['getRepository']);
     dataSource = createMock<DataSource>(['transaction']);
     (dataSource.transaction as jest.Mock).mockImplementation(
       async (runInTx) => {
-        txOrderRepo = createMock<Repository<Order>>([
-          'create',
-          'save',
-          'findOne',
-        ]);
-        txItemRepo = createMock<Repository<any>>(['create', 'save']);
         manager
           .getRepository!.mockReturnValueOnce(txOrderRepo)
           .mockReturnValueOnce(txItemRepo);
-        // call the callback with our fake manager
         return await (runInTx as (em: EntityManager) => Promise<any>)(
           manager as any
         );
@@ -74,9 +77,9 @@ describe('OrdersService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         OrdersService,
+        { provide: DataSource, useValue: dataSource },
         { provide: OrdersRepository, useValue: orderRepo },
         { provide: OrderItemRepository, useValue: itemRepo },
-        { provide: DataSource, useValue: dataSource },
       ],
     }).compile();
 
@@ -109,13 +112,9 @@ describe('OrdersService', () => {
 
   describe('findByUser', () => {
     it('delegates to orderRepo.findByUser', async () => {
-      orderRepo.find!.mockResolvedValue([savedOrder]);
+      orderRepo.findByUser!.mockResolvedValue([savedOrder]);
       const res = await service.findByUser('u1');
-      expect(orderRepo.find).toHaveBeenCalledWith({
-        where: { user: { id: 'u1' } },
-        relations: ['store', 'items', 'items.variant', 'items.product'],
-        order: { createdAt: 'DESC' },
-      });
+      expect(orderRepo.findByUser).toHaveBeenCalledWith('u1');
       expect(res).toEqual([savedOrder]);
     });
   });
@@ -129,7 +128,7 @@ describe('OrdersService', () => {
     });
 
     it('returns order when found', async () => {
-      orderRepo.findOne!.mockResolvedValue(savedOrder);
+      orderRepo.findWithItems!.mockResolvedValue(savedOrder);
       const res = await service.getOrderWithItems('o1');
       expect(res).toEqual(savedOrder);
     });

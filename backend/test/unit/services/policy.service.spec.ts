@@ -3,7 +3,7 @@ import { PolicyService } from 'src/modules/auth/policy/policy.service';
 import {
   IUserService,
   IAdminService,
-  IStoreService,
+  IStoreService, USER_SERVICE, ADMIN_SERVICE, STORE_SERVICE,
 } from 'src/common/contracts/policy.contract';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { createServiceMock, MockedMethods } from '../utils/helpers';
@@ -33,9 +33,9 @@ describe('PolicyService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PolicyService,
-        { provide: UserService, useValue: userService },
-        { provide: AdminService, useValue: adminService },
-        { provide: StoreService, useValue: storeService },
+        { provide: USER_SERVICE, useValue: userService },
+        { provide: ADMIN_SERVICE, useValue: adminService },
+        { provide: STORE_SERVICE, useValue: storeService },
       ],
     }).compile();
 

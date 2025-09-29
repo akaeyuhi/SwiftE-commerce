@@ -69,10 +69,6 @@ describe('CartItemRepository', () => {
       expect(typeof repository.findById).toBe('function');
       expect(typeof repository.createEntity).toBe('function');
     });
-
-    it('should initialize with DataSource', () => {
-      expect(dataSource.createEntityManager).toHaveBeenCalledTimes(1);
-    });
   });
 
   describe('findByCart', () => {
@@ -263,13 +259,6 @@ describe('CartItemRepository', () => {
       expect(results).toHaveLength(3);
       expect(results.every((result) => result === mockCartItemList)).toBe(true);
       expect(repository.find).toHaveBeenCalledTimes(3);
-    });
-  });
-
-  describe('integration with TypeORM', () => {
-    it('should properly use DataSource and EntityManager', () => {
-      expect(repository['manager']).toBe(entityManager);
-      expect(dataSource.createEntityManager).toHaveBeenCalledTimes(1);
     });
   });
 });

@@ -1,4 +1,3 @@
-// test/unit/repositories/order-item.repository.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
 import { OrderItemRepository } from 'src/modules/store/orders/order-item/order-item.repository';
 import { OrderItem } from 'src/entities/store/product/order-item.entity';
