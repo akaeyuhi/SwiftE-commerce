@@ -2,6 +2,7 @@ import { CartItemRepository } from 'src/modules/store/cart/cart-item/cart-item.r
 import { CartItem } from 'src/entities/store/cart/cart-item.entity';
 import { DataSource, EntityManager } from 'typeorm';
 import { createMock, MockedMethods } from '../utils/helpers';
+import { Test, TestingModule } from '@nestjs/testing';
 
 describe('CartItemRepository', () => {
   let repository: CartItemRepository;
@@ -36,7 +37,14 @@ describe('CartItemRepository', () => {
       entityManager as unknown as EntityManager
     );
 
-    repository = new CartItemRepository(dataSource as unknown as DataSource);
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        CartItemRepository,
+        { provide: DataSource, useValue: dataSource },
+      ],
+    }).compile();
+
+    repository = module.get<CartItemRepository>(CartItemRepository);
 
     // Mock inherited Repository methods
     jest.spyOn(repository, 'find').mockImplementation(jest.fn());

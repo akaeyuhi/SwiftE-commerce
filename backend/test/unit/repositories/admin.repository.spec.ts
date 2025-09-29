@@ -4,6 +4,7 @@ import { DataSource, EntityManager } from 'typeorm';
 import { createMock, MockedMethods } from '../utils/helpers';
 import { NotFoundException } from '@nestjs/common';
 import { UpdateAdminDto } from 'src/modules/auth/admin/dto/update-admin.dto';
+import { Test, TestingModule } from '@nestjs/testing';
 
 describe('AdminRepository', () => {
   let repository: AdminRepository;
@@ -28,15 +29,21 @@ describe('AdminRepository', () => {
     } as unknown as Admin,
   ];
 
-  beforeEach(() => {
-
+  beforeEach(async () => {
     entityManager = createMock<EntityManager>([]);
     dataSource = createMock<DataSource>(['createEntityManager']);
     dataSource.createEntityManager!.mockReturnValue(
       entityManager as unknown as EntityManager
     );
 
-    repository = new AdminRepository(dataSource as unknown as DataSource);
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        AdminRepository,
+        { provide: DataSource, useValue: dataSource },
+      ],
+    }).compile();
+
+    repository = module.get<AdminRepository>(AdminRepository);
 
     // Mock the inherited Repository methods
     jest.spyOn(repository, 'find').mockImplementation(jest.fn());

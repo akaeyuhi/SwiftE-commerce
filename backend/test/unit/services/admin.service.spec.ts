@@ -4,6 +4,8 @@ import { Admin } from 'src/entities/user/policy/admin.entity';
 import { createRepositoryMock, MockedMethods } from '../utils/helpers';
 import { NotFoundException } from '@nestjs/common';
 import { CreateAdminDto } from 'src/modules/auth/admin/dto/create-admin.dto';
+import { Test, TestingModule } from '@nestjs/testing';
+import { CartItemService } from 'src/modules/store/cart/cart-item/cart-item.service';
 
 describe('AdminService', () => {
   let service: AdminService;
@@ -26,7 +28,7 @@ describe('AdminService', () => {
     } as unknown as Admin,
   ];
 
-  beforeEach(() => {
+  beforeEach(async () => {
     adminRepo = createRepositoryMock<AdminRepository>([
       'findOne',
       'findAll',
@@ -37,7 +39,14 @@ describe('AdminService', () => {
       'save',
     ]);
 
-    service = new AdminService(adminRepo as AdminRepository);
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        CartItemService,
+        { provide: AdminRepository, useValue: adminRepo },
+      ],
+    }).compile();
+
+    service = module.get<AdminService>(AdminService);
     jest.clearAllMocks();
   });
 
