@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Logger,
   Param,
   ParseUUIDPipe,
   Post,
@@ -22,6 +23,8 @@ import { EntityOwner } from 'src/common/decorators/entity-owner.decorator';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { AccessPolicies } from 'src/modules/auth/policy/policy.types';
 import { Request } from 'express';
+import { AnalyticsEventType } from 'src/modules/analytics/entities/analytics-event.entity';
+import { RecordEvent } from 'src/common/decorators/record-event.decorator';
 
 /**
  * OrdersController
@@ -71,11 +74,14 @@ export class OrdersController extends BaseController<
     },
     createUserOrder: { requireAuthenticated: true },
     findByUser: { requireAuthenticated: true },
+    checkout: { requireAuthenticated: true },
     updateStatus: {
       requireAuthenticated: true,
       storeRoles: [StoreRoles.ADMIN],
     },
   };
+
+  private readonly logger = new Logger(OrdersController.name);
 
   constructor(private readonly ordersService: OrdersService) {
     super(ordersService);
@@ -106,37 +112,46 @@ export class OrdersController extends BaseController<
    * @param req - express request (for current user)
    */
   @Post('create')
+  @RecordEvent({
+    eventType: AnalyticsEventType.CHECKOUT,
+    storeId: 'params.storeId',
+    userId: 'user.id',
+    invokedOn: 'store',
+    when: 'after',
+  })
   async createUserOrder(
     @Param('storeId', new ParseUUIDPipe()) storeId: string,
     @Body() dto: CreateOrderDto,
     @Req() req: Request
   ): Promise<Order> {
-    // Ensure storeId in DTO matches route
     dto.storeId = dto.storeId ?? storeId;
-
-    // Optionally ensure that req.user.id === dto.userId (owner creates own order)
-    // Permitted roles (store admin/site admin) can create orders for other users if you want.
     const currentUserId = (req as any).user?.id;
     if (!currentUserId) {
-      // JwtAuthGuard should have prevented this, but guard for safety
       throw new Error('Authentication required');
     }
 
-    // If the current user is not site admin and they are creating on behalf of another user,
-    // you might want to disallow that. We will enforce that only owner or admins may create for others.
     if (
       dto.userId &&
       dto.userId !== currentUserId &&
       !(req as any).user?.isSiteAdmin
     ) {
-      // If not site admin, deny creating orders for other users
       throw new Error('Cannot create order for another user');
     }
 
-    // If DTO has no userId, set it to current user
     dto.userId = dto.userId ?? currentUserId;
-
-    return this.ordersService.createOrder(dto);
+    return await this.ordersService.create(dto);
+  }
+  /**
+   * Checkout an existing order (mark it as paid) and emit analytics events.
+   *
+   * Route: POST /stores/:storeId/orders/:id/pay
+   */
+  @Post(':id/checkout')
+  async pay(
+    @Param('storeId', new ParseUUIDPipe()) storeId: string,
+    @Param('id', new ParseUUIDPipe()) id: string
+  ) {
+    return await this.ordersService.paid(id);
   }
 
   /**
