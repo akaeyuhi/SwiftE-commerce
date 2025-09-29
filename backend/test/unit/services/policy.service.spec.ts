@@ -3,7 +3,10 @@ import { PolicyService } from 'src/modules/auth/policy/policy.service';
 import {
   IUserService,
   IAdminService,
-  IStoreService, USER_SERVICE, ADMIN_SERVICE, STORE_SERVICE,
+  IStoreService,
+  USER_SERVICE,
+  ADMIN_SERVICE,
+  STORE_SERVICE,
 } from 'src/common/contracts/policy.contract';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { createServiceMock, MockedMethods } from '../utils/helpers';
