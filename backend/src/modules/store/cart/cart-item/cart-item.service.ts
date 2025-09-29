@@ -1,12 +1,14 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { BaseService } from 'src/common/abstracts/base.service';
 import { CartItem } from 'src/entities/store/cart/cart-item.entity';
 import { CartItemRepository } from 'src/modules/store/cart/cart-item/cart-item.repository';
 import { CartItemDto } from 'src/modules/store/cart/cart-item/dto/cart-item.dto';
+import { AnalyticsQueueService } from 'src/modules/analytics/queues/analytics-queue.service';
 
 /**
  * CartItemService
@@ -29,7 +31,11 @@ export class CartItemService extends BaseService<
   CartItemDto,
   CartItemDto
 > {
-  constructor(private readonly itemRepo: CartItemRepository) {
+  private readonly logger = new Logger(CartItemService.name);
+  constructor(
+    private readonly itemRepo: CartItemRepository,
+    private readonly analyticsQueue: AnalyticsQueueService
+  ) {
     super(itemRepo);
   }
 
@@ -59,20 +65,22 @@ export class CartItemService extends BaseService<
    *  - If an item for (cartId, variantId) exists, increment quantity by `quantity`.
    *  - Otherwise create a new item.
    *
-   * @param cartId - uuid of cart
-   * @param variantId - uuid of product variant
-   * @param quantity - positive integer
+   *  @param storeId - Store id
+   *  @param userId - user id
+   *  @param dto - dto to add to cart
    */
   async addOrIncrement(
-    cartId: string,
-    variantId: string,
-    quantity = 1
+    storeId: string,
+    userId: string,
+    dto: CartItemDto
   ): Promise<CartItem> {
-    if (quantity <= 0) throw new BadRequestException('Quantity must be > 0');
+    const { cartId, variantId, productId, quantity } = dto;
+    if (dto.quantity <= 0)
+      throw new BadRequestException('Quantity must be > 0');
 
     const existing = await this.itemRepo.findByCartAndVariant(
-      cartId,
-      variantId
+      dto.cartId,
+      dto.variantId
     );
     const itemRepo = this.itemRepo.manager.getRepository(CartItem);
 
@@ -86,6 +94,22 @@ export class CartItemService extends BaseService<
       variant: { id: variantId },
       quantity,
     });
+
+    try {
+      await this.analyticsQueue.recordAddToCart(
+        storeId,
+        productId ?? '',
+        userId,
+        quantity,
+        { cartId: created.cart.id }
+      );
+    } catch (err) {
+      // do not fail the API if analytics fails; just log
+      this.logger.warn(
+        'Failed to enqueue addToCart event: ' + (err as any)?.message
+      );
+    }
+
     return itemRepo.save(created);
   }
 

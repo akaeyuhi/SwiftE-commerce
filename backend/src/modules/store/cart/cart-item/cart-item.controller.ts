@@ -51,22 +51,18 @@ export class CartItemController extends BaseController<
    *
    * Body: { cartId, variantId, quantity }
    *
-   * @param _storeId - UUID of the store
-   * @param _userId - UUID of the user
+   * @param storeId - UUID of the store
+   * @param userId - UUID of the user
    * @param dto - CartItemDto containing cartId, variantId, quantity
    * @returns created or updated CartItem
    */
   @Post('add')
   async addOrIncrement(
-    @Param('storeId', new ParseUUIDPipe()) _storeId: string,
-    @Param('userId', new ParseUUIDPipe()) _userId: string,
+    @Param('storeId', new ParseUUIDPipe()) storeId: string,
+    @Param('userId', new ParseUUIDPipe()) userId: string,
     @Body() dto: CartItemDto
   ): Promise<CartItem> {
-    return this.cartItemService.addOrIncrement(
-      dto.cartId,
-      dto.variantId,
-      dto.quantity
-    );
+    return this.cartItemService.addOrIncrement(storeId, userId, dto);
   }
 
   /**

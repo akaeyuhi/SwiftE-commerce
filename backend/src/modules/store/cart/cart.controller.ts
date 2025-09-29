@@ -6,6 +6,7 @@ import {
   Delete,
   Param,
   ParseUUIDPipe,
+  UseInterceptors,
 } from '@nestjs/common';
 import { CartService } from 'src/modules/store/cart/cart.service';
 import { CreateCartDto } from 'src/modules/store/cart/dto/create-cart.dto';
@@ -16,6 +17,7 @@ import { JwtAuthGuard } from 'src/modules/auth/policy/guards/jwt-auth.guard';
 import { StoreRolesGuard } from 'src/modules/auth/policy/guards/store-roles.guard';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { AccessPolicies } from 'src/modules/auth/policy/policy.types';
+import { RecordEventInterceptor } from 'src/modules/analytics/interceptors/record-event.interceptor';
 
 /**
  * CartController
@@ -27,6 +29,7 @@ import { AccessPolicies } from 'src/modules/auth/policy/policy.types';
  */
 @Controller('stores/:storeId/:userId/cart')
 @UseGuards(JwtAuthGuard, StoreRolesGuard)
+@UseInterceptors(RecordEventInterceptor)
 export class CartController extends BaseController<
   ShoppingCart,
   CreateCartDto,
