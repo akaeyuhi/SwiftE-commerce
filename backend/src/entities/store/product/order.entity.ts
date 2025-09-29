@@ -13,7 +13,7 @@ import { OrderItem } from 'src/entities/store/product/order-item.entity';
 import { UserOwnedEntity } from 'src/common/interfaces/user-owned.entity.interface';
 import { StoreOwnedEntity } from 'src/common/interfaces/store-owned.entity.interface';
 import { OrderInfo } from 'src/common/embeddables/order-info.embeddable';
-import {OrderStatus} from "src/common/enums/order-status.enum";
+import { OrderStatus } from 'src/common/enums/order-status.enum';
 
 /**
  * Order
