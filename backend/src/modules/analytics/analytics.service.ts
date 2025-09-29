@@ -10,7 +10,6 @@ import { AiPredictRow } from 'src/modules/ai/ai-predictor/dto/ai-predict.dto';
 
 @Injectable()
 export class AnalyticsService {
-
   constructor(
     private readonly predictorService: AiPredictorService,
     private readonly eventsRepo: AnalyticsEventRepository,
@@ -27,6 +26,7 @@ export class AnalyticsService {
       eventType: dto.eventType,
       value: dto.value ?? null,
       meta: dto.meta ?? null,
+      invokedOn: dto.invokedOn ?? (dto.productId ? 'product' : 'store'),
     } as any);
     return this.eventsRepo.save(e);
   }

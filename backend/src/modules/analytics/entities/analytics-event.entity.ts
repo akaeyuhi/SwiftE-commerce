@@ -18,7 +18,6 @@ export enum AnalyticsEventType {
   ADD_TO_CART = 'add_to_cart',
   PURCHASE = 'purchase',
   CHECKOUT = 'checkout',
-  IMPRESSION = 'impression',
   CLICK = 'click',
   CUSTOM = 'custom',
 }
@@ -29,7 +28,6 @@ export class AnalyticsEvent {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  // optional foreign key-ish ids (store/product/user may be null for anonymous events)
   @Column({ type: 'uuid', nullable: true })
   storeId?: string;
 

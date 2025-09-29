@@ -162,4 +162,15 @@ export class AnalyticsEventRepository extends BaseRepository<AnalyticsEvent> {
       };
     });
   }
+
+  async insertMany(events: Partial<AnalyticsEvent>[]) {
+    if (!events || events.length === 0) return;
+    // Use query builder insert for faster bulk writes
+    await this.manager
+      .createQueryBuilder()
+      .insert()
+      .into(AnalyticsEvent)
+      .values(events)
+      .execute();
+  }
 }
