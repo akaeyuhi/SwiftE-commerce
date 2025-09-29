@@ -25,10 +25,10 @@ export class User implements BaseEntity {
   email: string;
 
   @Column({ type: 'varchar', length: 100, nullable: true })
-  firstName?: string;
+  firstName: string;
 
   @Column({ type: 'varchar', length: 100, nullable: true })
-  lastName?: string;
+  lastName: string;
 
   @Column({ type: 'text' })
   passwordHash: string;
