@@ -20,6 +20,9 @@ import { Product } from 'src/entities/store/product/product.entity';
 import { JwtAuthGuard } from 'src/modules/auth/policy/guards/jwt-auth.guard';
 import { StoreRolesGuard } from 'src/modules/auth/policy/guards/store-roles.guard';
 import { ProductPhotosInterceptor } from 'src/modules/products/product-photo/interceptors/product-photo.interceptor';
+import { RecordEventInterceptor } from 'src/modules/analytics/interceptors/record-event.interceptor';
+import { RecordEvents } from 'src/common/decorators/record-event.decorator';
+import { AnalyticsEventType } from 'src/modules/analytics/entities/analytics-event.entity';
 
 /**
  * ProductsController
@@ -38,6 +41,17 @@ import { ProductPhotosInterceptor } from 'src/modules/products/product-photo/int
  */
 @Controller('stores/:storeId/products')
 @UseGuards(JwtAuthGuard, StoreRolesGuard)
+@UseInterceptors(RecordEventInterceptor)
+@RecordEvents({
+  findOne: {
+    eventType: AnalyticsEventType.VIEW,
+    storeId: 'params.storeId',
+    productId: 'params.id', // or 'params.id'
+    userId: 'user.id',
+    invokedOn: 'product',
+    when: 'after',
+  },
+})
 export class ProductsController extends BaseController<
   Product,
   CreateProductDto,
