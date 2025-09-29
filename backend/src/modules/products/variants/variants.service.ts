@@ -272,7 +272,7 @@ export class VariantsService extends BaseService<
         quantity: qty,
       } as any);
     } else {
-      await this.inventoryService.update(inv.id, { quantity: qty } as any);
+      await this.inventoryService.update(inv.id, { quantity: qty });
     }
     return inv;
   }
@@ -290,6 +290,6 @@ export class VariantsService extends BaseService<
     if (newQuantity < 0) throw new Error('Insufficient stock');
     return await this.inventoryService.update(inv.id, {
       quantity: newQuantity,
-    } as any);
+    });
   }
 }

@@ -2,8 +2,8 @@ import { IsNumber, IsOptional, IsString, IsUUID } from 'class-validator';
 
 export class CreateVariantDto {
   @IsUUID() productId: string;
-  @IsString() sku: string;
   @IsNumber() price: number;
+  @IsOptional() @IsString() sku?: string;
   @IsOptional() attributes?: Record<string, any>;
   @IsOptional() stock?: number;
   @IsOptional() initialQuantity?: number = 0;
