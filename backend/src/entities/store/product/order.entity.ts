@@ -13,6 +13,7 @@ import { OrderItem } from 'src/entities/store/product/order-item.entity';
 import { UserOwnedEntity } from 'src/common/interfaces/user-owned.entity.interface';
 import { StoreOwnedEntity } from 'src/common/interfaces/store-owned.entity.interface';
 import { OrderInfo } from 'src/common/embeddables/order-info.embeddable';
+import {OrderStatus} from "src/common/enums/order-status.enum";
 
 /**
  * Order
@@ -36,8 +37,12 @@ export class Order implements UserOwnedEntity, StoreOwnedEntity {
    * Order status. You may want to convert this to an enum in code.
    * Examples: 'pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'
    */
-  @Column({ type: 'varchar', length: 50 })
-  status: string;
+  @Column({
+    type: 'enum',
+    enum: OrderStatus,
+    default: OrderStatus.PENDING,
+  })
+  status: OrderStatus;
 
   /**
    * Monetary total for the order (currency handled at application level).
