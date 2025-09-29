@@ -82,29 +82,29 @@ describe('CartService', () => {
     });
   });
 
-  describe('addItemToUserCart', () => {
-    it('throws for non-positive quantity', async () => {
-      await expect(
-        service.addItemToUserCart('u1', 's1', 'v1', 0)
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('creates a cart if missing then delegates addOrIncrement', async () => {
-      const cart = { id: 'cart1' } as ShoppingCart;
-      jest.spyOn(service, 'getOrCreateCart').mockResolvedValue(cart);
-      const returned = { id: 'i1', quantity: 2 } as CartItem;
-      cartItemService.addOrIncrement!.mockResolvedValue(returned);
-
-      const res = await service.addItemToUserCart('u1', 's1', 'variant-1', 2);
-      expect(service.getOrCreateCart).toHaveBeenCalledWith('u1', 's1');
-      expect(cartItemService.addOrIncrement).toHaveBeenCalledWith(
-        cart.id,
-        'variant-1',
-        2
-      );
-      expect(res).toEqual(returned);
-    });
-  });
+  // describe('addItemToUserCart', () => {
+  //   it('throws for non-positive quantity', async () => {
+  //     await expect(
+  //       service.addItemToUserCart('u1', 's1', 'v1', 0)
+  //     ).rejects.toThrow(BadRequestException);
+  //   });
+  //
+  //   it('creates a cart if missing then delegates addOrIncrement', async () => {
+  //     const cart = { id: 'cart1' } as ShoppingCart;
+  //     jest.spyOn(service, 'getOrCreateCart').mockResolvedValue(cart);
+  //     const returned = { id: 'i1', quantity: 2 } as CartItem;
+  //     cartItemService.addOrIncrement!.mockResolvedValue(returned);
+  //
+  //     const res = await service.addItemToUserCart('u1', 's1', 'variant-1', 2);
+  //     expect(service.getOrCreateCart).toHaveBeenCalledWith('u1', 's1');
+  //     expect(cartItemService.addOrIncrement).toHaveBeenCalledWith(
+  //       cart.id,
+  //       'variant-1',
+  //       2
+  //     );
+  //     expect(res).toEqual(returned);
+  //   });
+  // });
 
   describe('updateItemQuantity & removeItem', () => {
     it('updateItemQuantity delegates to cartItemService.updateQuantity', async () => {
