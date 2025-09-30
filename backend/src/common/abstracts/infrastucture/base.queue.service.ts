@@ -1,8 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import {
   QueueJob,
   QueueOptions,
 } from 'src/common/interfaces/infrastructure/queue.interface';
+import { Queue } from 'bull';
 
 /**
  * BaseQueueService
@@ -33,6 +34,7 @@ export abstract class BaseQueueService<JobData = any, JobResult = any> {
    * Name/identifier for this queue
    */
   protected abstract readonly queueName: string;
+  protected readonly logger = new Logger(BaseQueueService.name);
 
   /**
    * Default options for jobs added to this queue
@@ -43,6 +45,8 @@ export abstract class BaseQueueService<JobData = any, JobResult = any> {
     backoff: 'exponential',
     backoffDelay: 1000,
   };
+
+  protected constructor(protected readonly queue: Queue) {}
 
   /**
    * Add a job to the queue.
@@ -206,14 +210,39 @@ export abstract class BaseQueueService<JobData = any, JobResult = any> {
    *
    * @returns Promise resolving to queue stats
    */
-  abstract getStats(): Promise<{
-    waiting: number;
-    active: number;
-    completed: number;
-    failed: number;
-  }>;
-}
+  async getStats() {
+    try {
+      const [waiting, active, completed, failed, delayed] = await Promise.all([
+        this.queue.getWaiting(),
+        this.queue.getActive(),
+        this.queue.getCompleted(),
+        this.queue.getFailed(),
+        this.queue.getDelayed(),
+      ]);
 
+      return {
+        waiting: waiting.length,
+        active: active.length,
+        completed: completed.length,
+        failed: failed.length,
+        delayed: delayed.length,
+        total:
+          waiting.length + active.length + completed.length + failed.length,
+      };
+    } catch (error) {
+      this.logger.error('Failed to get queue stats:', error);
+      return {
+        waiting: 0,
+        active: 0,
+        completed: 0,
+        failed: 0,
+        delayed: 0,
+        paused: 0,
+        total: 0,
+      };
+    }
+  }
+}
 /**
  * Example usage:
  *

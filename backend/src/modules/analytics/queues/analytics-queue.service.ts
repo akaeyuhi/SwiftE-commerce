@@ -25,7 +25,7 @@ export enum AnalyticsJobType {
 }
 
 /**
- * Enhanced AnalyticsQueueService
+ * AnalyticsQueueService
  *
  * Extends BaseQueueService to provide analytics-specific job processing.
  * Handles event recording, batch processing, aggregation, cleanup tasks,
@@ -34,7 +34,7 @@ export enum AnalyticsJobType {
 @Injectable()
 export class AnalyticsQueueService extends BaseQueueService<AnalyticsJobData> {
   protected readonly queueName = 'analytics';
-  private readonly logger = new Logger(AnalyticsQueueService.name);
+  protected readonly logger = new Logger(AnalyticsQueueService.name);
 
   protected readonly defaultOptions: QueueOptions = {
     priority: 0,
@@ -44,10 +44,10 @@ export class AnalyticsQueueService extends BaseQueueService<AnalyticsJobData> {
   };
 
   constructor(
-    @InjectQueue('analytics') private readonly queue: Queue,
+    @InjectQueue('analytics') protected readonly queue: Queue,
     private readonly eventsRepo: AnalyticsEventRepository
   ) {
-    super();
+    super(queue);
   }
 
   /**
@@ -241,43 +241,6 @@ export class AnalyticsQueueService extends BaseQueueService<AnalyticsJobData> {
       throw error;
     }
   }
-
-  /**
-   * Get queue statistics
-   */
-  async getStats() {
-    try {
-      const [waiting, active, completed, failed, delayed] = await Promise.all([
-        this.queue.getWaiting(),
-        this.queue.getActive(),
-        this.queue.getCompleted(),
-        this.queue.getFailed(),
-        this.queue.getDelayed(),
-      ]);
-
-      return {
-        waiting: waiting.length,
-        active: active.length,
-        completed: completed.length,
-        failed: failed.length,
-        delayed: delayed.length,
-        total:
-          waiting.length + active.length + completed.length + failed.length,
-      };
-    } catch (error) {
-      this.logger.error('Failed to get queue stats:', error);
-      return {
-        waiting: 0,
-        active: 0,
-        completed: 0,
-        failed: 0,
-        delayed: 0,
-        paused: 0,
-        total: 0,
-      };
-    }
-  }
-
   // ===============================
   // Public Analytics API Methods
   // ===============================
