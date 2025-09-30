@@ -8,7 +8,7 @@ import {
 } from 'typeorm';
 import { User } from 'src/entities/user/user.entity';
 import { Store } from 'src/entities/store/store.entity';
-import { BaseEntity } from 'src/common/interfaces/base-entity.interface';
+import { BaseEntity } from 'src/common/interfaces/crud/base-entity.interface';
 
 @Entity({ name: 'ai_logs' })
 export class AiLog implements BaseEntity {
