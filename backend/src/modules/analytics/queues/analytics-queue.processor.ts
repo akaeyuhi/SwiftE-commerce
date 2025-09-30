@@ -1,59 +1,78 @@
 import { Processor, Process } from '@nestjs/bull';
 import { Job } from 'bull';
 import { Injectable, Logger } from '@nestjs/common';
-import { AnalyticsEventRepository } from '../repositories/analytics-event.repository';
-import { AnalyticsJobPayload } from './types';
-import { RecordEventDto } from '../dto/record-event.dto';
+import {
+  AnalyticsQueueService,
+  AnalyticsJobType,
+  AnalyticsJobData,
+} from './analytics-queue.service';
 
 /**
  * AnalyticsQueueProcessor
  *
- * - processes jobs named 'record'
- * - supports job.data being a single RecordEventDto or an array
- * - writes to analytics_events using AnalyticsEventRepository
+ * Bull processor that delegates to AnalyticsQueueService.processJob()
+ * This maintains separation of concerns - processor handles Bull integration,
+ * service handles business logic.
  */
 @Injectable()
 @Processor('analytics')
 export class AnalyticsQueueProcessor {
   private readonly logger = new Logger(AnalyticsQueueProcessor.name);
 
-  constructor(private readonly eventsRepo: AnalyticsEventRepository) {}
+  constructor(private readonly analyticsQueue: AnalyticsQueueService) {}
 
+  @Process(AnalyticsJobType.RECORD_SINGLE)
+  async handleRecordSingle(job: Job<AnalyticsJobData>) {
+    return this.processJob(job, AnalyticsJobType.RECORD_SINGLE);
+  }
+
+  @Process(AnalyticsJobType.RECORD_BATCH)
+  async handleRecordBatch(job: Job<AnalyticsJobData>) {
+    return this.processJob(job, AnalyticsJobType.RECORD_BATCH);
+  }
+
+  @Process(AnalyticsJobType.AGGREGATE_DAILY)
+  async handleAggregateDaily(job: Job<AnalyticsJobData>) {
+    return this.processJob(job, AnalyticsJobType.AGGREGATE_DAILY);
+  }
+
+  @Process(AnalyticsJobType.CLEANUP_OLD)
+  async handleCleanupOld(job: Job<AnalyticsJobData>) {
+    return this.processJob(job, AnalyticsJobType.CLEANUP_OLD);
+  }
+
+  /**
+   * Legacy processor for backward compatibility
+   */
   @Process('record')
-  async handleRecord(job: Job<AnalyticsJobPayload>) {
-    const payload = job.data;
+  async handleLegacyRecord(job: Job<any>) {
     try {
-      const rows: RecordEventDto[] = Array.isArray(payload)
-        ? payload
-        : [payload];
+      const payload = job.data;
+      const events = Array.isArray(payload) ? payload : [payload];
 
-      // Convert to entities array and bulk-save
-      const entities = rows.map((r) =>
-        this.eventsRepo.create({
-          storeId: r.storeId ?? null,
-          productId: r.productId ?? null,
-          userId: r.userId ?? null,
-          eventType: r.eventType,
-          value: r.value ?? null,
-          meta: r.meta ?? null,
-        } as any)
-      );
+      // Convert to new format and delegate
+      const jobData: AnalyticsJobData = { events };
+      return await this.analyticsQueue['processSingleRecord'](jobData);
+    } catch (error) {
+      this.logger.error(`Legacy record job ${job.id} failed:`, error);
+      throw error;
+    }
+  }
 
-      // Save many at once (TypeORM accepts arrays)
-      await this.eventsRepo.insertMany(entities as any);
+  /**
+   * Common job processing wrapper
+   */
+  private async processJob(job: Job<AnalyticsJobData>, jobType: string) {
+    try {
+      this.logger.debug(`Processing ${jobType} job ${job.id}`);
 
-      // optionally log metrics
-      this.logger.debug(
-        `Persisted ${entities.length} analytics events (job ${job.id})`
-      );
+      const result = await this.analyticsQueue['processJob'](jobType, job.data);
 
-      return { ok: true, inserted: entities.length };
-    } catch (err) {
-      this.logger.error(
-        `Failed to process analytics job ${job.id}: ${err?.message}`,
-        err?.stack
-      );
-      throw err; // allow Bull to retry per JobOptions
+      this.logger.debug(`Completed ${jobType} job ${job.id}:`, result);
+      return result;
+    } catch (error) {
+      this.logger.error(`Job ${job.id} (${jobType}) failed:`, error);
+      throw error;
     }
   }
 }
