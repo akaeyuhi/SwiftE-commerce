@@ -11,6 +11,7 @@ import { UserRoleModule } from 'src/modules/user/user-role/user-role.module';
 import { StoreModule } from 'src/modules/store/store.module';
 import { USER_SERVICE } from 'src/common/contracts/policy.contract';
 import { AuthModule } from 'src/modules/auth/auth.module';
+import { LikesModule } from './likes/likes/likes.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { AuthModule } from 'src/modules/auth/auth.module';
     UserRoleModule,
     StoreModule,
     AuthModule,
+    LikesModule,
   ],
   providers: [
     UserRepository,

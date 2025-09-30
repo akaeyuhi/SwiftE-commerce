@@ -15,6 +15,7 @@ import { AiLog } from 'src/entities/ai/ai-log.entity';
 import { BaseEntity } from 'src/common/interfaces/base-entity.interface';
 import { AdminRoles } from 'src/common/enums/admin.enum';
 import { Store } from 'src/entities/store/store.entity';
+import { Like } from 'src/entities/user/like.entity';
 
 @Entity({ name: 'users' })
 export class User implements BaseEntity {
@@ -68,4 +69,7 @@ export class User implements BaseEntity {
 
   @OneToMany(() => AiLog, (log) => log.user)
   aiLogs: AiLog[];
+
+  @OneToMany(() => Like, (like) => like.user)
+  likes: Like[];
 }
