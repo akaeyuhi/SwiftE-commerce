@@ -1,5 +1,13 @@
-import { User } from 'src/entities/user/user.entity';
+import { IsBoolean, IsDate, IsOptional, IsUUID } from 'class-validator';
 
 export class CreateAdminDto {
-  user: User;
+  @IsUUID()
+  userId: string;
+  @IsUUID()
+  assignedByUser?: string;
+  @IsDate()
+  @IsOptional()
+  assignedAt?: Date;
+  @IsBoolean()
+  isActive: boolean;
 }
