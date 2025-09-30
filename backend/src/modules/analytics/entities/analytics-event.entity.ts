@@ -15,6 +15,7 @@ import {
 export enum AnalyticsEventType {
   VIEW = 'view',
   LIKE = 'like',
+  UNLIKE = 'unlike',
   ADD_TO_CART = 'add_to_cart',
   PURCHASE = 'purchase',
   CHECKOUT = 'checkout',
