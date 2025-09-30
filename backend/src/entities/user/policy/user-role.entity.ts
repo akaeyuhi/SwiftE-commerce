@@ -37,4 +37,22 @@ export class UserRole implements UserOwnedEntity {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @Column({ default: true })
+  isActive: boolean;
+
+  @Column({ nullable: true })
+  assignedBy?: string;
+
+  @Column({ nullable: true })
+  assignedAt?: Date;
+
+  @Column({ nullable: true })
+  revokedBy?: string;
+
+  @Column({ nullable: true })
+  revokedAt?: Date;
+
+  @Column('json', { nullable: true })
+  metadata?: Record<string, any>;
 }

@@ -74,13 +74,11 @@ export class UserService extends BaseService<
     return user;
   }
 
-  // Additional methods:
-  async assignRole(
+  async assignStoreRole(
     userId: string,
     roleName: StoreRoles,
     storeId: string
   ): Promise<UserRole> {
-    // validate user & store existence
     const user = await this.getEntityById(userId);
     if (!user) throw new NotFoundException('User not found');
 
@@ -99,7 +97,7 @@ export class UserService extends BaseService<
     return userRole;
   }
 
-  async revokeRole(
+  async revokeStoreRole(
     userId: string,
     roleId: string,
     storeId?: string
@@ -107,7 +105,6 @@ export class UserService extends BaseService<
     await this.userRepo.removeRoleFromUser(userId, roleId, storeId);
   }
 
-  // create a store and give STORE_ADMIN to owner
   async createStore(ownerId: string, dto: CreateStoreDto): Promise<StoreDto> {
     const owner = await this.getEntityById(ownerId);
     if (!owner) throw new NotFoundException('Store owner not found');
@@ -116,7 +113,7 @@ export class UserService extends BaseService<
 
     const store = await this.storeService.create(dto);
 
-    await this.assignRole(owner.id, StoreRoles.ADMIN, store.id!);
+    await this.assignStoreRole(owner.id, StoreRoles.ADMIN, store.id!);
 
     return store;
   }
@@ -129,5 +126,142 @@ export class UserService extends BaseService<
   async isUserSiteAdmin(userId: string) {
     const user = await this.findOneWithRelations(userId);
     return user.siteRole === AdminRoles.ADMIN;
+  }
+
+  async assignSiteAdminRole(userId: string) {
+    const user = await this.getEntityById(userId);
+    if (!user) throw new NotFoundException('User not found');
+    return this.update(userId, { siteRole: AdminRoles.ADMIN });
+  }
+
+  /**
+   * Mark user's email as verified
+   */
+  async markAsVerified(userId: string): Promise<User | null> {
+    const user = await this.getEntityById(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (user.isEmailVerified) {
+      return user; // Already verified
+    }
+
+    await this.userRepo.update(userId, {
+      isEmailVerified: true,
+      emailVerifiedAt: new Date(),
+    });
+
+    return this.getEntityById(userId);
+  }
+
+  /**
+   * Check if user email is verified
+   */
+  async isEmailVerified(userId: string): Promise<boolean> {
+    const user = await this.getEntityById(userId);
+    return user?.isEmailVerified || false;
+  }
+
+  /**
+   * Check if user has specific store role (delegates to UserRoleService)
+   */
+  async userHasStoreRole(
+    userId: string,
+    storeId: string,
+    roleName: StoreRoles
+  ): Promise<boolean> {
+    return this.userRoleService.userHasStoreRole(userId, storeId, roleName);
+  }
+
+  /**
+   * Check if user is store admin (delegates to UserRoleService)
+   */
+  async userIsStoreAdmin(userId: string, storeId: string): Promise<boolean> {
+    return this.userRoleService.userIsStoreAdmin(userId, storeId);
+  }
+
+  /**
+   * Get user's basic profile info
+   */
+  async getProfile(userId: string): Promise<{
+    id: string;
+    email: string;
+    firstName?: string;
+    lastName?: string;
+    isEmailVerified: boolean;
+    emailVerifiedAt?: Date;
+    storeRoles?: any[];
+    createdAt: Date;
+  } | null> {
+    const user = await this.getEntityById(userId);
+    if (!user) return null;
+
+    const storeRoles = await this.getUserStoreRoles(userId);
+
+    return {
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      isEmailVerified: user.isEmailVerified || false,
+      emailVerifiedAt: user.emailVerifiedAt,
+      storeRoles: storeRoles.map((role) => ({
+        storeId: role.store.id,
+        storeName: role.store.name,
+        roleName: role.roleName,
+        assignedAt: role.assignedAt,
+      })),
+      createdAt: user.createdAt,
+    };
+  }
+
+  /**
+   * Update user's basic info
+   */
+  async updateProfile(
+    userId: string,
+    updates: {
+      firstName?: string;
+      lastName?: string;
+    }
+  ): Promise<User | null> {
+    const user = await this.findOne(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    await this.userRepo.update(userId, updates);
+    return this.getEntityById(userId);
+  }
+
+  /**
+   * Soft delete user account
+   */
+  async deactivateAccount(userId: string): Promise<void> {
+    const user = await this.findOne(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    await this.userRepo.update(userId, {
+      isActive: false,
+      deactivatedAt: new Date(),
+    });
+  }
+
+  /**
+   * Reactivate user account
+   */
+  async reactivateAccount(userId: string): Promise<void> {
+    const user = await this.findOne(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    await this.userRepo.update(userId, {
+      isActive: true,
+      deactivatedAt: undefined,
+    });
   }
 }

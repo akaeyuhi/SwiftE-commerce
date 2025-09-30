@@ -39,25 +39,24 @@ export class UserController extends BaseController<
     return this.userService.create(dto);
   }
 
+  /* @deprecated */
   @Post(':id/roles')
   @StoreRole(StoreRoles.ADMIN)
   @AdminRole(AdminRoles.ADMIN)
   async assignRole(@Param('id') userId: string, @Body() dto: RoleDto) {
-    return this.userService.assignRole(userId, dto.roleName, dto.storeId);
+    return this.userService.assignStoreRole(userId, dto.roleName, dto.storeId);
   }
 
+  /* @deprecated */
   @Delete(':id/roles')
   @StoreRole(StoreRoles.ADMIN)
   @AdminRole(AdminRoles.ADMIN)
   async revokeStoreRole(@Param('id') userId: string, @Body() dto: RoleDto) {
-    return this.userService.revokeRole(userId, dto.roleName, dto.storeId);
+    return this.userService.revokeStoreRole(userId, dto.roleName, dto.storeId);
   }
 
   @Post(':id/stores')
   async createStore(@Param('id') userId: string, @Body() dto: CreateStoreDto) {
     return this.userService.createStore(userId, dto);
   }
-
-  // Additional endpoints:
-  // POST /users/:id/ai-logs
 }
