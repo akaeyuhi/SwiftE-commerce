@@ -1,36 +1,88 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
+import { BaseAnalyticsRepository } from 'src/common/abstracts/analytics/base.analytics.repository';
 import { ProductDailyStats } from '../entities/product-daily-stats.entity';
-import { BaseRepository } from 'src/common/abstracts/base.repository';
+import { DateRangeOptions } from 'src/common/interfaces/infrastructure/analytics.interface';
 
 @Injectable()
-export class ProductDailyStatsRepository extends BaseRepository<ProductDailyStats> {
+export class ProductDailyStatsRepository extends BaseAnalyticsRepository<ProductDailyStats> {
   constructor(dataSource: DataSource) {
     super(ProductDailyStats, dataSource.createEntityManager());
   }
 
   /**
-   * Sum aggregated columns for product in a date range using QueryBuilder.
+   * Get aggregated metrics for a product across date range
    */
-  async getAggregateRange(productId: string, from?: string, to?: string) {
+  async getAggregatedMetrics(
+    productId: string,
+    options: DateRangeOptions = {}
+  ) {
     const qb = this.createQueryBuilder('p')
       .select([
-        'COALESCE(SUM(p.views),0) as views',
-        'COALESCE(SUM(p.purchases),0) as purchases',
-        'COALESCE(SUM(p.addToCarts),0) as addToCarts',
-        'COALESCE(SUM(p.revenue),0) as revenue',
+        'COALESCE(SUM(p.views), 0) as views',
+        'COALESCE(SUM(p.purchases), 0) as purchases',
+        'COALESCE(SUM(p.addToCarts), 0) as addToCarts',
+        'COALESCE(SUM(p.revenue), 0) as revenue',
       ])
       .where('p.productId = :productId', { productId });
 
-    if (from) qb.andWhere('p.date >= :from', { from });
-    if (to) qb.andWhere('p.date <= :to', { to });
+    this.applyDateRange(qb, options, 'p.date');
 
     const raw = await qb.getRawOne();
-    return {
-      views: Number(raw?.views ?? 0),
-      purchases: Number(raw?.purchases ?? 0),
-      addToCarts: Number(raw?.addToCarts ?? 0),
-      revenue: Number(raw?.revenue ?? 0),
-    };
+    return this.parseAggregationResult(raw);
+  }
+
+  /**
+   * Get daily timeseries data for a product
+   */
+  async getDailyTimeseries(
+    productId: string,
+    options: DateRangeOptions = {}
+  ): Promise<ProductDailyStats[]> {
+    const qb = this.createQueryBuilder('p')
+      .where('p.productId = :productId', { productId })
+      .orderBy('p.date', 'ASC');
+
+    this.applyDateRange(qb, options, 'p.date');
+
+    return qb.getMany();
+  }
+
+  /**
+   * Get comparative metrics for multiple products
+   */
+  async getComparativeMetrics(
+    productIds: string[],
+    options: DateRangeOptions = {}
+  ) {
+    if (!productIds.length) return [];
+
+    const qb = this.createQueryBuilder('p')
+      .select([
+        'p.productId',
+        'SUM(p.views) as views',
+        'SUM(p.purchases) as purchases',
+        'SUM(p.addToCarts) as addToCarts',
+        'SUM(p.revenue) as revenue',
+      ])
+      .where('p.productId IN (:...productIds)', { productIds })
+      .groupBy('p.productId');
+
+    this.applyDateRange(qb, options, 'p.date');
+
+    const raw = await qb.getRawMany();
+
+    return raw.map((r) => ({
+      productId: r.productId,
+      ...this.parseAggregationResult(r),
+    }));
+  }
+
+  /**
+   * Legacy method for backward compatibility
+   * @deprecated Use getAggregatedMetrics instead
+   */
+  async getAggregateRange(productId: string, from?: string, to?: string) {
+    return this.getAggregatedMetrics(productId, { from, to });
   }
 }
