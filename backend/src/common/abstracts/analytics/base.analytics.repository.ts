@@ -56,9 +56,8 @@ export abstract class BaseAnalyticsRepository<
     eventTypeMapping?: Record<string, string>
   ) {
     return metrics.map((metric) => {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const eventType = eventTypeMapping?.[metric] || metric.toUpperCase();
-      return `SUM(CASE WHEN eventType = :${metric} THEN 1 ELSE 0 END) as ${metric}`;
+      return `SUM(CASE WHEN eventType = :${eventType} THEN 1 ELSE 0 END) as ${metric}`;
     });
   }
 

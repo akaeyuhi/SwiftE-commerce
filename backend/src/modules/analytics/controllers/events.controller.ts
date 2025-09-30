@@ -1,6 +1,6 @@
 import { Controller, Post, Body, Param, ParseUUIDPipe } from '@nestjs/common';
 import { AnalyticsService } from 'src/modules/analytics/analytics.service';
-import { RecordEventDto } from 'src/modules/analytics/dto/record-event.dto';
+import { RecordEventDto } from 'src/modules/analytics/dto';
 
 /**
  * EventsController
@@ -19,6 +19,6 @@ export class EventsController {
   ) {
     // Ensure storeId from route if not present in DTO
     dto.storeId = dto.storeId ?? storeId;
-    return this.statsService.recordEvent(dto);
+    return this.statsService.trackEvent(dto);
   }
 }
