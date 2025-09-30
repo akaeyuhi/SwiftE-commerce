@@ -17,4 +17,7 @@ export interface QueueOptions {
   maxAttempts?: number;
   backoff?: 'fixed' | 'exponential';
   backoffDelay?: number;
+  removeOnComplete?: number;
+  jobId?: string;
+  removeOnFail?: number;
 }

@@ -17,4 +17,3 @@ export interface AiPredictResult {
   label?: string;
   [key: string]: any;
 }
-

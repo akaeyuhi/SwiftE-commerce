@@ -25,9 +25,7 @@ export class CategoriesService extends BaseService<
   CreateCategoryDto,
   UpdateCategoryDto
 > {
-  constructor(
-    private readonly categoriesRepo: CategoriesRepository,
-  ) {
+  constructor(private readonly categoriesRepo: CategoriesRepository) {
     super(categoriesRepo);
   }
 

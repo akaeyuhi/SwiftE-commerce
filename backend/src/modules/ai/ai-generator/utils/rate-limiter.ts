@@ -21,7 +21,6 @@ export interface RateLimitResult {
 export class TokenBucket {
   private tokens: number;
   private lastRefill: number;
-  private readonly logger = new Logger(TokenBucket.name);
 
   constructor(private readonly config: RateLimitConfig) {
     this.tokens = config.capacity;

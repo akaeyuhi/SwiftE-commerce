@@ -130,7 +130,7 @@ Return as JSON array.`,
     }
 
     // Validate prompt
-    if (!prompt || typeof prompt !== 'string' || prompt.trim().length === 0) {
+    if (!prompt || prompt.trim().length === 0) {
       throw new Error('Prompt is required and cannot be empty');
     }
 

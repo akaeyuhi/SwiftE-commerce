@@ -4,7 +4,10 @@ import { lastValueFrom } from 'rxjs';
 import { BaseAiProvider, ProviderConfig } from './base.provider';
 import { AiLogsService } from '../../ai-logs/ai-logs.service';
 import { AiAuditService } from '../../ai-audit/ai-audit.service';
-import {AiGenerateOptions, AiGenerateResult} from "src/common/interfaces/ai/generator.interface";
+import {
+  AiGenerateOptions,
+  AiGenerateResult,
+} from 'src/common/interfaces/ai/generator.interface';
 
 /**
  * Enhanced OpenAI Provider

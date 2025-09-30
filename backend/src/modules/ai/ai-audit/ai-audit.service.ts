@@ -1,7 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import {
-  AiAuditRepository,
-} from './ai-audit.repository';
+import { AiAuditRepository } from './ai-audit.repository';
 import { AiAudit } from 'src/entities/ai/ai-audit.entity';
 import {
   createCipheriv,
@@ -9,7 +7,10 @@ import {
   createHash,
   randomBytes,
 } from 'crypto';
-import {AuditQueryOptions, AuditStats} from "src/common/interfaces/ai/audit.interface";
+import {
+  AuditQueryOptions,
+  AuditStats,
+} from 'src/common/interfaces/ai/audit.interface';
 
 export interface StoreEncryptedResponseParams {
   feature: string;

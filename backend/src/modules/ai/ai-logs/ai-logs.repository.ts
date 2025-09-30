@@ -210,7 +210,7 @@ export class AiLogsRepository extends BaseRepository<AiLog> {
     const dailyData = await qb.getRawMany();
 
     // For each day, get top features
-    const enrichedData = await Promise.all(
+    return await Promise.all(
       dailyData.map(async (day) => {
         const topFeatures = await this.getTopFeaturesByDate(day.date, filters);
 
@@ -223,8 +223,6 @@ export class AiLogsRepository extends BaseRepository<AiLog> {
         };
       })
     );
-
-    return enrichedData;
   }
 
   /**

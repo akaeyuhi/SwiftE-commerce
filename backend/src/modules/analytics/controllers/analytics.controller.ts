@@ -22,7 +22,11 @@ import { AccessPolicies } from 'src/modules/auth/policy/policy.types';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { AdminRoles } from 'src/common/enums/admin.enum';
 import { AdminRole } from 'src/common/decorators/admin-role.decorator';
-import {AggregationRequestDto, AnalyticsQueryDto, BatchEventsDto} from "src/modules/analytics/dto";
+import {
+  AggregationRequestDto,
+  AnalyticsQueryDto,
+  BatchEventsDto,
+} from 'src/modules/analytics/dto';
 
 /**
  * AnalyticsController

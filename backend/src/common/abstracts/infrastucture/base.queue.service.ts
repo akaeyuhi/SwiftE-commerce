@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { QueueJob, QueueOptions } from 'src/common/interfaces/infrastructure/queue.interface';
+import {
+  QueueJob,
+  QueueOptions,
+} from 'src/common/interfaces/infrastructure/queue.interface';
 
 /**
  * BaseQueueService
