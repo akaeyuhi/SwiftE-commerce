@@ -35,19 +35,17 @@ export class LikesService extends BaseService<
         productId
       );
       if (exists) return exists;
-      const entity = this.likesRepo.createEntity({
+      return this.likesRepo.createEntity({
         user: { id: userId },
         product: { id: productId },
       });
-      return entity;
     } else {
       const exists = await this.likesRepo.findByUserAndStore(userId, storeId!);
       if (exists) return exists;
-      const entity = this.likesRepo.createEntity({
+      return this.likesRepo.createEntity({
         user: { id: userId },
         store: { id: storeId },
       });
-      return entity;
     }
   }
 
