@@ -1,7 +1,7 @@
 import { IsOptional, IsEnum, IsUUID, IsNumber, IsIn } from 'class-validator';
 import { AnalyticsEventType } from '../entities/analytics-event.entity';
 
-export type Maybe<T> = T | undefined | null;
+export type Maybe<T> = T | undefined;
 
 export class RecordEventDto {
   @IsOptional()

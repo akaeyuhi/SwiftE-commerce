@@ -4,8 +4,8 @@ import { PolicyEntry } from 'src/modules/auth/policy/policy.types';
 import { UserRole } from 'src/entities/user/policy/user-role.entity';
 import { DeepPartial } from 'typeorm';
 import { User } from 'src/entities/user/user.entity';
-import { StoreOwnedEntity } from 'src/common/interfaces/store-owned.entity.interface';
-import { UserOwnedEntity } from 'src/common/interfaces/user-owned.entity.interface';
+import { StoreOwnedEntity } from 'src/common/interfaces/crud/store-owned.entity.interface';
+import { UserOwnedEntity } from 'src/common/interfaces/crud/user-owned.entity.interface';
 import { Store } from 'src/entities/store/store.entity';
 import {
   ADMIN_SERVICE,

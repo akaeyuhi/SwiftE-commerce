@@ -6,7 +6,7 @@ import {
   UpdateDateColumn,
   Unique,
 } from 'typeorm';
-import { BaseEntity } from 'src/common/interfaces/base-entity.interface';
+import { BaseEntity } from 'src/common/interfaces/crud/base-entity.interface';
 import { User } from 'src/entities/user/user.entity';
 import { Store } from 'src/entities/store/store.entity';
 import { Product } from 'src/entities/store/product/product.entity';

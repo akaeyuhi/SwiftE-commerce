@@ -1,4 +1,4 @@
-import { ICrudService } from '../interfaces/crud.interface';
+import { ICrudService } from 'src/common/interfaces/crud/crud.interface';
 import { BaseMapper } from 'src/common/abstracts/base.mapper';
 import { BaseRepository } from 'src/common/abstracts/base.repository';
 import { DeepPartial, ObjectLiteral } from 'typeorm';

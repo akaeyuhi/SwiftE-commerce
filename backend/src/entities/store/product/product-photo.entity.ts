@@ -7,7 +7,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Product } from 'src/entities/store/product/product.entity';
-import { BaseEntity } from 'src/common/interfaces/base-entity.interface';
+import { BaseEntity } from 'src/common/interfaces/crud/base-entity.interface';
 
 @Entity({ name: 'product_photos' })
 export class ProductPhoto implements BaseEntity {

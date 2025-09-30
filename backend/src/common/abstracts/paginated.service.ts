@@ -1,6 +1,6 @@
 import { BaseService } from 'src/common/abstracts/base.service';
 import { PaginationDto } from 'src/common/dtos/pagination.dto';
-import { PaginatedResult } from 'src/common/interfaces/paginated-result.interface';
+import { PaginatedResult } from 'src/common/interfaces/crud/paginated-result.interface';
 import { ObjectLiteral } from 'typeorm';
 
 /**

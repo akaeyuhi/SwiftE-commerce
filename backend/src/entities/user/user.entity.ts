@@ -12,7 +12,7 @@ import { Order } from 'src/entities/store/product/order.entity';
 import { Review } from 'src/entities/store/review.entity';
 import { NewsPost } from 'src/entities/store/news-post.entity';
 import { AiLog } from 'src/entities/ai/ai-log.entity';
-import { BaseEntity } from 'src/common/interfaces/base-entity.interface';
+import { BaseEntity } from 'src/common/interfaces/crud/base-entity.interface';
 import { AdminRoles } from 'src/common/enums/admin.enum';
 import { Store } from 'src/entities/store/store.entity';
 import { Like } from 'src/entities/user/like.entity';

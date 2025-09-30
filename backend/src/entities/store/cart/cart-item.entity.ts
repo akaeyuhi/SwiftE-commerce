@@ -8,7 +8,7 @@ import {
 } from 'typeorm';
 import { ShoppingCart } from 'src/entities/store/cart/cart.entity';
 import { ProductVariant } from 'src/entities/store/product/variant.entity';
-import { BaseEntity } from 'src/common/interfaces/base-entity.interface';
+import { BaseEntity } from 'src/common/interfaces/crud/base-entity.interface';
 
 @Entity({ name: 'cart_items' })
 export class CartItem implements BaseEntity {

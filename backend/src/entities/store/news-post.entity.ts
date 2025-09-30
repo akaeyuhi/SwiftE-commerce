@@ -8,8 +8,8 @@ import {
 } from 'typeorm';
 import { Store } from 'src/entities/store/store.entity';
 import { User } from 'src/entities/user/user.entity';
-import { UserOwnedEntity } from 'src/common/interfaces/user-owned.entity.interface';
-import { StoreOwnedEntity } from 'src/common/interfaces/store-owned.entity.interface';
+import { UserOwnedEntity } from 'src/common/interfaces/crud/user-owned.entity.interface';
+import { StoreOwnedEntity } from 'src/common/interfaces/crud/store-owned.entity.interface';
 
 @Entity({ name: 'news_posts' })
 export class NewsPost implements UserOwnedEntity, StoreOwnedEntity {

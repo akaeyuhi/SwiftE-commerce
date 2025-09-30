@@ -1,4 +1,4 @@
-import { BaseEntity } from 'src/common/interfaces/base-entity.interface';
+import { BaseEntity } from 'src/common/interfaces/crud/base-entity.interface';
 import { User } from 'src/entities/user/user.entity';
 
 export interface UserOwnedEntity extends BaseEntity {

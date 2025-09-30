@@ -16,7 +16,7 @@ import { NewsPost } from 'src/entities/store/news-post.entity';
 import { AiLog } from 'src/entities/ai/ai-log.entity';
 import { Inventory } from 'src/entities/store/product/inventory.entity';
 import { Category } from 'src/entities/store/product/category.entity';
-import { UserOwnedEntity } from 'src/common/interfaces/user-owned.entity.interface';
+import { UserOwnedEntity } from 'src/common/interfaces/crud/user-owned.entity.interface';
 
 @Entity({ name: 'store' })
 export class Store implements UserOwnedEntity {

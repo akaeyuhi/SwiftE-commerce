@@ -13,6 +13,7 @@ export interface AiGenerateResult {
     promptTokens?: number;
     completionTokens?: number;
     totalTokens?: number;
+    cost?: number;
   };
 }
 

@@ -9,7 +9,7 @@ import {
 import { Order } from 'src/entities/store/product/order.entity';
 import { Product } from 'src/entities/store/product/product.entity';
 import { ProductVariant } from 'src/entities/store/product/variant.entity';
-import { BaseEntity } from 'src/common/interfaces/base-entity.interface';
+import { BaseEntity } from 'src/common/interfaces/crud/base-entity.interface';
 
 /**
  * OrderItem

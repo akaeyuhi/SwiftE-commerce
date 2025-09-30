@@ -13,7 +13,7 @@ import { Category } from 'src/entities/store/product/category.entity';
 import { ProductVariant } from 'src/entities/store/product/variant.entity';
 import { ProductPhoto } from 'src/entities/store/product/product-photo.entity';
 import { Review } from 'src/entities/store/review.entity';
-import { StoreOwnedEntity } from 'src/common/interfaces/store-owned.entity.interface';
+import { StoreOwnedEntity } from 'src/common/interfaces/crud/store-owned.entity.interface';
 
 @Entity({ name: 'products' })
 export class Product implements StoreOwnedEntity {
