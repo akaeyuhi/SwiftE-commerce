@@ -217,7 +217,7 @@ export abstract class BaseAnalyticsService<EventPayload = any> {
     }
 
     // Basic validation - override for more specific checks
-    if (typeof event === 'object' && event !== null) {
+    if (typeof event === 'object') {
       // Check for common required fields if they exist
       const eventObj = event as any;
 
