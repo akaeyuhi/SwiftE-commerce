@@ -1,86 +1,430 @@
 import {
   Controller,
+  Get,
   Post,
   Body,
+  Query,
   UseGuards,
   Req,
-  Get,
-  Query,
+  ValidationPipe,
   ParseIntPipe,
+  HttpCode,
+  HttpStatus,
   BadRequestException,
 } from '@nestjs/common';
-import { AiLogsService } from 'src/modules/ai/ai-logs/ai-logs.service';
-import { CreateAiLogDto } from 'src/modules/ai/ai-logs/dto/create-ai-log.dto';
-import { JwtAuthGuard } from 'src/modules/auth/policy/guards/jwt-auth.guard';
 import { Request } from 'express';
-import {AdminGuard} from "src/modules/auth/policy/guards/admin.guard";
-import {StoreRolesGuard} from "src/modules/auth/policy/guards/store-roles.guard";
-import {StoreRole} from "src/common/decorators/store-role.decorator";
-import {StoreRoles} from "src/common/enums/store-roles.enum";
+import { AiLogsService } from './ai-logs.service';
+import { JwtAuthGuard } from 'src/modules/auth/policy/guards/jwt-auth.guard';
+import { AdminGuard } from 'src/modules/auth/policy/guards/admin.guard';
+import { StoreRolesGuard } from 'src/modules/auth/policy/guards/store-roles.guard';
+import { StoreRole } from 'src/common/decorators/store-role.decorator';
+import { AdminRole } from 'src/common/decorators/admin-role.decorator';
+import { StoreRoles } from 'src/common/enums/store-roles.enum';
+import { AdminRoles } from 'src/common/enums/admin.enum';
+import { AccessPolicies } from 'src/modules/auth/policy/policy.types';
+import {
+  CleanupLogsDto,
+  CreateAiLogDto,
+  LogQueryDto,
+  UsageStatsQueryDto,
+} from 'src/modules/ai/ai-logs/dto/create-ai-log.dto';
 
 /**
- * AiLogsController
+ * Enhanced AI Logs Controller
  *
- * Small controller to create and query AI logs.
- * POST /ai-logs     -> create a log entry. If no userId in body, controller will take it from req.user (if present).
- * GET  /ai-logs     -> list logs with filters: storeId, userId, feature, limit, offset
+ * Provides comprehensive AI usage logging and analytics with:
+ * - Log creation and querying
+ * - Usage statistics and trends
+ * - Error tracking and monitoring
+ * - Data cleanup and maintenance
  *
- * Protected by JwtAuthGuard; internal services can call AiLogsService.record(...) directly.
+ * Security:
+ * - Users can only access their own logs
+ * - Store admins can access store-wide logs
+ * - Site admins have full access
  */
-@UseGuards(JwtAuthGuard)
-@UseGuards(JwtAuthGuard, AdminGuard, StoreRolesGuard)
-@StoreRole(StoreRoles.ADMIN)
 @Controller('ai/logs')
+@UseGuards(JwtAuthGuard, AdminGuard, StoreRolesGuard)
 export class AiLogsController {
-  constructor(private readonly logs: AiLogsService) {}
+  static accessPolicies: AccessPolicies = {
+    // Log management
+    createLog: { storeRoles: [StoreRoles.ADMIN, StoreRoles.MODERATOR] },
+    getLogs: { storeRoles: [StoreRoles.ADMIN, StoreRoles.MODERATOR] },
+
+    // Analytics
+    getUsageStats: { storeRoles: [StoreRoles.ADMIN] },
+    getTopFeatures: { storeRoles: [StoreRoles.ADMIN] },
+    getDailyUsage: { storeRoles: [StoreRoles.ADMIN] },
+    getErrorLogs: { storeRoles: [StoreRoles.ADMIN] },
+    getUsageTrends: { storeRoles: [StoreRoles.ADMIN] },
+
+    // System management - admin only
+    healthCheck: { adminRole: AdminRoles.ADMIN },
+    cleanupLogs: { adminRole: AdminRoles.ADMIN },
+  };
+
+  constructor(private readonly logsService: AiLogsService) {}
 
   /**
-   * Create an AI log.
-   *
-   * If the request is authenticated and body.userId is missing, we use req.user.id as userId.
+   * POST /ai/logs
+   * Create an AI usage log entry
    */
   @Post()
-  async create(@Body() dto: CreateAiLogDto, @Req() req: Request) {
-    const authUser = (req as any).user as any;
-    const userIdFromReq = authUser?.id;
+  @HttpCode(HttpStatus.CREATED)
+  async createLog(
+    @Body(ValidationPipe) dto: CreateAiLogDto,
+    @Req() req: Request
+  ) {
+    try {
+      const user = this.extractUser(req);
 
-    const userId = dto.userId ?? userIdFromReq ?? undefined;
+      const log = await this.logsService.record({
+        userId: dto.userId || user.id,
+        storeId: dto.storeId || user.storeId,
+        feature: dto.feature,
+        prompt: dto.prompt,
+        details: dto.details,
+      });
 
-    if (!userId && !dto.storeId) {
-      // allow anonymous store-level logs if necessary — here we require either a user or store for traceability
-      // adjust this policy if anonymous logging is acceptable
+      return {
+        success: true,
+        data: {
+          logId: log.id,
+          createdAt: log.createdAt,
+        },
+      };
+    } catch (error) {
+      throw new BadRequestException(`Failed to create log: ${error.message}`);
     }
-
-    return this.logs.record({
-      userId,
-      storeId: dto.storeId ?? null,
-      feature: dto.feature,
-      prompt: dto.prompt ?? null,
-      details: dto.details ?? null,
-    });
   }
 
   /**
-   * Query logs.
-   *
-   * Query params:
-   *  - storeId (optional)
-   *  - userId (optional)
-   *  - feature (optional)
-   *  - limit (optional, default 100)
-   *  - offset (optional, default 0)
+   * GET /ai/logs
+   * Query AI usage logs with filtering
    */
   @Get()
-  async list(
-    @Query('storeId') storeId?: string,
-    @Query('userId') userId?: string,
-    @Query('feature') feature?: string,
-    @Query('limit', new ParseIntPipe({ optional: true })) limit = 100,
-    @Query('offset', new ParseIntPipe({ optional: true })) offset = 0
+  async getLogs(
+    @Query(ValidationPipe) query: LogQueryDto,
+    @Req() req: Request
   ) {
-    if (limit <= 0 || limit > 1000)
-      throw new BadRequestException('limit must be between 1 and 1000');
+    try {
+      const user = this.extractUser(req);
 
-    return this.logs.findByFilter({ storeId, userId, feature }, limit, offset);
+      // Apply security filters based on user permissions
+      const filters = this.buildSecurityFilters(query, user);
+
+      const logs = await this.logsService.findByFilter(filters, {
+        limit: query.limit || 100,
+        offset: query.offset || 0,
+        dateFrom: query.dateFrom ? new Date(query.dateFrom) : undefined,
+        dateTo: query.dateTo ? new Date(query.dateTo) : undefined,
+        feature: query.feature,
+        hasDetails: query.hasDetails,
+      });
+
+      return {
+        success: true,
+        data: {
+          logs,
+          metadata: {
+            count: logs.length,
+            filters,
+            retrievedAt: new Date().toISOString(),
+            userId: user.id,
+          },
+        },
+      };
+    } catch (error) {
+      throw new BadRequestException(
+        `Failed to retrieve logs: ${error.message}`
+      );
+    }
+  }
+
+  /**
+   * GET /ai/logs/stats
+   * Get comprehensive usage statistics
+   */
+  @Get('stats')
+  @StoreRole(StoreRoles.ADMIN)
+  async getUsageStats(
+    @Query(ValidationPipe) query: UsageStatsQueryDto,
+    @Req() req: Request
+  ) {
+    try {
+      const user = this.extractUser(req);
+
+      const filters = this.buildSecurityFilters(query, user);
+
+      const stats = await this.logsService.getUsageStats({
+        ...filters,
+        dateFrom: query.dateFrom ? new Date(query.dateFrom) : undefined,
+        dateTo: query.dateTo ? new Date(query.dateTo) : undefined,
+      });
+
+      return {
+        success: true,
+        data: {
+          stats,
+          metadata: {
+            period: {
+              from: query.dateFrom,
+              to: query.dateTo,
+            },
+            filters,
+            generatedAt: new Date().toISOString(),
+            userId: user.id,
+          },
+        },
+      };
+    } catch (error) {
+      throw new BadRequestException(
+        `Failed to get usage stats: ${error.message}`
+      );
+    }
+  }
+
+  /**
+   * GET /ai/logs/features/top
+   * Get top AI features by usage
+   */
+  @Get('features/top')
+  @StoreRole(StoreRoles.ADMIN)
+  async getTopFeatures(
+    @Query('limit', new ParseIntPipe({ optional: true })) limit: number = 10,
+    @Query(ValidationPipe) query: UsageStatsQueryDto,
+    @Req() req: Request
+  ) {
+    try {
+      const user = this.extractUser(req);
+      const filters = this.buildSecurityFilters(query, user);
+
+      const topFeatures = await this.logsService.getTopFeatures(limit, {
+        ...filters,
+        dateFrom: query.dateFrom ? new Date(query.dateFrom) : undefined,
+        dateTo: query.dateTo ? new Date(query.dateTo) : undefined,
+      });
+
+      return {
+        success: true,
+        data: {
+          features: topFeatures,
+          metadata: {
+            limit,
+            generatedAt: new Date().toISOString(),
+            userId: user.id,
+          },
+        },
+      };
+    } catch (error) {
+      throw new BadRequestException(
+        `Failed to get top features: ${error.message}`
+      );
+    }
+  }
+
+  /**
+   * GET /ai/logs/daily
+   * Get daily usage metrics
+   */
+  @Get('daily')
+  @StoreRole(StoreRoles.ADMIN)
+  async getDailyUsage(
+    @Query('days', new ParseIntPipe({ optional: true })) days: number = 30,
+    @Query(ValidationPipe) query: UsageStatsQueryDto,
+    @Req() req: Request
+  ) {
+    try {
+      const user = this.extractUser(req);
+      const filters = this.buildSecurityFilters(query, user);
+
+      const dailyUsage = await this.logsService.getDailyUsage(days, filters);
+
+      return {
+        success: true,
+        data: {
+          dailyUsage,
+          metadata: {
+            days,
+            generatedAt: new Date().toISOString(),
+            userId: user.id,
+          },
+        },
+      };
+    } catch (error) {
+      throw new BadRequestException(
+        `Failed to get daily usage: ${error.message}`
+      );
+    }
+  }
+
+  /**
+   * GET /ai/logs/errors
+   * Get error logs for debugging
+   */
+  @Get('errors')
+  @StoreRole(StoreRoles.ADMIN)
+  async getErrorLogs(
+    @Query('limit', new ParseIntPipe({ optional: true })) limit: number = 100,
+    @Query(ValidationPipe) query: UsageStatsQueryDto,
+    @Req() req: Request
+  ) {
+    try {
+      const user = this.extractUser(req);
+      const filters = this.buildSecurityFilters(query, user);
+
+      const errorLogs = await this.logsService.getErrorLogs(limit, {
+        ...filters,
+        dateFrom: query.dateFrom ? new Date(query.dateFrom) : undefined,
+        dateTo: query.dateTo ? new Date(query.dateTo) : undefined,
+      });
+
+      return {
+        success: true,
+        data: {
+          errorLogs,
+          metadata: {
+            count: errorLogs.length,
+            limit,
+            generatedAt: new Date().toISOString(),
+            userId: user.id,
+          },
+        },
+      };
+    } catch (error) {
+      throw new BadRequestException(
+        `Failed to get error logs: ${error.message}`
+      );
+    }
+  }
+
+  /**
+   * GET /ai/logs/trends
+   * Get usage trends and insights
+   */
+  @Get('trends')
+  @StoreRole(StoreRoles.ADMIN)
+  async getUsageTrends(
+    @Query('days', new ParseIntPipe({ optional: true })) days: number = 30,
+    @Query(ValidationPipe) query: UsageStatsQueryDto,
+    @Req() req: Request
+  ) {
+    try {
+      const user = this.extractUser(req);
+      const filters = this.buildSecurityFilters(query, user);
+
+      const trends = await this.logsService.getUsageTrends(days, filters);
+
+      return {
+        success: true,
+        data: {
+          trends,
+          metadata: {
+            period: days,
+            generatedAt: new Date().toISOString(),
+            userId: user.id,
+          },
+        },
+      };
+    } catch (error) {
+      throw new BadRequestException(
+        `Failed to get usage trends: ${error.message}`
+      );
+    }
+  }
+
+  /**
+   * GET /ai/logs/health
+   * Health check for logs service
+   */
+  @Get('health')
+  @AdminRole(AdminRoles.ADMIN)
+  async healthCheck() {
+    try {
+      const health = await this.logsService.healthCheck();
+
+      return {
+        success: true,
+        data: {
+          service: 'ai-logs',
+          ...health,
+          timestamp: new Date().toISOString(),
+        },
+      };
+    } catch (error) {
+      return {
+        success: false,
+        data: {
+          service: 'ai-logs',
+          healthy: false,
+          error: error.message,
+          timestamp: new Date().toISOString(),
+        },
+      };
+    }
+  }
+
+  /**
+   * POST /ai/logs/cleanup
+   * Cleanup old logs (admin only)
+   */
+  @Post('cleanup')
+  @HttpCode(HttpStatus.OK)
+  @AdminRole(AdminRoles.ADMIN)
+  async cleanupLogs(@Body(ValidationPipe) dto: CleanupLogsDto) {
+    try {
+      const result = await this.logsService.cleanup(
+        dto.retentionDays || 30,
+        dto.dryRun || false
+      );
+
+      return {
+        success: true,
+        data: {
+          ...result,
+          cleanupAt: new Date().toISOString(),
+        },
+      };
+    } catch (error) {
+      throw new BadRequestException(`Cleanup failed: ${error.message}`);
+    }
+  }
+
+  private extractUser(req: Request): {
+    id: string;
+    storeId?: string;
+    isAdmin?: boolean;
+  } {
+    const user = (req as any).user;
+    if (!user?.id) {
+      throw new BadRequestException('User context not found');
+    }
+    return {
+      id: user.id,
+      storeId: user.storeId,
+      isAdmin: user.isAdmin || user.roles?.includes('admin'),
+    };
+  }
+
+  private buildSecurityFilters(
+    query: any,
+    user: { id: string; storeId?: string; isAdmin?: boolean }
+  ) {
+    const filters: any = {};
+
+    // If user is not admin, restrict to their data
+    if (!user.isAdmin) {
+      if (user.storeId) {
+        filters.storeId = user.storeId;
+      } else {
+        filters.userId = user.id;
+      }
+    } else {
+      // Admins can filter by specific store/user if provided
+      if (query.storeId) filters.storeId = query.storeId;
+      if (query.userId) filters.userId = query.userId;
+    }
+
+    return filters;
   }
 }
