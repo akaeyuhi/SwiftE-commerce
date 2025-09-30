@@ -1,4 +1,3 @@
-// src/modules/analytics/interceptors/record-event.interceptor.ts
 import {
   Injectable,
   NestInterceptor,

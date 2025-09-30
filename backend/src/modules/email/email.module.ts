@@ -1,5 +1,5 @@
 // src/modules/email/email.module.ts
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bull';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { join } from 'path';
@@ -201,7 +201,7 @@ const handlebarsHelpers = {
       }),
     }),
 
-    PolicyModule,
+    forwardRef(() => PolicyModule),
   ],
   controllers: [EmailController],
   providers: [

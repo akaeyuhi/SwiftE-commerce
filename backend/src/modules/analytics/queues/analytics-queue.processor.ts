@@ -52,7 +52,7 @@ export class AnalyticsQueueProcessor {
 
       // Convert to new format and delegate
       const jobData: AnalyticsJobData = { events };
-      return await this.analyticsQueue['processSingleRecord'](jobData);
+      return await this.analyticsQueue['processSingleRecord'](jobData, job);
     } catch (error) {
       this.logger.error(`Legacy record job ${job.id} failed:`, error);
       throw error;
@@ -66,7 +66,11 @@ export class AnalyticsQueueProcessor {
     try {
       this.logger.debug(`Processing ${jobType} job ${job.id}`);
 
-      const result = await this.analyticsQueue['processJob'](jobType, job.data);
+      const result = await this.analyticsQueue['processJob'](
+        jobType,
+        job.data,
+        job
+      );
 
       this.logger.debug(`Completed ${jobType} job ${job.id}:`, result);
       return result;

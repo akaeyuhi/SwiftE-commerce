@@ -5,6 +5,7 @@ import { RecordEventDto } from '../dto/record-event.dto';
 import { AnalyticsEventRepository } from '../repositories/analytics-event.repository';
 import { BaseQueueService } from 'src/common/abstracts/infrastucture/base.queue.service';
 import { QueueOptions } from 'src/common/interfaces/infrastructure/queue.interface';
+import { AnalyticsEventType } from 'src/modules/analytics/entities/analytics-event.entity';
 
 export interface AnalyticsJobData {
   events: RecordEventDto[];
@@ -257,6 +258,95 @@ export class AnalyticsQueueService extends BaseQueueService<AnalyticsJobData> {
       { events: [event] },
       options
     );
+  }
+
+  async recordView(
+    storeId?: string,
+    productId?: string,
+    userId?: string,
+    meta?: any
+  ) {
+    const ev: RecordEventDto = {
+      storeId,
+      productId,
+      userId,
+      eventType: AnalyticsEventType.VIEW,
+      invokedOn: productId ? 'product' : 'store',
+      meta,
+    };
+    return this.addEvent(ev);
+  }
+
+  async recordLike(
+    storeId?: string,
+    productId?: string,
+    userId?: string,
+    meta?: any
+  ) {
+    const ev: RecordEventDto = {
+      storeId,
+      productId,
+      userId,
+      eventType: AnalyticsEventType.LIKE,
+      invokedOn: productId ? 'product' : 'store',
+      meta: meta ?? null,
+    };
+    return this.addEvent(ev);
+  }
+
+  async recordAddToCart(
+    storeId: string,
+    productId: string,
+    userId?: string,
+    quantity = 1,
+    meta?: any
+  ) {
+    const ev: RecordEventDto = {
+      storeId: storeId ?? null,
+      productId: productId ?? null,
+      userId,
+      eventType: AnalyticsEventType.ADD_TO_CART,
+      invokedOn: productId ? 'product' : 'store',
+      value: quantity,
+      meta: meta ?? null,
+    };
+    return this.addEvent(ev);
+  }
+
+  async recordPurchase(
+    storeId: string,
+    productId: string,
+    userId: string,
+    amount = 0,
+    meta?: any
+  ) {
+    const ev: RecordEventDto = {
+      storeId: storeId ?? null,
+      productId: productId ?? null,
+      userId: userId ?? null,
+      eventType: AnalyticsEventType.PURCHASE,
+      invokedOn: productId ? 'product' : 'store',
+      value: amount,
+      meta: meta ?? null,
+    };
+    return this.addEvent(ev);
+  }
+
+  async recordClick(
+    storeId?: string,
+    productId?: string,
+    userId?: string,
+    meta?: any
+  ) {
+    const ev: RecordEventDto = {
+      storeId,
+      productId,
+      userId,
+      eventType: AnalyticsEventType.CLICK,
+      invokedOn: productId ? 'product' : 'store',
+      meta,
+    };
+    return this.addEvent(ev);
   }
 
   /**

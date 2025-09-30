@@ -13,6 +13,8 @@ import { AiModule } from 'src/modules/ai/ai.module';
 import { PolicyModule } from 'src/modules/auth/policy/policy.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { BullModule } from '@nestjs/bull';
+import { AnalyticsQueueService } from 'src/modules/analytics/queues/analytics-queue.service';
+import { RecordEventInterceptor } from 'src/modules/analytics/interceptors/record-event.interceptor';
 
 @Module({
   imports: [
@@ -44,14 +46,18 @@ import { BullModule } from '@nestjs/bull';
   providers: [
     AnalyticsService,
     AnalyticsEventRepository,
+    AnalyticsQueueService,
     StoreDailyStatsRepository,
     ProductDailyStatsRepository,
+    RecordEventInterceptor,
   ],
   controllers: [EventsController, AnalyticsController, AdminStatsController],
   exports: [
     AnalyticsService,
     StoreDailyStatsRepository,
     ProductDailyStatsRepository,
+    AnalyticsQueueService,
+    RecordEventInterceptor,
   ],
 })
 export class AnalyticsModule {}

@@ -6,9 +6,14 @@ import { Admin } from 'src/entities/user/policy/admin.entity';
 import { AdminRepository } from 'src/modules/auth/admin/admin.repository';
 import { PolicyModule } from 'src/modules/auth/policy/policy.module';
 import { ADMIN_SERVICE } from 'src/common/contracts/policy.contract';
+import { UserModule } from 'src/modules/user/user.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Admin]), forwardRef(() => PolicyModule)],
+  imports: [
+    TypeOrmModule.forFeature([Admin]),
+    forwardRef(() => PolicyModule),
+    forwardRef(() => UserModule),
+  ],
   controllers: [AdminController],
   providers: [
     AdminService,

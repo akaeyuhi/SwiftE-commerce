@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { StoreService } from 'src/modules/store/store.service';
 import { StoreController } from 'src/modules/store/store.controller';
 import { StoreRepository } from 'src/modules/store/store.repository';
@@ -12,6 +12,7 @@ import { OrdersModule } from 'src/modules/store/orders/orders.module';
 import { CategoriesModule } from 'src/modules/store/categories/categories.module';
 import { STORE_SERVICE } from 'src/common/contracts/policy.contract';
 import { AuthModule } from 'src/modules/auth/auth.module';
+import { AnalyticsModule } from 'src/modules/analytics/analytics.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { AuthModule } from 'src/modules/auth/auth.module';
     InventoryModule,
     NewsModule,
     OrdersModule,
+    forwardRef(() => AnalyticsModule),
   ],
   controllers: [StoreController],
   providers: [

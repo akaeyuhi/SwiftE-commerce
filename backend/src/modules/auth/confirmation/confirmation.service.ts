@@ -1,4 +1,3 @@
-// src/modules/auth/confirmation/confirmation.service.ts
 import {
   Injectable,
   BadRequestException,

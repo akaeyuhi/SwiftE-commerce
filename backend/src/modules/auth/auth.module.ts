@@ -17,6 +17,9 @@ import { AdminService } from 'src/modules/auth/admin/admin.service';
 import { AdminModule } from 'src/modules/auth/admin/admin.module';
 import { UserModule } from 'src/modules/user/user.module';
 import { ConfirmationModule } from './confirmation/confirmation.module';
+import { EmailModule } from 'src/modules/email/email.module';
+import { ConfirmationService } from 'src/modules/auth/confirmation/confirmation.service';
+import { UserRoleModule } from 'src/modules/user/user-role/user-role.module';
 
 @Module({
   imports: [
@@ -26,6 +29,9 @@ import { ConfirmationModule } from './confirmation/confirmation.module';
     forwardRef(() => UserModule),
     forwardRef(() => AuthAdapterModule),
     forwardRef(() => PolicyModule),
+    ConfirmationModule,
+    EmailModule,
+    UserRoleModule,
     ConfigModule,
     PassportModule,
     JwtModule.register({
@@ -33,7 +39,6 @@ import { ConfirmationModule } from './confirmation/confirmation.module';
       secret: process.env.JWT_SECRET,
       signOptions: { expiresIn: '24h' },
     }),
-    ConfirmationModule,
   ],
   controllers: [AuthController],
   providers: [
@@ -43,6 +48,7 @@ import { ConfirmationModule } from './confirmation/confirmation.module';
     RefreshTokenService,
     PolicyService,
     AdminService,
+    ConfirmationService,
   ],
   exports: [PolicyService, AdminService, RefreshTokenService],
 })
