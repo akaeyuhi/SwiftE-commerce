@@ -1,14 +1,12 @@
 import {
   BadRequestException,
   Injectable,
-  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { BaseService } from 'src/common/abstracts/base.service';
 import { CartItem } from 'src/entities/store/cart/cart-item.entity';
 import { CartItemRepository } from 'src/modules/store/cart/cart-item/cart-item.repository';
 import { CartItemDto } from 'src/modules/store/cart/cart-item/dto/cart-item.dto';
-import { AnalyticsQueueService } from 'src/modules/analytics/queues/analytics-queue.service';
 
 /**
  * CartItemService
@@ -31,11 +29,7 @@ export class CartItemService extends BaseService<
   CartItemDto,
   CartItemDto
 > {
-  private readonly logger = new Logger(CartItemService.name);
-  constructor(
-    private readonly itemRepo: CartItemRepository,
-    private readonly analyticsQueue: AnalyticsQueueService
-  ) {
+  constructor(private readonly itemRepo: CartItemRepository) {
     super(itemRepo);
   }
 
@@ -65,16 +59,10 @@ export class CartItemService extends BaseService<
    *  - If an item for (cartId, variantId) exists, increment quantity by `quantity`.
    *  - Otherwise create a new item.
    *
-   *  @param storeId - Store id
-   *  @param userId - user id
    *  @param dto - dto to add to cart
    */
-  async addOrIncrement(
-    storeId: string,
-    userId: string,
-    dto: CartItemDto
-  ): Promise<CartItem> {
-    const { cartId, variantId, productId, quantity } = dto;
+  async addOrIncrement(dto: CartItemDto): Promise<CartItem> {
+    const { cartId, variantId, quantity } = dto;
     if (dto.quantity <= 0)
       throw new BadRequestException('Quantity must be > 0');
 
@@ -82,35 +70,17 @@ export class CartItemService extends BaseService<
       dto.cartId,
       dto.variantId
     );
-    const itemRepo = this.itemRepo.manager.getRepository(CartItem);
 
     if (existing) {
       existing.quantity = (existing.quantity ?? 0) + quantity;
-      return itemRepo.save(existing);
+      return this.itemRepo.save(existing);
     }
 
-    const created = itemRepo.create({
+    return this.itemRepo.createEntity({
       cart: { id: cartId },
       variant: { id: variantId },
       quantity,
     });
-
-    try {
-      await this.analyticsQueue.recordAddToCart(
-        storeId,
-        productId ?? '',
-        userId,
-        quantity,
-        { cartId: created.cart.id }
-      );
-    } catch (err) {
-      // do not fail the API if analytics fails; just log
-      this.logger.warn(
-        'Failed to enqueue addToCart event: ' + (err as any)?.message
-      );
-    }
-
-    return itemRepo.save(created);
   }
 
   /**
@@ -127,16 +97,14 @@ export class CartItemService extends BaseService<
     const item = await this.itemRepo.findWithRelations(itemId);
     if (!item) throw new NotFoundException('Cart item not found');
 
-    const itemRepo = this.itemRepo.manager.getRepository(CartItem);
-
     if (quantity === 0) {
-      await itemRepo.delete(itemId);
+      await this.itemRepo.deleteById(itemId);
       item.quantity = 0;
       return item;
     }
 
     item.quantity = quantity;
-    return itemRepo.save(item);
+    return this.itemRepo.save(item);
   }
 
   /**
@@ -159,7 +127,7 @@ export class CartItemService extends BaseService<
       throw new BadRequestException('Resulting quantity would be negative');
 
     item.quantity = newQty;
-    return this.itemRepo.manager.getRepository(CartItem).save(item);
+    return this.itemRepo.save(item);
   }
 
   /**

@@ -14,6 +14,8 @@ import { CartItem } from 'src/entities/store/cart/cart-item.entity';
 import { JwtAuthGuard } from 'src/modules/auth/policy/guards/jwt-auth.guard';
 import { StoreRolesGuard } from 'src/modules/auth/policy/guards/store-roles.guard';
 import { AccessPolicies } from 'src/modules/auth/policy/policy.types';
+import { AnalyticsEventType } from 'src/modules/analytics/entities/analytics-event.entity';
+import { RecordEvent } from 'src/common/decorators/record-event.decorator';
 
 /**
  * CartItemController
@@ -51,18 +53,26 @@ export class CartItemController extends BaseController<
    *
    * Body: { cartId, variantId, quantity }
    *
-   * @param storeId - UUID of the store
-   * @param userId - UUID of the user
+   * @param _storeId - UUID of the store
+   * @param _userId - UUID of the user
    * @param dto - CartItemDto containing cartId, variantId, quantity
    * @returns created or updated CartItem
    */
   @Post('add')
+  @RecordEvent({
+    eventType: AnalyticsEventType.ADD_TO_CART,
+    productId: 'body.productId',
+    storeId: 'params.storeId',
+    userId: 'params.userId',
+    value: 'body.quantity',
+    when: 'after',
+  })
   async addOrIncrement(
-    @Param('storeId', new ParseUUIDPipe()) storeId: string,
-    @Param('userId', new ParseUUIDPipe()) userId: string,
+    @Param('storeId', new ParseUUIDPipe()) _storeId: string,
+    @Param('userId', new ParseUUIDPipe()) _userId: string,
     @Body() dto: CartItemDto
   ): Promise<CartItem> {
-    return this.cartItemService.addOrIncrement(storeId, userId, dto);
+    return this.cartItemService.addOrIncrement(dto);
   }
 
   /**
