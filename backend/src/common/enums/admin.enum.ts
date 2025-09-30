@@ -1,4 +1,4 @@
 export enum AdminRoles {
-  USER = 'user',
-  ADMIN = 'admin',
+  USER = 'SITE_USER',
+  ADMIN = 'SITE_ADMIN',
 }
