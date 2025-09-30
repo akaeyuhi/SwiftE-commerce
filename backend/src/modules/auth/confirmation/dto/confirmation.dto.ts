@@ -1,7 +1,7 @@
 import { IsString, IsOptional, IsUUID, IsEnum } from 'class-validator';
 import { ConfirmationType } from '../enums/confirmation.enum';
 
-export class ConfirmEmailDto {
+export class ConfirmTokenDto {
   @IsString()
   token: string;
 }

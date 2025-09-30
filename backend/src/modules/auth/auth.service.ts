@@ -19,7 +19,7 @@ import { Request } from 'express';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { AdminRoles } from 'src/common/enums/admin.enum';
 import { ConfirmationType } from './confirmation/enums/confirmation.enum';
-import { randomBytes } from 'crypto';
+import { createHash, randomBytes } from 'crypto';
 
 export interface JwtPayload {
   id: string;
@@ -511,6 +511,162 @@ export class AuthService {
     });
 
     return { accessToken, refreshToken, csrfToken };
+  }
+
+  /**
+   * Process confirmation based on type parameter and token
+   */
+  async processConfirmation(
+    typeParam: string,
+    token: string
+  ): Promise<{
+    success: boolean;
+    message: string;
+    type: ConfirmationType;
+    user?: any;
+    activeRoles?: any;
+  }> {
+    // Convert kebab-case type parameter back to ConfirmationType enum
+    const confirmationType = this.parseConfirmationType(typeParam);
+
+    if (!confirmationType) {
+      throw new BadRequestException(`Invalid confirmation type: ${typeParam}`);
+    }
+
+    // Process the confirmation
+    const result = await this.confirmationService.confirmToken(token);
+
+    if (!result.success) {
+      return {
+        success: false,
+        message: result.message || 'Confirmation failed',
+        type: confirmationType,
+      };
+    }
+
+    // Verify the confirmation type matches what was expected
+    if (result.type !== confirmationType) {
+      throw new BadRequestException(
+        `Token type mismatch. Expected ${confirmationType}, got ${result.type}`
+      );
+    }
+
+    const user = await this.userService.getEntityById(result.userId);
+    let activeRoles: null & any = null;
+
+    // For role confirmations, include updated role information
+    if (this.isRoleConfirmationType(confirmationType)) {
+      activeRoles = await this.getActiveRoles(result.userId);
+    }
+
+    return {
+      success: true,
+      message: result.message,
+      type: result.type,
+      user: user
+        ? {
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            isEmailVerified: user.isEmailVerified,
+          }
+        : undefined,
+      activeRoles,
+    };
+  }
+
+  /**
+   * Revoke/cancel a confirmation
+   */
+  async revokeConfirmation(
+    typeParam: string,
+    token: string
+  ): Promise<{
+    success: boolean;
+    message: string;
+    type: ConfirmationType;
+  }> {
+    const confirmationType = this.parseConfirmationType(typeParam);
+
+    if (!confirmationType) {
+      throw new BadRequestException(`Invalid confirmation type: ${typeParam}`);
+    }
+
+    // First, find the confirmation to get the user ID
+    const hashedToken = this.hashToken(token);
+    const confirmation =
+      await this.confirmationService.findConfirmationByToken(hashedToken);
+
+    if (!confirmation) {
+      throw new NotFoundException('Confirmation not found');
+    }
+
+    if (confirmation.isUsed) {
+      throw new BadRequestException('Confirmation has already been processed');
+    }
+
+    // Cancel the confirmation
+    await this.confirmationService.cancelPendingConfirmation(
+      confirmation.userId,
+      confirmationType
+    );
+
+    return {
+      success: true,
+      message: `${this.getConfirmationTypeDisplayName(confirmationType)} has been cancelled`,
+      type: confirmationType,
+    };
+  }
+
+  /**
+   * Convert kebab-case type parameter to ConfirmationType enum
+   */
+  private parseConfirmationType(typeParam: string): ConfirmationType | null {
+    const typeMap: Record<string, ConfirmationType> = {
+      'account-verification': ConfirmationType.ACCOUNT_VERIFICATION,
+      'site-admin-role': ConfirmationType.SITE_ADMIN_ROLE,
+      'store-admin-role': ConfirmationType.STORE_ADMIN_ROLE,
+      'store-moderator-role': ConfirmationType.STORE_MODERATOR_ROLE,
+      'password-reset': ConfirmationType.PASSWORD_RESET,
+    };
+
+    return typeMap[typeParam.toLowerCase()] || null;
+  }
+
+  /**
+   * Check if confirmation type is role-related
+   */
+  private isRoleConfirmationType(type: ConfirmationType): boolean {
+    return [
+      ConfirmationType.SITE_ADMIN_ROLE,
+      ConfirmationType.STORE_ADMIN_ROLE,
+      ConfirmationType.STORE_MODERATOR_ROLE,
+    ].includes(type);
+  }
+
+  /**
+   * Get human-readable confirmation type name
+   */
+  private getConfirmationTypeDisplayName(type: ConfirmationType): string {
+    const displayNames: Record<ConfirmationType, string> = {
+      [ConfirmationType.ACCOUNT_VERIFICATION]: 'Account verification',
+      [ConfirmationType.SITE_ADMIN_ROLE]: 'Site administrator role assignment',
+      [ConfirmationType.STORE_ADMIN_ROLE]:
+        'Store administrator role assignment',
+      [ConfirmationType.STORE_MODERATOR_ROLE]:
+        'Store moderator role assignment',
+      [ConfirmationType.PASSWORD_RESET]: 'Password reset',
+    };
+
+    return displayNames[type] || 'Confirmation';
+  }
+
+  /**
+   * Hash token for lookup (should match ConfirmationService implementation)
+   */
+  private hashToken(token: string): string {
+    return createHash('sha256').update(token).digest('hex');
   }
 }
 function cryptoRandomHex(length = 16) {

@@ -3,13 +3,14 @@ import {
   Post,
   Get,
   Body,
+  Query,
+  Param,
   Req,
   Res,
   UseGuards,
   HttpCode,
   ValidationPipe,
   BadRequestException,
-  Param,
   Delete,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
@@ -22,8 +23,8 @@ import { JwtAuthGuard } from 'src/modules/auth/policy/guards/jwt-auth.guard';
 import {
   AssignRoleDto,
   CancelRoleAssignmentDto,
-  ConfirmEmailDto,
   ResendConfirmationDto,
+  ConfirmTokenDto,
 } from 'src/modules/auth/confirmation/dto/confirmation.dto';
 import { AdminGuard } from 'src/modules/auth/policy/guards/admin.guard';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
@@ -89,7 +90,6 @@ export class AuthController {
   @Post('refresh')
   @HttpCode(200)
   async refresh(@Req() req: Request, @Res() res: Response) {
-    // CSRF double-submit check
     const csrfHeader =
       req.headers['x-csrf-token'] || req.headers['x-xsrf-token'];
     const csrfCookie = req.cookies ? req.cookies[CSRF_COOKIE_NAME] : undefined;
@@ -139,19 +139,84 @@ export class AuthController {
     });
   }
 
+  // ====================================================================
+  // UNIFIED CONFIRMATION ROUTES
+  // ====================================================================
+
   /**
-   * Confirm email address
+   * GET /auth/confirm/:type?token=xxx
+   * Unified confirmation endpoint for email links
+   * Handles: account-verification, site-admin-role, store-admin-role, store-moderator-role
    */
-  @Post('confirm-email')
-  async confirmEmail(@Body(ValidationPipe) dto: ConfirmEmailDto) {
-    const result = await this.authService.confirmEmail(dto.token);
+  @Get('confirm/:type')
+  async confirmFromLink(
+    @Param('type') typeParam: string,
+    @Query('token') token: string
+  ) {
+    if (!token) {
+      throw new BadRequestException('Confirmation token is required');
+    }
+
+    const result = await this.authService.processConfirmation(typeParam, token);
 
     return {
       success: result.success,
       message: result.message,
+      type: result.type,
       user: result.user,
+      activeRoles: result.activeRoles,
     };
   }
+
+  /**
+   * POST /auth/confirm/:type
+   * Unified confirmation endpoint for API calls
+   * Handles: account-verification, site-admin-role, store-admin-role, store-moderator-role
+   */
+  @Post('confirm/:type')
+  async confirmFromApi(
+    @Param('type') typeParam: string,
+    @Body(ValidationPipe) dto: ConfirmTokenDto
+  ) {
+    const result = await this.authService.processConfirmation(
+      typeParam,
+      dto.token
+    );
+
+    return {
+      success: result.success,
+      message: result.message,
+      type: result.type,
+      user: result.user,
+      activeRoles: result.activeRoles,
+    };
+  }
+
+  /**
+   * DELETE /auth/confirm/:type?token=xxx
+   * Cancel/revoke a confirmation (for email links with revoke functionality)
+   */
+  @Delete('confirm/:type')
+  async revokeConfirmationFromLink(
+    @Param('type') typeParam: string,
+    @Query('token') token: string
+  ) {
+    if (!token) {
+      throw new BadRequestException('Confirmation token is required');
+    }
+
+    const result = await this.authService.revokeConfirmation(typeParam, token);
+
+    return {
+      success: result.success,
+      message: result.message,
+      type: result.type,
+    };
+  }
+
+  // ====================================================================
+  // OTHER CONFIRMATION MANAGEMENT ROUTES
+  // ====================================================================
 
   /**
    * Resend confirmation email
@@ -175,6 +240,24 @@ export class AuthController {
       message: 'Confirmation email sent successfully',
     };
   }
+
+  /**
+   * Get user's confirmation status
+   */
+  @UseGuards(JwtAuthGuard)
+  @Get(':userId/confirmation-status')
+  async getConfirmationStatus(@Param('userId') userId: string) {
+    const result = await this.authService.getConfirmationStatus(userId);
+
+    return {
+      success: true,
+      data: result,
+    };
+  }
+
+  // ====================================================================
+  // ROLE ASSIGNMENT ROUTES
+  // ====================================================================
 
   /**
    * Assign site admin role (requires admin privileges)
@@ -291,17 +374,9 @@ export class AuthController {
       message: 'Store role revoked successfully',
     };
   }
-
-  /**
-   * Get user's confirmation status
-   */
-  @UseGuards(JwtAuthGuard)
-  @Get(':userId/confirmation-status')
-  async getConfirmationStatus(@Param('userId') userId: string) {
-    return this.authService.getConfirmationStatus(userId);
-  }
 }
 
+// Helper functions remain the same...
 function setRefreshCookie(res: Response, refreshToken: string) {
   const secure = (process.env.COOKIE_SECURE || 'true') === 'true';
   const maxAge = 7 * 24 * 60 * 60 * 1000;

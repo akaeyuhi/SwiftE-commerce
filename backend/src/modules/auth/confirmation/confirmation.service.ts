@@ -397,4 +397,12 @@ export class ConfirmationService {
       };
     }
   }
+  /**
+   * Find confirmation by token (for revocation purposes)
+   */
+  async findConfirmationByToken(
+    hashedToken: string
+  ): Promise<Confirmation | null> {
+    return this.confirmationRepo.findByToken(hashedToken);
+  }
 }
