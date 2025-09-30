@@ -9,6 +9,8 @@ import {
   QueueOptions,
 } from 'src/common/interfaces/infrastructure/queue.interface';
 import { EmailPriority } from 'src/modules/email/enums/email.enum';
+import { AdminRoles } from 'src/common/enums/admin.enum';
+import { StoreRoles } from 'src/common/enums/store-roles.enum';
 
 /**
  * EmailQueueService
@@ -323,5 +325,41 @@ export class EmailQueueService extends BaseQueueService<EmailJobData, any> {
       removeOnFail: options.removeOnFail || 50,
       jobId: options.jobId,
     };
+  }
+
+  /**
+   * Send role confirmation email
+   */
+  async sendRoleConfirmation(
+    userEmail: string,
+    userName: string,
+    roleType: AdminRoles | StoreRoles,
+    confirmationUrl: string,
+    metadata?: Record<string, any>,
+    options?: QueueOptions
+  ): Promise<string> {
+    return this.scheduleJob(
+      'ROLE_CONFIRMATION',
+      {
+        type: 'ROLE_CONFIRMATION' as any,
+        emailData: {
+          to: [{ email: userEmail, name: userName }],
+          subject: '', // Will be set by template
+          html: '', // Will be set by template
+          templateId: 'role_confirmation',
+          templateData: {
+            userName,
+            roleType,
+            confirmationUrl,
+            storeName: metadata?.storeName || 'Store',
+            assignedBy: metadata?.assignedBy,
+            assignedAt: metadata?.assignedAt,
+          },
+          priority: EmailPriority.HIGH,
+          tags: ['role-confirmation', 'auth'],
+        },
+      },
+      { priority: EmailPriority.HIGH, ...options }
+    );
   }
 }

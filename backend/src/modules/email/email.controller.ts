@@ -39,20 +39,16 @@ export class EmailController {
   @Post('send')
   @AdminRole(AdminRoles.ADMIN)
   async sendEmail(@Body(ValidationPipe) dto: SendEmailDto) {
-    try {
-      const result = await this.emailService.sendEmail(dto);
+    const result = await this.emailService.sendEmail(dto);
 
-      return {
-        success: true,
-        data: {
-          messageId: result.messageId,
-          provider: result.provider,
-          sentAt: result.sentAt,
-        },
-      };
-    } catch (error) {
-      throw new BadRequestException(`Failed to send email: ${error.message}`);
-    }
+    return {
+      success: true,
+      data: {
+        messageId: result.messageId,
+        provider: result.provider,
+        sentAt: result.sentAt,
+      },
+    };
   }
 
   /**

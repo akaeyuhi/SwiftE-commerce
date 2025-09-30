@@ -16,6 +16,7 @@ import { AuthAdapterModule } from 'src/modules/auth-adapter/auth-adapter.module'
 import { AdminService } from 'src/modules/auth/admin/admin.service';
 import { AdminModule } from 'src/modules/auth/admin/admin.module';
 import { UserModule } from 'src/modules/user/user.module';
+import { ConfirmationModule } from './confirmation/confirmation.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { UserModule } from 'src/modules/user/user.module';
       secret: process.env.JWT_SECRET,
       signOptions: { expiresIn: '24h' },
     }),
+    ConfirmationModule,
   ],
   controllers: [AuthController],
   providers: [
