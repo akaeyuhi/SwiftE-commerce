@@ -10,7 +10,7 @@ import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { DomainEvent } from 'src/common/interfaces/infrastructure/event.interface';
 import { BaseNotificationListener } from 'src/common/abstracts/infrastucture/base.notification.listener';
 import { NewsNotificationService } from 'src/modules/infrastructure/notifications/news/news-notification.service';
-import {User} from "src/entities/user/user.entity";
+import { User } from 'src/entities/user/user.entity';
 
 type NewsEventType = 'news.published';
 type NewsEventData = NewsPublishedEvent;
