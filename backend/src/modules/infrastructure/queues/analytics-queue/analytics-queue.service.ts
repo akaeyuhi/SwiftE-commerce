@@ -56,27 +56,6 @@ export class AnalyticsQueueService extends BaseQueueService<AnalyticsJobData> {
     return { jobType, data };
   }
 
-  protected async getJobStatus(jobId: string) {
-    const job = await this.queue.getJob(jobId);
-    if (!job) return null;
-
-    return {
-      id: job.id.toString(),
-      type: job.name,
-      data: job.data,
-      priority: job.opts.priority || 0,
-      attempts: job.attemptsMade,
-      maxAttempts: job.opts.attempts || 3,
-      delay: job.opts.delay || 0,
-      processedAt: job.processedOn ? new Date(job.processedOn) : undefined,
-      completedAt: job.finishedOn ? new Date(job.finishedOn) : undefined,
-      failedAt: job.failedReason ? new Date() : undefined,
-      error: job.failedReason,
-      progress: job.progress(),
-      state: await job.getState(),
-    };
-  }
-
   protected async removeJob(jobId: string): Promise<void> {
     const job = await this.queue.getJob(jobId);
     if (job) {
