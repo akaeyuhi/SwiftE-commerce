@@ -3,13 +3,18 @@ import { DataSource } from 'typeorm';
 import { BaseRepository } from 'src/common/abstracts/base.repository';
 import { Review } from 'src/entities/store/review.entity';
 
+export type AggregateRating = {
+  count: number;
+  avg: number | null;
+};
+
 @Injectable()
 export class ReviewsRepository extends BaseRepository<Review> {
   constructor(dataSource: DataSource) {
     super(Review, dataSource.createEntityManager());
   }
 
-  async getRatingAggregate(productId: string) {
+  async getRatingAggregate(productId: string): Promise<AggregateRating> {
     const qb = this.createQueryBuilder('r')
       .select(['COUNT(r.id) as count', 'AVG(r.rating) as avg'])
       .where('r.product = :productId', { productId });

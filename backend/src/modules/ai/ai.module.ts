@@ -1,4 +1,4 @@
-import { forwardRef, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { AiAuditsModule } from 'src/modules/ai/ai-audit/ai-audit.module';
 import { AiLogsModule } from 'src/modules/ai/ai-logs/ai-logs.module';
 import { AiGeneratorModule } from 'src/modules/ai/ai-generator/ai-generator.module';
@@ -14,13 +14,11 @@ import { OpenAiProvider } from 'src/modules/ai/ai-generator/providers/open-ai.pr
 import { HuggingFaceProvider } from 'src/modules/ai/ai-generator/providers/hugging-face.provider';
 import { HttpModule } from '@nestjs/axios';
 import { AnalyticsModule } from 'src/modules/analytics/analytics.module';
-import { ReviewsModule } from 'src/modules/products/reviews/reviews.module';
 
 @Module({
   imports: [
     HttpModule,
-    forwardRef(() => AnalyticsModule),
-    ReviewsModule,
+    AnalyticsModule,
     AiAuditsModule,
     AiLogsModule,
     AiGeneratorModule,

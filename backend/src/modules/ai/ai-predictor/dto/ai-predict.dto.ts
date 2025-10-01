@@ -3,7 +3,7 @@
  */
 export interface AiPredictRow {
   productId?: string | null;
-  storeId?: string | null;
+  storeId?: string;
   features: Record<string, any>;
 }
 

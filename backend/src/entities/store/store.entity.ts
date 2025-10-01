@@ -16,7 +16,7 @@ import { NewsPost } from 'src/entities/store/news-post.entity';
 import { AiLog } from 'src/entities/ai/ai-log.entity';
 import { Inventory } from 'src/entities/store/product/inventory.entity';
 import { Category } from 'src/entities/store/product/category.entity';
-import { UserOwnedEntity } from 'src/common/interfaces/user-owned.entity.interface';
+import { UserOwnedEntity } from 'src/common/interfaces/crud/user-owned.entity.interface';
 
 @Entity({ name: 'store' })
 export class Store implements UserOwnedEntity {
@@ -29,7 +29,7 @@ export class Store implements UserOwnedEntity {
   @Column({ type: 'text' })
   description: string;
 
-  @ManyToOne(() => User, { onDelete: 'SET NULL' })
+  @ManyToOne(() => User, (user) => user.ownedStores, { onDelete: 'SET NULL' })
   owner: User;
 
   @CreateDateColumn()
@@ -48,7 +48,7 @@ export class Store implements UserOwnedEntity {
   @OneToMany(() => Order, (order) => order.store)
   orders: Order[];
 
-  @OneToMany(() => Order, (category) => category.store)
+  @OneToMany(() => Category, (category) => category.store)
   categories: Category[];
 
   @OneToMany(() => ShoppingCart, (cart) => cart.store)

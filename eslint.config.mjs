@@ -130,6 +130,7 @@ export default [
                     ignoreUrls: true,
                     ignoreComments: true,
                     ignorePattern: '^import .*',
+                    ignoreTemplateLiterals: true,
                 },
             ],
 

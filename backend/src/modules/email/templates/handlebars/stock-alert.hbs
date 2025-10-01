@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Back in Stock</title>
+  <style>
+    .email-container { max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; }
+    .header { background-color: #dc3545; color: white; padding: 20px; text-align: center; }
+    .content { padding: 30px 20px; }
+    .product { border: 1px solid #ddd; border-radius: 8px; padding: 20px; margin: 20px 0; }
+    .product-image { max-width: 200px; height: auto; }
+    .button { display: inline-block; padding: 12px 30px; background-color: #dc3545; color: white; text-decoration: none; border-radius: 5px; }
+    .urgency { color: #dc3545; font-weight: bold; }
+  </style>
+</head>
+<body>
+<div class="email-container">
+  <div class="header">
+    <h1>🚨 Back in Stock Alert!</h1>
+  </div>
+  <div class="content">
+    <p>Great news! The item you were waiting for is back in stock:</p>
+
+    <div class="product">
+      <h2>{{productName}}</h2>
+      {{#if productImage}}
+        <img src="{{productImage}}" alt="{{productName}}" class="product-image">
+      {{/if}}
+      <p><strong>Price:</strong> {{currency productPrice}}</p>
+      <p><strong>Stock:</strong> <span class="urgency">{{stockQuantity}} remaining</span></p>
+      {{#if productDescription}}
+        <p>{{truncate productDescription 150}}</p>
+      {{/if}}
+    </div>
+
+    <p class="urgency">⚡ Limited stock available - act fast!</p>
+
+    <p style="text-align: center; margin: 30px 0;">
+      <a href="{{productUrl}}" class="button">Shop Now</a>
+    </p>
+  </div>
+</div>
+</body>
+</html>

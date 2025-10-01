@@ -8,7 +8,7 @@ import {
 } from 'typeorm';
 import { ProductVariant } from 'src/entities/store/product/variant.entity';
 import { Store } from 'src/entities/store/store.entity';
-import { StoreOwnedEntity } from 'src/common/interfaces/store-owned.entity.interface';
+import { StoreOwnedEntity } from 'src/common/interfaces/crud/store-owned.entity.interface';
 
 // TODO
 /**

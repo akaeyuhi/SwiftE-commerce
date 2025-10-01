@@ -7,9 +7,11 @@ import {
   IsString,
   ArrayMinSize,
   IsNotEmpty,
+  IsEnum,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { CreateOrderItemDto } from 'src/modules/store/orders/order-item/dto/create-order-item.dto';
+import { OrderStatus } from 'src/common/enums/order-status.enum';
 
 /**
  * Embedded DTO for shipping / billing address (keeps shape similar to OrderInfo embeddable).
@@ -104,5 +106,6 @@ export class CreateOrderDto {
 
   @IsString()
   @IsOptional()
-  status?: string; // optional override, default 'pending'
+  @IsEnum(OrderStatus)
+  status?: OrderStatus; // optional override, default 'pending'
 }

@@ -9,7 +9,7 @@ import {
 } from 'typeorm';
 import { Product } from 'src/entities/store/product/product.entity';
 import { Inventory } from 'src/entities/store/product/inventory.entity';
-import { BaseEntity } from 'src/common/interfaces/base-entity.interface';
+import { BaseEntity } from 'src/common/interfaces/crud/base-entity.interface';
 
 @Entity({ name: 'product_variants' })
 export class ProductVariant implements BaseEntity {

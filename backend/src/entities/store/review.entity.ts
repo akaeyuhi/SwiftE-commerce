@@ -8,7 +8,7 @@ import {
 } from 'typeorm';
 import { User } from 'src/entities/user/user.entity';
 import { Product } from 'src/entities/store/product/product.entity';
-import { UserOwnedEntity } from 'src/common/interfaces/user-owned.entity.interface';
+import { UserOwnedEntity } from 'src/common/interfaces/crud/user-owned.entity.interface';
 
 @Entity({ name: 'reviews' })
 export class Review implements UserOwnedEntity {

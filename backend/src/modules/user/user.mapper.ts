@@ -19,9 +19,9 @@ export class UserMapper extends BaseMapper<User, UserDto> {
   toEntity(dto: Partial<UserDto>): User {
     const user = new User();
     if (dto.id) user.id = dto.id;
-    user.email = dto.email!;
-    user.firstName = dto.firstName;
-    user.lastName = dto.lastName;
+    user.email = dto.email ?? user.email;
+    user.firstName = dto.firstName ?? user.firstName;
+    user.lastName = dto.lastName ?? user.lastName;
     return user;
   }
 }

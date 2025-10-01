@@ -9,17 +9,27 @@ import { AuthModule } from 'src/modules/auth/auth.module';
 import { StoreModule } from 'src/modules/store/store.module';
 import { AiModule } from './modules/ai/ai.module';
 import { ProductsModule } from 'src/modules/products/products.module';
+import { AuthorizationModule } from './modules/authorization/authorization.module';
+import { AdminModule } from 'src/modules/admin/admin.module';
+import { QueuesModule } from 'src/modules/infrastructure/queues/queues.module';
+import { InterceptorsModule } from 'src/modules/infrastructure/interceptors/interceptors.module';
+import { AnalyticsReviewsModule } from './modules/analytics-reviews/analytics-reviews.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot(),
     DatabaseModule,
+    AuthorizationModule,
+    QueuesModule,
+    InterceptorsModule,
     UserModule,
+    AdminModule,
     AuthModule,
     StoreModule,
     ProductsModule,
     AnalyticsModule,
     AiModule,
+    AnalyticsReviewsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -17,9 +17,12 @@ import { CreateProductDto } from 'src/modules/products/dto/create-product.dto';
 import { UpdateProductDto } from 'src/modules/products/dto/update-product.dto';
 import { BaseController } from 'src/common/abstracts/base.controller';
 import { Product } from 'src/entities/store/product/product.entity';
-import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
-import { StoreRolesGuard } from 'src/common/guards/store-roles.guard';
-import { ProductPhotosInterceptor } from 'src/modules/products/product-photo/interceptors/product-photo.interceptor';
+import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';
+import { StoreRolesGuard } from 'src/modules/authorization/guards/store-roles.guard';
+import { RecordEventInterceptor } from 'src/modules/infrastructure/interceptors/record-event/record-event.interceptor';
+import { RecordEvents } from 'src/common/decorators/record-event.decorator';
+import { AnalyticsEventType } from 'src/modules/analytics/entities/analytics-event.entity';
+import { UploadProductPhotos } from 'src/common/decorators/upload-product-photos.decorator';
 
 /**
  * ProductsController
@@ -38,6 +41,17 @@ import { ProductPhotosInterceptor } from 'src/modules/products/product-photo/int
  */
 @Controller('stores/:storeId/products')
 @UseGuards(JwtAuthGuard, StoreRolesGuard)
+@UseInterceptors(RecordEventInterceptor)
+@RecordEvents({
+  findOne: {
+    eventType: AnalyticsEventType.VIEW,
+    storeId: 'params.storeId',
+    productId: 'params.id', // or 'params.id'
+    userId: 'user.id',
+    invokedOn: 'product',
+    when: 'after',
+  },
+})
 export class ProductsController extends BaseController<
   Product,
   CreateProductDto,
@@ -63,7 +77,7 @@ export class ProductsController extends BaseController<
    * @param photos - optionally uploaded files
    * @param mainPhoto - optionally uploaded main photo
    */
-  @UseInterceptors(ProductPhotosInterceptor())
+  @UploadProductPhotos()
   @Post()
   async createProduct(
     @Param('storeId', new ParseUUIDPipe()) storeId: string,
@@ -89,7 +103,7 @@ export class ProductsController extends BaseController<
    * @param productId - uuid of the product to attach photos to
    * @param photos - uploaded files from the request
    */
-  @UseInterceptors(ProductPhotosInterceptor())
+  @UploadProductPhotos()
   @Post(':productId/photos')
   async addPhotosToProduct(
     @Param('storeId', new ParseUUIDPipe()) storeId: string,
@@ -110,7 +124,7 @@ export class ProductsController extends BaseController<
    * @param productId - uuid of the product to attach photos to
    * @param photo - Main photo to upload
    */
-  @UseInterceptors(ProductPhotosInterceptor())
+  @UploadProductPhotos()
   @Post(':productId/photos/main')
   async addMainPhotoToProduct(
     @Param('storeId', new ParseUUIDPipe()) storeId: string,

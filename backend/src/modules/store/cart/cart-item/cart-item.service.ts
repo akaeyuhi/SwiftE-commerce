@@ -59,34 +59,28 @@ export class CartItemService extends BaseService<
    *  - If an item for (cartId, variantId) exists, increment quantity by `quantity`.
    *  - Otherwise create a new item.
    *
-   * @param cartId - uuid of cart
-   * @param variantId - uuid of product variant
-   * @param quantity - positive integer
+   *  @param dto - dto to add to cart
    */
-  async addOrIncrement(
-    cartId: string,
-    variantId: string,
-    quantity = 1
-  ): Promise<CartItem> {
-    if (quantity <= 0) throw new BadRequestException('Quantity must be > 0');
+  async addOrIncrement(dto: CartItemDto): Promise<CartItem> {
+    const { cartId, variantId, quantity } = dto;
+    if (dto.quantity <= 0)
+      throw new BadRequestException('Quantity must be > 0');
 
     const existing = await this.itemRepo.findByCartAndVariant(
-      cartId,
-      variantId
+      dto.cartId,
+      dto.variantId
     );
-    const itemRepo = this.itemRepo.manager.getRepository(CartItem);
 
     if (existing) {
       existing.quantity = (existing.quantity ?? 0) + quantity;
-      return itemRepo.save(existing);
+      return this.itemRepo.save(existing);
     }
 
-    const created = itemRepo.create({
+    return this.itemRepo.createEntity({
       cart: { id: cartId },
       variant: { id: variantId },
       quantity,
     });
-    return itemRepo.save(created);
   }
 
   /**
@@ -103,16 +97,14 @@ export class CartItemService extends BaseService<
     const item = await this.itemRepo.findWithRelations(itemId);
     if (!item) throw new NotFoundException('Cart item not found');
 
-    const itemRepo = this.itemRepo.manager.getRepository(CartItem);
-
     if (quantity === 0) {
-      await itemRepo.delete(itemId);
+      await this.itemRepo.deleteById(itemId);
       item.quantity = 0;
       return item;
     }
 
     item.quantity = quantity;
-    return itemRepo.save(item);
+    return this.itemRepo.save(item);
   }
 
   /**
@@ -135,7 +127,7 @@ export class CartItemService extends BaseService<
       throw new BadRequestException('Resulting quantity would be negative');
 
     item.quantity = newQty;
-    return this.itemRepo.manager.getRepository(CartItem).save(item);
+    return this.itemRepo.save(item);
   }
 
   /**

@@ -12,8 +12,10 @@ import { Order } from 'src/entities/store/product/order.entity';
 import { Review } from 'src/entities/store/review.entity';
 import { NewsPost } from 'src/entities/store/news-post.entity';
 import { AiLog } from 'src/entities/ai/ai-log.entity';
-import { BaseEntity } from 'src/common/interfaces/base-entity.interface';
+import { BaseEntity } from 'src/common/interfaces/crud/base-entity.interface';
 import { AdminRoles } from 'src/common/enums/admin.enum';
+import { Store } from 'src/entities/store/store.entity';
+import { Like } from 'src/entities/user/like.entity';
 
 @Entity({ name: 'users' })
 export class User implements BaseEntity {
@@ -24,13 +26,25 @@ export class User implements BaseEntity {
   email: string;
 
   @Column({ type: 'varchar', length: 100, nullable: true })
-  firstName?: string;
+  firstName: string;
 
   @Column({ type: 'varchar', length: 100, nullable: true })
-  lastName?: string;
+  lastName: string;
 
   @Column({ type: 'text' })
   passwordHash: string;
+
+  @Column({ default: false })
+  isEmailVerified: boolean;
+
+  @Column({ nullable: true })
+  emailVerifiedAt?: Date;
+
+  @Column({ default: true })
+  isActive: boolean;
+
+  @Column({ nullable: true })
+  deactivatedAt?: Date;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
@@ -46,6 +60,9 @@ export class User implements BaseEntity {
   siteRole: AdminRoles;
 
   // Relations
+
+  @OneToMany(() => Store, (store) => store.owner)
+  ownedStores: Store[];
 
   @OneToMany(() => UserRole, (ur) => ur.user)
   roles: UserRole[];
@@ -64,4 +81,7 @@ export class User implements BaseEntity {
 
   @OneToMany(() => AiLog, (log) => log.user)
   aiLogs: AiLog[];
+
+  @OneToMany(() => Like, (like) => like.user)
+  likes: Like[];
 }

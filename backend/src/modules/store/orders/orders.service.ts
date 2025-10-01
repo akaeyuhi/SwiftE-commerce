@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { CreateOrderDto } from 'src/modules/store/orders/dto/create-order.dto';
@@ -11,6 +12,10 @@ import { OrdersRepository } from 'src/modules/store/orders/orders.repository';
 import { OrderItemRepository } from 'src/modules/store/orders/order-item/order-item.repository';
 import { DataSource } from 'typeorm';
 import { CreateOrderItemDto } from 'src/modules/store/orders/order-item/dto/create-order-item.dto';
+import { OrderStatus } from 'src/common/enums/order-status.enum';
+import { RecordEventDto } from 'src/modules/infrastructure/queues/analytics-queue/dto/record-event.dto';
+import { AnalyticsEventType } from 'src/modules/analytics/entities/analytics-event.entity';
+import { AnalyticsQueueService } from 'src/modules/infrastructure/queues/analytics-queue/analytics-queue.service';
 
 /**
  * OrdersService
@@ -24,8 +29,11 @@ export class OrdersService extends BaseService<
   CreateOrderDto,
   UpdateOrderDto
 > {
+  private readonly logger = new Logger(OrdersService.name);
+
   constructor(
     private readonly orderRepo: OrdersRepository,
+    private readonly analyticsQueue: AnalyticsQueueService,
     private readonly itemRepo: OrderItemRepository,
     private readonly dataSource: DataSource
   ) {
@@ -62,13 +70,15 @@ export class OrdersService extends BaseService<
       const orderToSave = orderRepoTx.create({
         user: { id: dto.userId },
         store: { id: dto.storeId },
-        status: dto.status ?? 'pending',
+        status: dto.status ?? OrderStatus.PENDING,
         totalAmount,
         shipping: dto.shipping,
         billing: dto.billing,
       });
 
-      const savedOrder = await orderRepoTx.save(orderToSave);
+      const savedOrder = (await orderRepoTx.save(
+        orderToSave
+      )) as unknown as Order;
 
       const itemRepoTx = manager.getRepository(this.itemRepo.metadata.target);
       for (const it of dto.items as CreateOrderItemDto[]) {
@@ -100,6 +110,8 @@ export class OrdersService extends BaseService<
     if (!created) {
       throw new BadRequestException('Failed to create order');
     }
+
+    await this.recordEvent(created, AnalyticsEventType.PURCHASE);
 
     return created;
   }
@@ -135,10 +147,94 @@ export class OrdersService extends BaseService<
    * @param id
    * @param status
    */
-  async updateStatus(id: string, status: string): Promise<Order> {
+  async updateStatus(id: string, status: OrderStatus): Promise<Order> {
     const order = await this.orderRepo.findById(id);
     if (!order) throw new NotFoundException('Order not found');
     order.status = status;
     return await this.orderRepo.save(order);
+  }
+
+  /**
+   * Checkout the order: set status to 'paid' and persist.
+   *
+   * Loads order with items and related product/variant so caller (controller)
+   * can use that data for analytics or downstream work.
+   *
+   * @param orderId - uuid of the order
+   * @returns updated Order with relations loaded
+   */
+  async paid(orderId: string): Promise<void> {
+    const order = await this.orderRepo.findById(orderId);
+    if (!order) throw new NotFoundException('Order not found');
+    await this.updateStatus(order.id, OrderStatus.PAID);
+    return this.recordEvent(order, AnalyticsEventType.PURCHASE);
+  }
+
+  /**
+   * Convenience: fetch order with relations (items, variant.product, store, user)
+   * used by controller or other services.
+   */
+  async findWithRelations(orderId: string): Promise<Order | null> {
+    return this.orderRepo.findOne({
+      where: { id: orderId },
+      relations: [
+        'items',
+        'items.variant',
+        'items.variant.product',
+        'store',
+        'user',
+      ],
+    });
+  }
+
+  private async recordEvent(
+    order: Order,
+    eventType: AnalyticsEventType
+  ): Promise<void> {
+    if ((order as any).status === OrderStatus.PAID) {
+      try {
+        const storeEvent: RecordEventDto = {
+          storeId: order.store.id,
+          userId: order.user.id,
+          eventType,
+          invokedOn: 'store',
+          value: Number(order.totalAmount ?? 0),
+          meta: { orderId: order.id },
+        };
+        await this.analyticsQueue.addEvent(storeEvent);
+      } catch (err) {
+        this.logger.warn(
+          'Failed to enqueue purchase store-event: ' + (err as any)?.message
+        );
+      }
+
+      try {
+        for (const it of order.items ?? []) {
+          const productId = it?.variant?.product?.id ?? undefined;
+          const itemValue =
+            Number((it as any).price ?? 0) * Number((it as any).quantity ?? 1);
+          if (productId) {
+            const productEvent: RecordEventDto = {
+              storeId: order.store?.id,
+              productId,
+              userId: order.user?.id,
+              eventType,
+              invokedOn: 'product',
+              value: itemValue,
+              meta: {
+                orderId: order.id,
+                itemId: it.id,
+                quantity: (it as any).quantity,
+              },
+            };
+            await this.analyticsQueue.addEvent(productEvent);
+          }
+        }
+      } catch (err) {
+        this.logger.warn(
+          'Failed to enqueue per-item purchase events: ' + (err as any)?.message
+        );
+      }
+    }
   }
 }

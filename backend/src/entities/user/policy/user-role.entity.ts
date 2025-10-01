@@ -9,7 +9,7 @@ import {
 import { User } from 'src/entities/user/user.entity';
 import { Store } from 'src/entities/store/store.entity';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
-import { UserOwnedEntity } from 'src/common/interfaces/user-owned.entity.interface';
+import { UserOwnedEntity } from 'src/common/interfaces/crud/user-owned.entity.interface';
 
 @Entity({ name: 'user_roles' })
 export class UserRole implements UserOwnedEntity {
@@ -37,4 +37,22 @@ export class UserRole implements UserOwnedEntity {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @Column({ default: true })
+  isActive: boolean;
+
+  @Column({ nullable: true })
+  assignedBy?: string;
+
+  @Column({ nullable: true })
+  assignedAt?: Date;
+
+  @Column({ nullable: true })
+  revokedBy?: string;
+
+  @Column({ nullable: true })
+  revokedAt?: Date;
+
+  @Column('json', { nullable: true })
+  metadata?: Record<string, any>;
 }

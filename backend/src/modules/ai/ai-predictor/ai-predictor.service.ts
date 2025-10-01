@@ -1,51 +1,83 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { lastValueFrom } from 'rxjs';
+import { Inject, Injectable } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
-import {
-  AiPredictRow,
-  AiPredictBatchRequest,
-  AiPredictResult,
-} from 'src/modules/ai/ai-predictor/dto/ai-predict.dto';
-import { AiPredictorRepository } from 'src/modules/ai/ai-predictor/ai-predictor.repository';
-import { AiPredictorStat } from 'src/entities/ai/ai-predictor-stat.entity';
+import { lastValueFrom } from 'rxjs';
+import { DataSource } from 'typeorm';
 import { subDays } from 'date-fns';
+import { BaseAiService } from 'src/common/abstracts/ai/base.ai.service';
+import { AiPredictorRepository } from './ai-predictor.repository';
+import { StoreDailyStatsRepository } from 'src/modules/analytics/repositories/store-daily-stats.repository';
+import { ProductDailyStatsRepository } from 'src/modules/analytics/repositories/product-daily-stats.repository';
+import { AiLogsService } from '../ai-logs/ai-logs.service';
+import { AiAuditService } from '../ai-audit/ai-audit.service';
 import { ProductVariant } from 'src/entities/store/product/variant.entity';
 import { Inventory } from 'src/entities/store/product/inventory.entity';
-import { DataSource } from 'typeorm';
+import { AiPredictorStat } from 'src/entities/ai/ai-predictor-stat.entity';
+import { AiPredictRow, AiPredictBatchRequest } from './dto/ai-predict.dto';
+import {
+  AiServiceRequest,
+  AiServiceResponse,
+} from 'src/common/interfaces/ai/ai.interface';
+import {
+  PredictorRequestData,
+  PredictorResponseData,
+} from 'src/common/interfaces/ai/predictor.interface';
+import {
+  IReviewsRepository,
+  REVIEWS_REPOSITORY,
+} from 'src/common/contracts/reviews.contract';
 
-import { StoreDailyStatsRepository } from 'src/modules/analytics/repositories/store-daily-stats.repository';
-
-import { ProductDailyStatsRepository } from 'src/modules/analytics/repositories/product-daily-stats.repository';
-import { ReviewsRepository } from 'src/modules/products/reviews/reviews.repository';
-import { AiLogsService } from 'src/modules/ai/ai-logs/ai-logs.service';
-import { AiAuditService } from 'src/modules/ai/ai-audit/ai-audit.service';
-import { AxiosResponse } from 'axios';
+export interface FeatureVector {
+  sales_7d: number;
+  sales_14d: number;
+  sales_30d: number;
+  sales_7d_per_day: number;
+  sales_30d_per_day: number;
+  sales_ratio_7_30: number;
+  views_7d: number;
+  views_30d: number;
+  addToCarts_7d: number;
+  view_to_purchase_7d: number;
+  avg_price: number;
+  min_price: number;
+  max_price: number;
+  avg_rating: number;
+  rating_count: number;
+  inventory_qty: number;
+  days_since_restock: number;
+  day_of_week: number;
+  is_weekend: number;
+  store_views_7d: number;
+  store_purchases_7d: number;
+}
 
 /**
- * AiPredictorService
+ * Enhanced AiPredictorService extending BaseAiService
  *
- * Responsibilities:
- *  - Build a numeric feature vector for a product (buildFeatureVector)
- *  - Call external predictor endpoint (/predict_batch)
- *  - Persist returned predictions into DB (predictBatchAndPersist)
- *
- * Notes about repositories:
- *  - PredictorRepository is expected to expose helper methods that return
- *    aggregated numbers. Example methods used below (implement them in repository):
- *      - getProductAggregate(productId, fromIso, toIso) => { views, purchases, addToCarts, revenue }
- *      - getStoreAggregate(storeId, fromIso, toIso) => same shape as above
- *      - getVariantPriceStats(productId) => { avgPrice, minPrice, maxPrice }
- *      - getRatingAggregate(productId) => { avg, count }
- *      - getInventoryAggregate(productId) => { inventoryQty, lastUpdatedAt } (lastUpdatedAt iso string or null)
- *
- *  Keeping data-logic inside repository keeps the service easy to test and the SQL centralized.
+ * Provides comprehensive prediction capabilities with:
+ * - Feature vector building with caching
+ * - Batch processing with chunking
+ * - Error handling and retry logic
+ * - Comprehensive logging and auditing
+ * - Performance optimization
  */
 @Injectable()
-export class AiPredictorService {
-  private readonly logger = new Logger(AiPredictorService.name);
+export class AiPredictorService extends BaseAiService<
+  PredictorRequestData,
+  PredictorResponseData
+> {
   private readonly predictorUrl: string;
-  private readonly token?: string;
+  private readonly authToken?: string;
   private readonly chunkSize: number;
+
+  // Feature cache to avoid rebuilding features for same product/store combination
+  private readonly featureCache = new Map<
+    string,
+    {
+      features: FeatureVector;
+      timestamp: number;
+    }
+  >();
+  private readonly cacheTimeout = 5 * 60 * 1000; // 5 minutes
 
   constructor(
     private readonly httpService: HttpService,
@@ -53,446 +85,428 @@ export class AiPredictorService {
     private readonly dataSource: DataSource,
     private readonly storeStatsRepo: StoreDailyStatsRepository,
     private readonly productStatsRepo: ProductDailyStatsRepository,
-    private readonly reviewsRepo: ReviewsRepository,
-    private readonly aiLogs: AiLogsService,
-    private readonly aiAudit: AiAuditService
+    private readonly aiLogsService: AiLogsService,
+    private readonly aiAuditService: AiAuditService,
+    @Inject(REVIEWS_REPOSITORY) private readonly reviewsRepo: IReviewsRepository
   ) {
+    super();
+
     this.predictorUrl =
       process.env.PREDICTOR_URL ?? 'http://predictor:8080/predict_batch';
-    this.token = process.env.PREDICTOR_AUTH_TOKEN ?? undefined;
-    this.chunkSize = Number(process.env.PREDICTOR_CHUNK_SIZE ?? 50);
+    this.authToken = process.env.PREDICTOR_AUTH_TOKEN;
+    this.chunkSize = parseInt(process.env.PREDICTOR_CHUNK_SIZE ?? '50');
   }
 
-  /**
-   * Build numeric feature vector for a product (same schema that training expects).
-   *
-   * The returned object is a flat map { featureName: number } which must match the
-   * scaler.columns used during model training (order is determined at training time).
-   *
-   * Features included (baseline):
-   *  - sales_7d, sales_14d, sales_30d
-   *  - sales_7d_per_day, sales_30d_per_day, sales_ratio_7_30
-   *  - views_7d, views_30d
-   *  - addToCarts_7d
-   *  - view_to_purchase_7d
-   *  - avg_price, min_price, max_price
-   *  - avg_rating, rating_count
-   *  - inventory_qty (sum across variants)
-   *  - days_since_last_restock (approx from inventory updatedAt)
-   *  - day_of_week (0..6), is_weekend (0/1)
-   *  - store_views_7d, store_purchases_7d
-   *
-   * @param productId - product UUID
-   * @param storeId - optional store UUID (used for store-level features)
-   */
-  /* eslint-disable camelcase */
-  async buildFeatureVector(
-    productId: string,
-    storeId?: string
-  ): Promise<Record<string, number | null>> {
-    // helper to get date strings
-    const today = new Date();
-    const fmt = (d: Date) => d.toISOString().slice(0, 10); // 'YYYY-MM-DD'
-    const start7 = fmt(subDays(today, 6)); // inclusive 7-day window (today and 6 prev)
-    const start14 = fmt(subDays(today, 13));
-    const start30 = fmt(subDays(today, 29));
-    const end = fmt(today);
+  protected validateRequest(
+    request: AiServiceRequest<PredictorRequestData>
+  ): void {
+    if (!request.data?.items?.length) {
+      throw new Error('Items array is required and cannot be empty');
+    }
 
-    // 1) product-level aggregated counts from product_daily_stats (fast)
-    const agg7 = await this.productStatsRepo.getAggregateRange(
-      productId,
-      start7,
-      end
-    );
-    const agg14 = await this.productStatsRepo.getAggregateRange(
-      productId,
-      start14,
-      end
-    );
-    const agg30 = await this.productStatsRepo.getAggregateRange(
-      productId,
-      start30,
-      end
-    );
-
-    // 2) store-level aggregates (optional)
-    let storeAgg7 = { views: 0, purchases: 0, addToCarts: 0, revenue: 0 };
-    if (storeId) {
-      storeAgg7 = await this.storeStatsRepo.getAggregateRange(
-        storeId,
-        start7,
-        end
+    if (request.data.items.length > 1000) {
+      throw new Error(
+        'Cannot process more than 1000 items in a single request'
       );
     }
 
-    // 3) price statistics from product variants (avg/min/max)
-    const variantRepo = this.dataSource.getRepository(ProductVariant);
-    const priceRaw = await variantRepo
-      .createQueryBuilder('v')
-      .select('AVG(v.price)::numeric', 'avg_price')
-      .addSelect('MIN(v.price)::numeric', 'min_price')
-      .addSelect('MAX(v.price)::numeric', 'max_price')
-      .where('v.product = :productId', { productId })
-      .getRawOne();
+    for (const item of request.data.items) {
+      if (typeof item === 'string') continue; // productId string is valid
 
-    const avgPrice = priceRaw?.avg_price ? Number(priceRaw.avg_price) : 0;
-    const minPrice = priceRaw?.min_price
-      ? Number(priceRaw.min_price)
-      : avgPrice;
-    const maxPrice = priceRaw?.max_price
-      ? Number(priceRaw.max_price)
-      : avgPrice;
-
-    // 4) ratings
-    const ratingAgg = await this.reviewsRepo.getRatingAggregate(productId);
-    const avgRating = ratingAgg?.avg ?? 0;
-    const ratingCount = ratingAgg?.count ?? 0;
-
-    // 5) inventory: sum quantities across variants for this product
-    // Inventory has variant -> ProductVariant -> product relation
-    const invRepo = this.dataSource.getRepository(Inventory);
-    // join variant to inventory to product
-    const invRaw = await invRepo
-      .createQueryBuilder('inv')
-      .select('COALESCE(SUM(inv.quantity),0)', 'inventory_qty')
-      .addSelect('MAX(inv.updatedAt)::text', 'last_updated_at')
-      .innerJoin('inv.variant', 'v')
-      .where('v.product = :productId', { productId })
-      .getRawOne();
-
-    const inventoryQty = invRaw ? Number(invRaw.inventory_qty || 0) : 0;
-    const lastRestockAt = invRaw?.last_updated_at
-      ? new Date(invRaw.last_updated_at)
-      : null;
-    const daysSinceRestock = lastRestockAt
-      ? Math.max(
-          0,
-          Math.floor(
-            (Date.now() - lastRestockAt.getTime()) / (1000 * 60 * 60 * 24)
-          )
-        )
-      : 365;
-
-    // 6) simple conversion metrics
-    const sales7 = agg7.purchases || 0;
-    const sales30 = agg30.purchases || 0;
-    const views7 = agg7.views || 0;
-    const views30 = agg30.views || 0;
-    const addToCarts7 = agg7.addToCarts || 0;
-
-    const sales7PerDay = sales7 / 7;
-    const sales30PerDay = sales30 / 30;
-    const salesRatio7_30 = sales30 > 0 ? sales7 / (sales30 || 1) : 0;
-    const viewToPurchase7 = views7 > 0 ? sales7 / views7 : 0;
-
-    // 7) store-level features
-    const storeViews7 = storeAgg7.views || 0;
-    const storePurchases7 = storeAgg7.purchases || 0;
-
-    // 8) time features
-    const dow = today.getUTCDay(); // 0..6 (Sunday..Saturday)
-    const isWeekend = dow === 0 || dow === 6 ? 1 : 0;
-
-    const features: Record<string, number | null> = {
-      sales_7d: sales7,
-      sales_14d: agg14.purchases || 0,
-      sales_30d: sales30,
-      sales_7d_per_day: Number(sales7PerDay.toFixed(6)),
-      sales_30d_per_day: Number(sales30PerDay.toFixed(6)),
-      sales_ratio_7_30: Number(salesRatio7_30.toFixed(6)),
-      views_7d: views7,
-      views_30d: views30,
-      addToCarts_7d: addToCarts7,
-      view_to_purchase_7d: Number(viewToPurchase7.toFixed(6)),
-      avg_price: avgPrice,
-      min_price: minPrice,
-      max_price: maxPrice,
-      avg_rating: avgRating ?? 0,
-      rating_count: ratingCount,
-      inventory_qty: inventoryQty,
-      days_since_restock: daysSinceRestock,
-      day_of_week: dow,
-      is_weekend: isWeekend,
-      store_views_7d: storeViews7,
-      store_purchases_7d: storePurchases7,
-    };
-
-    // Optionally coerce NaN => 0
-    for (const k of Object.keys(features)) {
-      const v = features[k];
-      if (v === null || Number.isNaN(v as number)) features[k] = 0;
+      if (typeof item === 'object') {
+        const obj = item as any;
+        if (!obj.productId && !obj.features) {
+          throw new Error(
+            'Each item must have either productId or pre-built features'
+          );
+        }
+      }
     }
+  }
 
-    return features;
+  protected async processRequest(
+    request: AiServiceRequest<PredictorRequestData>
+  ): Promise<AiServiceResponse<PredictorResponseData>> {
+    const startTime = Date.now();
+
+    try {
+      const predictions = await this.predictBatchInternal(
+        request.data.items,
+        request.data.modelVersion,
+        request.userId,
+        request.storeId
+      );
+
+      const processingTime = Date.now() - startTime;
+
+      return {
+        success: true,
+        text: `Processed ${predictions.length} predictions`,
+        result: {
+          predictions,
+          modelVersion: request.data.modelVersion,
+          processingTime,
+        },
+        feature: request.feature,
+        provider: 'predictor',
+        model: request.data.modelVersion,
+        usage: {
+          totalTokens: 0, // Predictor doesn't use tokens
+        },
+      };
+    } catch (error) {
+      this.logger.error('Predictor request processing failed:', error);
+      throw error;
+    }
+  }
+
+  protected async logUsage(
+    request: AiServiceRequest<PredictorRequestData>,
+    response: AiServiceResponse<PredictorResponseData>
+  ): Promise<void> {
+    await this.aiLogsService.record({
+      userId: request.userId,
+      storeId: request.storeId,
+      feature: request.feature,
+      prompt: null,
+      details: {
+        itemCount: request.data.items.length,
+        modelVersion: request.data.modelVersion,
+        processingTime: response.result?.processingTime,
+        success: response.success,
+        error: response.error,
+        predictionsCount: response.result?.predictions?.length || 0,
+      },
+    });
+  }
+
+  protected async auditRequest(
+    request: AiServiceRequest<PredictorRequestData>,
+    response: AiServiceResponse<PredictorResponseData>
+  ): Promise<void> {
+    await this.aiAuditService.storeEncryptedResponse({
+      feature: request.feature,
+      provider: 'predictor',
+      model: request.data.modelVersion,
+      rawResponse: response.result,
+      userId: request.userId,
+      storeId: request.storeId,
+    });
   }
 
   /**
-   * Predict batch: accepts mixed inputs:
-   * - string productId
-   * - { productId, storeId? }
-   * - PredictRow { productId?, storeId?, features }
-   *
-   * For rows lacking `features`, this method will call `buildFeatureVector`.
-   *
-   * Returns array of results objects:
-   *  { index, productId?, storeId?, features, rawPrediction, score, label, error? }
-   *
-   * The `features` field is always included so callers can persist the full snapshot.
+   * Build comprehensive feature vector for a product with caching
    */
-  async predictBatch(
+  async buildFeatureVector(
+    productId: string,
+    storeId?: string
+  ): Promise<FeatureVector> {
+    const cacheKey = `${productId}:${storeId || 'none'}`;
+    const cached = this.featureCache.get(cacheKey);
+
+    if (cached && Date.now() - cached.timestamp < this.cacheTimeout) {
+      return cached.features;
+    }
+
+    try {
+      const features = await this.computeFeatureVector(productId, storeId);
+
+      // Cache the result
+      this.featureCache.set(cacheKey, {
+        features,
+        timestamp: Date.now(),
+      });
+
+      // Clean up old cache entries periodically
+      if (this.featureCache.size > 1000) {
+        this.cleanupFeatureCache();
+      }
+
+      return features;
+    } catch (error) {
+      this.logger.error(
+        `Failed to build feature vector for product ${productId}:`,
+        error
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Internal batch prediction logic (extracted from original predictBatch)
+   */
+  private async predictBatchInternal(
+    items: Array<
+      string | { productId: string; storeId?: string } | AiPredictRow
+    >,
+    modelVersion?: string,
+    userId?: string,
+    contextStoreId?: string
+  ) {
+    if (!items || items.length === 0) return [];
+
+    // Normalize items to AiPredictRow format
+    const normalized = await this.normalizeItems(items);
+
+    // Build missing feature vectors in parallel chunks
+    await this.buildMissingFeatures(normalized);
+
+    // Process predictions in chunks
+    return this.processPredictionChunks(
+      normalized,
+      modelVersion,
+      userId,
+      contextStoreId
+    );
+  }
+
+  private async normalizeItems(
     items: Array<
       string | { productId: string; storeId?: string } | AiPredictRow
     >
   ): Promise<
-    Array<
-      AiPredictResult & {
-        productId?: string;
-        storeId?: string;
-        features?: Record<string, number>;
-        rawPrediction?: any;
-        error?: string;
-      }
-    >
+    Array<AiPredictRow & { meta: { productId?: string; storeId?: string } }>
   > {
-    if (!items || items.length === 0) return [];
+    const normalized: Array<AiPredictRow & { meta: any }> = [];
 
-    // Normalize items -> PredictRow[] placeholders
-    const normalized: AiPredictRow[] = [];
-    const meta: Array<{ productId?: string; storeId?: string }> = [];
-
-    for (const it of items) {
-      if (typeof it === 'string') {
-        meta.push({ productId: it, storeId: undefined });
+    for (const item of items) {
+      if (typeof item === 'string') {
         normalized.push({
-          productId: it,
+          productId: item,
           storeId: undefined,
           features: {} as any,
+          meta: { productId: item, storeId: undefined },
         });
-      } else if (
-        (it as AiPredictRow).features &&
-        Object.keys((it as AiPredictRow).features).length
-      ) {
-        const row = it as AiPredictRow;
-        meta.push({ productId: row.productId!, storeId: row.storeId! });
-        normalized.push(row);
+      } else if (this.hasValidFeatures(item as AiPredictRow)) {
+        const row = item as AiPredictRow;
+        normalized.push({
+          ...row,
+          meta: { productId: row.productId, storeId: row.storeId },
+        });
       } else {
-        const obj = it as { productId: string; storeId?: string };
-        meta.push({ productId: obj.productId, storeId: obj.storeId });
+        const obj = item as { productId: string; storeId?: string };
         normalized.push({
           productId: obj.productId,
           storeId: obj.storeId,
           features: {} as any,
+          meta: { productId: obj.productId, storeId: obj.storeId },
         });
       }
     }
 
-    // Build missing feature vectors in chunks
-    for (let i = 0; i < normalized.length; i += this.chunkSize) {
-      const chunk = normalized.slice(i, i + this.chunkSize);
-      const builders = chunk.map(async (r) => {
-        if (r.features && Object.keys(r.features).length > 0) return;
-        const pid = r.productId;
-        const sid = (r as any).storeId ?? undefined;
-        if (!pid) {
-          r.features = {} as any;
-          (r as any).__buildError = 'missing_product_id';
-          return;
-        }
-        try {
-          const features = await this.buildFeatureVector(pid, sid);
-          r.features = features as any;
-        } catch (err: any) {
-          r.features = {} as any;
-          (r as any).__buildError = err?.message ?? String(err);
-          this.logger.warn(
-            `buildFeatureVector failed for ${pid}: ${(err && err.message) || err}`
-          );
-        }
-      });
-      await Promise.all(builders);
-    }
-
-    const resultsOut: Array<
-      AiPredictResult & {
-        productId?: string;
-        storeId?: string;
-        features?: Record<string, number>;
-        rawPrediction?: any;
-        error?: string;
-      }
-    > = [];
-
-    // Send to external predictor in chunks
-    for (let i = 0; i < normalized.length; i += this.chunkSize) {
-      const chunk = normalized.slice(i, i + this.chunkSize);
-      const payload: AiPredictBatchRequest = { rows: chunk };
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      };
-      if (this.token) headers['X-Internal-Token'] = this.token;
-
-      try {
-        const resp$ = this.httpService.post<AiPredictResult>(
-          this.predictorUrl,
-          payload,
-          {
-            headers,
-          }
-        );
-        const resp = await lastValueFrom(resp$);
-        const data = resp?.data;
-        const preds = Array.isArray(data?.results) ? data.results : [];
-
-        await this.storeResult(chunk, resp, data);
-
-        for (let j = 0; j < chunk.length; j++) {
-          const globalIndex = i + j;
-          const row = chunk[j];
-          const md = meta[globalIndex] ?? {};
-          const buildErr = (row as any).__buildError;
-
-          if (buildErr) {
-            resultsOut.push({
-              index: globalIndex,
-              score: NaN,
-              label: 'error',
-              productId: md.productId,
-              storeId: md.storeId,
-              features: row.features as any,
-              rawPrediction: preds[j] ?? null,
-              error: `feature_build_error: ${buildErr}`,
-            } as any);
-            continue;
-          }
-
-          const pred = preds[j];
-
-          if (!pred) {
-            resultsOut.push({
-              index: globalIndex,
-              score: NaN,
-              label: 'no_prediction',
-              productId: md.productId,
-              storeId: md.storeId,
-              features: row.features as any,
-              rawPrediction: null,
-              error: 'no_prediction_returned',
-            } as any);
-            continue;
-          }
-
-          // normalize score
-          const score =
-            typeof pred.score === 'number'
-              ? pred.score
-              : typeof pred === 'number'
-                ? pred
-                : (pred?.prob ?? pred?.value ?? NaN);
-          const scoreVal = Number.isFinite(Number(score)) ? Number(score) : NaN;
-          const label =
-            pred.label ??
-            (scoreVal > 0.7 ? 'high' : scoreVal > 0.4 ? 'medium' : 'low');
-
-          resultsOut.push({
-            index: globalIndex,
-            score: scoreVal,
-            label,
-            productId: md.productId,
-            storeId: md.storeId,
-            features: row.features as any,
-            rawPrediction: pred,
-          } as any);
-        }
-      } catch (err: any) {
-        this.logger.error(
-          'predictBatch: predictor call failed: ' + (err?.message ?? err)
-        );
-        // mark each item in chunk with error
-        for (let j = 0; j < chunk.length; j++) {
-          const globalIndex = i + j;
-          const md = meta[globalIndex] ?? {};
-          resultsOut.push({
-            index: globalIndex,
-            score: NaN,
-            label: 'error',
-            productId: md.productId,
-            storeId: md.storeId,
-            features: chunk[j].features as any,
-            rawPrediction: null,
-            error: `predictor_call_error: ${err?.message ?? err}`,
-          } as any);
-        }
-      }
-    }
-
-    return resultsOut;
+    return normalized;
   }
 
-  // -------------------- persist (reuses predictBatch) --------------------
+  private hasValidFeatures(row: AiPredictRow): boolean {
+    return row.features && Object.keys(row.features).length > 0;
+  }
 
-  /**
-   * Build features (if necessary), predict, and persist successful predictions.
-   *
-   * - items: same flexible input as predictBatch
-   * - modelVersion: optional string to attach to persisted rows
-   *
-   * returns array: [{ predictorStat: PredictorStatEntity, prediction: rawPrediction }]
-   */
-  async predictBatchAndPersist(
-    items: Array<
-      string | { productId: string; storeId?: string } | AiPredictRow
-    >,
-    modelVersion?: string
-  ): Promise<Array<{ predictorStat: AiPredictorStat; prediction: any }>> {
-    const results = await this.predictBatch(items);
-    const persisted: Array<{
-      predictorStat: AiPredictorStat;
-      prediction: any;
-    }> = [];
+  private async buildMissingFeatures(
+    normalized: Array<AiPredictRow & { meta: any }>
+  ): Promise<void> {
+    const featureBuildingPromises: Promise<void>[] = [];
 
-    for (const r of results) {
-      // skip items that had build errors or predictor errors
-      if (r.error) {
-        // optionally: persist an error row if you want to track failures
-        this.logger.warn(
-          `Skipping persist for product ${r.productId} due to error: ${r.error}`
-        );
-        continue;
-      }
+    for (const item of normalized) {
+      if (this.hasValidFeatures(item)) continue;
 
-      try {
-        // create DB row - predictorRepo extends BaseRepository and has createEntity
-        const created = await this.predictorRepo.createEntity({
-          scope: r.productId ? 'product' : 'store',
-          productId: r.productId ?? null,
-          storeId: r.storeId ?? null,
-          features: r.features ?? {},
-          prediction: r.rawPrediction ?? { score: r.score, label: r.label },
-          modelVersion: modelVersion ?? null,
-        } as any);
-        persisted.push({
-          predictorStat: created as AiPredictorStat,
-          prediction: r.rawPrediction ?? { score: r.score, label: r.label },
-        });
-      } catch (err: any) {
-        this.logger.error(
-          `Failed to persist prediction for ${r.productId}: ${err?.message ?? err}`
-        );
+      const promise = this.buildSingleItemFeatures(item);
+      featureBuildingPromises.push(promise);
+
+      // Process in smaller batches to avoid overwhelming the system
+      if (featureBuildingPromises.length >= 10) {
+        await Promise.allSettled(featureBuildingPromises);
+        featureBuildingPromises.length = 0;
       }
     }
 
-    return persisted;
+    // Process remaining promises
+    if (featureBuildingPromises.length > 0) {
+      await Promise.allSettled(featureBuildingPromises);
+    }
   }
 
-  private async storeResult(
-    chunk: AiPredictRow[],
-    resp: AxiosResponse<AiPredictResult>,
-    data: AiPredictResult
-  ) {
+  private async buildSingleItemFeatures(
+    item: AiPredictRow & { meta: any }
+  ): Promise<void> {
+    if (!item.productId) {
+      item.features = {} as any;
+      (item as any).__buildError = 'missing_product_id';
+      return;
+    }
+
     try {
-      await this.aiLogs.record({
-        userId: undefined, // caller may pass user context if available — you can extend predictBatch signature
-        storeId: undefined,
+      const features = await this.buildFeatureVector(
+        item.productId,
+        item.storeId
+      );
+      item.features = features as any;
+    } catch (error) {
+      item.features = {} as any;
+      (item as any).__buildError = error.message || String(error);
+      this.logger.warn(
+        `buildFeatureVector failed for ${item.productId}: ${error.message || error}`
+      );
+    }
+  }
+
+  private async processPredictionChunks(
+    normalized: Array<AiPredictRow & { meta: any }>,
+    modelVersion?: string,
+    userId?: string,
+    contextStoreId?: string
+  ) {
+    const results: Array<any> = [];
+
+    for (let i = 0; i < normalized.length; i += this.chunkSize) {
+      const chunk = normalized.slice(i, i + this.chunkSize);
+
+      try {
+        const chunkResults = await this.processSingleChunk(
+          chunk,
+          i,
+          modelVersion,
+          userId,
+          contextStoreId
+        );
+        results.push(...chunkResults);
+      } catch (error) {
+        // Handle chunk failure by marking all items as errors
+        const errorResults = this.createErrorResults(chunk, i, error.message);
+        results.push(...errorResults);
+      }
+    }
+
+    return results;
+  }
+
+  private async processSingleChunk(
+    chunk: Array<AiPredictRow & { meta: any }>,
+    startIndex: number,
+    modelVersion?: string,
+    userId?: string,
+    contextStoreId?: string
+  ) {
+    const payload: AiPredictBatchRequest = {
+      rows: chunk.map((item) => ({
+        productId: item.productId,
+        storeId: item.storeId,
+        features: item.features,
+      })),
+    };
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    if (this.authToken) {
+      headers['X-Internal-Token'] = this.authToken;
+    }
+
+    const response = await lastValueFrom(
+      this.httpService.post<{ results: any[] }>(this.predictorUrl, payload, {
+        headers,
+        timeout: this.requestTimeout,
+      })
+    );
+
+    const predictions = response.data?.results || [];
+
+    // Store successful API call for auditing
+    await this.storeChunkResult(chunk, response, userId, contextStoreId);
+
+    return this.formatChunkResults(chunk, predictions, startIndex);
+  }
+
+  private formatChunkResults(
+    chunk: Array<AiPredictRow & { meta: any }>,
+    predictions: any[],
+    startIndex: number
+  ) {
+    return chunk.map((item, chunkIndex) => {
+      const globalIndex = startIndex + chunkIndex;
+      const buildError = (item as any).__buildError;
+
+      if (buildError) {
+        return {
+          index: globalIndex,
+          score: NaN,
+          label: 'error',
+          productId: item.meta.productId,
+          storeId: item.meta.storeId,
+          features: item.features,
+          rawPrediction: null,
+          error: `feature_build_error: ${buildError}`,
+        };
+      }
+
+      const prediction = predictions[chunkIndex];
+      if (!prediction) {
+        return {
+          index: globalIndex,
+          score: NaN,
+          label: 'no_prediction',
+          productId: item.meta.productId,
+          storeId: item.meta.storeId,
+          features: item.features,
+          rawPrediction: null,
+          error: 'no_prediction_returned',
+        };
+      }
+
+      const score = this.normalizeScore(
+        prediction.score ?? prediction.probability ?? prediction.value ?? 0
+      );
+
+      const label =
+        prediction.label ??
+        (score > 0.7 ? 'high' : score > 0.4 ? 'medium' : 'low');
+
+      return {
+        index: globalIndex,
+        score,
+        label,
+        productId: item.meta.productId,
+        storeId: item.meta.storeId,
+        features: item.features,
+        rawPrediction: prediction,
+      };
+    });
+  }
+
+  private createErrorResults(
+    chunk: Array<AiPredictRow & { meta: any }>,
+    startIndex: number,
+    errorMessage: string
+  ) {
+    return chunk.map((item, chunkIndex) => ({
+      index: startIndex + chunkIndex,
+      score: NaN,
+      label: 'error',
+      productId: item.meta.productId,
+      storeId: item.meta.storeId,
+      features: item.features,
+      rawPrediction: null,
+      error: `predictor_call_error: ${errorMessage}`,
+    }));
+  }
+
+  private normalizeScore(score: any): number {
+    const numScore = Number(score);
+    if (!Number.isFinite(numScore)) return 0;
+    return Math.max(0, Math.min(1, numScore));
+  }
+
+  private async storeChunkResult(
+    chunk: AiPredictRow[],
+    response: any,
+    userId?: string,
+    storeId?: string
+  ): Promise<void> {
+    // This matches the original storeResult method
+    try {
+      await this.aiLogsService.record({
+        userId,
+        storeId,
         feature: 'predictor',
         prompt: null,
         details: {
@@ -506,21 +520,330 @@ export class AiPredictorService {
       );
     }
 
-    // store the raw predictor response encrypted
     try {
-      await this.aiAudit.storeEncryptedResponse({
+      await this.aiAuditService.storeEncryptedResponse({
         feature: 'predictor',
         provider: 'predictor',
         model: undefined,
-        rawResponse: resp.data ?? data,
-        userId: null,
-        storeId: null,
+        rawResponse: response.data,
+        userId: userId || null,
+        storeId: storeId || null,
       });
     } catch (err) {
       this.logger.warn(
         'AiAudit.storeEncryptedResponse failed for predictor: ' +
           (err as any)?.message
       );
+    }
+  }
+
+  /* eslint-disable camelcase */
+  private async computeFeatureVector(
+    productId: string,
+    storeId?: string
+  ): Promise<FeatureVector> {
+    // Date calculations
+    const today = new Date();
+    const formatDate = (d: Date) => d.toISOString().slice(0, 10);
+
+    const start7 = formatDate(subDays(today, 6));
+    const start14 = formatDate(subDays(today, 13));
+    const start30 = formatDate(subDays(today, 29));
+    const end = formatDate(today);
+
+    // Parallel data fetching for performance
+    const [
+      agg7,
+      agg14,
+      agg30,
+      storeAgg7,
+      priceStats,
+      ratingAgg,
+      inventoryStats,
+    ] = await Promise.all([
+      this.productStatsRepo.getAggregatedMetrics(productId, {
+        from: start7,
+        to: end,
+      }),
+      this.productStatsRepo.getAggregatedMetrics(productId, {
+        from: start14,
+        to: end,
+      }),
+      this.productStatsRepo.getAggregatedMetrics(productId, {
+        from: start30,
+        to: end,
+      }),
+      storeId
+        ? this.storeStatsRepo.getAggregatedMetrics(storeId, {
+            from: start7,
+            to: end,
+          })
+        : null,
+      this.getPriceStats(productId),
+      this.reviewsRepo.getRatingAggregate(productId),
+      this.getInventoryStats(productId),
+    ]);
+
+    // Calculate derived metrics
+    const sales7 = agg7.purchases || 0;
+    const sales14 = agg14.purchases || 0;
+    const sales30 = agg30.purchases || 0;
+    const views7 = agg7.views || 0;
+    const views30 = agg30.views || 0;
+    const addToCarts7 = agg7.addToCarts || 0;
+
+    const sales7PerDay = sales7 / 7;
+    const sales30PerDay = sales30 / 30;
+    const salesRatio7_30 = sales30 > 0 ? sales7 / sales30 : 0;
+    const viewToPurchase7 = views7 > 0 ? sales7 / views7 : 0;
+
+    // Store metrics (default to 0 if no store provided)
+    const storeViews7 = storeAgg7?.views || 0;
+    const storePurchases7 = storeAgg7?.purchases || 0;
+
+    // Temporal features
+    const dow = today.getUTCDay();
+    const isWeekend = dow === 0 || dow === 6 ? 1 : 0;
+
+    const features: FeatureVector = {
+      sales_7d: sales7,
+      sales_14d: sales14,
+      sales_30d: sales30,
+      sales_7d_per_day: Number(sales7PerDay.toFixed(6)),
+      sales_30d_per_day: Number(sales30PerDay.toFixed(6)),
+      sales_ratio_7_30: Number(salesRatio7_30.toFixed(6)),
+      views_7d: views7,
+      views_30d: views30,
+      addToCarts_7d: addToCarts7,
+      view_to_purchase_7d: Number(viewToPurchase7.toFixed(6)),
+      avg_price: priceStats.avg || 0,
+      min_price: priceStats.min || 0,
+      max_price: priceStats.max || 0,
+      avg_rating: ratingAgg?.avg || 0,
+      rating_count: ratingAgg?.count || 0,
+      inventory_qty: inventoryStats.quantity || 0,
+      days_since_restock: inventoryStats.daysSinceRestock || 365,
+      day_of_week: dow,
+      is_weekend: isWeekend,
+      store_views_7d: storeViews7,
+      store_purchases_7d: storePurchases7,
+    };
+
+    // Ensure no NaN values
+    Object.keys(features).forEach((key) => {
+      const value = (features as any)[key];
+      if (value === null || Number.isNaN(value)) {
+        (features as any)[key] = 0;
+      }
+    });
+
+    return features;
+  }
+
+  private async getPriceStats(productId: string) {
+    const variantRepo = this.dataSource.getRepository(ProductVariant);
+
+    const priceRaw = await variantRepo
+      .createQueryBuilder('v')
+      .select('AVG(v.price)::numeric', 'avg_price')
+      .addSelect('MIN(v.price)::numeric', 'min_price')
+      .addSelect('MAX(v.price)::numeric', 'max_price')
+      .where('v.product = :productId', { productId })
+      .getRawOne();
+
+    const avg = priceRaw?.avg_price ? Number(priceRaw.avg_price) : 0;
+    const min = priceRaw?.min_price ? Number(priceRaw.min_price) : avg;
+    const max = priceRaw?.max_price ? Number(priceRaw.max_price) : avg;
+
+    return { avg, min, max };
+  }
+
+  private async getInventoryStats(productId: string) {
+    const invRepo = this.dataSource.getRepository(Inventory);
+
+    const invRaw = await invRepo
+      .createQueryBuilder('inv')
+      .select('COALESCE(SUM(inv.quantity),0)', 'inventory_qty')
+      .addSelect('MAX(inv.updatedAt)::text', 'last_updated_at')
+      .innerJoin('inv.variant', 'v')
+      .where('v.product = :productId', { productId })
+      .getRawOne();
+
+    const quantity = invRaw ? Number(invRaw.inventory_qty || 0) : 0;
+    const lastRestockAt = invRaw?.last_updated_at
+      ? new Date(invRaw.last_updated_at)
+      : null;
+
+    const daysSinceRestock = lastRestockAt
+      ? Math.max(
+          0,
+          Math.floor(
+            (Date.now() - lastRestockAt.getTime()) / (1000 * 60 * 60 * 24)
+          )
+        )
+      : 365;
+
+    return { quantity, daysSinceRestock };
+  }
+
+  private cleanupFeatureCache(): void {
+    const now = Date.now();
+    const keysToDelete: string[] = [];
+
+    this.featureCache.forEach((value, key) => {
+      if (now - value.timestamp > this.cacheTimeout) {
+        keysToDelete.push(key);
+      }
+    });
+
+    keysToDelete.forEach((key) => this.featureCache.delete(key));
+
+    this.logger.debug(
+      `Cleaned up ${keysToDelete.length} expired cache entries`
+    );
+  }
+
+  // ===============================
+  // Public API Methods
+  // ===============================
+
+  /**
+   * Public method that maintains the original interface
+   */
+  async predictBatch(
+    items: Array<
+      string | { productId: string; storeId?: string } | AiPredictRow
+    >
+  ) {
+    const request: AiServiceRequest<PredictorRequestData> = {
+      feature: 'batch_prediction',
+      provider: 'predictor',
+      data: { items },
+    };
+
+    const response = await this.execute(request);
+    return response.result?.predictions || [];
+  }
+
+  /**
+   * Enhanced prediction with persistence
+   */
+  async predictBatchAndPersist(
+    items: Array<
+      string | { productId: string; storeId?: string } | AiPredictRow
+    >,
+    modelVersion?: string
+  ): Promise<Array<{ predictorStat: AiPredictorStat; prediction: any }>> {
+    const predictions = await this.predictBatch(items);
+    const persisted: Array<{
+      predictorStat: AiPredictorStat;
+      prediction: any;
+    }> = [];
+
+    for (const prediction of predictions) {
+      if (prediction.error) {
+        this.logger.warn(
+          `Skipping persist for product ${prediction.productId} due to error: ${prediction.error}`
+        );
+        continue;
+      }
+
+      try {
+        const created = await this.predictorRepo.createEntity({
+          scope: prediction.productId ? 'product' : 'store',
+          productId: prediction.productId ?? null,
+          storeId: prediction.storeId ?? null,
+          features: prediction.features ?? {},
+          prediction: prediction.rawPrediction ?? {
+            score: prediction.score,
+            label: prediction.label,
+          },
+          modelVersion: modelVersion ?? null,
+        } as any);
+
+        persisted.push({
+          predictorStat: created as AiPredictorStat,
+          prediction: prediction.rawPrediction ?? {
+            score: prediction.score,
+            label: prediction.label,
+          },
+        });
+      } catch (err: any) {
+        this.logger.error(
+          `Failed to persist prediction for ${prediction.productId}: ${err?.message ?? err}`
+        );
+      }
+    }
+
+    return persisted;
+  }
+
+  /**
+   * Get trending products based on recent predictions
+   */
+  async getTrendingProducts(
+    storeId: string,
+    options: {
+      limit?: number;
+      timeframe?: 'day' | 'week' | 'month';
+      minScore?: number;
+    } = {}
+  ) {
+    return this.predictorRepo.getTrendingProducts(storeId, options);
+  }
+
+  /**
+   * Get prediction statistics
+   */
+  async getPredictionStats(
+    filters: {
+      storeId?: string;
+      productId?: string;
+      modelVersion?: string;
+      dateFrom?: Date;
+      dateTo?: Date;
+    } = {}
+  ) {
+    return this.predictorRepo.getPredictionStats(filters);
+  }
+
+  /**
+   * Health check for predictor service
+   */
+  async healthCheck() {
+    try {
+      // Test a simple prediction to verify service availability
+      const testPayload = {
+        rows: [
+          {
+            productId: 'test',
+            features: { test: 1 },
+          },
+        ],
+      };
+
+      const response = await lastValueFrom(
+        this.httpService.post(this.predictorUrl, testPayload, {
+          headers: {
+            'Content-Type': 'application/json',
+            ...(this.authToken && { 'X-Internal-Token': this.authToken }),
+          },
+          timeout: 5000,
+        })
+      );
+
+      return {
+        healthy: true,
+        url: this.predictorUrl,
+        responseTime: Date.now(),
+        status: response.status,
+      };
+    } catch (error) {
+      return {
+        healthy: false,
+        url: this.predictorUrl,
+        error: error.message,
+      };
     }
   }
 }

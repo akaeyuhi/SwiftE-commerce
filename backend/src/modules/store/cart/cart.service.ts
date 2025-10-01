@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { BaseService } from 'src/common/abstracts/base.service';
 import { ShoppingCart } from 'src/entities/store/cart/cart.entity';
 import { CreateCartDto } from 'src/modules/store/cart/dto/create-cart.dto';
@@ -61,30 +61,31 @@ export class CartService extends BaseService<
     return this.cartRepo.findByUserAndStore(userId, storeId);
   }
 
-  /**
-   * Add (or increment) an item in user's cart for a specific store.
-   *
-   * Behavior:
-   *  - Ensures a cart exists for (userId, storeId)
-   *  - Delegates to CartItemService.addOrIncrement for item-level logic
-   *
-   * @param userId - uuid of the user
-   * @param storeId - uuid of the store
-   * @param variantId - uuid of product variant to add
-   * @param quantity - positive integer (default 1)
-   * @returns created or updated CartItem
-   */
-  async addItemToUserCart(
-    userId: string,
-    storeId: string,
-    variantId: string,
-    quantity = 1
-  ): Promise<CartItem> {
-    if (quantity <= 0) throw new BadRequestException('Quantity must be > 0');
-
-    const cart = await this.getOrCreateCart(userId, storeId);
-    return this.cartItemService.addOrIncrement(cart.id, variantId, quantity);
-  }
+  // @deprecated
+  // /**
+  //  * Add (or increment) an item in user's cart for a specific store.
+  //  *
+  //  * Behavior:
+  //  *  - Ensures a cart exists for (userId, storeId)
+  //  *  - Delegates to CartItemService.addOrIncrement for item-level logic
+  //  *
+  //  * @param userId - uuid of the user
+  //  * @param storeId - uuid of the store
+  //  * @param variantId - uuid of product variant to add
+  //  * @param quantity - positive integer (default 1)
+  //  * @returns created or updated CartItem
+  //  */
+  // async addItemToUserCart(
+  //   userId: string,
+  //   storeId: string,
+  //   variantId: string,
+  //   quantity = 1
+  // ): Promise<CartItem> {
+  //   if (quantity <= 0) throw new BadRequestException('Quantity must be > 0');
+  //
+  //   const cart = await this.getOrCreateCart(userId, storeId);
+  //   return this.cartItemService.addOrIncrement(storeId, userId, { cartId: cart.id, variantId, quantity });
+  // }
 
   /**
    * Update quantity of a cart item.

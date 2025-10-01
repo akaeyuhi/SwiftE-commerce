@@ -219,6 +219,22 @@ export class ProductsService extends BaseService<
     return this.productRepo.findProductsByCategory(categoryId, storeId);
   }
 
+  private async attachCategory(
+    categoryId: string,
+    product: Product
+  ): Promise<Product> {
+    const category = await this.categoriesService.findOne(categoryId);
+    if (!category) throw new NotFoundException('Category not found');
+
+    product.categories = product.categories ?? [];
+    const already = product.categories.some((c) => c.id === category.id);
+    if (!already) {
+      product.categories.push(category);
+      await this.productRepo.save(product);
+    }
+    return product;
+  }
+
   /**
    * Attach (assign) an existing category to a product (ManyToMany).
    * Loads the product with categories, pushes new category if not present and saves.
@@ -236,17 +252,7 @@ export class ProductsService extends BaseService<
     });
 
     if (!product) throw new NotFoundException('Product not found');
-
-    const category = await this.categoriesService.findOne(categoryId);
-    if (!category) throw new NotFoundException('Category not found');
-
-    product.categories = product.categories ?? [];
-    const already = product.categories.some((c) => c.id === category.id);
-    if (!already) {
-      product.categories.push(category);
-      await this.productRepo.save(product);
-    }
-    return product;
+    return this.attachCategory(categoryId, product);
   }
 
   async attachMultipleCategories(
@@ -261,15 +267,7 @@ export class ProductsService extends BaseService<
     if (!product) throw new NotFoundException('Product not found');
 
     for (const categoryId of categoryIds) {
-      const category = await this.categoriesService.findOne(categoryId);
-      if (!category) throw new NotFoundException('Category not found');
-
-      product.categories = product.categories ?? [];
-      const already = product.categories.some((c) => c.id === category.id);
-      if (!already) {
-        product.categories.push(category);
-        await this.productRepo.save(product);
-      }
+      await this.attachCategory(categoryId, product);
     }
     return product;
   }

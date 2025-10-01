@@ -1,0 +1,68 @@
+{{!-- src/modules/email/templates/handlebars/low-stock-warning.hbs --}}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Low Stock Warning</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+    <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h1 style="color: #FF9800;">⚠️ Low Stock Alert</h1>
+
+        <p>Hi {{storeOwnerName}},</p>
+
+        <p>One of your products is running low on inventory:</p>
+
+        <div style="border: 1px solid #FF9800; border-radius: 8px; padding: 20px; margin: 20px 0; background-color: #FFF3E0;">
+            <h2 style="margin: 0 0 15px 0;">{{productName}}</h2>
+
+            <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <td style="padding: 8px 0;"><strong>SKU:</strong></td>
+                    <td style="padding: 8px 0;">{{productSku}}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px 0;"><strong>Category:</strong></td>
+                    <td style="padding: 8px 0;">{{productCategory}}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px 0;"><strong>Current Stock:</strong></td>
+                    <td style="padding: 8px 0; color: #d32f2f; font-weight: bold;">
+                        {{currentStock}} units
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px 0;"><strong>Threshold:</strong></td>
+                    <td style="padding: 8px 0;">{{stockThreshold}} units</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px 0;"><strong>Recent Sales:</strong></td>
+                    <td style="padding: 8px 0;">{{recentSales}} units</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px 0;"><strong>Estimated Days:</strong></td>
+                    <td style="padding: 8px 0;">~{{estimatedDays}} days</td>
+                </tr>
+            </table>
+        </div>
+
+        <p style="color: #d32f2f; font-weight: bold;">
+            Action recommended: Restock this product soon to avoid running out!
+        </p>
+
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="{{manageInventoryUrl}}"
+               style="background-color: #FF9800; color: white; padding: 12px 30px;
+                      text-decoration: none; border-radius: 5px; display: inline-block;">
+                Manage Inventory
+            </a>
+        </div>
+
+        <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+
+        <p style="color: #999; font-size: 12px; text-align: center;">
+            © {{storeName}}. All rights reserved.
+        </p>
+    </div>
+</body>
+</html>

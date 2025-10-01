@@ -10,7 +10,7 @@ import {
 } from 'typeorm';
 import { Product } from 'src/entities/store/product/product.entity';
 import { Store } from 'src/entities/store/store.entity';
-import { StoreOwnedEntity } from 'src/common/interfaces/store-owned.entity.interface';
+import { StoreOwnedEntity } from 'src/common/interfaces/crud/store-owned.entity.interface';
 
 @Entity({ name: 'categories' })
 export class Category implements StoreOwnedEntity {

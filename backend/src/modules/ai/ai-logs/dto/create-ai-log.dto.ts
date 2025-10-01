@@ -1,22 +1,20 @@
-import { IsOptional, IsString, IsUUID, IsObject } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsObject,
+  IsNumber,
+  IsBoolean,
+  IsDateString,
+} from 'class-validator';
+import { Type } from 'class-transformer';
 
-/**
- * DTO: CreateAiLogDto
- *
- * Fields:
- * - userId: optional UUID of user who triggered the AI feature (if omitted, controller may fill from req.user)
- * - storeId: optional UUID of the store context
- * - feature: e.g. 'predictor', 'generator-name', 'generator-idea'
- * - prompt: optional prompt text used for generation (will be stored inside details.prompt)
- * - details: optional arbitrary JSON with provider response or additional metadata
- */
 export class CreateAiLogDto {
   @IsOptional()
-  @IsUUID()
+  @IsString()
   userId?: string;
 
   @IsOptional()
-  @IsUUID()
+  @IsString()
   storeId?: string;
 
   @IsString()
@@ -29,4 +27,69 @@ export class CreateAiLogDto {
   @IsOptional()
   @IsObject()
   details?: Record<string, any>;
+}
+
+export class LogQueryDto {
+  @IsOptional()
+  @IsString()
+  storeId?: string;
+
+  @IsOptional()
+  @IsString()
+  userId?: string;
+
+  @IsOptional()
+  @IsString()
+  feature?: string;
+
+  @IsOptional()
+  @IsDateString()
+  dateFrom?: string;
+
+  @IsOptional()
+  @IsDateString()
+  dateTo?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  hasDetails?: boolean;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  limit?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  offset?: number;
+}
+
+export class UsageStatsQueryDto {
+  @IsOptional()
+  @IsString()
+  storeId?: string;
+
+  @IsOptional()
+  @IsString()
+  userId?: string;
+
+  @IsOptional()
+  @IsDateString()
+  dateFrom?: string;
+
+  @IsOptional()
+  @IsDateString()
+  dateTo?: string;
+}
+
+export class CleanupLogsDto {
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  retentionDays?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  dryRun?: boolean;
 }

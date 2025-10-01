@@ -3,11 +3,11 @@ import { BaseService } from './base.service';
 import { ObjectLiteral } from 'typeorm';
 import { AdminRole } from 'src/common/decorators/admin-role.decorator';
 import { AdminRoles } from 'src/common/enums/admin.enum';
-import { AccessPolicies } from 'src/modules/auth/policy/policy.types';
-import { AdminGuard } from 'src/common/guards/admin.guard';
-import { StoreRolesGuard } from 'src/common/guards/store-roles.guard';
-import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
-import { EntityOwnerGuard } from 'src/common/guards/entity-owner.guard';
+import { AccessPolicies } from 'src/modules/authorization/policy/policy.types';
+import { AdminGuard } from 'src/modules/authorization/guards/admin.guard';
+import { StoreRolesGuard } from 'src/modules/authorization/guards/store-roles.guard';
+import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';
+import { EntityOwnerGuard } from 'src/modules/authorization/guards/entity-owner.guard';
 
 /**
  * Abstract base HTTP controller providing standard CRUD endpoints.

@@ -8,18 +8,10 @@ import { ProductDailyStatsRepository } from './repositories/product-daily-stats.
 import { ScheduleModule } from '@nestjs/schedule';
 import { AdminStatsController } from 'src/modules/analytics/controllers/admin-stats.controller';
 import { HttpModule } from '@nestjs/axios';
-import { ReviewsModule } from 'src/modules/products/reviews/reviews.module';
-import { AiModule } from 'src/modules/ai/ai.module';
-import { AuthModule } from 'src/modules/auth/auth.module';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
-  imports: [
-    ScheduleModule.forRoot(),
-    HttpModule,
-    AiModule,
-    ReviewsModule,
-    AuthModule,
-  ],
+  imports: [ScheduleModule.forRoot(), ConfigModule, HttpModule],
   providers: [
     AnalyticsService,
     AnalyticsEventRepository,
