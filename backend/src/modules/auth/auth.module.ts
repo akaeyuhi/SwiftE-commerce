@@ -10,14 +10,12 @@ import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { RefreshTokenService } from 'src/modules/auth/refresh-token/refresh-token.service';
-import { AdminService } from 'src/modules/auth/admin/admin.service';
-import { AdminModule } from 'src/modules/auth/admin/admin.module';
+import { AdminModule } from 'src/modules/admin/admin.module';
 import { ConfirmationModule } from './confirmation/confirmation.module';
 import { EmailModule } from 'src/modules/email/email.module';
 import { ConfirmationService } from 'src/modules/auth/confirmation/confirmation.service';
 import { UserRoleModule } from 'src/modules/user/user-role/user-role.module';
 import { UserModule } from 'src/modules/user/user.module';
-import { PolicyModule } from 'src/modules/auth/policy/policy.module';
 
 @Module({
   imports: [
@@ -35,7 +33,6 @@ import { PolicyModule } from 'src/modules/auth/policy/policy.module';
     ConfirmationModule,
     EmailModule,
     UserModule,
-    PolicyModule,
     UserRoleModule,
   ],
   controllers: [AuthController],
@@ -44,7 +41,6 @@ import { PolicyModule } from 'src/modules/auth/policy/policy.module';
     AuthJwtStrategy,
     RefreshTokenStrategy,
     RefreshTokenService,
-    AdminService,
     ConfirmationService,
   ],
   exports: [RefreshTokenService],

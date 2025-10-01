@@ -1,8 +1,8 @@
 import { UnauthorizedException } from '@nestjs/common';
-import { JwtAuthGuard } from 'src/modules/auth/policy/guards/jwt-auth.guard';
+import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';
 import { createPolicyMock, MockedMethods } from 'test/unit/utils/helpers';
 import { Test, TestingModule } from '@nestjs/testing';
-import { PolicyService } from 'src/modules/auth/policy/policy.service';
+import { PolicyService } from 'src/modules/authorization/policy/policy.service';
 import { jest } from '@jest/globals';
 
 describe('JwtAuthGuard', () => {

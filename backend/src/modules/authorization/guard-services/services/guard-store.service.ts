@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { GuardStoreRepository } from '../repositories/guard-store.repository';
+import { GuardStoreRepository } from 'src/modules/authorization/guard-services/repositories/guard-store.repository';
 import { IStoreService } from 'src/common/contracts/policy.contract';
 import { UserRole } from 'src/entities/user/policy/user-role.entity';
 import { Store } from 'src/entities/store/store.entity';

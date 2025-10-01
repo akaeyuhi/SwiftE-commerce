@@ -4,7 +4,7 @@ import {
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
-import { PolicyService } from 'src/modules/auth/policy/policy.service';
+import { PolicyService } from 'src/modules/authorization/policy/policy.service';
 import {
   createMock,
   createMockExecutionContext,
@@ -12,7 +12,7 @@ import {
   MockedMethods,
 } from '../utils/helpers';
 import { jest } from '@jest/globals';
-import { EntityOwnerGuard } from 'src/modules/auth/policy/guards/entity-owner.guard';
+import { EntityOwnerGuard } from 'src/modules/authorization/guards/entity-owner.guard';
 import { Test, TestingModule } from '@nestjs/testing';
 
 describe('EntityOwnerGuard', () => {

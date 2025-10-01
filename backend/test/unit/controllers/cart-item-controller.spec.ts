@@ -10,10 +10,10 @@ import {
   MockedMethods,
 } from '../utils/helpers';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
-import { PolicyService } from 'src/modules/auth/policy/policy.service';
-import { JwtAuthGuard } from 'src/modules/auth/policy/guards/jwt-auth.guard';
-import { StoreRolesGuard } from 'src/modules/auth/policy/guards/store-roles.guard';
-import { AdminGuard } from 'src/modules/auth/policy/guards/admin.guard';
+import { PolicyService } from 'src/modules/authorization/policy/policy.service';
+import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';
+import { StoreRolesGuard } from 'src/modules/authorization/guards/store-roles.guard';
+import { AdminGuard } from 'src/modules/authorization/guards/admin.guard';
 
 describe('CartItemController', () => {
   let controller: CartItemController;

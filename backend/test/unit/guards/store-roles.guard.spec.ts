@@ -1,6 +1,6 @@
 import { Reflector } from '@nestjs/core';
 import { ExecutionContext, ForbiddenException } from '@nestjs/common';
-import { PolicyService } from 'src/modules/auth/policy/policy.service';
+import { PolicyService } from 'src/modules/authorization/policy/policy.service';
 import {
   createMockExecutionContext,
   createPolicyMock,
@@ -8,7 +8,7 @@ import {
 } from '../utils/helpers';
 import { jest } from '@jest/globals';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
-import { StoreRolesGuard } from 'src/modules/auth/policy/guards/store-roles.guard';
+import { StoreRolesGuard } from 'src/modules/authorization/guards/store-roles.guard';
 
 describe('StoreRolesGuard', () => {
   let guard: StoreRolesGuard;

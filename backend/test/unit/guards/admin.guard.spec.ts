@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { Reflector } from '@nestjs/core';
 import { ForbiddenException } from '@nestjs/common';
-import { AdminGuard } from 'src/modules/auth/policy/guards/admin.guard';
-import { PolicyService } from 'src/modules/auth/policy/policy.service';
+import { AdminGuard } from 'src/modules/authorization/guards/admin.guard';
+import { PolicyService } from 'src/modules/authorization/policy/policy.service';
 import {
   createMockExecutionContext,
   createPolicyMock,

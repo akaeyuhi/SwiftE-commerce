@@ -1,7 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { VariantsController } from 'src/modules/products/variants/variants.controller';
 import { VariantsService } from 'src/modules/products/variants/variants.service';
-import { PolicyService } from 'src/modules/auth/policy/policy.service';
+import { PolicyService } from 'src/modules/authorization/policy/policy.service';
 import {
   createServiceMock,
   createPolicyMock,
@@ -9,8 +9,8 @@ import {
   MockedMethods,
 } from '../utils/helpers';
 import { ProductVariant } from 'src/entities/store/product/variant.entity';
-import { JwtAuthGuard } from 'src/modules/auth/policy/guards/jwt-auth.guard';
-import { StoreRolesGuard } from 'src/modules/auth/policy/guards/store-roles.guard';
+import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';
+import { StoreRolesGuard } from 'src/modules/authorization/guards/store-roles.guard';
 
 describe('VariantsController', () => {
   let ctrl: VariantsController;

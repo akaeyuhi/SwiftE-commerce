@@ -12,16 +12,16 @@ import {
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { Request } from 'express';
-import { AdminService } from './admin.service';
+import { AdminService } from 'src/modules/admin/admin.service';
 import { Admin } from 'src/entities/user/policy/admin.entity';
 import { BaseController } from 'src/common/abstracts/base.controller';
-import { CreateAdminDto } from './dto/create-admin.dto';
-import { UpdateAdminDto } from './dto/update-admin.dto';
-import { JwtAuthGuard } from 'src/modules/auth/policy/guards/jwt-auth.guard';
-import { AdminGuard } from 'src/modules/auth/policy/guards/admin.guard';
+import { CreateAdminDto } from 'src/modules/admin/dto/create-admin.dto';
+import { UpdateAdminDto } from 'src/modules/admin/dto/update-admin.dto';
+import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';
+import { AdminGuard } from 'src/modules/authorization/guards/admin.guard';
 import { AdminRole } from 'src/common/decorators/admin-role.decorator';
 import { AdminRoles } from 'src/common/enums/admin.enum';
-import { AccessPolicies } from 'src/modules/auth/policy/policy.types';
+import { AccessPolicies } from 'src/modules/authorization/policy/policy.types';
 
 /**
  * Admin Controller

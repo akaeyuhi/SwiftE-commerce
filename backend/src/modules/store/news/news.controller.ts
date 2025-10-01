@@ -13,11 +13,11 @@ import { CreateNewsDto } from 'src/modules/store/news/dto/create-news.dto';
 import { UpdateNewsDto } from 'src/modules/store/news/dto/update-news.dto';
 import { BaseController } from 'src/common/abstracts/base.controller';
 import { NewsPost } from 'src/entities/store/news-post.entity';
-import { JwtAuthGuard } from 'src/modules/auth/policy/guards/jwt-auth.guard';
-import { StoreRolesGuard } from 'src/modules/auth/policy/guards/store-roles.guard';
+import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';
+import { StoreRolesGuard } from 'src/modules/authorization/guards/store-roles.guard';
 import { NewsPostDto } from 'src/modules/store/news/dto/news.dto';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
-import { AccessPolicies } from 'src/modules/auth/policy/policy.types';
+import { AccessPolicies } from 'src/modules/authorization/policy/policy.types';
 import { Request } from 'express';
 
 /**

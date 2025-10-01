@@ -10,10 +10,10 @@ import {
   createServiceMock,
   MockedMethods,
 } from '../utils/helpers';
-import { JwtAuthGuard } from 'src/modules/auth/policy/guards/jwt-auth.guard';
-import { StoreRolesGuard } from 'src/modules/auth/policy/guards/store-roles.guard';
-import { AdminGuard } from 'src/modules/auth/policy/guards/admin.guard';
-import { PolicyService } from 'src/modules/auth/policy/policy.service';
+import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';
+import { StoreRolesGuard } from 'src/modules/authorization/guards/store-roles.guard';
+import { AdminGuard } from 'src/modules/authorization/guards/admin.guard';
+import { PolicyService } from 'src/modules/authorization/policy/policy.service';
 import { jest } from '@jest/globals';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { UserRole } from 'src/entities/user/policy/user-role.entity';

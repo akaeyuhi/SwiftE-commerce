@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NewsController } from 'src/modules/store/news/news.controller';
 import { NewsService } from 'src/modules/store/news/news.service';
-import { PolicyService } from 'src/modules/auth/policy/policy.service';
+import { PolicyService } from 'src/modules/authorization/policy/policy.service';
 import {
   createServiceMock,
   createPolicyMock,
@@ -11,8 +11,8 @@ import {
 import { NewsPost } from 'src/entities/store/news-post.entity';
 import { Store } from 'src/entities/store/store.entity';
 import { User } from 'src/entities/user/user.entity';
-import { JwtAuthGuard } from 'src/modules/auth/policy/guards/jwt-auth.guard';
-import { StoreRolesGuard } from 'src/modules/auth/policy/guards/store-roles.guard';
+import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';
+import { StoreRolesGuard } from 'src/modules/authorization/guards/store-roles.guard';
 
 describe('NewsController', () => {
   let controller: NewsController;

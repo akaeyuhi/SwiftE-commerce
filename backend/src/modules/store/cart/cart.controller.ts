@@ -13,10 +13,10 @@ import { CreateCartDto } from 'src/modules/store/cart/dto/create-cart.dto';
 import { UpdateCartDto } from 'src/modules/store/cart/dto/update-cart.dto';
 import { BaseController } from 'src/common/abstracts/base.controller';
 import { ShoppingCart } from 'src/entities/store/cart/cart.entity';
-import { JwtAuthGuard } from 'src/modules/auth/policy/guards/jwt-auth.guard';
-import { StoreRolesGuard } from 'src/modules/auth/policy/guards/store-roles.guard';
+import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';
+import { StoreRolesGuard } from 'src/modules/authorization/guards/store-roles.guard';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
-import { AccessPolicies } from 'src/modules/auth/policy/policy.types';
+import { AccessPolicies } from 'src/modules/authorization/policy/policy.types';
 import { RecordEventInterceptor } from 'src/modules/infrastructure/interceptors/record-event/record-event.interceptor';
 
 /**

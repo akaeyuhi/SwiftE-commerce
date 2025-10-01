@@ -5,12 +5,12 @@ import { Store } from 'src/entities/store/store.entity';
 import { Admin } from 'src/entities/user/policy/admin.entity';
 import { UserRole } from 'src/entities/user/policy/user-role.entity';
 
-import { GuardUserRepository } from './repositories/guard-user.repository';
-import { GuardStoreRepository } from './repositories/guard-store.repository';
-import { GuardAdminRepository } from './repositories/guard-admin.repository';
-import { GuardUserService } from './services/guard-user.service';
-import { GuardStoreService } from './services/guard-store.service';
-import { GuardAdminService } from './services/guard-admin.service';
+import { GuardUserRepository } from 'src/modules/authorization/guard-services/repositories/guard-user.repository';
+import { GuardStoreRepository } from 'src/modules/authorization/guard-services/repositories/guard-store.repository';
+import { GuardAdminRepository } from 'src/modules/authorization/guard-services/repositories/guard-admin.repository';
+import { GuardUserService } from 'src/modules/authorization/guard-services/services/guard-user.service';
+import { GuardStoreService } from 'src/modules/authorization/guard-services/services/guard-store.service';
+import { GuardAdminService } from 'src/modules/authorization/guard-services/services/guard-admin.service';
 import {
   ADMIN_SERVICE,
   STORE_SERVICE,

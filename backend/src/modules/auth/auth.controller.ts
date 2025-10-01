@@ -19,14 +19,14 @@ import { CreateUserDto } from '../user/dto/create-user.dto';
 import { RefreshDto } from './dto/refresh.dto';
 import { Request, Response } from 'express';
 import { AuthGuard } from '@nestjs/passport';
-import { JwtAuthGuard } from 'src/modules/auth/policy/guards/jwt-auth.guard';
+import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';
 import {
   AssignRoleDto,
   CancelRoleAssignmentDto,
   ResendConfirmationDto,
   ConfirmTokenDto,
 } from 'src/modules/auth/confirmation/dto/confirmation.dto';
-import { AdminGuard } from 'src/modules/auth/policy/guards/admin.guard';
+import { AdminGuard } from 'src/modules/authorization/guards/admin.guard';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 
 const REFRESH_COOKIE_NAME =

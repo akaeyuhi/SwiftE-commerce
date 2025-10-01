@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
-import { PolicyEntry } from 'src/modules/auth/policy/policy.types';
+import { PolicyEntry } from 'src/modules/authorization/policy/policy.types';
 import { UserRole } from 'src/entities/user/policy/user-role.entity';
 import { DeepPartial } from 'typeorm';
 import { User } from 'src/entities/user/user.entity';

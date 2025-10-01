@@ -4,8 +4,8 @@ import { of } from 'rxjs';
 import { BaseService } from 'src/common/abstracts/base.service';
 import { BaseRepository } from 'src/common/abstracts/base.repository';
 import { BaseMapper } from 'src/common/abstracts/base.mapper';
-import { PolicyService } from 'src/modules/auth/policy/policy.service';
-import { PolicyEntry } from 'src/modules/auth/policy/policy.types';
+import { PolicyService } from 'src/modules/authorization/policy/policy.service';
+import { PolicyEntry } from 'src/modules/authorization/policy/policy.types';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 
 /**

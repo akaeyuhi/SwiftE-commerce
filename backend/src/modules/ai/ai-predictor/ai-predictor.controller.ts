@@ -16,14 +16,14 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 import { AiPredictorService } from './ai-predictor.service';
-import { JwtAuthGuard } from 'src/modules/auth/policy/guards/jwt-auth.guard';
-import { AdminGuard } from 'src/modules/auth/policy/guards/admin.guard';
-import { StoreRolesGuard } from 'src/modules/auth/policy/guards/store-roles.guard';
-import { EntityOwnerGuard } from 'src/modules/auth/policy/guards/entity-owner.guard';
+import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';
+import { AdminGuard } from 'src/modules/authorization/guards/admin.guard';
+import { StoreRolesGuard } from 'src/modules/authorization/guards/store-roles.guard';
+import { EntityOwnerGuard } from 'src/modules/authorization/guards/entity-owner.guard';
 import { AdminRole } from 'src/common/decorators/admin-role.decorator';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { AdminRoles } from 'src/common/enums/admin.enum';
-import { AccessPolicies } from 'src/modules/auth/policy/policy.types';
+import { AccessPolicies } from 'src/modules/authorization/policy/policy.types';
 import {
   BatchPredictDto,
   BuildFeatureVectorDto,

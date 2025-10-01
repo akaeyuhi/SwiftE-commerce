@@ -6,11 +6,11 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { STORE_ROLES_META } from 'src/common/decorators/store-role.decorator';
-import { PolicyService } from 'src/modules/auth/policy/policy.service';
+import { PolicyService } from 'src/modules/authorization/policy/policy.service';
 import {
   PolicyEntry,
   AccessPolicies,
-} from 'src/modules/auth/policy/policy.types';
+} from 'src/modules/authorization/policy/policy.types';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 
 /**

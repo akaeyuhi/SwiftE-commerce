@@ -13,12 +13,16 @@ import { EmailModule } from './modules/email/email.module';
 import { QueuesModule } from './modules/infrastructure/queues/queues.module';
 import { InterceptorsModule } from './modules/infrastructure/interceptors/interceptors.module';
 import { InfrastructureModule } from './modules/infrastructure/infrastructure.module';
+import { AuthorizationModule } from './modules/authorization/authorization.module';
+import { AdminModule } from 'src/modules/admin/admin.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot(),
     DatabaseModule,
+    AuthorizationModule,
     UserModule,
+    AdminModule,
     AuthModule,
     StoreModule,
     ProductsModule,

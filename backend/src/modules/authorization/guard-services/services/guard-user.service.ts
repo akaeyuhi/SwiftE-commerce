@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { GuardUserRepository } from '../repositories/guard-user.repository';
+import { GuardUserRepository } from 'src/modules/authorization/guard-services/repositories/guard-user.repository';
 import { IUserService } from 'src/common/contracts/policy.contract';
 import { User } from 'src/entities/user/user.entity';
 import { AdminRoles } from 'src/common/enums/admin.enum';

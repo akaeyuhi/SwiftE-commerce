@@ -1,8 +1,8 @@
-import { AdminController } from 'src/modules/auth/admin/admin.controller';
-import { AdminService } from 'src/modules/auth/admin/admin.service';
+import { AdminController } from 'src/modules/admin/admin.controller';
+import { AdminService } from 'src/modules/admin/admin.service';
 import { Admin } from 'src/entities/user/policy/admin.entity';
-import { CreateAdminDto } from 'src/modules/auth/admin/dto/create-admin.dto';
-import { UpdateAdminDto } from 'src/modules/auth/admin/dto/update-admin.dto';
+import { CreateAdminDto } from 'src/modules/admin/dto/create-admin.dto';
+import { UpdateAdminDto } from 'src/modules/admin/dto/update-admin.dto';
 import {
   createGuardMock,
   createPolicyMock,
@@ -11,10 +11,10 @@ import {
 } from '../utils/helpers';
 import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { PolicyService } from 'src/modules/auth/policy/policy.service';
-import { JwtAuthGuard } from 'src/modules/auth/policy/guards/jwt-auth.guard';
-import { StoreRolesGuard } from 'src/modules/auth/policy/guards/store-roles.guard';
-import { AdminGuard } from 'src/modules/auth/policy/guards/admin.guard';
+import { PolicyService } from 'src/modules/authorization/policy/policy.service';
+import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';
+import { StoreRolesGuard } from 'src/modules/authorization/guards/store-roles.guard';
+import { AdminGuard } from 'src/modules/authorization/guards/admin.guard';
 
 describe('AdminController', () => {
   let controller: AdminController;

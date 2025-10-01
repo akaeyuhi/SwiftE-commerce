@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { PolicyService } from 'src/modules/auth/policy/policy.service';
+import { PolicyService } from 'src/modules/authorization/policy/policy.service';
 import {
   IUserService,
   IAdminService,
@@ -11,11 +11,11 @@ import {
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { createServiceMock, MockedMethods } from '../utils/helpers';
 import { UserService } from 'src/modules/user/user.service';
-import { AdminService } from 'src/modules/auth/admin/admin.service';
+import { AdminService } from 'src/modules/admin/admin.service';
 import { StoreService } from 'src/modules/store/store.service';
 import { UserRole } from 'src/entities/user/policy/user-role.entity';
 import { User } from 'src/entities/user/user.entity';
-import { PolicyEntry } from 'src/modules/auth/policy/policy.types';
+import { PolicyEntry } from 'src/modules/authorization/policy/policy.types';
 import { UserOwnedEntity } from 'src/common/interfaces/crud/user-owned.entity.interface';
 import { StoreOwnedEntity } from 'src/common/interfaces/crud/store-owned.entity.interface';
 

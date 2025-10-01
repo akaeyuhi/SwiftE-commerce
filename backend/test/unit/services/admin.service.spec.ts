@@ -1,9 +1,9 @@
-import { AdminService } from 'src/modules/auth/admin/admin.service';
-import { AdminRepository } from 'src/modules/auth/admin/admin.repository';
+import { AdminService } from 'src/modules/admin/admin.service';
+import { AdminRepository } from 'src/modules/admin/admin.repository';
 import { Admin } from 'src/entities/user/policy/admin.entity';
 import { createRepositoryMock, MockedMethods } from '../utils/helpers';
 import { NotFoundException } from '@nestjs/common';
-import { CreateAdminDto } from 'src/modules/auth/admin/dto/create-admin.dto';
+import { CreateAdminDto } from 'src/modules/admin/dto/create-admin.dto';
 import { Test, TestingModule } from '@nestjs/testing';
 
 describe('AdminService', () => {

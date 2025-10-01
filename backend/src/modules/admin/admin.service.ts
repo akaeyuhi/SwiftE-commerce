@@ -6,9 +6,9 @@ import {
 } from '@nestjs/common';
 import { BaseService } from 'src/common/abstracts/base.service';
 import { Admin } from 'src/entities/user/policy/admin.entity';
-import { AdminRepository } from './admin.repository';
-import { CreateAdminDto } from './dto/create-admin.dto';
-import { UpdateAdminDto } from './dto/update-admin.dto';
+import { AdminRepository } from 'src/modules/admin/admin.repository';
+import { CreateAdminDto } from 'src/modules/admin/dto/create-admin.dto';
+import { UpdateAdminDto } from 'src/modules/admin/dto/update-admin.dto';
 import { UserService } from 'src/modules/user/user.service';
 
 export interface FormattedAdmin {

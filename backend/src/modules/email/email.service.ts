@@ -1,13 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import {
-  EmailProvider,
   EmailData,
+  EmailProvider,
   EmailSendResult,
 } from 'src/common/interfaces/infrastructure/email.interface';
 import { EmailTemplatesService } from './templates/email-templates.service';
 import { SendGridProvider } from './providers/sendgrid.provider';
 import { SMTPProvider } from './providers/smtp.provider';
-import { EmailJobType } from 'src/common/enums/email.enum';
+import {EmailJobType} from "src/common/enums/email.enum";
 
 @Injectable()
 export class EmailService {
@@ -20,56 +20,25 @@ export class EmailService {
     private readonly sendGridProvider: SendGridProvider,
     private readonly smtpProvider: SMTPProvider
   ) {
-    // Configure providers based on environment
     this.providers = [this.sendGridProvider, this.smtpProvider];
     this.primaryProvider = this.selectPrimaryProvider();
   }
 
+  /**
+   * Send email with optional template processing
+   */
   async sendEmail(
     emailData: EmailData,
     jobType?: EmailJobType
   ): Promise<EmailSendResult> {
     try {
-      // Process template if templateId is provided
+      // If templateId and jobType provided, use Handlebars template system
       if (emailData.templateId && jobType) {
-        const processedEmail = await this.processTemplate(emailData, jobType);
-        emailData = { ...emailData, ...processedEmail };
+        return await this.sendTemplatedEmail(emailData, jobType);
       }
 
-      // Validate email data
-      this.validateEmailData(emailData);
-
-      // Send using primary provider
-      let result = await this.primaryProvider.send(emailData);
-
-      // Fallback to other providers if primary fails
-      if (!result.success && this.providers.length > 1) {
-        this.logger.warn(
-          `Primary provider ${this.primaryProvider.name} failed, trying fallback`
-        );
-
-        for (const provider of this.providers) {
-          if (provider === this.primaryProvider) continue;
-
-          result = await provider.send(emailData);
-          if (result.success) {
-            this.logger.log(
-              `Email sent successfully using fallback provider: ${provider.name}`
-            );
-            break;
-          }
-        }
-      }
-
-      if (result.success) {
-        this.logger.log(
-          `Email sent successfully: ${result.messageId} via ${result.provider}`
-        );
-      } else {
-        this.logger.error(`All email providers failed: ${result.error}`);
-      }
-
-      return result;
+      // Otherwise, send directly with provided HTML/text
+      return await this.sendDirectEmail(emailData);
     } catch (error) {
       this.logger.error('Email service error:', error);
       return {
@@ -81,22 +50,105 @@ export class EmailService {
     }
   }
 
-  private async processTemplate(emailData: EmailData, jobType: EmailJobType) {
-    const template = this.templatesService.getTemplate(jobType);
-    if (!template) {
-      throw new Error(`Template not found for job type: ${jobType}`);
+  /**
+   * Send email using Handlebars templates
+   */
+  private async sendTemplatedEmail(
+    emailData: EmailData,
+    jobType: EmailJobType
+  ): Promise<EmailSendResult> {
+    try {
+      // Get template configuration
+      const template = this.templatesService.getTemplate(jobType);
+      if (!template) {
+        throw new Error(`Template not found for job type: ${jobType}`);
+      }
+
+      // Use EmailTemplatesService to send with Handlebars
+      return await this.templatesService.sendTemplatedEmail(
+        jobType,
+        emailData.templateData || {},
+        {
+          to: emailData.to.map((r) => r.email),
+          cc: emailData.cc?.map((r) => r.email),
+          bcc: emailData.bcc?.map((r) => r.email),
+          attachments: emailData.attachments,
+        }
+      );
+    } catch (error) {
+      this.logger.error('Templated email error:', error);
+      return {
+        success: false,
+        error: error.message,
+        provider: 'smtp',
+        sentAt: new Date(),
+      };
+    }
+  }
+
+  /**
+   * Send email directly (without template processing)
+   */
+  private async sendDirectEmail(
+    emailData: EmailData
+  ): Promise<EmailSendResult> {
+    // Validate email data
+    this.validateEmailData(emailData);
+
+    // Send using primary provider
+    let result = await this.primaryProvider.send(emailData);
+
+    // Fallback to other providers if primary fails
+    if (!result.success && this.providers.length > 1) {
+      this.logger.warn(
+        `Primary provider ${this.primaryProvider.name} failed, trying fallback`
+      );
+
+      for (const provider of this.providers) {
+        if (provider === this.primaryProvider) continue;
+
+        result = await provider.send(emailData);
+        if (result.success) {
+          this.logger.log(
+            `Email sent successfully using fallback provider: ${provider.name}`
+          );
+          break;
+        }
+      }
     }
 
-    const processed = this.templatesService.renderTemplate(
-      template,
-      emailData.templateData || {}
-    );
+    if (result.success) {
+      this.logger.log(
+        `Email sent successfully: ${result.messageId} via ${result.provider}`
+      );
+    } else {
+      this.logger.error(`All email providers failed: ${result.error}`);
+    }
 
-    return {
-      subject: processed.subject,
-      html: processed.html,
-      text: processed.text,
+    return result;
+  }
+
+  /**
+   * Send email with manual template data (for legacy/backward compatibility)
+   */
+  async sendWithManualTemplate(
+    emailData: EmailData,
+    templateHtml: string,
+    templateText: string
+  ): Promise<EmailSendResult> {
+    const processedData: EmailData = {
+      ...emailData,
+      html: this.templatesService['processTemplate'](
+        templateHtml,
+        emailData.templateData || {}
+      ),
+      text: this.templatesService['processTemplate'](
+        templateText,
+        emailData.templateData || {}
+      ),
     };
+
+    return this.sendDirectEmail(processedData);
   }
 
   private validateEmailData(emailData: EmailData): void {
@@ -114,8 +166,8 @@ export class EmailService {
       throw new Error('Email subject is required');
     }
 
-    if (!emailData.html && !emailData.text) {
-      throw new Error('Email content (html or text) is required');
+    if (!emailData.html && !emailData.text && !emailData.templateId) {
+      throw new Error('Email content (html, text, or templateId) is required');
     }
   }
 
@@ -133,7 +185,6 @@ export class EmailService {
       case 'smtp':
         return this.smtpProvider;
       default:
-        // Default to SendGrid if API key is available, otherwise SMTP
         return process.env.SENDGRID_API_KEY
           ? this.sendGridProvider
           : this.smtpProvider;

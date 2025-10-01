@@ -13,12 +13,12 @@ import {
   HttpCode,
   BadRequestException,
 } from '@nestjs/common';
-import { JwtAuthGuard } from 'src/modules/auth/policy/guards/jwt-auth.guard';
-import { AdminGuard } from 'src/modules/auth/policy/guards/admin.guard';
-import { StoreRolesGuard } from 'src/modules/auth/policy/guards/store-roles.guard';
+import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';
+import { AdminGuard } from 'src/modules/authorization/guards/admin.guard';
+import { StoreRolesGuard } from 'src/modules/authorization/guards/store-roles.guard';
 import { AnalyticsService } from '../analytics.service';
 import { RecordEventDto } from 'src/modules/infrastructure/queues/analytics-queue/dto/record-event.dto';
-import { AccessPolicies } from 'src/modules/auth/policy/policy.types';
+import { AccessPolicies } from 'src/modules/authorization/policy/policy.types';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { AdminRoles } from 'src/common/enums/admin.enum';
 import { AdminRole } from 'src/common/decorators/admin-role.decorator';

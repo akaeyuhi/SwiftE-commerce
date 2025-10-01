@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { OrdersController } from 'src/modules/store/orders/orders.controller';
 import { OrdersService } from 'src/modules/store/orders/orders.service';
-import { PolicyService } from 'src/modules/auth/policy/policy.service';
+import { PolicyService } from 'src/modules/authorization/policy/policy.service';
 import {
   createServiceMock,
   createPolicyMock,
@@ -14,10 +14,10 @@ import { UpdateOrderDto } from 'src/modules/store/orders/dto/update-order.dto';
 import { Request } from 'express';
 import { Store } from 'src/entities/store/store.entity';
 import { User } from 'src/entities/user/user.entity';
-import { JwtAuthGuard } from 'src/modules/auth/policy/guards/jwt-auth.guard';
-import { AdminGuard } from 'src/modules/auth/policy/guards/admin.guard';
-import { StoreRolesGuard } from 'src/modules/auth/policy/guards/store-roles.guard';
-import { EntityOwnerGuard } from 'src/modules/auth/policy/guards/entity-owner.guard';
+import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';
+import { AdminGuard } from 'src/modules/authorization/guards/admin.guard';
+import { StoreRolesGuard } from 'src/modules/authorization/guards/store-roles.guard';
+import { EntityOwnerGuard } from 'src/modules/authorization/guards/entity-owner.guard';
 
 describe('OrdersController', () => {
   let controller: OrdersController;

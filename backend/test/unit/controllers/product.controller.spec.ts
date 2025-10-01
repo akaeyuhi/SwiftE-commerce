@@ -1,7 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { ProductsController } from 'src/modules/products/products.controller';
 import { ProductsService } from 'src/modules/products/products.service';
-import { PolicyService } from 'src/modules/auth/policy/policy.service';
+import { PolicyService } from 'src/modules/authorization/policy/policy.service';
 import {
   createServiceMock,
   createPolicyMock,
@@ -10,8 +10,8 @@ import {
 } from '../utils/helpers';
 import { Product } from 'src/entities/store/product/product.entity';
 import { CreateProductDto } from 'src/modules/products/dto/create-product.dto';
-import { JwtAuthGuard } from 'src/modules/auth/policy/guards/jwt-auth.guard';
-import { StoreRolesGuard } from 'src/modules/auth/policy/guards/store-roles.guard';
+import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';
+import { StoreRolesGuard } from 'src/modules/authorization/guards/store-roles.guard';
 import { Store } from 'src/entities/store/store.entity';
 
 describe('ProductsController', () => {

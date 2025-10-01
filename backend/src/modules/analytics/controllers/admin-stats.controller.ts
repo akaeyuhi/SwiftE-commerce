@@ -6,9 +6,9 @@ import {
   Query,
   ParseUUIDPipe,
 } from '@nestjs/common';
-import { JwtAuthGuard } from 'src/modules/auth/policy/guards/jwt-auth.guard';
-import { AdminGuard } from 'src/modules/auth/policy/guards/admin.guard';
-import { StoreRolesGuard } from 'src/modules/auth/policy/guards/store-roles.guard';
+import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';
+import { AdminGuard } from 'src/modules/authorization/guards/admin.guard';
+import { StoreRolesGuard } from 'src/modules/authorization/guards/store-roles.guard';
 import { AnalyticsService } from 'src/modules/analytics/analytics.service';
 import { GetStatsDto } from 'src/modules/analytics/dto/get-stats.dto';
 

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { GuardAdminRepository } from '../repositories/guard-admin.repository';
+import { GuardAdminRepository } from 'src/modules/authorization/guard-services/repositories/guard-admin.repository';
 import { IAdminService } from 'src/common/contracts/policy.contract';
 
 @Injectable()

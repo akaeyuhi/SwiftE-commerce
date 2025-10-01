@@ -1,7 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { ReviewsController } from 'src/modules/products/reviews/reviews.controller';
 import { ReviewsService } from 'src/modules/products/reviews/reviews.service';
-import { PolicyService } from 'src/modules/auth/policy/policy.service';
+import { PolicyService } from 'src/modules/authorization/policy/policy.service';
 import {
   createServiceMock,
   createPolicyMock,
@@ -13,8 +13,8 @@ import { CreateReviewDto } from 'src/modules/products/reviews/dto/create-review.
 import { Request } from 'express';
 import { User } from 'src/entities/user/user.entity';
 import { Product } from 'src/entities/store/product/product.entity';
-import { JwtAuthGuard } from 'src/modules/auth/policy/guards/jwt-auth.guard';
-import { StoreRolesGuard } from 'src/modules/auth/policy/guards/store-roles.guard';
+import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';
+import { StoreRolesGuard } from 'src/modules/authorization/guards/store-roles.guard';
 
 describe('ReviewsController', () => {
   let ctrl: ReviewsController;

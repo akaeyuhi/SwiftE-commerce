@@ -7,7 +7,7 @@ import {
 import { randomBytes, createHash } from 'crypto';
 import { ConfirmationRepository } from './confirmation.repository';
 import { UserService } from 'src/modules/user/user.service';
-import { AdminService } from '../admin/admin.service';
+import { AdminService } from 'src/modules/admin/admin.service';
 import { ConfirmationType } from './enums/confirmation.enum';
 import { Confirmation } from './entities/confirmation.entity';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
