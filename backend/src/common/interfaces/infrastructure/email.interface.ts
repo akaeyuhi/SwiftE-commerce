@@ -1,4 +1,4 @@
-import { EmailPriority } from 'src/modules/email/enums/email.enum';
+import { EmailJobType, EmailPriority } from 'src/common/enums/email.enum';
 
 export interface EmailTemplate {
   subject: string;
@@ -57,17 +57,4 @@ export interface EmailJobData {
   attempts?: number;
   scheduledFor?: Date;
   metadata?: Record<string, any>;
-}
-
-export enum EmailJobType {
-  USER_CONFIRMATION = 'user_confirmation',
-  WELCOME = 'welcome',
-  PASSWORD_RESET = 'password_reset',
-  STOCK_ALERT = 'stock_alert',
-  LOW_STOCK_WARNING = 'low_stock_warning',
-  ORDER_CONFIRMATION = 'order_confirmation',
-  SHIPPING_NOTIFICATION = 'shipping_notification',
-  PROMOTIONAL = 'promotional',
-  NEWSLETTER = 'newsletter',
-  CUSTOM = 'custom',
 }

@@ -7,7 +7,6 @@ import {
   ValidationPipe,
   BadRequestException,
 } from '@nestjs/common';
-import { EmailQueueService } from './queues/email-queue.service';
 import { EmailService } from './email.service';
 import { JwtAuthGuard } from 'src/modules/auth/policy/guards/jwt-auth.guard';
 import { AdminGuard } from 'src/modules/auth/policy/guards/admin.guard';
@@ -23,6 +22,7 @@ import {
   SendStockAlertDto,
   SendLowStockWarningDto,
 } from './dto/email.dto';
+import { EmailQueueService } from 'src/modules/infrastructure/queues/email-queue/email-queue.service';
 
 @Controller('email')
 @UseGuards(JwtAuthGuard, AdminGuard, StoreRolesGuard)

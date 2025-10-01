@@ -8,7 +8,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { EmailPriority } from '../enums/email.enum';
+import { EmailPriority } from 'src/common/enums/email.enum';
 
 export class EmailRecipientDto {
   @IsEmail()

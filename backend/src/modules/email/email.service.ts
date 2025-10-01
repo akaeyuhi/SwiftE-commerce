@@ -1,14 +1,13 @@
-// src/modules/email/email.service.ts
 import { Injectable, Logger } from '@nestjs/common';
 import {
   EmailProvider,
   EmailData,
   EmailSendResult,
-  EmailJobType,
-} from './interfaces/email.interface';
+} from 'src/common/interfaces/infrastructure/email.interface';
 import { EmailTemplatesService } from './templates/email-templates.service';
 import { SendGridProvider } from './providers/sendgrid.provider';
 import { SMTPProvider } from './providers/smtp.provider';
+import { EmailJobType } from 'src/common/enums/email.enum';
 
 @Injectable()
 export class EmailService {
