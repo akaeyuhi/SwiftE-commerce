@@ -1,0 +1,33 @@
+{{!-- src/modules/email/templates/handlebars/order-delivered.hbs --}}
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Order Delivered</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+<div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+  <h1 style="color: #4CAF50;">Order Delivered! ✅</h1>
+
+  <p>Hi {{userName}},</p>
+
+  <p>Your order #{{orderNumber}} has been successfully delivered!</p>
+
+  <p>We hope you love your purchase. If you have any issues, please don't hesitate to contact us.</p>
+
+  <div style="text-align: center; margin: 30px 0;">
+    <a href="{{reviewUrl}}"
+       style="background-color: #4CAF50; color: white; padding: 12px 30px;
+                      text-decoration: none; border-radius: 5px; display: inline-block;">
+      Leave a Review
+    </a>
+  </div>
+
+  <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+
+  <p style="color: #999; font-size: 12px; text-align: center;">
+    © {{storeName}}. All rights reserved.
+  </p>
+</div>
+</body>
+</html>

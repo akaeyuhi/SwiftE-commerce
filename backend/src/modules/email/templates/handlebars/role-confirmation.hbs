@@ -1,0 +1,41 @@
+{{!-- src/modules/email/templates/handlebars/role-confirmation.hbs --}}
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>New Role Assignment</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+<div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+  <h1 style="color: #2196F3;">New Role Assignment</h1>
+
+  <p>Hi {{userName}},</p>
+
+  <p>You have been assigned a new role: <strong>{{roleType}}</strong></p>
+
+  {{#if storeName}}
+    <p>Store: <strong>{{storeName}}</strong></p>
+  {{/if}}
+
+  {{#if assignedBy}}
+    <p>Assigned by: {{assignedBy}}</p>
+  {{/if}}
+
+  <p>Please confirm this role assignment by clicking the button below:</p>
+
+  <div style="text-align: center; margin: 30px 0;">
+    <a href="{{confirmationUrl}}"
+       style="background-color: #2196F3; color: white; padding: 12px 30px;
+                      text-decoration: none; border-radius: 5px; display: inline-block;">
+      Confirm Role
+    </a>
+  </div>
+
+  <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+
+  <p style="color: #999; font-size: 12px; text-align: center;">
+    © {{storeName}}. All rights reserved.
+  </p>
+</div>
+</body>
+</html>

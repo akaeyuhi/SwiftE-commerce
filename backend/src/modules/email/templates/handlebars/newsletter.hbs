@@ -1,0 +1,26 @@
+{{!-- src/modules/email/templates/handlebars/newsletter.hbs --}}
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Newsletter</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+<div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+  <h1>{{newsletterTitle}}</h1>
+
+  <p>Hi {{userName}},</p>
+
+  <div style="margin: 30px 0;">
+    {{{content}}}
+  </div>
+
+  <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+
+  <p style="color: #999; font-size: 12px; text-align: center;">
+    © {{storeName}}. All rights reserved.<br>
+    <a href="{{unsubscribeUrl}}" style="color: #999;">Unsubscribe</a>
+  </p>
+</div>
+</body>
+</html>
