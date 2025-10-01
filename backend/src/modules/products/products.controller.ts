@@ -19,8 +19,8 @@ import { BaseController } from 'src/common/abstracts/base.controller';
 import { Product } from 'src/entities/store/product/product.entity';
 import { JwtAuthGuard } from 'src/modules/auth/policy/guards/jwt-auth.guard';
 import { StoreRolesGuard } from 'src/modules/auth/policy/guards/store-roles.guard';
-import { ProductPhotosInterceptor } from 'src/modules/products/product-photo/interceptors/product-photo.interceptor';
-import { RecordEventInterceptor } from 'src/modules/analytics/interceptors/record-event.interceptor';
+import { ProductPhotosInterceptor } from 'src/modules/infrastructure/interceptors/product-photo/product-photo.interceptor';
+import { RecordEventInterceptor } from 'src/modules/infrastructure/interceptors/record-event/record-event.interceptor';
 import { RecordEvents } from 'src/common/decorators/record-event.decorator';
 import { AnalyticsEventType } from 'src/modules/analytics/entities/analytics-event.entity';
 
@@ -77,7 +77,7 @@ export class ProductsController extends BaseController<
    * @param photos - optionally uploaded files
    * @param mainPhoto - optionally uploaded main photo
    */
-  @UseInterceptors(ProductPhotosInterceptor())
+  @UseInterceptors(ProductPhotosInterceptor)
   @Post()
   async createProduct(
     @Param('storeId', new ParseUUIDPipe()) storeId: string,
@@ -103,7 +103,7 @@ export class ProductsController extends BaseController<
    * @param productId - uuid of the product to attach photos to
    * @param photos - uploaded files from the request
    */
-  @UseInterceptors(ProductPhotosInterceptor())
+  @UseInterceptors(ProductPhotosInterceptor)
   @Post(':productId/photos')
   async addPhotosToProduct(
     @Param('storeId', new ParseUUIDPipe()) storeId: string,
@@ -124,7 +124,7 @@ export class ProductsController extends BaseController<
    * @param productId - uuid of the product to attach photos to
    * @param photo - Main photo to upload
    */
-  @UseInterceptors(ProductPhotosInterceptor())
+  @UseInterceptors(ProductPhotosInterceptor)
   @Post(':productId/photos/main')
   async addMainPhotoToProduct(
     @Param('storeId', new ParseUUIDPipe()) storeId: string,

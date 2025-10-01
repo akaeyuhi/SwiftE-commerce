@@ -8,7 +8,7 @@ import { ProductPhotoRepository } from 'src/modules/products/product-photo/produ
 import {
   ALLOWED_IMAGE_MIME_PREFIX,
   UPLOADS_PRODUCTS_DIR,
-} from 'src/modules/products/product-photo/interceptors/constants';
+} from 'src/modules/infrastructure/interceptors/product-photo/constants';
 import { Store } from 'src/entities/store/store.entity';
 import { Product } from 'src/entities/store/product/product.entity';
 

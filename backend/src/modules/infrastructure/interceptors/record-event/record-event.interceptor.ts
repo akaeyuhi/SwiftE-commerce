@@ -14,9 +14,9 @@ import {
   RECORD_EVENTS_MAP_META,
   RecordEventOptions,
 } from 'src/common/decorators/record-event.decorator';
-import { AnalyticsQueueService } from '../queues/analytics-queue.service';
-import { AnalyticsEventType } from '../entities/analytics-event.entity';
-import { RecordEventDto } from '../dto/record-event.dto';
+import { AnalyticsQueueService } from 'src/modules/infrastructure/queues/analytics-queue/analytics-queue.service';
+import { AnalyticsEventType } from 'src/modules/analytics/entities/analytics-event.entity';
+import { RecordEventDto } from 'src/modules/infrastructure/queues/analytics-queue/dto/record-event.dto';
 
 /**
  * RecordEventInterceptor
