@@ -7,7 +7,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { RefreshToken } from 'src/entities/user/policy/refresh-token.entity';
 import { RefreshTokenModule } from 'src/modules/auth/refresh-token/refresh-token.module';
 import { ConfigModule } from '@nestjs/config';
-import { PolicyService } from 'src/modules/auth/policy/policy.service';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { RefreshTokenService } from 'src/modules/auth/refresh-token/refresh-token.service';
