@@ -9,7 +9,7 @@ import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';
 import { StoreRolesGuard } from 'src/modules/authorization/guards/store-roles.guard';
 import { RecordEventInterceptor } from 'src/modules/infrastructure/interceptors/record-event/record-event.interceptor';
 import { RecordEvents } from 'src/common/decorators/record-event.decorator';
-import { AnalyticsEventType } from 'src/entities/infrastructure/analytics-event.entity';
+import { AnalyticsEventType } from 'src/entities/infrastructure/analytics/analytics-event.entity';
 
 @Controller('stores')
 @UseGuards(JwtAuthGuard, StoreRolesGuard)

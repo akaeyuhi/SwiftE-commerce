@@ -16,7 +16,7 @@ import { LikesService } from './likes.service';
 import { CreateLikeDto } from './dto/create-like.dto';
 import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';
 import { RecordEventInterceptor } from 'src/modules/infrastructure/interceptors/record-event/record-event.interceptor';
-import { AnalyticsEventType } from 'src/entities/infrastructure/analytics-event.entity';
+import { AnalyticsEventType } from 'src/entities/infrastructure/analytics/analytics-event.entity';
 import { RecordEvent } from 'src/common/decorators/record-event.decorator';
 
 /**

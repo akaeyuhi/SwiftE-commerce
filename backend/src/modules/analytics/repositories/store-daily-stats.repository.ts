@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { BaseAnalyticsRepository } from 'src/common/abstracts/analytics/base.analytics.repository';
-import { StoreDailyStats } from 'src/entities/infrastructure/store-daily-stats.entity';
+import { StoreDailyStats } from 'src/entities/infrastructure/analytics/store-daily-stats.entity';
 import { DateRangeOptions } from 'src/common/interfaces/infrastructure/analytics.interface';
 
 @Injectable()
