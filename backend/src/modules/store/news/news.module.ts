@@ -4,10 +4,9 @@ import { NewsController } from 'src/modules/store/news/news.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { NewsPost } from 'src/entities/store/news-post.entity';
 import { NewsRepository } from 'src/modules/store/news/news.repository';
-import { AuthModule } from 'src/modules/auth/auth.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([NewsPost]), AuthModule],
+  imports: [TypeOrmModule.forFeature([NewsPost])],
   controllers: [NewsController],
   providers: [NewsService, NewsRepository],
 })

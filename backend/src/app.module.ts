@@ -10,6 +10,9 @@ import { StoreModule } from 'src/modules/store/store.module';
 import { AiModule } from './modules/ai/ai.module';
 import { ProductsModule } from 'src/modules/products/products.module';
 import { EmailModule } from './modules/email/email.module';
+import { QueuesModule } from './modules/infrastructure/queues/queues.module';
+import { InterceptorsModule } from './modules/infrastructure/interceptors/interceptors.module';
+import { InfrastructureModule } from './modules/infrastructure/infrastructure.module';
 
 @Module({
   imports: [
@@ -22,6 +25,9 @@ import { EmailModule } from './modules/email/email.module';
     AnalyticsModule,
     AiModule,
     EmailModule,
+    QueuesModule,
+    InterceptorsModule,
+    InfrastructureModule,
   ],
   controllers: [AppController],
   providers: [AppService],

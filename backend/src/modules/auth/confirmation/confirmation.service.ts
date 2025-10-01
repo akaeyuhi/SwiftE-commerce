@@ -6,14 +6,13 @@ import {
 } from '@nestjs/common';
 import { randomBytes, createHash } from 'crypto';
 import { ConfirmationRepository } from './confirmation.repository';
-import { EmailQueueService } from 'src/modules/email/queues/email-queue.service';
 import { UserService } from 'src/modules/user/user.service';
 import { AdminService } from '../admin/admin.service';
-import { UserRoleService } from 'src/modules/user/user-role/user-role.service';
 import { ConfirmationType } from './enums/confirmation.enum';
 import { Confirmation } from './entities/confirmation.entity';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { AdminRoles } from 'src/common/enums/admin.enum';
+import { EmailQueueService } from 'src/modules/infrastructure/queues/email-queue/email-queue.service';
 
 @Injectable()
 export class ConfirmationService {
@@ -23,8 +22,7 @@ export class ConfirmationService {
     private readonly confirmationRepo: ConfirmationRepository,
     private readonly emailQueueService: EmailQueueService,
     private readonly userService: UserService,
-    private readonly adminService: AdminService,
-    private readonly userRoleService: UserRoleService
+    private readonly adminService: AdminService
   ) {}
 
   /**
@@ -266,7 +264,7 @@ export class ConfirmationService {
           const adminStoreId = confirmation.metadata?.storeId;
           const adminAssignedBy = confirmation.metadata?.assignedBy;
           if (adminStoreId) {
-            await this.userRoleService.assignStoreRole(
+            await this.userService.assignStoreRole(
               confirmation.userId,
               adminStoreId,
               StoreRoles.ADMIN,
@@ -279,7 +277,7 @@ export class ConfirmationService {
           const moderatorStoreId = confirmation.metadata?.storeId;
           const moderatorAssignedBy = confirmation.metadata?.assignedBy;
           if (moderatorStoreId) {
-            await this.userRoleService.assignStoreRole(
+            await this.userService.assignStoreRole(
               confirmation.userId,
               moderatorStoreId,
               StoreRoles.MODERATOR,
@@ -289,7 +287,6 @@ export class ConfirmationService {
           break;
 
         case ConfirmationType.PASSWORD_RESET:
-          // Password reset logic would go here
           break;
 
         default:

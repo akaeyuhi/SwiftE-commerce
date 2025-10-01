@@ -4,10 +4,9 @@ import { AiLogsController } from 'src/modules/ai/ai-logs/ai-logs.controller';
 import { AiLogsRepository } from 'src/modules/ai/ai-logs/ai-logs.repository';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AiLog } from 'src/entities/ai/ai-log.entity';
-import { PolicyModule } from 'src/modules/auth/policy/policy.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([AiLog]), PolicyModule],
+  imports: [TypeOrmModule.forFeature([AiLog])],
   controllers: [AiLogsController],
   providers: [AiLogsService, AiLogsRepository],
   exports: [AiLogsService, AiLogsRepository],

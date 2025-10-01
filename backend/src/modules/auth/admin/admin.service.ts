@@ -1,4 +1,3 @@
-// src/modules/auth/admin/admin.service.ts
 import {
   Injectable,
   NotFoundException,

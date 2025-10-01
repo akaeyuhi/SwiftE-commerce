@@ -1,4 +1,4 @@
-import { forwardRef, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { ConfirmationService } from './confirmation.service';
 import { ConfirmationCleanupService } from 'src/modules/auth/confirmation/confirmation-cleanup.service';
 import { ConfirmationRepository } from 'src/modules/auth/confirmation/confirmation.repository';
@@ -7,15 +7,13 @@ import { Confirmation } from 'src/modules/auth/confirmation/entities/confirmatio
 import { EmailModule } from 'src/modules/email/email.module';
 import { UserModule } from 'src/modules/user/user.module';
 import { AdminModule } from 'src/modules/auth/admin/admin.module';
-import { UserRoleModule } from 'src/modules/user/user-role/user-role.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Confirmation]),
     EmailModule,
-    forwardRef(() => UserModule),
+    UserModule,
     AdminModule,
-    UserRoleModule,
   ],
   providers: [
     ConfirmationService,

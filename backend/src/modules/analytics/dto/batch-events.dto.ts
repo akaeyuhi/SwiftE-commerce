@@ -1,6 +1,6 @@
 import { IsArray, ValidateNested, ArrayMaxSize } from 'class-validator';
 import { Type } from 'class-transformer';
-import { RecordEventDto } from './record-event.dto';
+import { RecordEventDto } from 'src/modules/infrastructure/queues/analytics-queue/dto/record-event.dto';
 
 export class BatchEventsDto {
   @IsArray()

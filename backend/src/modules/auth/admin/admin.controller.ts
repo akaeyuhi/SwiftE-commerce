@@ -1,4 +1,3 @@
-// src/modules/auth/admin/admin.controller.ts
 import {
   Controller,
   Get,

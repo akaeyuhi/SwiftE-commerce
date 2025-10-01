@@ -4,7 +4,7 @@ import {
   EmailProvider,
   EmailData,
   EmailSendResult,
-} from '../interfaces/email.interface';
+} from 'src/common/interfaces/infrastructure/email.interface';
 
 @Injectable()
 export class SendGridProvider implements EmailProvider {

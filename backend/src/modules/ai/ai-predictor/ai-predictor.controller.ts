@@ -51,20 +51,16 @@ import {
 @UseGuards(JwtAuthGuard, AdminGuard, StoreRolesGuard, EntityOwnerGuard)
 export class AiPredictorController {
   static accessPolicies: AccessPolicies = {
-    // Feature building - store level access
     buildFeatureVector: {
       storeRoles: [StoreRoles.ADMIN, StoreRoles.MODERATOR],
     },
 
-    // Predictions - store level access
     predictSingle: { storeRoles: [StoreRoles.ADMIN, StoreRoles.MODERATOR] },
     predictBatch: { storeRoles: [StoreRoles.ADMIN, StoreRoles.MODERATOR] },
 
-    // Analytics - store admin access
     getTrendingProducts: { storeRoles: [StoreRoles.ADMIN] },
     getPredictionStats: { storeRoles: [StoreRoles.ADMIN] },
 
-    // System endpoints - site admin only
     healthCheck: { adminRole: AdminRoles.ADMIN },
     getModelComparison: { adminRole: AdminRoles.ADMIN },
   };

@@ -12,7 +12,6 @@ import * as bcrypt from 'bcrypt';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenService } from 'src/modules/auth/refresh-token/refresh-token.service';
 import { ConfirmationService } from './confirmation/confirmation.service';
-import { EmailQueueService } from 'src/modules/email/queues/email-queue.service';
 import { AdminService } from './admin/admin.service';
 import { UserRoleService } from 'src/modules/user/user-role/user-role.service';
 import { Request } from 'express';
@@ -20,6 +19,7 @@ import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { AdminRoles } from 'src/common/enums/admin.enum';
 import { ConfirmationType } from './confirmation/enums/confirmation.enum';
 import { createHash, randomBytes } from 'crypto';
+import { EmailQueueService } from 'src/modules/infrastructure/queues/email-queue/email-queue.service';
 
 export interface JwtPayload {
   id: string;

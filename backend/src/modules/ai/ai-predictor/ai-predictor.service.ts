@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { lastValueFrom } from 'rxjs';
 import { DataSource } from 'typeorm';
@@ -22,6 +22,10 @@ import {
   PredictorRequestData,
   PredictorResponseData,
 } from 'src/common/interfaces/ai/predictor.interface';
+import {
+  IReviewsRepository,
+  REVIEWS_REPOSITORY,
+} from 'src/common/contracts/reviews.contract';
 
 export interface FeatureVector {
   sales_7d: number;
@@ -82,9 +86,9 @@ export class AiPredictorService extends BaseAiService<
     private readonly dataSource: DataSource,
     private readonly storeStatsRepo: StoreDailyStatsRepository,
     private readonly productStatsRepo: ProductDailyStatsRepository,
-    private readonly reviewsRepo: ReviewsRepository,
     private readonly aiLogsService: AiLogsService,
-    private readonly aiAuditService: AiAuditService
+    private readonly aiAuditService: AiAuditService,
+    @Inject(REVIEWS_REPOSITORY) private readonly reviewsRepo: IReviewsRepository
   ) {
     super();
 
@@ -558,11 +562,23 @@ export class AiPredictorService extends BaseAiService<
       ratingAgg,
       inventoryStats,
     ] = await Promise.all([
-      this.productStatsRepo.getAggregateRange(productId, start7, end),
-      this.productStatsRepo.getAggregateRange(productId, start14, end),
-      this.productStatsRepo.getAggregateRange(productId, start30, end),
+      this.productStatsRepo.getAggregatedMetrics(productId, {
+        from: start7,
+        to: end,
+      }),
+      this.productStatsRepo.getAggregatedMetrics(productId, {
+        from: start14,
+        to: end,
+      }),
+      this.productStatsRepo.getAggregatedMetrics(productId, {
+        from: start30,
+        to: end,
+      }),
       storeId
-        ? this.storeStatsRepo.getAggregateRange(storeId, start7, end)
+        ? this.storeStatsRepo.getAggregatedMetrics(storeId, {
+            from: start7,
+            to: end,
+          })
         : null,
       this.getPriceStats(productId),
       this.reviewsRepo.getRatingAggregate(productId),

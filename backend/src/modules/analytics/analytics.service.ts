@@ -1,15 +1,17 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { Between } from 'typeorm';
 import { AnalyticsEventRepository } from './repositories/analytics-event.repository';
 import { StoreDailyStatsRepository } from './repositories/store-daily-stats.repository';
 import { ProductDailyStatsRepository } from './repositories/product-daily-stats.repository';
 import { ReviewsRepository } from 'src/modules/products/reviews/reviews.repository';
-import { AiPredictorService } from 'src/modules/ai/ai-predictor/ai-predictor.service';
-import { RecordEventDto } from './dto/record-event.dto';
-import { AiPredictRow } from 'src/modules/ai/ai-predictor/dto/ai-predict.dto';
-import { AnalyticsQueueService } from './queues/analytics-queue.service';
+import { RecordEventDto } from 'src/modules/infrastructure/queues/analytics-queue/dto/record-event.dto';
+import { AnalyticsQueueService } from 'src/modules/infrastructure/queues/analytics-queue/analytics-queue.service';
 import { BaseAnalyticsService } from 'src/common/abstracts/analytics/base.analytics.service';
+import {
+  IReviewsRepository,
+  REVIEWS_REPOSITORY,
+} from 'src/common/contracts/reviews.contract';
 
 export interface AnalyticsAggregationOptions {
   from?: string;
@@ -34,11 +36,10 @@ export interface AnalyticsAggregationOptions {
 export class AnalyticsService extends BaseAnalyticsService<RecordEventDto> {
   constructor(
     private readonly queueService: AnalyticsQueueService,
-    private readonly predictorService: AiPredictorService,
     private readonly eventsRepo: AnalyticsEventRepository,
     private readonly storeStatsRepo: StoreDailyStatsRepository,
     private readonly productStatsRepo: ProductDailyStatsRepository,
-    private readonly reviewsRepo: ReviewsRepository
+    @Inject(REVIEWS_REPOSITORY) private readonly reviewsRepo: IReviewsRepository
   ) {
     super();
   }
@@ -299,7 +300,10 @@ export class AnalyticsService extends BaseAnalyticsService<RecordEventDto> {
       };
     }
 
-    const raw = await this.eventsRepo.aggregateStoreRange(storeId, from, to);
+    const raw = await this.eventsRepo.aggregateStoreMetrics(storeId, {
+      from,
+      to,
+    });
     return {
       storeId,
       views: raw.views,
@@ -320,7 +324,11 @@ export class AnalyticsService extends BaseAnalyticsService<RecordEventDto> {
     to?: string,
     limit = 10
   ) {
-    return this.eventsRepo.topProductsByConversion(storeId, from, to, limit);
+    return this.eventsRepo.getTopProductsByConversion(storeId, {
+      from,
+      to,
+      limit,
+    });
   }
 
   async recomputeProductRating(productId: string) {
@@ -329,7 +337,10 @@ export class AnalyticsService extends BaseAnalyticsService<RecordEventDto> {
 
   async getStoreStats(storeId: string, from?: string, to?: string) {
     // Get summary
-    const agg = await this.storeStatsRepo.getAggregateRange(storeId, from, to);
+    const agg = await this.storeStatsRepo.getAggregatedMetrics(storeId, {
+      from,
+      to,
+    });
     const summary = {
       views: agg.views,
       purchases: agg.purchases,
@@ -363,11 +374,10 @@ export class AnalyticsService extends BaseAnalyticsService<RecordEventDto> {
 
   async getProductStats(productId: string, from?: string, to?: string) {
     // Get summary
-    const agg = await this.productStatsRepo.getAggregateRange(
-      productId,
+    const agg = await this.productStatsRepo.getAggregatedMetrics(productId, {
       from,
-      to
-    );
+      to,
+    });
     const summary = {
       views: agg.views,
       purchases: agg.purchases,
@@ -394,17 +404,9 @@ export class AnalyticsService extends BaseAnalyticsService<RecordEventDto> {
     }
 
     // Get rating
-    const rating = await this.reviewsRepo.getRatingAggregate(productId);
+    const rating = await this.recomputeProductRating(productId);
 
     return { productId, summary, series, rating };
-  }
-
-  async predictorClient(rows: AiPredictRow[], modelVersion?: string) {
-    if (!rows || rows.length === 0) return [];
-    return await this.predictorService.predictBatchAndPersist(
-      rows,
-      modelVersion
-    );
   }
 
   // ===============================
@@ -416,8 +418,6 @@ export class AnalyticsService extends BaseAnalyticsService<RecordEventDto> {
     from?: string,
     to?: string
   ) {
-    // This would require a query that joins products with reviews for the store
-    // Implementation depends on your schema relationships
     const query = `
       SELECT 
         COUNT(r.id) as total_reviews,

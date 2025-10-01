@@ -1,6 +1,6 @@
 import { Controller, Post, Body, Param, ParseUUIDPipe } from '@nestjs/common';
 import { AnalyticsService } from 'src/modules/analytics/analytics.service';
-import { RecordEventDto } from 'src/modules/analytics/dto';
+import { RecordEventDto } from 'src/modules/infrastructure/queues/analytics-queue/dto/record-event.dto';
 
 /**
  * EventsController

@@ -1,23 +1,19 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue, JobOptions } from 'bull';
-import { EmailService } from '../email.service';
 import { BaseQueueService } from 'src/common/abstracts/infrastucture/base.queue.service';
-import { EmailJobData, EmailJobType } from '../interfaces/email.interface';
-import {
-  QueueJob,
-  QueueOptions,
-} from 'src/common/interfaces/infrastructure/queue.interface';
-import { EmailPriority } from 'src/modules/email/enums/email.enum';
+import { QueueOptions } from 'src/common/interfaces/infrastructure/queue.interface';
 import { AdminRoles } from 'src/common/enums/admin.enum';
+import { EmailJobType, EmailPriority } from 'src/common/enums/email.enum';
+import { EmailJobData } from 'src/common/interfaces/infrastructure/email.interface';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 
 /**
- * EmailQueueService
+ * EmailQueueService (Global)
  *
- * Queue-based email processing service extending BaseQueueService.
- * Handles reliable email delivery with retry logic, priority processing,
- * and comprehensive error handling.
+ * Pure infrastructure service - NO business logic dependencies.
+ * Does NOT import EmailService - processing is done in EmailQueueProcessor.
+ * All email sending is queued for async processing.
  */
 @Injectable()
 export class EmailQueueService extends BaseQueueService<EmailJobData, any> {
@@ -28,15 +24,16 @@ export class EmailQueueService extends BaseQueueService<EmailJobData, any> {
     priority: EmailPriority.NORMAL,
     maxAttempts: 3,
     backoff: 'exponential',
-    backoffDelay: 5000, // 5 seconds base delay
+    backoffDelay: 5000,
   };
 
-  constructor(
-    @InjectQueue('email') protected readonly queue: Queue,
-    private readonly emailService: EmailService
-  ) {
+  constructor(@InjectQueue('email') protected readonly queue: Queue) {
     super(queue);
   }
+
+  // ===============================
+  // Queue Management
+  // ===============================
 
   protected async addJob(
     jobType: string,
@@ -51,31 +48,12 @@ export class EmailQueueService extends BaseQueueService<EmailJobData, any> {
   protected async processJob(
     jobType: string,
     data: EmailJobData,
-    job: QueueJob<EmailJobData>
+    job: any
   ): Promise<any> {
-    this.logger.debug(`Processing email job ${job.id}: ${jobType}`);
-
-    try {
-      const result = await this.emailService.sendEmail(
-        data.emailData,
-        data.type as EmailJobType
-      );
-
-      this.logger.log(
-        `Email job ${job.id} completed successfully: ${result.messageId}`
-      );
-
-      return {
-        success: true,
-        messageId: result.messageId,
-        provider: result.provider,
-        sentAt: result.sentAt,
-        jobId: job.id.toString(),
-      };
-    } catch (error) {
-      this.logger.error(`Email job ${job.id} failed:`, error);
-      throw error;
-    }
+    // This method is required by BaseQueueService but not used
+    // Processing is done in EmailQueueProcessor
+    this.logger.debug(`Job ${job.id} will be processed by processor`);
+    return { jobType, data };
   }
 
   protected async getJobStatus(jobId: string) {
@@ -105,6 +83,10 @@ export class EmailQueueService extends BaseQueueService<EmailJobData, any> {
       await job.remove();
     }
   }
+
+  // ===============================
+  // Queue Utilities
+  // ===============================
 
   async scheduleRecurring(
     jobType: string,
@@ -163,9 +145,12 @@ export class EmailQueueService extends BaseQueueService<EmailJobData, any> {
   }
 
   // ===============================
-  // Public Email Queue Methods
+  // Public Email Queue API
   // ===============================
 
+  /**
+   * Send user confirmation email
+   */
   async sendUserConfirmation(
     userEmail: string,
     userName: string,
@@ -179,8 +164,8 @@ export class EmailQueueService extends BaseQueueService<EmailJobData, any> {
         type: EmailJobType.USER_CONFIRMATION,
         emailData: {
           to: [{ email: userEmail, name: userName }],
-          subject: '', // Will be set by template
-          html: '', // Will be set by template
+          subject: '',
+          html: '',
           templateId: 'user_confirmation',
           templateData: {
             userName,
@@ -196,6 +181,9 @@ export class EmailQueueService extends BaseQueueService<EmailJobData, any> {
     );
   }
 
+  /**
+   * Send welcome email
+   */
   async sendWelcomeEmail(
     userEmail: string,
     userName: string,
@@ -209,8 +197,8 @@ export class EmailQueueService extends BaseQueueService<EmailJobData, any> {
         type: EmailJobType.WELCOME,
         emailData: {
           to: [{ email: userEmail, name: userName }],
-          subject: '', // Will be set by template
-          html: '', // Will be set by template
+          subject: '',
+          html: '',
           templateId: 'welcome',
           templateData: {
             userName,
@@ -225,6 +213,9 @@ export class EmailQueueService extends BaseQueueService<EmailJobData, any> {
     );
   }
 
+  /**
+   * Send stock alert email
+   */
   async sendStockAlert(
     userEmail: string,
     userName: string,
@@ -244,8 +235,8 @@ export class EmailQueueService extends BaseQueueService<EmailJobData, any> {
         type: EmailJobType.STOCK_ALERT,
         emailData: {
           to: [{ email: userEmail, name: userName }],
-          subject: '', // Will be set by template
-          html: '', // Will be set by template
+          subject: '',
+          html: '',
           templateId: 'stock_alert',
           templateData: {
             userName,
@@ -264,6 +255,9 @@ export class EmailQueueService extends BaseQueueService<EmailJobData, any> {
     );
   }
 
+  /**
+   * Send low stock warning email
+   */
   async sendLowStockWarning(
     storeOwnerEmail: string,
     storeOwnerName: string,
@@ -285,8 +279,8 @@ export class EmailQueueService extends BaseQueueService<EmailJobData, any> {
         type: EmailJobType.LOW_STOCK_WARNING,
         emailData: {
           to: [{ email: storeOwnerEmail, name: storeOwnerName }],
-          subject: '', // Will be set by template
-          html: '', // Will be set by template
+          subject: '',
+          html: '',
           templateId: 'low_stock_warning',
           templateData: {
             storeOwnerName,
@@ -307,26 +301,6 @@ export class EmailQueueService extends BaseQueueService<EmailJobData, any> {
     );
   }
 
-  private convertToBullOptions(options?: QueueOptions): JobOptions {
-    if (!options) return {};
-
-    return {
-      priority: options.priority || EmailPriority.NORMAL,
-      delay: options.delay,
-      attempts: options.maxAttempts,
-      backoff:
-        options.backoff === 'exponential'
-          ? {
-              type: 'exponential',
-              delay: options.backoffDelay || 5000,
-            }
-          : options.backoffDelay || 5000,
-      removeOnComplete: options.removeOnComplete || 100,
-      removeOnFail: options.removeOnFail || 50,
-      jobId: options.jobId,
-    };
-  }
-
   /**
    * Send role confirmation email
    */
@@ -339,13 +313,13 @@ export class EmailQueueService extends BaseQueueService<EmailJobData, any> {
     options?: QueueOptions
   ): Promise<string> {
     return this.scheduleJob(
-      'ROLE_CONFIRMATION',
+      EmailJobType.ROLE_CONFIRMATION,
       {
-        type: 'ROLE_CONFIRMATION' as any,
+        type: EmailJobType.ROLE_CONFIRMATION,
         emailData: {
           to: [{ email: userEmail, name: userName }],
-          subject: '', // Will be set by template
-          html: '', // Will be set by template
+          subject: '',
+          html: '',
           templateId: 'role_confirmation',
           templateData: {
             userName,
@@ -361,5 +335,105 @@ export class EmailQueueService extends BaseQueueService<EmailJobData, any> {
       },
       { priority: EmailPriority.HIGH, ...options }
     );
+  }
+
+  /**
+   * Send password reset email
+   */
+  async sendPasswordReset(
+    userEmail: string,
+    userName: string,
+    resetUrl: string,
+    expirationMinutes: number = 30,
+    options?: QueueOptions
+  ): Promise<string> {
+    return this.scheduleJob(
+      EmailJobType.PASSWORD_RESET,
+      {
+        type: EmailJobType.PASSWORD_RESET,
+        emailData: {
+          to: [{ email: userEmail, name: userName }],
+          subject: '',
+          html: '',
+          templateId: 'password_reset',
+          templateData: {
+            userName,
+            resetUrl,
+            expirationMinutes,
+          },
+          priority: EmailPriority.HIGH,
+          tags: ['password-reset', 'security'],
+        },
+      },
+      { priority: EmailPriority.HIGH, ...options }
+    );
+  }
+
+  /**
+   * Send order confirmation email
+   */
+  async sendOrderConfirmation(
+    userEmail: string,
+    userName: string,
+    orderData: {
+      orderId: string;
+      orderNumber: string;
+      totalAmount: number;
+      currency: string;
+      items: Array<{
+        name: string;
+        quantity: number;
+        price: number;
+      }>;
+      shippingAddress?: string;
+      orderUrl: string;
+    },
+    options?: QueueOptions
+  ): Promise<string> {
+    return this.scheduleJob(
+      EmailJobType.ORDER_CONFIRMATION,
+      {
+        type: EmailJobType.ORDER_CONFIRMATION,
+        emailData: {
+          to: [{ email: userEmail, name: userName }],
+          subject: '',
+          html: '',
+          templateId: 'order_confirmation',
+          templateData: {
+            userName,
+            ...orderData,
+          },
+          priority: EmailPriority.HIGH,
+          tags: ['order', 'confirmation'],
+        },
+      },
+      { priority: EmailPriority.HIGH, ...options }
+    );
+  }
+
+  // ===============================
+  // Utility Methods
+  // ===============================
+
+  private convertToBullOptions(options?: QueueOptions): JobOptions {
+    if (!options) return {};
+
+    return {
+      priority: options.priority || EmailPriority.NORMAL,
+      delay: options.delay,
+      attempts: options.maxAttempts,
+      backoff:
+        options.backoff === 'exponential'
+          ? {
+              type: 'exponential',
+              delay: options.backoffDelay || 5000,
+            }
+          : options.backoffDelay || 5000,
+      removeOnComplete:
+        options.removeOnComplete !== undefined ? options.removeOnComplete : 100,
+      removeOnFail:
+        options.removeOnFail !== undefined ? options.removeOnFail : 50,
+      jobId: options.jobId,
+    };
   }
 }

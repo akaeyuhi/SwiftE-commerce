@@ -39,15 +39,26 @@ export class UserController extends BaseController<
     return this.userService.create(dto);
   }
 
-  /* @deprecated */
+  /**
+   * Legacy method for backward compatibility
+   * @deprecated Use AuthController assignRole instead
+   */
   @Post(':id/roles')
   @StoreRole(StoreRoles.ADMIN)
   @AdminRole(AdminRoles.ADMIN)
   async assignRole(@Param('id') userId: string, @Body() dto: RoleDto) {
-    return this.userService.assignStoreRole(userId, dto.roleName, dto.storeId);
+    return this.userService.assignStoreRole(
+      userId,
+      dto.roleName,
+      dto.storeId,
+      dto.assignedBy
+    );
   }
 
-  /* @deprecated */
+  /**
+   * Legacy method for backward compatibility
+   * @deprecated Use AuthController revokeRole instead
+   */
   @Delete(':id/roles')
   @StoreRole(StoreRoles.ADMIN)
   @AdminRole(AdminRoles.ADMIN)

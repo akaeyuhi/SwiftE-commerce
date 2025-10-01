@@ -14,19 +14,15 @@ import { OpenAiProvider } from 'src/modules/ai/ai-generator/providers/open-ai.pr
 import { HuggingFaceProvider } from 'src/modules/ai/ai-generator/providers/hugging-face.provider';
 import { HttpModule } from '@nestjs/axios';
 import { AnalyticsModule } from 'src/modules/analytics/analytics.module';
-import { ReviewsModule } from 'src/modules/products/reviews/reviews.module';
-import { PolicyModule } from 'src/modules/auth/policy/policy.module';
 
 @Module({
   imports: [
     HttpModule,
-    forwardRef(() => AnalyticsModule),
-    ReviewsModule,
+    AnalyticsModule,
     AiAuditsModule,
     AiLogsModule,
     AiGeneratorModule,
     AiPredictorModule,
-    PolicyModule,
   ],
   providers: [
     AiAuditService,

@@ -77,7 +77,8 @@ export class UserService extends BaseService<
   async assignStoreRole(
     userId: string,
     roleName: StoreRoles,
-    storeId: string
+    storeId: string,
+    assignedBy?: string
   ): Promise<UserRole> {
     const user = await this.getEntityById(userId);
     if (!user) throw new NotFoundException('User not found');
@@ -88,11 +89,12 @@ export class UserService extends BaseService<
     const exists = await this.userRoleService.findByStoreUser(userId, storeId);
     if (exists) throw new BadRequestException('Role already assigned');
 
-    const userRole = await this.userRoleService.create({
+    const userRole = await this.userRoleService.assignStoreRole(
+      userId,
+      storeId,
       roleName,
-      user,
-      store,
-    });
+      assignedBy
+    );
     await this.userRepo.addRoleToUser(user, userRole);
     return userRole;
   }

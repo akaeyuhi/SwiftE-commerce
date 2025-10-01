@@ -49,11 +49,9 @@ export class UserRoleService extends BaseService<
     roleName: StoreRoles,
     assignedBy?: string
   ): Promise<UserRole> {
-    // Check if user already has a role in this store
     const existingRole = await this.findByStoreUser(userId, storeId);
 
     if (existingRole) {
-      // Update existing role
       return this.userRoleRepo.save({
         ...existingRole,
         roleName,

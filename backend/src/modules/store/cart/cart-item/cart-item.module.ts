@@ -4,10 +4,9 @@ import { CartItemController } from 'src/modules/store/cart/cart-item/cart-item.c
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CartItem } from 'src/entities/store/cart/cart-item.entity';
 import { CartItemRepository } from 'src/modules/store/cart/cart-item/cart-item.repository';
-import { AuthModule } from 'src/modules/auth/auth.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([CartItem]), AuthModule],
+  imports: [TypeOrmModule.forFeature([CartItem])],
   providers: [CartItemService, CartItemRepository],
   controllers: [CartItemController],
   exports: [CartItemService],

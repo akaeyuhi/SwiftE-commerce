@@ -100,7 +100,11 @@ describe('CartItemService', () => {
       entityRepo.create.mockReturnValue(mockCartItem);
       entityRepo.save.mockResolvedValue(mockCartItem);
 
-      const result = await service.addOrIncrement('cart1', 'variant1', 3);
+      const result = await service.addOrIncrement({
+        cartId: 'cart1',
+        variantId: 'variant1',
+        quantity: 3,
+      });
 
       expect(repo.findByCartAndVariant).toHaveBeenCalledWith(
         'cart1',
@@ -119,7 +123,11 @@ describe('CartItemService', () => {
       repo.findByCartAndVariant!.mockResolvedValue(existing as any);
       entityRepo.save.mockResolvedValue({ ...existing, quantity: 5 });
 
-      const result = await service.addOrIncrement('cart1', 'variant1', 3);
+      const result = await service.addOrIncrement({
+        cartId: 'cart1',
+        variantId: 'variant1',
+        quantity: 3,
+      });
 
       expect(existing.quantity).toBe(5); // 2 + 3
       expect(entityRepo.save).toHaveBeenCalledWith(existing);
@@ -128,7 +136,11 @@ describe('CartItemService', () => {
 
     it('throws for non-positive quantity', async () => {
       await expect(
-        service.addOrIncrement('cart1', 'variant1', 0)
+        service.addOrIncrement({
+          cartId: 'cart1',
+          variantId: 'variant1',
+          quantity: 0,
+        })
       ).rejects.toThrow(BadRequestException);
     });
   });

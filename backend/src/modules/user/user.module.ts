@@ -9,8 +9,6 @@ import { UserMapper } from 'src/modules/user/user.mapper';
 import { UserRepository } from 'src/modules/user/user.repository';
 import { UserRoleModule } from 'src/modules/user/user-role/user-role.module';
 import { StoreModule } from 'src/modules/store/store.module';
-import { USER_SERVICE } from 'src/common/contracts/policy.contract';
-import { AuthModule } from 'src/modules/auth/auth.module';
 import { LikesModule } from './likes/likes/likes.module';
 
 @Module({
@@ -18,19 +16,10 @@ import { LikesModule } from './likes/likes/likes.module';
     TypeOrmModule.forFeature([User, UserRole, Store]),
     UserRoleModule,
     StoreModule,
-    AuthModule,
     LikesModule,
   ],
-  providers: [
-    UserRepository,
-    UserService,
-    {
-      provide: USER_SERVICE,
-      useExisting: UserService,
-    },
-    UserMapper,
-  ],
+  providers: [UserRepository, UserService, UserMapper],
   controllers: [UserController],
-  exports: [UserService, USER_SERVICE],
+  exports: [UserService],
 })
 export class UserModule {}

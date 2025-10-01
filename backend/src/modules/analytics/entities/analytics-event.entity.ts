@@ -5,6 +5,7 @@ import {
   CreateDateColumn,
   Index,
 } from 'typeorm';
+import { AdminRoles } from 'src/common/enums/admin.enum';
 
 /**
  * AnalyticsEvent
@@ -38,12 +39,18 @@ export class AnalyticsEvent {
   @Column({ type: 'uuid', nullable: true })
   userId?: string;
 
-  @Column({ type: 'varchar', length: 50 })
+  @Column({
+    type: 'enum',
+    enum: AnalyticsEventType,
+    default: AnalyticsEventType.CUSTOM,
+  })
   eventType: AnalyticsEventType;
 
-  // Generic numeric payload (e.g. value for purchase)
   @Column({ type: 'numeric', nullable: true })
   value?: number;
+
+  @Column({ type: 'varchar', length: 50 })
+  invokedOn: 'store' | 'product';
 
   // small JSON payload for additional context (browser, referrer, utm, etc.)
   @Column({ type: 'jsonb', nullable: true })

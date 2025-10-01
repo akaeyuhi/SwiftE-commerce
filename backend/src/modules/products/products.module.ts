@@ -1,4 +1,4 @@
-import { forwardRef, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Product } from 'src/entities/store/product/product.entity';
 import { ProductRepository } from 'src/modules/products/products.repository';
@@ -10,7 +10,6 @@ import { VariantsModule } from 'src/modules/products/variants/variants.module';
 import { StoreModule } from 'src/modules/store/store.module';
 import { CategoriesModule } from 'src/modules/store/categories/categories.module';
 import { InventoryModule } from 'src/modules/store/inventory/inventory.module';
-import { PolicyModule } from 'src/modules/auth/policy/policy.module';
 import { AnalyticsModule } from 'src/modules/analytics/analytics.module';
 
 @Module({
@@ -18,11 +17,10 @@ import { AnalyticsModule } from 'src/modules/analytics/analytics.module';
     TypeOrmModule.forFeature([Product]),
     ProductPhotoModule,
     StoreModule,
-    PolicyModule,
     InventoryModule,
     CategoriesModule,
     VariantsModule,
-    forwardRef(() => AnalyticsModule),
+    AnalyticsModule,
   ],
   providers: [ProductRepository, ProductsService, ProductsMapper],
   controllers: [ProductsController],
