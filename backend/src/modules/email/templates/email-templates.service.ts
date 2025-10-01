@@ -7,7 +7,7 @@ import {
 import { SMTPProvider } from '../providers/smtp.provider';
 import * as fs from 'node:fs';
 import { join } from 'path';
-import {EmailJobType} from "src/common/enums/email.enum";
+import { EmailJobType } from 'src/common/enums/email.enum';
 
 interface TemplateConfig {
   templateFile: string;
