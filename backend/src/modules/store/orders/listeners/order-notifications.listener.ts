@@ -1,137 +1,164 @@
-// src/modules/store/orders/listeners/order-notifications.listener.ts
-
 import { Injectable, Logger } from '@nestjs/common';
-import { OnEvent } from '@nestjs/event-emitter';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   OrderStatusChangeEvent,
   OrderCreatedEvent,
-  OrderShippingInfo,
-  OrderAddressInfo,
 } from 'src/common/events/orders/order-status-change.event';
-import { OrderStatus } from 'src/common/enums/order-status.enum';
 import {
   OrderConfirmationNotificationData,
   OrderShippedNotificationData,
   OrderDeliveredNotificationData,
   OrderCancelledNotificationData,
 } from 'src/common/interfaces/notifications/order-notification.types';
-import {OrderNotificationService} from "src/modules/infrastructure/notifications/order/order-notification.service";
+import { OrderStatus } from 'src/common/enums/order-status.enum';
+import { DomainEvent } from 'src/common/interfaces/infrastructure/event.interface';
+import { BaseNotificationListener } from 'src/common/abstracts/infrastucture/base.notification.listener';
+import { OrderNotificationService } from 'src/modules/infrastructure/notifications/order/order-notification.service';
+
+type OrderEventType = 'order.created' | 'order.status-changed';
+type OrderEventData = OrderCreatedEvent | OrderStatusChangeEvent;
 
 /**
  * OrderNotificationsListener
  *
- * Event-driven notification orchestrator for order status changes.
- * Listens to order events and delegates notification delivery to OrderNotificationService.
+ * Listens to order domain events and sends email notifications.
+ * Extends BaseNotificationListener for retry logic and error handling.
  *
- * Responsibilities:
- * - Transform events into notification payloads
- * - Route notifications based on order status
- * - Format data for email templates
+ * Handles:
+ * - order.created → Order confirmation email
+ * - order.status-changed (SHIPPED) → Shipping notification email
+ * - order.status-changed (DELIVERED) → Delivery confirmation email
+ * - order.status-changed (CANCELLED) → Cancellation notification email
  *
- * Decoupled architecture:
- * - OrdersService emits events (doesn't know about notifications)
- * - This listener orchestrates notifications (doesn't know about email details)
- * - OrderNotificationService handles delivery (doesn't know about business logic)
- * - EmailQueueService manages async email delivery
+ * Features:
+ * - Automatic retries with exponential backoff
+ * - Error logging and dead letter queue
+ * - Metrics recording
+ * - Address and date formatting
  */
 @Injectable()
-export class OrderNotificationsListener {
-  private readonly logger = new Logger(OrderNotificationsListener.name);
+export class OrderNotificationsListener extends BaseNotificationListener<
+  OrderEventData,
+  OrderEventType
+> {
+  protected readonly logger = new Logger(OrderNotificationsListener.name);
 
-  constructor(private readonly orderNotifications: OrderNotificationService) {}
+  constructor(
+    protected readonly eventEmitter: EventEmitter2,
+    private readonly orderNotifications: OrderNotificationService
+  ) {
+    super(eventEmitter);
+  }
 
   /**
-   * Handle order creation events.
+   * Process order events and route to appropriate handler.
    */
-  @OnEvent('order.created', { async: true })
-  async handleOrderCreated(event: OrderCreatedEvent): Promise<void> {
-    try {
-      this.logger.log(
-        `Processing order confirmation for order ${event.orderNumber} to ${event.userEmail}`
-      );
+  protected async handleEvent(
+    event: DomainEvent<OrderEventData>
+  ): Promise<void> {
+    switch (event.type) {
+      case 'order.created':
+        await this.handleOrderCreated(event.data as OrderCreatedEvent);
+        break;
 
-      const notificationData: OrderConfirmationNotificationData = {
-        orderId: event.orderId,
-        orderNumber: event.orderNumber,
-        storeId: event.storeId,
-        storeName: event.storeName,
-        userId: event.userId,
-        totalAmount: event.totalAmount,
-        items: event.items.map((item) => ({
-          productName: item.productName,
-          sku: item.sku,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          lineTotal: item.lineTotal,
-        })),
-        shippingAddress: this.formatOrderInfoAddress(event.shipping),
-        shippingAddressLine1: event.shipping.addressLine1,
-        shippingAddressLine2: event.shipping.addressLine2,
-        shippingCity: event.shipping.city,
-        shippingState: event.shipping.state,
-        shippingPostalCode: event.shipping.postalCode,
-        shippingCountry: event.shipping.country,
-        shippingPhone: event.shipping.phone,
-        shippingMethod: event.shipping.shippingMethod || 'Standard Shipping',
-        deliveryInstructions: event.shipping.deliveryInstructions,
-        orderUrl: event.orderUrl,
-        orderDate: new Date().toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-        }),
-      };
+      case 'order.status-changed':
+        await this.handleOrderStatusChange(
+          event.data as OrderStatusChangeEvent
+        );
+        break;
 
-      await this.orderNotifications.notifyOrderConfirmation(
-        event.userEmail,
-        event.userName,
-        notificationData
-      );
-
-      this.logger.log(
-        `Order confirmation queued for order ${event.orderNumber}`
-      );
-    } catch (error) {
-      this.logger.error(
-        `Error processing order.created event for order ${event.orderNumber}`,
-        error.stack
-      );
+      default:
+        this.logger.warn(`Unknown event type: ${event.type}`);
     }
   }
 
   /**
-   * Handle order status change events.
+   * Get event types this listener handles.
    */
-  @OnEvent('order.status-changed', { async: true })
-  async handleOrderStatusChange(event: OrderStatusChangeEvent): Promise<void> {
-    try {
-      this.logger.log(
-        `Processing status change for order ${event.orderNumber}: ${event.previousStatus} → ${event.newStatus}`
-      );
+  protected getEventTypes(): OrderEventType[] {
+    return ['order.created', 'order.status-changed'];
+  }
 
-      switch (event.newStatus) {
-        case OrderStatus.SHIPPED:
-          await this.handleOrderShipped(event);
-          break;
+  /**
+   * Filter events to only process those with valid email recipients.
+   */
+  protected shouldProcessEvent(event: DomainEvent<OrderEventData>): boolean {
+    const data = event.data as any;
+    return !!(data?.userEmail && this.isValidEmail(data.userEmail));
+  }
 
-        case OrderStatus.DELIVERED:
-          await this.handleOrderDelivered(event);
-          break;
+  /**
+   * Handle order created event.
+   */
+  private async handleOrderCreated(event: OrderCreatedEvent): Promise<void> {
+    this.logger.log(
+      `Processing order confirmation for order ${event.orderNumber}`
+    );
 
-        case OrderStatus.CANCELLED:
-          await this.handleOrderCancelled(event);
-          break;
+    const notificationData: OrderConfirmationNotificationData = {
+      orderId: event.orderId,
+      orderNumber: event.orderNumber,
+      storeId: event.storeId,
+      storeName: event.storeName,
+      userId: event.userId,
+      totalAmount: event.totalAmount,
+      items: event.items.map((item) => ({
+        productName: item.productName,
+        sku: item.sku,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        lineTotal: item.lineTotal,
+      })),
+      shippingAddress: this.formatAddress(event.shipping),
+      shippingAddressLine1: event.shipping.addressLine1,
+      shippingAddressLine2: event.shipping.addressLine2,
+      shippingCity: event.shipping.city,
+      shippingState: event.shipping.state,
+      shippingPostalCode: event.shipping.postalCode,
+      shippingCountry: event.shipping.country,
+      shippingPhone: event.shipping.phone,
+      shippingMethod: event.shipping.shippingMethod || 'Standard Shipping',
+      deliveryInstructions: event.shipping.deliveryInstructions,
+      orderUrl: event.orderUrl,
+      orderDate: this.formatDate(new Date()),
+    };
 
-        default:
-          this.logger.debug(
-            `No notification configured for status: ${event.newStatus}`
-          );
-      }
-    } catch (error) {
-      this.logger.error(
-        `Error processing order.status-changed event for order ${event.orderNumber}`,
-        error.stack
-      );
+    await this.orderNotifications.notifyOrderConfirmation(
+      event.userEmail,
+      event.userName,
+      notificationData
+    );
+
+    this.logger.log(`Order confirmation queued for order ${event.orderNumber}`);
+  }
+
+  /**
+   * Handle order status change event.
+   */
+  private async handleOrderStatusChange(
+    event: OrderStatusChangeEvent
+  ): Promise<void> {
+    this.logger.log(
+      `Processing status change for order ${event.orderNumber}: ${event.previousStatus} → ${event.newStatus}`
+    );
+
+    switch (event.newStatus) {
+      case OrderStatus.SHIPPED:
+        await this.handleOrderShipped(event);
+        break;
+
+      case OrderStatus.DELIVERED:
+        await this.handleOrderDelivered(event);
+        break;
+
+      case OrderStatus.CANCELLED:
+        await this.handleOrderCancelled(event);
+        break;
+
+      default:
+        this.logger.debug(
+          `No notification configured for status: ${event.newStatus}`
+        );
     }
   }
 
@@ -141,10 +168,6 @@ export class OrderNotificationsListener {
   private async handleOrderShipped(
     event: OrderStatusChangeEvent
   ): Promise<void> {
-    this.logger.log(
-      `Processing shipping notification for order ${event.orderNumber}`
-    );
-
     const notificationData: OrderShippedNotificationData = {
       orderId: event.orderId,
       orderNumber: event.orderNumber,
@@ -168,15 +191,11 @@ export class OrderNotificationsListener {
         : undefined,
       shippingMethod: event.shipping?.shippingMethod || 'Standard Shipping',
       shippingAddress: event.shipping
-        ? this.formatOrderInfoAddress(event.shipping)
+        ? this.formatAddress(event.shipping)
         : 'Address not provided',
       shippedDate: event.shipping?.shippedAt
         ? this.formatDate(event.shipping.shippedAt)
-        : new Date().toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-          }),
+        : this.formatDate(new Date()),
     };
 
     await this.orderNotifications.notifyOrderShipped(
@@ -196,10 +215,6 @@ export class OrderNotificationsListener {
   private async handleOrderDelivered(
     event: OrderStatusChangeEvent
   ): Promise<void> {
-    this.logger.log(
-      `Processing delivery confirmation for order ${event.orderNumber}`
-    );
-
     const notificationData: OrderDeliveredNotificationData = {
       orderId: event.orderId,
       orderNumber: event.orderNumber,
@@ -216,16 +231,12 @@ export class OrderNotificationsListener {
       })),
       deliveredDate: event.shipping?.deliveredAt
         ? this.formatDate(event.shipping.deliveredAt)
-        : new Date().toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-          }),
+        : this.formatDate(new Date()),
       shippingAddress: event.shipping
-        ? this.formatOrderInfoAddress(event.shipping)
+        ? this.formatAddress(event.shipping)
         : 'Address not provided',
-      reviewUrl: this.generateReviewUrl(event.orderId),
-      supportUrl: this.generateSupportUrl(event.storeId),
+      reviewUrl: this.generateUrl(`/orders/${event.orderId}/review`),
+      supportUrl: this.generateUrl(`/stores/${event.storeId}/support`),
     };
 
     await this.orderNotifications.notifyOrderDelivered(
@@ -240,15 +251,11 @@ export class OrderNotificationsListener {
   }
 
   /**
-   * Handle order cancellation notification.
+   * Handle order cancelled notification.
    */
   private async handleOrderCancelled(
     event: OrderStatusChangeEvent
   ): Promise<void> {
-    this.logger.log(
-      `Processing cancellation notification for order ${event.orderNumber}`
-    );
-
     const notificationData: OrderCancelledNotificationData = {
       orderId: event.orderId,
       orderNumber: event.orderNumber,
@@ -263,12 +270,8 @@ export class OrderNotificationsListener {
         unitPrice: item.unitPrice,
         lineTotal: item.lineTotal,
       })),
-      cancelledDate: new Date().toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      }),
-      cancellationReason: undefined, // Can be passed via event metadata
+      cancelledDate: this.formatDate(new Date()),
+      cancellationReason: undefined,
       refundAmount: event.totalAmount,
       refundMethod: 'Original payment method',
     };
@@ -285,66 +288,10 @@ export class OrderNotificationsListener {
   }
 
   /**
-   * Format OrderInfo address for display in emails.
-   */
-  private formatOrderInfoAddress(
-    address: OrderShippingInfo | OrderAddressInfo
-  ): string {
-    const parts: string[] = [];
-
-    const fullName = [address.firstName, address.lastName]
-      .filter(Boolean)
-      .join(' ');
-    if (fullName) parts.push(fullName);
-
-    if (address.company) parts.push(address.company);
-
-    parts.push(address.addressLine1);
-    if (address.addressLine2) parts.push(address.addressLine2);
-
-    const cityLine = [address.city, address.state, address.postalCode]
-      .filter(Boolean)
-      .join(', ');
-    parts.push(cityLine);
-
-    parts.push(address.country);
-
-    if (address.phone) parts.push(`Phone: ${address.phone}`);
-
-    return parts.join('\n');
-  }
-
-  /**
-   * Format date for display.
-   */
-  private formatDate(date: Date): string {
-    return new Date(date).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-  }
-
-  /**
-   * Generate tracking URL.
+   * Generate tracking URL for shipping carrier.
    */
   private generateTrackingUrl(trackingNumber: string): string {
+    // TODO: Implement carrier-specific tracking URLs
     return `https://tools.usps.com/go/TrackConfirmAction?tLabels=${trackingNumber}`;
-  }
-
-  /**
-   * Generate review URL for the order.
-   */
-  private generateReviewUrl(orderId: string): string {
-    const baseUrl = process.env.FRONTEND_URL || 'https://your-store.com';
-    return `${baseUrl}/orders/${orderId}/review`;
-  }
-
-  /**
-   * Generate support URL for the store.
-   */
-  private generateSupportUrl(storeId: string): string {
-    const baseUrl = process.env.FRONTEND_URL || 'https://your-store.com';
-    return `${baseUrl}/stores/${storeId}/support`;
   }
 }

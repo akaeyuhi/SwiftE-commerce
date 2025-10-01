@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { OnEvent } from '@nestjs/event-emitter';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   LowStockEvent,
   OutOfStockEvent,
@@ -13,42 +13,86 @@ import { InventoryNotificationService } from 'src/modules/infrastructure/notific
 import { StoreRoleService } from 'src/modules/store/store-role/store-role.service';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { VariantsService } from 'src/modules/store/variants/variants.service';
+import { DomainEvent } from 'src/common/interfaces/infrastructure/event.interface';
+import { BaseNotificationListener } from 'src/common/abstracts/infrastucture/base.notification.listener';
+import { Store } from 'src/entities/store/store.entity';
+
+type InventoryEventType = 'inventory.low-stock' | 'inventory.out-of-stock';
+type InventoryEventData = LowStockEvent | OutOfStockEvent;
 
 /**
  * InventoryNotificationsListener
  *
  * Event-driven notification orchestrator for inventory alerts.
- * Listens to inventory events and delegates notification delivery to InventoryNotificationService.
+ * Extends BaseNotificationListener for retry logic, error handling, and utility methods.
  *
- * Architecture decisions:
- * - Uses ProductVariant repository to load store data (avoids Store module circular dependency)
+ * Handles:
+ * - inventory.low-stock → Alert when stock falls below threshold (with cooldown)
+ * - inventory.out-of-stock → Critical alert when item completely out of stock (no cooldown)
+ *
+ * Features:
+ * - Cooldown logic to prevent notification spam (1 hour for low-stock alerts)
+ * - Automatic retries with exponential backoff (inherited from base class)
+ * - Batch notifications to all store admins/moderators
+ * - Category extraction from product data
+ * - Manual notification trigger capability
+ * - Cooldown monitoring and statistics
+ *
+ * Architecture:
+ * - Uses VariantsService to load store data (avoids circular dependency)
  * - Delegates role management to StoreRoleService
- * - Implements in-memory cooldown cache (upgrade to Redis for distributed systems)
- *
- * Responsibilities:
- * - Fetch store admins/moderators for recipient list
- * - Transform events into notification payloads
- * - Implement cooldown logic to prevent spam
- * - Handle batch notification delivery
- *
- * Decoupled architecture:
- * - InventoryService emits events (doesn't know about notifications)
- * - This listener orchestrates notifications (doesn't know about email details)
- * - InventoryNotificationService handles delivery (doesn't know about business logic)
+ * - In-memory cooldown cache (upgrade to Redis for distributed systems)
  */
 @Injectable()
-export class InventoryNotificationsListener {
-  private readonly logger = new Logger(InventoryNotificationsListener.name);
+export class InventoryNotificationsListener extends BaseNotificationListener<
+  InventoryEventData,
+  InventoryEventType
+> {
+  protected readonly logger = new Logger(InventoryNotificationsListener.name);
 
-  // In-memory cooldown cache (use Redis in production for distributed systems)
+  // Cooldown configuration
   private readonly alertCache = new Map<string, number>();
   private readonly ALERT_COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
 
+  // Override retry config for inventory alerts
+  protected readonly maxRetries: number = 3;
+  protected readonly baseRetryDelay: number = 3000; // 3 seconds
+
   constructor(
+    eventEmitter: EventEmitter2,
     private readonly variantService: VariantsService,
     private readonly storeRoleService: StoreRoleService,
     private readonly inventoryNotifications: InventoryNotificationService
-  ) {}
+  ) {
+    super(eventEmitter);
+  }
+
+  /**
+   * Get event types this listener handles (for metadata).
+   */
+  protected getEventTypes(): InventoryEventType[] {
+    return ['inventory.low-stock', 'inventory.out-of-stock'];
+  }
+
+  /**
+   * Process inventory events and route to appropriate handler.
+   */
+  protected async handleEvent(
+    event: DomainEvent<InventoryEventData>
+  ): Promise<void> {
+    switch (event.type) {
+      case 'inventory.low-stock':
+        await this.handleLowStock(event.data as LowStockEvent);
+        break;
+
+      case 'inventory.out-of-stock':
+        await this.handleOutOfStock(event.data as OutOfStockEvent);
+        break;
+
+      default:
+        this.logger.warn(`Unknown event type: ${event.type}`);
+    }
+  }
 
   /**
    * Handle low stock events.
@@ -56,8 +100,9 @@ export class InventoryNotificationsListener {
    * Sends notifications to all store admins and moderators.
    * Implements cooldown to prevent notification spam.
    */
-  @OnEvent('inventory.low-stock', { async: true })
   async handleLowStock(event: LowStockEvent): Promise<void> {
+    const startTime = Date.now();
+
     try {
       // Check cooldown to prevent spam
       if (this.isInCooldown(event.variantId, 'low-stock')) {
@@ -67,23 +112,13 @@ export class InventoryNotificationsListener {
         return;
       }
 
-      // Load variant with full relations to get store information
-      const variant = await this.loadVariantWithRelations(event.variantId);
+      this.logger.log(
+        `Processing low stock alert for ${event.sku} (current: ${event.currentStock}, threshold: ${event.threshold})`
+      );
 
-      if (!variant) {
-        this.logger.error(
-          `Variant ${event.variantId} not found while processing low stock event`
-        );
-        return;
-      }
-
-      const store = variant.product.store;
-      if (!store) {
-        this.logger.error(
-          `Store not found for variant ${event.variantId} (product: ${event.productId})`
-        );
-        return;
-      }
+      const { variant, store } = await this.getVariantWithsStore(
+        event.variantId
+      );
 
       // Get all admins and moderators for this store
       const recipients = await this.getStoreNotificationRecipients(
@@ -98,7 +133,7 @@ export class InventoryNotificationsListener {
         return;
       }
 
-      // Extract category name from product categories
+      // Extract category name
       const categoryName = this.extractCategoryName(variant.product.categories);
 
       // Build notification data
@@ -114,45 +149,45 @@ export class InventoryNotificationsListener {
         productId: event.productId,
         variantId: event.variantId,
         storeName: store.name,
-        inventoryManagementUrl: this.getInventoryManagementUrl(
-          event.storeId,
-          event.productId
+        inventoryManagementUrl: this.generateUrl(
+          `/stores/${event.storeId}/products/${event.productId}/inventory`
         ),
         isCritical: event.currentStock <= Math.floor(event.threshold / 2),
       };
 
-      // Send notifications to all recipients using batch operation
-      const notificationPromises = recipients.map((recipient) =>
-        this.inventoryNotifications.notifyLowStock(
-          recipient.email,
-          recipient.name,
-          notificationData
-        )
-      );
-
-      const results = await Promise.allSettled(notificationPromises);
-
-      // Log results
-      const successCount = results.filter(
-        (r) => r.status === 'fulfilled'
-      ).length;
-      const failCount = results.filter((r) => r.status === 'rejected').length;
-
-      this.logger.log(
-        `Low stock alerts for ${event.sku} (${store.name}): ` +
-          `${successCount} sent, ${failCount} failed to ${recipients.length} recipients`
+      // Send notifications using batch processing from base class
+      await this.batchProcess(
+        recipients,
+        async (recipient) => {
+          await this.inventoryNotifications.notifyLowStock(
+            recipient.email,
+            recipient.name,
+            notificationData
+          );
+        },
+        100 // 100ms delay between notifications
       );
 
       // Update cooldown cache
-      this.alertCache.set(
-        this.getCooldownKey(event.variantId, 'low-stock'),
-        Date.now()
+      this.setCooldown(event.variantId, 'low-stock');
+
+      const duration = Date.now() - startTime;
+      this.recordMetrics('inventory.low-stock', true, duration);
+
+      this.logger.log(
+        `Low stock alerts for ${event.sku} sent to ${recipients.length} recipients`
       );
     } catch (error) {
+      const duration = Date.now() - startTime;
+      this.recordMetrics('inventory.low-stock', false, duration);
+
       this.logger.error(
         `Failed to process low stock event for ${event.sku}`,
         error.stack
       );
+
+      // Optionally rethrow for retry logic if needed
+      throw error;
     }
   }
 
@@ -162,26 +197,17 @@ export class InventoryNotificationsListener {
    * Sends critical notifications immediately without cooldown.
    * Out of stock alerts are not subject to cooldown due to severity.
    */
-  @OnEvent('inventory.out-of-stock', { async: true })
   async handleOutOfStock(event: OutOfStockEvent): Promise<void> {
+    const startTime = Date.now();
+
     try {
-      // Load variant with full relations to get store information
-      const variant = await this.loadVariantWithRelations(event.variantId);
+      this.logger.warn(
+        `Processing OUT OF STOCK alert for ${event.sku} - CRITICAL`
+      );
 
-      if (!variant) {
-        this.logger.error(
-          `Variant ${event.variantId} not found while processing out of stock event`
-        );
-        return;
-      }
-
-      const store = variant.product.store;
-      if (!store) {
-        this.logger.error(
-          `Store not found for variant ${event.variantId} (product: ${event.productId})`
-        );
-        return;
-      }
+      const { variant, store } = await this.getVariantWithsStore(
+        event.variantId
+      );
 
       // Get recipients
       const recipients = await this.getStoreNotificationRecipients(
@@ -196,7 +222,7 @@ export class InventoryNotificationsListener {
         return;
       }
 
-      // Extract category name from product categories
+      // Extract category name
       const categoryName = this.extractCategoryName(variant.product.categories);
 
       // Build notification data
@@ -208,52 +234,58 @@ export class InventoryNotificationsListener {
         productId: event.productId,
         variantId: event.variantId,
         storeName: store.name,
-        inventoryManagementUrl: this.getInventoryManagementUrl(
-          event.storeId,
-          event.productId
+        inventoryManagementUrl: this.generateUrl(
+          `/stores/${event.storeId}/products/${event.productId}/inventory`
         ),
       };
 
-      // Send critical notifications (no cooldown for out of stock)
-      const notificationPromises = recipients.map((recipient) =>
-        this.inventoryNotifications.notifyOutOfStock(
-          recipient.email,
-          recipient.name,
-          notificationData
-        )
+      // Send critical notifications immediately (faster batch processing)
+      await this.batchProcess(
+        recipients,
+        async (recipient) => {
+          await this.inventoryNotifications.notifyOutOfStock(
+            recipient.email,
+            recipient.name,
+            notificationData
+          );
+        },
+        50 // 50ms delay for critical alerts
       );
 
-      const results = await Promise.allSettled(notificationPromises);
-
-      // Log results
-      const successCount = results.filter(
-        (r) => r.status === 'fulfilled'
-      ).length;
-      const failCount = results.filter((r) => r.status === 'rejected').length;
+      const duration = Date.now() - startTime;
+      this.recordMetrics('inventory.out-of-stock', true, duration);
 
       this.logger.log(
-        `OUT OF STOCK alerts for ${event.sku} (${store.name}): ` +
-          `${successCount} sent, ${failCount} failed to ${recipients.length} recipients`
+        `OUT OF STOCK alerts for ${event.sku} sent to ${recipients.length} recipients`
       );
     } catch (error) {
+      const duration = Date.now() - startTime;
+      this.recordMetrics('inventory.out-of-stock', false, duration);
+
       this.logger.error(
         `Failed to process out of stock event for ${event.sku}`,
         error.stack
       );
+
+      // Rethrow to trigger retry if needed
+      throw error;
     }
   }
+
+  // ===============================
+  // Private Helper Methods
+  // ===============================
 
   /**
    * Load variant with all necessary relations.
    *
-   * Loads: variant -> product -> (store, categories)
-   * This approach avoids circular dependency with Store module.
+   * Loads: variant → product → (store, categories)
    */
   private async loadVariantWithRelations(
     variantId: string
   ): Promise<ProductVariant | null> {
     try {
-      return this.variantService.findWithRelations(variantId);
+      return await this.variantService.findWithRelations(variantId);
     } catch (error) {
       this.logger.error(
         `Failed to load variant ${variantId} with relations`,
@@ -263,15 +295,29 @@ export class InventoryNotificationsListener {
     }
   }
 
+  private async getVariantWithsStore(
+    variantId: string
+  ): Promise<{ variant: ProductVariant; store: Store }> {
+    const variant = await this.loadVariantWithRelations(variantId);
+
+    if (!variant) {
+      throw new Error(`Variant ${variantId} not found`);
+    }
+
+    const store = variant.product?.store;
+    if (!store) {
+      throw new Error(
+        `Store not found for variant ${variantId} (product: ${variant.product.id})`
+      );
+    }
+
+    return { variant, store };
+  }
+
   /**
    * Extract primary category name from product categories.
    *
-   * Strategy:
-   * - Returns first category if available
-   * - For hierarchical categories, prefer parent categories
-   * - Returns 'Uncategorized' if no categories exist
-   *
-   * Future enhancement: Support multiple categories in notification
+   * Prefers top-level categories over nested ones.
    */
   private extractCategoryName(
     categories?: Array<{ name: string; parent?: any }>
@@ -280,7 +326,7 @@ export class InventoryNotificationsListener {
       return null;
     }
 
-    // Prefer categories without parent (top-level categories)
+    // Prefer top-level categories (without parent)
     const topLevelCategory = categories.find((cat) => !cat.parent);
     if (topLevelCategory) {
       return topLevelCategory.name;
@@ -292,9 +338,6 @@ export class InventoryNotificationsListener {
 
   /**
    * Get all store admins and moderators eligible for notifications.
-   *
-   * Fetches active users with ADMIN or MODERATOR roles in the store.
-   * Uses StoreRoleService to avoid circular dependencies.
    */
   private async getStoreNotificationRecipients(
     storeId: string
@@ -302,7 +345,6 @@ export class InventoryNotificationsListener {
     Array<{ email: string; name: string; userId: string; role: StoreRoles }>
   > {
     try {
-      // Get all active store roles (admins and moderators)
       const storeRoles = await this.storeRoleService.getStoreRoles(storeId);
 
       // Filter for admin and moderator roles only
@@ -315,7 +357,7 @@ export class InventoryNotificationsListener {
 
       // Map to recipient format
       return eligibleRoles
-        .filter((role) => role.user && role.user.email) // Filter out invalid users
+        .filter((role) => role.user?.email) // Filter out invalid users
         .map((role) => ({
           email: role.user.email,
           name: this.getUserDisplayName(role.user),
@@ -331,54 +373,12 @@ export class InventoryNotificationsListener {
     }
   }
 
-  /**
-   * Get user display name with fallback logic.
-   *
-   * Priority: firstName > email username > full email
-   */
-  private getUserDisplayName(user: any): string {
-    if (user.firstName) {
-      return user.firstName;
-    }
-
-    if (user.email) {
-      // Extract username from email as fallback
-      const username = user.email.split('@')[0];
-      return username.charAt(0).toUpperCase() + username.slice(1);
-    }
-
-    return 'Store Team Member';
-  }
+  // ===============================
+  // Cooldown Management
+  // ===============================
 
   /**
-   * Generate inventory management URL for frontend.
-   *
-   * Deep links to product inventory management page.
-   * Configure FRONTEND_URL in environment variables.
-   */
-  private getInventoryManagementUrl(
-    storeId: string,
-    productId: string
-  ): string {
-    const baseUrl = process.env.FRONTEND_URL || 'https://your-store.com';
-    return `${baseUrl}/stores/${storeId}/products/${productId}/inventory`;
-  }
-
-  /**
-   * Generate cooldown cache key.
-   *
-   * Format: {variantId}:{notificationType}
-   * Example: "abc-123:low-stock"
-   */
-  private getCooldownKey(variantId: string, type: string): string {
-    return `${variantId}:${type}`;
-  }
-
-  /**
-   * Check if variant is in cooldown period for specific notification type.
-   *
-   * Prevents notification spam by enforcing minimum time between alerts.
-   * Cooldown is per-variant per-type (low-stock has separate cooldown from out-of-stock).
+   * Check if variant is in cooldown period.
    */
   private isInCooldown(variantId: string, type: string): boolean {
     const key = this.getCooldownKey(variantId, type);
@@ -391,17 +391,27 @@ export class InventoryNotificationsListener {
   }
 
   /**
+   * Set cooldown for variant.
+   */
+  private setCooldown(variantId: string, type: string): void {
+    const key = this.getCooldownKey(variantId, type);
+    this.alertCache.set(key, Date.now());
+  }
+
+  /**
+   * Generate cooldown cache key.
+   */
+  private getCooldownKey(variantId: string, type: string): string {
+    return `${variantId}:${type}`;
+  }
+
+  /**
    * Clear cooldown for a variant.
-   *
-   * Useful for:
-   * - Testing notification delivery
-   * - Manual override by admins
-   * - Force immediate re-notification
    */
   clearCooldown(variantId: string, type: string): void {
     const key = this.getCooldownKey(variantId, type);
     this.alertCache.delete(key);
-    this.logger.log(`Cleared cooldown for ${variantId}:${type}`);
+    this.logger.log(`Cleared cooldown for ${key}`);
   }
 
   /**
@@ -430,9 +440,6 @@ export class InventoryNotificationsListener {
 
   /**
    * Get all active cooldowns (for monitoring/debugging).
-   *
-   * Returns cooldowns that haven't expired yet with remaining time.
-   * Useful for admin dashboards and debugging notification issues.
    */
   getActiveCooldowns(): Array<{
     variantId: string;
@@ -470,8 +477,6 @@ export class InventoryNotificationsListener {
 
   /**
    * Get cooldown statistics.
-   *
-   * Provides overview of notification throttling state.
    */
   getCooldownStats(): {
     totalActive: number;
@@ -486,10 +491,8 @@ export class InventoryNotificationsListener {
     let newestTimestamp: number | null = null;
 
     activeCooldowns.forEach((cooldown) => {
-      // Count by type
       byType[cooldown.type] = (byType[cooldown.type] || 0) + 1;
 
-      // Track oldest/newest
       const timestamp = Date.now() - cooldown.expiresIn;
       if (oldestTimestamp === null || timestamp < oldestTimestamp) {
         oldestTimestamp = timestamp;
@@ -508,17 +511,40 @@ export class InventoryNotificationsListener {
   }
 
   /**
+   * Schedule automatic cooldown cleanup.
+   */
+  cleanupExpiredCooldowns(): number {
+    const now = Date.now();
+    let cleanedCount = 0;
+
+    this.alertCache.forEach((timestamp, key) => {
+      if (now - timestamp > this.ALERT_COOLDOWN_MS) {
+        this.alertCache.delete(key);
+        cleanedCount++;
+      }
+    });
+
+    if (cleanedCount > 0) {
+      this.logger.debug(`Cleaned up ${cleanedCount} expired cooldowns`);
+    }
+
+    return cleanedCount;
+  }
+
+  // ===============================
+  // Manual Testing & Override
+  // ===============================
+
+  /**
    * Manually trigger notification for variant (bypasses cooldown).
    *
    * Admin operation for testing or force-sending notifications.
-   * Use with caution - can spam recipients if misused.
    */
   async manualNotify(
     variantId: string,
     notificationType: 'low-stock' | 'out-of-stock'
   ): Promise<{ success: boolean; recipientCount: number; error?: string }> {
     try {
-      // Load variant
       const variant = await this.loadVariantWithRelations(variantId);
 
       if (!variant) {
@@ -529,7 +555,14 @@ export class InventoryNotificationsListener {
         };
       }
 
-      // Get recipients
+      if (!variant.product?.store) {
+        return {
+          success: false,
+          recipientCount: 0,
+          error: 'Store not found for variant',
+        };
+      }
+
       const recipients = await this.getStoreNotificationRecipients(
         variant.product.store.id
       );
@@ -545,11 +578,42 @@ export class InventoryNotificationsListener {
       // Clear cooldown to allow notification
       this.clearCooldown(variantId, notificationType);
 
-      // Emit synthetic event
-      // Note: This is a simplified approach - in production you might want to
-      // emit through EventEmitter2 to maintain consistency
+      // Create synthetic event for testing
+      const syntheticEvent =
+        notificationType === 'low-stock'
+          ? ({
+              variantId: variant.id,
+              productId: variant.product.id,
+              storeId: variant.product.store.id,
+              sku: variant.sku,
+              productName: variant.product.name,
+              currentStock: 5,
+              threshold: 10,
+              recentSales: 15,
+              estimatedDaysUntilStockout: 3,
+              category:
+                this.extractCategoryName(variant.product.categories) ||
+                'Test Category',
+            } as LowStockEvent)
+          : ({
+              variantId: variant.id,
+              productId: variant.product.id,
+              storeId: variant.product.store.id,
+              sku: variant.sku,
+              productName: variant.product.name,
+              category:
+                this.extractCategoryName(variant.product.categories) ||
+                'Test Category',
+            } as OutOfStockEvent);
+
+      if (notificationType === 'low-stock') {
+        await this.handleLowStock(syntheticEvent as LowStockEvent);
+      } else {
+        await this.handleOutOfStock(syntheticEvent as OutOfStockEvent);
+      }
+
       this.logger.warn(
-        `Manual notification triggered for ${variant.sku} (${notificationType})`
+        `Manual notification triggered for ${variant.sku} (${notificationType}) - sent to ${recipients.length} recipients`
       );
 
       return {

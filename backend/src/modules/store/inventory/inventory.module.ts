@@ -7,6 +7,7 @@ import { StoreRoleModule } from 'src/modules/store/store-role/store-role.module'
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { InventoryThresholdsConfig } from 'src/modules/store/inventory/config/inventory-thresholds.config';
 import { ConfigModule } from '@nestjs/config';
+import { InventoryNotificationsAdminController } from 'src/modules/store/inventory/controllers/inventory-notifications-admin.controller';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { ConfigModule } from '@nestjs/config';
     ConfigModule,
     EventEmitterModule.forRoot(),
   ],
+  controllers: [InventoryNotificationsAdminController],
   providers: [InventoryService, InventoryRepository, InventoryThresholdsConfig],
   exports: [InventoryService, InventoryRepository],
 })
