@@ -5,14 +5,17 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { InventoryService } from 'src/modules/store/inventory/inventory.service';
 import { StoreRoleModule } from 'src/modules/store/store-role/store-role.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { InventoryThresholdsConfig } from 'src/modules/store/inventory/config/inventory-thresholds.config';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Inventory]),
     StoreRoleModule,
+    ConfigModule,
     EventEmitterModule.forRoot(),
   ],
-  providers: [InventoryService, InventoryRepository],
+  providers: [InventoryService, InventoryRepository, InventoryThresholdsConfig],
   exports: [InventoryService, InventoryRepository],
 })
 export class InventoryModule {}
