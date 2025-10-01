@@ -21,6 +21,7 @@ export interface NotificationLog extends ObjectLiteral {
 export interface NotificationPayload<Data = any> {
   recipient: string;
   recipientId?: string;
+  recipientName?: string;
   notificationType: NotificationType;
   data: Data;
   priority?: number;

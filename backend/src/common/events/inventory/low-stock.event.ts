@@ -1,5 +1,3 @@
-import {Category} from "src/entities/store/product/category.entity";
-
 /**
  * LowStockEvent
  *

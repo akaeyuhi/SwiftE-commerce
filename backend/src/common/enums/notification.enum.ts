@@ -26,6 +26,10 @@ export enum NotificationType {
   ORDER_CONFIRMATION = 'order_confirmation',
   ORDER_SHIPPED = 'order_shipped',
   ORDER_DELIVERED = 'order_delivered',
+  ORDER_CANCELLED = 'order_cancelled',
+  ORDER_REFUNDED = 'order_refunded',
+
+  NEWS_PUBLISHED = 'news_published',
 
   // User notifications
   USER_WELCOME = 'user_welcome',

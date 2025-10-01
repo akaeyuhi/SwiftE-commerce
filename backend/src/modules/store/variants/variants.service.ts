@@ -272,7 +272,7 @@ export class VariantsService extends BaseService<
         quantity: qty,
       } as any);
     } else {
-      await this.inventoryService.update(inv.id, { quantity: qty });
+      await this.inventoryService.adjustInventory(variantId, qty);
     }
     return inv;
   }
@@ -287,9 +287,18 @@ export class VariantsService extends BaseService<
     const inv = await this.inventoryService.findInventoryByVariantId(variantId);
     if (!inv) throw new NotFoundException('Inventory not found');
     const newQuantity = inv.quantity + delta;
-    if (newQuantity < 0) throw new Error('Insufficient stock');
-    return await this.inventoryService.update(inv.id, {
-      quantity: newQuantity,
+    return await this.inventoryService.adjustInventory(inv.id, newQuantity);
+  }
+
+  async findWithRelations(variantId: string): Promise<ProductVariant | null> {
+    return await this.variantRepo.findOne({
+      where: { id: variantId },
+      relations: {
+        product: {
+          store: true,
+          categories: true,
+        },
+      },
     });
   }
 }

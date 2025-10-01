@@ -63,4 +63,16 @@ export class OrderInfo {
   /** Shipping method chosen (e.g., 'standard', 'express') */
   @Column({ type: 'varchar', length: 100, nullable: true })
   shippingMethod?: string;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  trackingNumber?: string;
+
+  @Column({ type: 'timestamp', nullable: true })
+  estimatedDeliveryDate?: Date;
+
+  @Column({ type: 'timestamp', nullable: true })
+  shippedAt?: Date;
+
+  @Column({ type: 'timestamp', nullable: true })
+  deliveredAt?: Date;
 }
