@@ -1,4 +1,3 @@
-// src/modules/infrastructure/interceptors/product-photos.interceptor.ts
 import {
   Injectable,
   NestInterceptor,

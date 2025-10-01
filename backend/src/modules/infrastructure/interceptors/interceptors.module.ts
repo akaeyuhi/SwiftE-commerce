@@ -1,6 +1,5 @@
 import { Global, Module } from '@nestjs/common';
 import { RecordEventInterceptor } from 'src/modules/infrastructure/interceptors/record-event/record-event.interceptor';
-import { ProductPhotosInterceptor } from 'src/modules/infrastructure/interceptors/product-photo/product-photo.interceptor';
 
 /**
  * InterceptorsModule (Global)
@@ -9,7 +8,7 @@ import { ProductPhotosInterceptor } from 'src/modules/infrastructure/interceptor
  */
 @Global()
 @Module({
-  providers: [RecordEventInterceptor, ProductPhotosInterceptor],
-  exports: [RecordEventInterceptor, ProductPhotosInterceptor],
+  providers: [RecordEventInterceptor],
+  exports: [RecordEventInterceptor],
 })
 export class InterceptorsModule {}

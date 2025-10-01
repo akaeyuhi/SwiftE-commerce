@@ -1,16 +1,15 @@
 import { IReviewsRepository } from 'src/common/contracts/reviews.contract';
 import { Injectable } from '@nestjs/common';
-import {
-  AggregateRating,
-  ReviewsRepository,
-} from 'src/modules/products/reviews/reviews.repository';
+import { AggregateRating } from 'src/modules/products/reviews/reviews.repository';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Review } from 'src/entities/store/review.entity';
+import { Repository } from 'typeorm';
 
 @Injectable()
-export class AiReviewsRepository implements IReviewsRepository {
+export class AnalyticsReviewsRepository implements IReviewsRepository {
   constructor(
-    @InjectRepository(ReviewsRepository)
-    private readonly reviewsRepository: ReviewsRepository
+    @InjectRepository(Review)
+    private readonly reviewsRepository: Repository<Review>
   ) {}
   async getRatingAggregate(productId: string): Promise<AggregateRating> {
     const qb = this.reviewsRepository

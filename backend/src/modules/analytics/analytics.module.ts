@@ -9,8 +9,6 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { AdminStatsController } from 'src/modules/analytics/controllers/admin-stats.controller';
 import { HttpModule } from '@nestjs/axios';
 import { ConfigModule } from '@nestjs/config';
-import { REVIEWS_REPOSITORY } from 'src/common/contracts/reviews.contract';
-import { AnalyticsReviewsRepository } from 'src/modules/analytics/repositories/reviews-data.repository';
 
 @Module({
   imports: [ScheduleModule.forRoot(), ConfigModule, HttpModule],
@@ -19,7 +17,6 @@ import { AnalyticsReviewsRepository } from 'src/modules/analytics/repositories/r
     AnalyticsEventRepository,
     StoreDailyStatsRepository,
     ProductDailyStatsRepository,
-    { provide: REVIEWS_REPOSITORY, useExisting: AnalyticsReviewsRepository },
   ],
   controllers: [EventsController, AnalyticsController, AdminStatsController],
   exports: [
