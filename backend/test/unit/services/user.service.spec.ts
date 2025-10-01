@@ -204,12 +204,11 @@ describe('UserService', () => {
     });
   });
 
-  describe('assignRole / revokeRole', () => {
+  describe('assignStoreRole / revokeStoreRole', () => {
     it('assigns role when everything ok', async () => {
       const user = { id: 'u1', roles: [] } as any;
       const store = { id: 's1' } as any;
 
-      // mock getEntityById (BaseService) via spy on service instance
       jest.spyOn(service as any, 'getEntityById').mockResolvedValue(user);
       storeService.getEntityById!.mockResolvedValue(store);
       userRoleService.findByStoreUser!.mockResolvedValue(null);
@@ -226,7 +225,12 @@ describe('UserService', () => {
         roles: [savedRole],
       });
 
-      const res = await service.assignRole('u1', StoreRoles.ADMIN, 's1');
+      const res = await service.assignStoreRole(
+        'u1',
+        StoreRoles.ADMIN,
+        'a1',
+        's1'
+      );
 
       expect(service.getEntityById).toHaveBeenCalledWith('u1');
       expect(storeService.getEntityById).toHaveBeenCalledWith('s1');
@@ -236,11 +240,11 @@ describe('UserService', () => {
       expect(res).toEqual(savedRole);
     });
 
-    it('revokeRole calls repository to remove', async () => {
+    it('revokeStoreRole calls repository to remove', async () => {
       userRepo.removeRoleFromUser!.mockResolvedValue(
         true as unknown as DeleteResult
       );
-      await service.revokeRole('u1', 'r1', 's1');
+      await service.revokeStoreRole('u1', 'r1', 's1');
       expect(userRepo.removeRoleFromUser).toHaveBeenCalledWith(
         'u1',
         'r1',
@@ -248,20 +252,20 @@ describe('UserService', () => {
       );
     });
 
-    it('assignRole throws if user not found', async () => {
+    it('assignStoreRole throws if user not found', async () => {
       jest.spyOn(service, 'getEntityById').mockResolvedValue(null);
       await expect(
-        service.assignRole('no', StoreRoles.GUEST, 's1')
+        service.assignStoreRole('no', StoreRoles.GUEST, 'a1', 's1')
       ).rejects.toThrow(NotFoundException);
     });
 
-    it('assignRole throws if store not found', async () => {
+    it('assignStoreRole throws if store not found', async () => {
       jest
         .spyOn(service, 'getEntityById')
         .mockResolvedValue({ id: 'u1' } as User);
       storeService.getEntityById!.mockResolvedValue(null);
       await expect(
-        service.assignRole('u1', StoreRoles.GUEST, 'missing')
+        service.assignStoreRole('u1', StoreRoles.GUEST, 'a1', 'missing')
       ).rejects.toThrow(NotFoundException);
     });
 
@@ -274,7 +278,7 @@ describe('UserService', () => {
         id: 'already',
       } as UserRole);
       await expect(
-        service.assignRole('u1', StoreRoles.GUEST, 's1')
+        service.assignStoreRole('u1', StoreRoles.GUEST, 'a1', 's1')
       ).rejects.toThrow(BadRequestException);
     });
   });
@@ -288,15 +292,14 @@ describe('UserService', () => {
       const created = { id: 'store1', name: 'StoreX' } as Store;
       storeService.create!.mockResolvedValue(created);
 
-      // spy assignRole to avoid internal logic execution
       jest
-        .spyOn(service, 'assignRole')
+        .spyOn(service, 'assignStoreRole')
         .mockResolvedValue({ id: 'role1' } as UserRole);
 
       const res = await service.createStore(owner.id, dto);
       expect(service.getEntityById).toHaveBeenCalledWith(owner.id);
       expect(storeService.create).toHaveBeenCalledWith({ ...dto, owner });
-      expect(service.assignRole).toHaveBeenCalledWith(
+      expect(service.assignStoreRole).toHaveBeenCalledWith(
         owner.id,
         StoreRoles.ADMIN,
         created.id

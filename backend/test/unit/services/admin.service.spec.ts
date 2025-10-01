@@ -142,8 +142,10 @@ describe('AdminService', () => {
   describe('inherited BaseService methods', () => {
     describe('create', () => {
       it('should create a new admin', async () => {
-        const createDto = { user: { id: 'user3' } } as CreateAdminDto;
-        const createdAdmin = { id: 'admin3', ...createDto } as Admin;
+        const createDto = {
+          user: { id: 'user3' },
+        } as unknown as CreateAdminDto;
+        const createdAdmin = { id: 'admin3', ...createDto } as unknown as Admin;
 
         adminRepo.createEntity!.mockResolvedValue(createdAdmin);
 
@@ -267,8 +269,8 @@ describe('AdminService', () => {
 
   describe('integration scenarios', () => {
     it('should handle creating admin and then validating admin status', async () => {
-      const createDto = { user: { id: 'user4' } } as CreateAdminDto;
-      const createdAdmin = { id: 'admin4', ...createDto } as Admin;
+      const createDto = { user: { id: 'user4' } } as unknown as CreateAdminDto;
+      const createdAdmin = { id: 'admin4', ...createDto } as unknown as Admin;
 
       // Setup create flow
       adminRepo.createEntity!.mockResolvedValue(createdAdmin);

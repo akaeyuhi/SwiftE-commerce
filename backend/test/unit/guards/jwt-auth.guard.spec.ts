@@ -1,11 +1,27 @@
 import { UnauthorizedException } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/modules/auth/policy/guards/jwt-auth.guard';
+import { createPolicyMock, MockedMethods } from 'test/unit/utils/helpers';
+import { Test, TestingModule } from '@nestjs/testing';
+import { PolicyService } from 'src/modules/auth/policy/policy.service';
+import { jest } from '@jest/globals';
 
 describe('JwtAuthGuard', () => {
   let guard: JwtAuthGuard;
+  let policyMock: Partial<MockedMethods<PolicyService>>;
 
-  beforeEach(() => {
-    guard = new JwtAuthGuard();
+  beforeEach(async () => {
+    policyMock = createPolicyMock();
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        JwtAuthGuard,
+        { provide: PolicyService, useValue: policyMock },
+      ],
+    }).compile();
+
+    guard = module.get<JwtAuthGuard>(JwtAuthGuard);
+
+    jest.clearAllMocks();
   });
 
   it('rethrows provided error', () => {

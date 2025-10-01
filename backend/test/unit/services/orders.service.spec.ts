@@ -6,12 +6,13 @@ import { DataSource, EntityManager, Repository } from 'typeorm';
 import { Order } from 'src/entities/store/product/order.entity';
 import { CreateOrderDto } from 'src/modules/store/orders/dto/create-order.dto';
 import { CreateOrderItemDto } from 'src/modules/store/orders/order-item/dto/create-order-item.dto';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import {
+  createMock,
   createRepositoryMock,
   MockedMethods,
-  createMock,
 } from '../utils/helpers';
+import { OrderStatus } from 'src/common/enums/order-status.enum';
 
 describe('OrdersService', () => {
   let service: OrdersService;
@@ -137,20 +138,23 @@ describe('OrdersService', () => {
   describe('updateStatus', () => {
     it('throws NotFoundException if missing', async () => {
       orderRepo.findById!.mockResolvedValue(null);
-      await expect(service.updateStatus('o1', 'shipped')).rejects.toThrow(
-        NotFoundException
-      );
+      await expect(
+        service.updateStatus('o1', OrderStatus.SHIPPED)
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('saves updated status', async () => {
       const order = { ...savedOrder };
       orderRepo.findById!.mockResolvedValue(order as any);
-      orderRepo.save!.mockResolvedValue({ ...order, status: 'shipped' } as any);
+      orderRepo.save!.mockResolvedValue({
+        ...order,
+        status: OrderStatus.SHIPPED,
+      } as any);
 
-      const res = await service.updateStatus('o1', 'shipped');
-      expect(order.status).toBe('shipped');
+      const res = await service.updateStatus('o1', OrderStatus.SHIPPED);
+      expect(order.status).toBe(OrderStatus.SHIPPED);
       expect(orderRepo.save).toHaveBeenCalledWith(order);
-      expect(res.status).toBe('shipped');
+      expect(res.status).toBe(OrderStatus.SHIPPED);
     });
   });
 });

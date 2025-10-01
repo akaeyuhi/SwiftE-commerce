@@ -30,8 +30,8 @@ describe('UserController', () => {
 
     service = createServiceMock<UserService>([
       'create',
-      'assignRole',
-      'revokeRole',
+      'assignStoreRole',
+      'revokeStoreRole',
       'createStore',
     ]);
     const module: TestingModule = await Test.createTestingModule({
@@ -78,13 +78,14 @@ describe('UserController', () => {
     const roleDto: RoleDto = {
       roleName: StoreRoles.ADMIN,
       storeId: 's1',
+      assignedBy: 'a1',
     };
-    service.assignRole!.mockResolvedValue({
+    service.assignStoreRole!.mockResolvedValue({
       id: 'r1',
     } as UserRole);
 
     const res = await controller.assignRole('u1', roleDto);
-    expect(service.assignRole).toHaveBeenCalledWith(
+    expect(service.assignStoreRole).toHaveBeenCalledWith(
       'u1',
       roleDto.roleName,
       roleDto.storeId
@@ -97,10 +98,10 @@ describe('UserController', () => {
       roleName: StoreRoles.ADMIN,
       storeId: 's1',
     };
-    service.revokeRole!.mockResolvedValue(undefined);
+    service.revokeStoreRole!.mockResolvedValue(undefined);
 
     const res = await controller.revokeStoreRole('u1', roleDto);
-    expect(service.revokeRole).toHaveBeenCalledWith(
+    expect(service.revokeStoreRole).toHaveBeenCalledWith(
       'u1',
       roleDto.roleName,
       roleDto.storeId

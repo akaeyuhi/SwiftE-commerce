@@ -166,7 +166,7 @@ describe('AdminController', () => {
 
   describe('create - POST /', () => {
     it('should create a new admin', async () => {
-      const createdAdmin = { id: 'admin3', ...mockCreateAdminDto } as Admin;
+      const createdAdmin = {id: 'admin3', ...mockCreateAdminDto} as unknown as Admin;
       adminService.create!.mockResolvedValue(createdAdmin);
 
       const result = await controller.create(mockCreateAdminDto);

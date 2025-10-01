@@ -9,7 +9,6 @@ import {
 import { jest } from '@jest/globals';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { StoreRolesGuard } from 'src/modules/auth/policy/guards/store-roles.guard';
-import { log } from 'console';
 
 describe('StoreRolesGuard', () => {
   let guard: StoreRolesGuard;
