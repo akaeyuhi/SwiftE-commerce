@@ -1,4 +1,4 @@
-import { UserRole } from 'src/entities/user/policy/user-role.entity';
+import { StoreRole } from 'src/entities/user/policy/store-role.entity';
 import { StoreDto } from 'src/modules/store/dto/store.dto';
 import { Store } from 'src/entities/store/store.entity';
 import { User } from 'src/entities/user/user.entity';
@@ -9,13 +9,13 @@ export const STORE_SERVICE = 'STORE_SERVICE';
 export const ADMIN_SERVICE = 'ADMIN_SERVICE';
 
 export interface IUserService {
-  getUserStoreRoles(userId: string): Promise<UserRole[]>;
+  getUserStoreRoles(userId: string): Promise<StoreRole[]>;
   isUserSiteAdmin(userId: string): Promise<boolean>;
   isActive(storeId: string): Promise<boolean>;
 }
 
 export interface IStoreService {
-  hasUserStoreRole(userRole: UserRole): Promise<boolean>;
+  hasUserStoreRole(userRole: StoreRole): Promise<boolean>;
   findOne(storeId: string): Promise<StoreDto>;
 }
 

@@ -5,20 +5,20 @@ import {
 } from '@nestjs/common';
 import { GuardStoreRepository } from 'src/modules/authorization/guard-services/repositories/guard-store.repository';
 import { IStoreService } from 'src/common/contracts/policy.contract';
-import { UserRole } from 'src/entities/user/policy/user-role.entity';
+import { StoreRole } from 'src/entities/user/policy/store-role.entity';
 import { Store } from 'src/entities/store/store.entity';
 
 @Injectable()
 export class GuardStoreService implements IStoreService {
   constructor(private readonly repo: GuardStoreRepository) {}
 
-  async hasUserStoreRole(userRole: UserRole) {
-    const store = await this.repo.findById(userRole.store.id);
+  async hasUserStoreRole(storeRole: StoreRole) {
+    const store = await this.repo.findById(storeRole.store.id);
     if (!store) throw new BadRequestException('Store not found');
-    return store.userRoles.some(
-      (storeRole) =>
-        storeRole.user.id === userRole.user.id &&
-        storeRole.roleName === userRole.roleName
+    return store.storeRoles.some(
+      (role) =>
+        role.user.id === storeRole.user.id &&
+        role.roleName === storeRole.roleName
     );
   }
   async findOne(id: string): Promise<Store> {

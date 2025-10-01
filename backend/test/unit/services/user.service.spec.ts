@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UserService } from 'src/modules/user/user.service';
 import { UserRepository } from 'src/modules/user/user.repository';
-import { UserRoleService } from 'src/modules/user/user-role/user-role.service';
+import { StoreRoleService } from 'src/modules/store/store-role/store-role.service';
 import { StoreService } from 'src/modules/store/store.service';
 import { UserMapper } from 'src/modules/user/user.mapper';
 import * as bcrypt from 'bcrypt';
@@ -19,13 +19,13 @@ import { User } from 'src/entities/user/user.entity';
 import { UserDto } from 'src/modules/user/dto/user.dto';
 import { DeleteResult } from 'typeorm';
 import { Store } from 'src/entities/store/store.entity';
-import { UserRole } from 'src/entities/user/policy/user-role.entity';
+import { StoreRole } from 'src/entities/user/policy/store-role.entity';
 import { CreateStoreDto } from 'src/modules/store/dto/create-store.dto';
 
 describe('UserService', () => {
   let service: UserService;
   let userRepo: Partial<MockedMethods<UserRepository>>;
-  let userRoleService: Partial<MockedMethods<UserRoleService>>;
+  let storeRoleService: Partial<MockedMethods<StoreRoleService>>;
   let storeService: Partial<MockedMethods<StoreService>>;
   let mapper: Partial<MockedMethods<UserMapper>>;
 
@@ -40,7 +40,7 @@ describe('UserService', () => {
       'removeRoleFromUser',
     ]);
 
-    userRoleService = createServiceMock<UserRoleService>([
+    storeRoleService = createServiceMock<StoreRoleService>([
       'findByStoreUser',
       'create',
     ]);
@@ -53,7 +53,7 @@ describe('UserService', () => {
       providers: [
         UserService,
         { provide: UserRepository, useValue: userRepo },
-        { provide: UserRoleService, useValue: userRoleService },
+        { provide: StoreRoleService, useValue: storeRoleService },
         { provide: StoreService, useValue: storeService },
         { provide: UserMapper, useValue: mapper },
       ],
@@ -211,15 +211,15 @@ describe('UserService', () => {
 
       jest.spyOn(service as any, 'getEntityById').mockResolvedValue(user);
       storeService.getEntityById!.mockResolvedValue(store);
-      userRoleService.findByStoreUser!.mockResolvedValue(null);
+      storeRoleService.findByStoreUser!.mockResolvedValue(null);
 
       const savedRole = {
         id: 'r1',
         roleName: StoreRoles.ADMIN,
         user,
         store,
-      } as UserRole;
-      userRoleService.create!.mockResolvedValue(savedRole);
+      } as StoreRole;
+      storeRoleService.create!.mockResolvedValue(savedRole);
       userRepo.addRoleToUser!.mockResolvedValue({
         ...user,
         roles: [savedRole],
@@ -234,8 +234,8 @@ describe('UserService', () => {
 
       expect(service.getEntityById).toHaveBeenCalledWith('u1');
       expect(storeService.getEntityById).toHaveBeenCalledWith('s1');
-      expect(userRoleService.findByStoreUser).toHaveBeenCalledWith('u1', 's1');
-      expect(userRoleService.create).toHaveBeenCalled();
+      expect(storeRoleService.findByStoreUser).toHaveBeenCalledWith('u1', 's1');
+      expect(storeRoleService.create).toHaveBeenCalled();
       expect(userRepo.addRoleToUser).toHaveBeenCalled();
       expect(res).toEqual(savedRole);
     });
@@ -274,9 +274,9 @@ describe('UserService', () => {
         .spyOn(service, 'getEntityById')
         .mockResolvedValue({ id: 'u1' } as User);
       storeService.getEntityById!.mockResolvedValue({ id: 's1' } as Store);
-      userRoleService.findByStoreUser!.mockResolvedValue({
+      storeRoleService.findByStoreUser!.mockResolvedValue({
         id: 'already',
-      } as UserRole);
+      } as StoreRole);
       await expect(
         service.assignStoreRole('u1', StoreRoles.GUEST, 'a1', 's1')
       ).rejects.toThrow(BadRequestException);
@@ -294,7 +294,7 @@ describe('UserService', () => {
 
       jest
         .spyOn(service, 'assignStoreRole')
-        .mockResolvedValue({ id: 'role1' } as UserRole);
+        .mockResolvedValue({ id: 'role1' } as StoreRole);
 
       const res = await service.createStore(owner.id, dto);
       expect(service.getEntityById).toHaveBeenCalledWith(owner.id);

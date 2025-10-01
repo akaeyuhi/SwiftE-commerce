@@ -1,9 +1,9 @@
 import { Test } from '@nestjs/testing';
-import { VariantsService } from 'src/modules/products/variants/variants.service';
-import { VariantsRepository } from 'src/modules/products/variants/variants.repository';
+import { VariantsService } from 'src/modules/store/variants/variants.service';
+import { VariantsRepository } from 'src/modules/store/variants/variants.repository';
 import { InventoryService } from 'src/modules/store/inventory/inventory.service';
 import { ProductVariant } from 'src/entities/store/product/variant.entity';
-import { CreateVariantDto } from 'src/modules/products/variants/dto/create-variant.dto';
+import { CreateVariantDto } from 'src/modules/store/variants/dto/create-variant.dto';
 import {
   createRepositoryMock,
   createServiceMock,

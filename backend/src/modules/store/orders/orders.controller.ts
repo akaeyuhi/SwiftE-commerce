@@ -23,7 +23,7 @@ import { EntityOwner } from 'src/common/decorators/entity-owner.decorator';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { AccessPolicies } from 'src/modules/authorization/policy/policy.types';
 import { Request } from 'express';
-import { AnalyticsEventType } from 'src/modules/analytics/entities/analytics-event.entity';
+import { AnalyticsEventType } from 'src/entities/infrastructure/analytics-event.entity';
 import { RecordEvent } from 'src/common/decorators/record-event.decorator';
 
 /**

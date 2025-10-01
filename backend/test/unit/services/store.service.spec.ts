@@ -3,7 +3,7 @@ import { StoreService } from 'src/modules/store/store.service';
 import { StoreRepository } from 'src/modules/store/store.repository';
 import { StoreMapper } from 'src/modules/store/store.mapper';
 import { BadRequestException } from '@nestjs/common';
-import { UserRole } from 'src/entities/user/policy/user-role.entity';
+import { StoreRole } from 'src/entities/user/policy/store-role.entity';
 import { jest } from '@jest/globals';
 import {
   createMapperMock,
@@ -74,7 +74,7 @@ describe('StoreService', () => {
   describe('hasUserStoreRole', () => {
     it('throws when store not found', async () => {
       repo.findById!.mockResolvedValue(null);
-      const fakeRole = { store: { id: 's1' } } as UserRole;
+      const fakeRole = { store: { id: 's1' } } as StoreRole;
       await expect(service.hasUserStoreRole(fakeRole)).rejects.toThrow(
         BadRequestException
       );
@@ -87,12 +87,12 @@ describe('StoreService', () => {
         roleName: StoreRoles.ADMIN,
         user: { id: 'u1' },
         store: { id: 's1' },
-      } as UserRole;
+      } as StoreRole;
       const storeEntity = {
         id: 's1',
-        userRoles: [
+        storeRoles: [
           { user: { id: 'u1' }, roleName: StoreRoles.ADMIN },
-        ] as UserRole[],
+        ] as StoreRole[],
       } as Store;
       repo.findById!.mockResolvedValue(storeEntity);
       const res = await service.hasUserStoreRole(userRole);
@@ -106,10 +106,10 @@ describe('StoreService', () => {
         roleName: StoreRoles.GUEST,
         user: { id: 'u2' },
         store: { id: 's2' },
-      } as UserRole;
+      } as StoreRole;
       const storeEntity = {
         id: 's2',
-        userRoles: [{ user: { id: 'someone' }, roleName: StoreRoles.ADMIN }],
+        storeRoles: [{ user: { id: 'someone' }, roleName: StoreRoles.ADMIN }],
       } as Store;
       repo.findById!.mockResolvedValue(storeEntity);
       const res = await service.hasUserStoreRole(userRole);

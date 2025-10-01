@@ -16,7 +16,7 @@ import { AdminGuard } from 'src/modules/authorization/guards/admin.guard';
 import { PolicyService } from 'src/modules/authorization/policy/policy.service';
 import { jest } from '@jest/globals';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
-import { UserRole } from 'src/entities/user/policy/user-role.entity';
+import { StoreRole } from 'src/entities/user/policy/store-role.entity';
 import { Store } from 'src/entities/store/store.entity';
 
 describe('UserController', () => {
@@ -82,7 +82,7 @@ describe('UserController', () => {
     };
     service.assignStoreRole!.mockResolvedValue({
       id: 'r1',
-    } as UserRole);
+    } as StoreRole);
 
     const res = await controller.assignRole('u1', roleDto);
     expect(service.assignStoreRole).toHaveBeenCalledWith(

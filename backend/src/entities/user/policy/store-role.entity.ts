@@ -12,7 +12,7 @@ import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { UserOwnedEntity } from 'src/common/interfaces/crud/user-owned.entity.interface';
 
 @Entity({ name: 'user_roles' })
-export class UserRole implements UserOwnedEntity {
+export class StoreRole implements UserOwnedEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
@@ -26,7 +26,7 @@ export class UserRole implements UserOwnedEntity {
   @ManyToOne(() => User, (user) => user.roles, { onDelete: 'CASCADE' })
   user: User;
 
-  @ManyToOne(() => Store, (store) => store.userRoles, {
+  @ManyToOne(() => Store, (store) => store.storeRoles, {
     nullable: true,
     onDelete: 'SET NULL',
   })

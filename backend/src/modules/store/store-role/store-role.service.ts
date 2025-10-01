@@ -1,26 +1,26 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { UserRoleRepository } from './user-role.repository';
-import { UserRole } from 'src/entities/user/policy/user-role.entity';
+import { StoreRoleRepository } from 'src/modules/store/store-role/store-role.repository';
+import { StoreRole } from 'src/entities/user/policy/store-role.entity';
 import { BaseService } from 'src/common/abstracts/base.service';
-import { CreateUserRoleDto } from './dto/create-role.dto';
-import { UpdateUserRoleDto } from './dto/update-user-role.dto';
+import { CreateStoreRoleDto } from 'src/modules/store/store-role/dto/create-store-role.dto';
+import { UpdateStoreRoleDto } from 'src/modules/store/store-role/dto/update-store-role.dto';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 
 @Injectable()
-export class UserRoleService extends BaseService<
-  UserRole,
-  CreateUserRoleDto,
-  UpdateUserRoleDto
+export class StoreRoleService extends BaseService<
+  StoreRole,
+  CreateStoreRoleDto,
+  UpdateStoreRoleDto
 > {
-  constructor(private readonly userRoleRepo: UserRoleRepository) {
-    super(userRoleRepo);
+  constructor(private readonly storeRoleRepo: StoreRoleRepository) {
+    super(storeRoleRepo);
   }
 
   async findByStoreUser(
     userId: string,
     storeId: string
-  ): Promise<UserRole | null> {
-    return this.userRoleRepo.findOne({
+  ): Promise<StoreRole | null> {
+    return this.storeRoleRepo.findOne({
       where: {
         user: {
           id: userId,
@@ -33,11 +33,11 @@ export class UserRoleService extends BaseService<
     });
   }
 
-  async update(userId: string, dto: UpdateUserRoleDto): Promise<UserRole> {
+  async update(userId: string, dto: UpdateStoreRoleDto): Promise<StoreRole> {
     const { store, roleName } = dto;
     const role = await this.findByStoreUser(userId, store!.id);
     if (!role) throw new NotFoundException(`Such role doesnt exist`);
-    return await this.userRoleRepo.save({ ...role, roleName });
+    return await this.storeRoleRepo.save({ ...role, roleName });
   }
 
   /**
@@ -48,11 +48,11 @@ export class UserRoleService extends BaseService<
     storeId: string,
     roleName: StoreRoles,
     assignedBy?: string
-  ): Promise<UserRole> {
+  ): Promise<StoreRole> {
     const existingRole = await this.findByStoreUser(userId, storeId);
 
     if (existingRole) {
-      return this.userRoleRepo.save({
+      return this.storeRoleRepo.save({
         ...existingRole,
         roleName,
         assignedBy,
@@ -62,7 +62,7 @@ export class UserRoleService extends BaseService<
     }
 
     // Create new role assignment
-    const createDto: CreateUserRoleDto = {
+    const createDto: CreateStoreRoleDto = {
       userId,
       storeId,
       roleName,
@@ -87,7 +87,7 @@ export class UserRoleService extends BaseService<
       throw new NotFoundException('User does not have a role in this store');
     }
 
-    await this.userRoleRepo.save({
+    await this.storeRoleRepo.save({
       ...role,
       isActive: false,
       revokedBy,
@@ -98,8 +98,8 @@ export class UserRoleService extends BaseService<
   /**
    * Get all users with roles in a store
    */
-  async getStoreRoles(storeId: string): Promise<UserRole[]> {
-    return this.userRoleRepo.find({
+  async getStoreRoles(storeId: string): Promise<StoreRole[]> {
+    return this.storeRoleRepo.find({
       where: {
         store: { id: storeId },
         isActive: true,
@@ -112,8 +112,8 @@ export class UserRoleService extends BaseService<
   /**
    * Get all stores where user has roles
    */
-  async getUserStoreRoles(userId: string): Promise<UserRole[]> {
-    return this.userRoleRepo.find({
+  async getUserStoreRoles(userId: string): Promise<StoreRole[]> {
+    return this.storeRoleRepo.find({
       where: {
         user: { id: userId },
         isActive: true,
@@ -167,7 +167,7 @@ export class UserRoleService extends BaseService<
     active: number;
     inactive: number;
   }> {
-    const allRoles = await this.userRoleRepo.find({
+    const allRoles = await this.storeRoleRepo.find({
       where: { store: { id: storeId } },
     });
 

@@ -13,7 +13,7 @@ import { createServiceMock, MockedMethods } from '../utils/helpers';
 import { UserService } from 'src/modules/user/user.service';
 import { AdminService } from 'src/modules/admin/admin.service';
 import { StoreService } from 'src/modules/store/store.service';
-import { UserRole } from 'src/entities/user/policy/user-role.entity';
+import { StoreRole } from 'src/entities/user/policy/store-role.entity';
 import { User } from 'src/entities/user/user.entity';
 import { PolicyEntry } from 'src/modules/authorization/policy/policy.types';
 import { UserOwnedEntity } from 'src/common/interfaces/crud/user-owned.entity.interface';
@@ -91,11 +91,11 @@ describe('PolicyService', () => {
       const role = {
         roleName: StoreRoles.ADMIN,
         store: { id: 's1' },
-      } as UserRole;
+      } as StoreRole;
       storeService.hasUserStoreRole!.mockResolvedValue(true);
 
       const res = await service.userHasStoreRoles(
-        { id: 'u1', roles: [role] } as unknown as UserRole,
+        { id: 'u1', roles: [role] } as unknown as StoreRole,
         's1',
         [StoreRoles.ADMIN]
       );
@@ -106,7 +106,7 @@ describe('PolicyService', () => {
     it('falls back to getUserStoreRoles and returns false if none match', async () => {
       userService.getUserStoreRoles!.mockResolvedValue([
         { roleName: StoreRoles.GUEST, store: { id: 's1' } },
-      ] as UserRole[]);
+      ] as StoreRole[]);
       storeService.hasUserStoreRole!.mockResolvedValue(true);
 
       const res = await service.userHasStoreRoles({ id: 'u1' } as User, 's1', [

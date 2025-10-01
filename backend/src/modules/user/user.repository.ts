@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { User } from 'src/entities/user/user.entity';
 import { BaseRepository } from 'src/common/abstracts/base.repository';
-import { UserRole } from 'src/entities/user/policy/user-role.entity';
+import { StoreRole } from 'src/entities/user/policy/store-role.entity';
 
 @Injectable()
 export class UserRepository extends BaseRepository<User> {
@@ -54,7 +54,7 @@ export class UserRepository extends BaseRepository<User> {
     return this.save({ ...user, ...permissions });
   }
 
-  async addRoleToUser(user: User, role: UserRole) {
+  async addRoleToUser(user: User, role: StoreRole) {
     return this.save({ ...user, roles: [...user.roles, role] });
   }
 

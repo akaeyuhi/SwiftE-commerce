@@ -6,7 +6,7 @@ import { Store } from 'src/entities/store/store.entity';
 import { StoreRepository } from 'src/modules/store/store.repository';
 import { StoreDto } from 'src/modules/store/dto/store.dto';
 import { StoreMapper } from 'src/modules/store/store.mapper';
-import { UserRole } from 'src/entities/user/policy/user-role.entity';
+import { StoreRole } from 'src/entities/user/policy/store-role.entity';
 
 @Injectable()
 export class StoreService extends BaseService<
@@ -30,13 +30,13 @@ export class StoreService extends BaseService<
     return this.mapper.toDto(saved);
   }
 
-  async hasUserStoreRole(userRole: UserRole) {
-    const store = await this.storeRepo.findById(userRole.store.id);
+  async hasUserStoreRole(storeRole: StoreRole) {
+    const store = await this.storeRepo.findById(storeRole.store.id);
     if (!store) throw new BadRequestException('Store not found');
-    return store.userRoles.some(
-      (storeRole) =>
-        storeRole.user.id === userRole.user.id &&
-        storeRole.roleName === userRole.roleName
+    return store.storeRoles.some(
+      (role) =>
+          role.user.id === storeRole.user.id &&
+          role.roleName === storeRole.roleName
     );
   }
 }

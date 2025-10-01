@@ -1,26 +1,26 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { UserRoleService } from 'src/modules/user/user-role/user-role.service';
-import { UserRoleRepository } from 'src/modules/user/user-role/user-role.repository';
+import { StoreRoleService } from 'src/modules/store/store-role/store-role.service';
+import { StoreRoleRepository } from 'src/modules/store/store-role/store-role.repository';
 import { NotFoundException } from '@nestjs/common';
-import { UserRole } from 'src/entities/user/policy/user-role.entity';
+import { StoreRole } from 'src/entities/user/policy/store-role.entity';
 import { createRepositoryMock, MockedMethods } from 'test/unit/utils/helpers';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 
-describe('UserRoleService', () => {
-  let service: UserRoleService;
-  let repo: Partial<MockedMethods<UserRoleRepository>>;
+describe('StoreRoleService', () => {
+  let service: StoreRoleService;
+  let repo: Partial<MockedMethods<StoreRoleRepository>>;
 
   beforeEach(async () => {
-    repo = createRepositoryMock<UserRoleRepository>(['findOne', 'save']);
+    repo = createRepositoryMock<StoreRoleRepository>(['findOne', 'save']);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        UserRoleService,
-        { provide: UserRoleRepository, useValue: repo },
+        StoreRoleService,
+        { provide: StoreRoleRepository, useValue: repo },
       ],
     }).compile();
 
-    service = module.get<UserRoleService>(UserRoleService);
+    service = module.get<StoreRoleService>(StoreRoleService);
   });
 
   afterEach(() => {
@@ -32,7 +32,7 @@ describe('UserRoleService', () => {
       const expected = {
         id: 'r1',
         roleName: StoreRoles.ADMIN,
-      } as UserRole;
+      } as StoreRole;
       repo.findOne!.mockResolvedValue(expected);
 
       const res = await service.findByStoreUser('user1', 'store1');
@@ -58,7 +58,7 @@ describe('UserRoleService', () => {
         id: 'r1',
         roleName: StoreRoles.GUEST,
         store: { id: 's1' },
-      } as UserRole;
+      } as StoreRole;
       repo.findOne!.mockResolvedValue(existing);
       const saved = { ...existing, roleName: StoreRoles.ADMIN };
       repo.save!.mockResolvedValue(saved);
@@ -86,7 +86,7 @@ describe('UserRoleService', () => {
         service.update('user1', {
           store: { id: 's1' },
           roleName: 'STORE_ADMIN',
-        } as UserRole)
+        } as StoreRole)
       ).rejects.toThrow(NotFoundException);
     });
   });

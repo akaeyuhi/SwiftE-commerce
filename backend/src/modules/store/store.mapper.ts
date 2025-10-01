@@ -18,7 +18,7 @@ export class StoreMapper extends BaseMapper<Store, StoreDto> {
       carts: entity.carts,
       newsPosts: entity.newsPosts,
       aiLogs: entity.aiLogs,
-      userRoles: entity.userRoles,
+      storeRoles: entity.storeRoles,
     };
   }
 

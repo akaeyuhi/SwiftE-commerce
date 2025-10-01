@@ -1,8 +1,8 @@
 import { PartialType } from '@nestjs/mapped-types';
-import { CreateUserRoleDto } from './create-role.dto';
+import { CreateStoreRoleDto } from 'src/modules/store/store-role/dto/create-store-role.dto';
 import { Store } from 'src/entities/store/store.entity';
 
-export class UpdateUserRoleDto extends PartialType(CreateUserRoleDto) {
+export class UpdateStoreRoleDto extends PartialType(CreateStoreRoleDto) {
   store?: Store;
   revokedBy?: string;
   revokedAt?: Date;

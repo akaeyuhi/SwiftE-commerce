@@ -8,7 +8,7 @@ import {
   AnalyticsJobData,
   AnalyticsJobType,
 } from './types/analytics-queue.types';
-import { AnalyticsEventType } from 'src/modules/analytics/entities/analytics-event.entity';
+import { AnalyticsEventType } from 'src/entities/infrastructure/analytics-event.entity';
 
 /**
  * AnalyticsQueueService (Global)

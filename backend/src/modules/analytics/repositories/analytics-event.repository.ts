@@ -4,7 +4,7 @@ import { BaseAnalyticsRepository } from 'src/common/abstracts/analytics/base.ana
 import {
   AnalyticsEvent,
   AnalyticsEventType,
-} from '../entities/analytics-event.entity';
+} from 'src/entities/infrastructure/analytics-event.entity';
 import { DateRangeOptions } from 'src/common/interfaces/infrastructure/analytics.interface';
 import {
   ProductMetrics,

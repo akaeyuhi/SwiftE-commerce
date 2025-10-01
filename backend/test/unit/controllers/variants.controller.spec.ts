@@ -1,6 +1,6 @@
 import { Test } from '@nestjs/testing';
-import { VariantsController } from 'src/modules/products/variants/variants.controller';
-import { VariantsService } from 'src/modules/products/variants/variants.service';
+import { VariantsController } from 'src/modules/store/variants/variants.controller';
+import { VariantsService } from 'src/modules/store/variants/variants.service';
 import { PolicyService } from 'src/modules/authorization/policy/policy.service';
 import {
   createServiceMock,

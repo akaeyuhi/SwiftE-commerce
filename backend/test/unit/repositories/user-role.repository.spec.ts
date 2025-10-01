@@ -1,26 +1,26 @@
-import { UserRoleRepository } from 'src/modules/user/user-role/user-role.repository';
-import { UserRole } from 'src/entities/user/policy/user-role.entity';
+import { StoreRoleRepository } from 'src/modules/store/store-role/store-role.repository';
+import { StoreRole } from 'src/entities/user/policy/store-role.entity';
 import { DataSource, EntityManager } from 'typeorm';
 import { createMock, MockedMethods } from '../utils/helpers';
-import { UpdateUserRoleDto } from 'src/modules/user/user-role/dto/update-user-role.dto';
 import { Test, TestingModule } from '@nestjs/testing';
+import {UpdateStoreRoleDto} from "src/modules/store/store-role/dto/update-store-role.dto";
 
-describe('UserRoleRepository', () => {
-  let repository: UserRoleRepository;
+describe('StoreRoleRepository', () => {
+  let repository: StoreRoleRepository;
   let dataSource: Partial<MockedMethods<DataSource>>;
   let entityManager: Partial<MockedMethods<EntityManager>>;
 
-  const mockUserRole: UserRole = {
+  const mockStoreRole: StoreRole = {
     id: 'r1',
     roleName: 'STORE_ADMIN',
     user: { id: 'u1' },
     store: { id: 's1' },
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
-  } as UserRole;
+  } as StoreRole;
 
-  const mockUserRoleList: UserRole[] = [
-    mockUserRole,
+  const mockUserRoleList: StoreRole[] = [
+    mockStoreRole,
     {
       id: 'r2',
       roleName: 'STORE_USER',
@@ -28,7 +28,7 @@ describe('UserRoleRepository', () => {
       store: { id: 's1' },
       createdAt: new Date('2024-01-02'),
       updatedAt: new Date('2024-01-02'),
-    } as unknown as UserRole,
+    } as unknown as StoreRole,
   ];
 
   beforeEach(async () => {
@@ -40,12 +40,12 @@ describe('UserRoleRepository', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        UserRoleRepository,
+        StoreRoleRepository,
         { provide: DataSource, useValue: dataSource },
       ],
     }).compile();
 
-    repository = module.get<UserRoleRepository>(UserRoleRepository);
+    repository = module.get<StoreRoleRepository>(StoreRoleRepository);
 
     // Mock inherited Repository methods
     jest.spyOn(repository, 'find').mockImplementation(jest.fn());
@@ -65,7 +65,7 @@ describe('UserRoleRepository', () => {
     });
 
     it('should extend BaseRepository', () => {
-      expect(repository).toBeInstanceOf(UserRoleRepository);
+      expect(repository).toBeInstanceOf(StoreRoleRepository);
       expect(typeof repository.findAll).toBe('function');
       expect(typeof repository.findById).toBe('function');
       expect(typeof repository.createEntity).toBe('function');
@@ -108,7 +108,7 @@ describe('UserRoleRepository', () => {
           roleName: 'STORE_USER',
           user: { id: `user${i}` },
           store: { id: 'store1' },
-        })) as unknown as UserRole[];
+        })) as unknown as StoreRole[];
 
         (repository.find as jest.Mock).mockResolvedValue(largeRoleList);
 
@@ -121,11 +121,11 @@ describe('UserRoleRepository', () => {
 
     describe('findById', () => {
       it('should delegate to findOneBy() method', async () => {
-        (repository.findOneBy as jest.Mock).mockResolvedValue(mockUserRole);
+        (repository.findOneBy as jest.Mock).mockResolvedValue(mockStoreRole);
 
         const result = await repository.findById('r1');
 
-        expect(result).toEqual(mockUserRole);
+        expect(result).toEqual(mockStoreRole);
         expect(repository.findOneBy).toHaveBeenCalledWith({ id: 'r1' });
         expect(repository.findOneBy).toHaveBeenCalledTimes(1);
       });
@@ -150,12 +150,12 @@ describe('UserRoleRepository', () => {
           'uuid-format-id',
         ];
 
-        (repository.findOneBy as jest.Mock).mockResolvedValue(mockUserRole);
+        (repository.findOneBy as jest.Mock).mockResolvedValue(mockStoreRole);
 
         for (const id of testIds) {
           const result = await repository.findById(id);
 
-          expect(result).toEqual(mockUserRole);
+          expect(result).toEqual(mockStoreRole);
           expect(repository.findOneBy).toHaveBeenCalledWith({ id });
         }
 
@@ -187,11 +187,11 @@ describe('UserRoleRepository', () => {
         const createData = { roleName: 'STORE_MANAGER' } as any;
         const createdEntity = {
           roleName: 'STORE_MANAGER',
-        } as unknown as UserRole;
+        } as unknown as StoreRole;
         const savedEntity = {
           id: 'r3',
           roleName: 'STORE_MANAGER',
-        } as unknown as UserRole;
+        } as unknown as StoreRole;
 
         (repository.create as jest.Mock).mockReturnValue(createdEntity);
         (repository.save as jest.Mock).mockResolvedValue(savedEntity);
@@ -213,8 +213,8 @@ describe('UserRoleRepository', () => {
           permissions: ['READ', 'WRITE'],
         } as any;
 
-        const createdEntity = { ...fullCreateData } as UserRole;
-        const savedEntity = { id: 'r4', ...fullCreateData } as UserRole;
+        const createdEntity = { ...fullCreateData } as StoreRole;
+        const savedEntity = { id: 'r4', ...fullCreateData } as StoreRole;
 
         (repository.create as jest.Mock).mockReturnValue(createdEntity);
         (repository.save as jest.Mock).mockResolvedValue(savedEntity);
@@ -246,14 +246,14 @@ describe('UserRoleRepository', () => {
         await expect(
           repository.createEntity({
             roleName: 'INVALID_ROLE',
-          } as unknown as UserRole)
+          } as unknown as StoreRole)
         ).rejects.toThrow(constraintError);
       });
 
       it('should handle empty create data', async () => {
         const emptyData = {} as any;
-        const createdEntity = {} as UserRole;
-        const savedEntity = { id: 'r5' } as UserRole;
+        const createdEntity = {} as StoreRole;
+        const savedEntity = { id: 'r5' } as StoreRole;
 
         (repository.create as jest.Mock).mockReturnValue(createdEntity);
         (repository.save as jest.Mock).mockResolvedValue(savedEntity);
@@ -272,8 +272,8 @@ describe('UserRoleRepository', () => {
           store: { id: 's1' },
         } as any;
 
-        const createdEntity = { ...roleData } as UserRole;
-        const savedEntity = { id: 'r6', ...roleData } as UserRole;
+        const createdEntity = { ...roleData } as StoreRole;
+        const savedEntity = { id: 'r6', ...roleData } as StoreRole;
 
         (repository.create as jest.Mock).mockReturnValue(createdEntity);
         (repository.save as jest.Mock).mockResolvedValue(savedEntity);
@@ -291,14 +291,14 @@ describe('UserRoleRepository', () => {
       it('should update existing user role', async () => {
         const updateData = {
           roleName: 'STORE_MANAGER',
-        } as unknown as UpdateUserRoleDto;
+        } as unknown as UpdateStoreRoleDto;
 
-        (repository.findOneBy as jest.Mock).mockResolvedValue(mockUserRole);
+        (repository.findOneBy as jest.Mock).mockResolvedValue(mockStoreRole);
         (repository.update as jest.Mock).mockResolvedValue({ affected: 1 });
 
         const result = await repository.updateEntity('r1', updateData);
 
-        expect(result).toEqual(mockUserRole);
+        expect(result).toEqual(mockStoreRole);
         expect(repository.findOneBy).toHaveBeenCalledWith({ id: 'r1' });
         expect(repository.update).toHaveBeenCalledWith('r1', updateData);
       });

@@ -15,7 +15,7 @@ import {
   RecordEventOptions,
 } from 'src/common/decorators/record-event.decorator';
 import { AnalyticsQueueService } from 'src/modules/infrastructure/queues/analytics-queue/analytics-queue.service';
-import { AnalyticsEventType } from 'src/modules/analytics/entities/analytics-event.entity';
+import { AnalyticsEventType } from 'src/entities/infrastructure/analytics-event.entity';
 import { RecordEventDto } from 'src/modules/infrastructure/queues/analytics-queue/dto/record-event.dto';
 
 /**

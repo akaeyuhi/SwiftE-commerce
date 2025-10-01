@@ -3,7 +3,7 @@ import { User } from 'src/entities/user/user.entity';
 import { Store } from 'src/entities/store/store.entity';
 import { IsDate, IsEnum, IsOptional, IsUUID } from 'class-validator';
 
-export class CreateUserRoleDto {
+export class CreateStoreRoleDto {
   @IsOptional()
   user?: User;
   @IsOptional()

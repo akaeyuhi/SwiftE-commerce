@@ -14,6 +14,7 @@ import { AdminModule } from 'src/modules/admin/admin.module';
 import { QueuesModule } from 'src/modules/infrastructure/queues/queues.module';
 import { InterceptorsModule } from 'src/modules/infrastructure/interceptors/interceptors.module';
 import { AnalyticsReviewsModule } from './modules/analytics-reviews/analytics-reviews.module';
+import { InventoryNotificationModule } from 'src/modules/infrastructure/notifications/inventory/inventory-notification.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { AnalyticsReviewsModule } from './modules/analytics-reviews/analytics-re
     AnalyticsModule,
     AiModule,
     AnalyticsReviewsModule,
+    InventoryNotificationModule,
   ],
   controllers: [AppController],
   providers: [AppService],

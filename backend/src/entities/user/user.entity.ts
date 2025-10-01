@@ -6,7 +6,7 @@ import {
   UpdateDateColumn,
   OneToMany,
 } from 'typeorm';
-import { UserRole } from 'src/entities/user/policy/user-role.entity';
+import { StoreRole } from 'src/entities/user/policy/store-role.entity';
 import { ShoppingCart } from 'src/entities/store/cart/cart.entity';
 import { Order } from 'src/entities/store/product/order.entity';
 import { Review } from 'src/entities/store/review.entity';
@@ -64,8 +64,8 @@ export class User implements BaseEntity {
   @OneToMany(() => Store, (store) => store.owner)
   ownedStores: Store[];
 
-  @OneToMany(() => UserRole, (ur) => ur.user)
-  roles: UserRole[];
+  @OneToMany(() => StoreRole, (ur) => ur.user)
+  roles: StoreRole[];
 
   @OneToMany(() => ShoppingCart, (cart) => cart.user)
   carts: ShoppingCart[];

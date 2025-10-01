@@ -3,7 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from 'src/entities/user/user.entity';
 import { Store } from 'src/entities/store/store.entity';
 import { Admin } from 'src/entities/user/policy/admin.entity';
-import { UserRole } from 'src/entities/user/policy/user-role.entity';
+import { StoreRole } from 'src/entities/user/policy/store-role.entity';
 
 import { GuardUserRepository } from 'src/modules/authorization/guard-services/repositories/guard-user.repository';
 import { GuardStoreRepository } from 'src/modules/authorization/guard-services/repositories/guard-store.repository';
@@ -19,7 +19,7 @@ import {
 
 @Global()
 @Module({
-  imports: [TypeOrmModule.forFeature([User, Store, Admin, UserRole])],
+  imports: [TypeOrmModule.forFeature([User, Store, Admin, StoreRole])],
   providers: [
     GuardUserRepository,
     GuardStoreRepository,

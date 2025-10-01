@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { PolicyEntry } from 'src/modules/authorization/policy/policy.types';
-import { UserRole } from 'src/entities/user/policy/user-role.entity';
+import { StoreRole } from 'src/entities/user/policy/store-role.entity';
 import { DeepPartial } from 'typeorm';
 import { User } from 'src/entities/user/user.entity';
 import { StoreOwnedEntity } from 'src/common/interfaces/crud/store-owned.entity.interface';
@@ -64,9 +64,9 @@ export class PolicyService {
     requiredRoles: StoreRoles[]
   ): Promise<boolean> {
     if (!user) return false;
-    const userRoles: UserRole[] | undefined = user.roles as UserRole[];
+    const userRoles: StoreRole[] | undefined = user.roles as StoreRole[];
 
-    let roles: UserRole[] = [];
+    let roles: StoreRole[] = [];
 
     if (Array.isArray(userRoles) && userRoles.length > 0) {
       roles = userRoles;

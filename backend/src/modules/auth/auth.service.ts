@@ -13,7 +13,7 @@ import { LoginDto } from './dto/login.dto';
 import { RefreshTokenService } from 'src/modules/auth/refresh-token/refresh-token.service';
 import { ConfirmationService } from './confirmation/confirmation.service';
 import { AdminService } from 'src/modules/admin/admin.service';
-import { UserRoleService } from 'src/modules/user/user-role/user-role.service';
+import { StoreRoleService } from 'src/modules/store/store-role/store-role.service';
 import { Request } from 'express';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { AdminRoles } from 'src/common/enums/admin.enum';
@@ -66,7 +66,7 @@ export class AuthService {
     private confirmationService: ConfirmationService,
     private emailQueueService: EmailQueueService,
     private adminService: AdminService,
-    private userRoleService: UserRoleService
+    private storeRoleService: StoreRoleService
   ) {}
 
   private async validateUser(
@@ -217,7 +217,7 @@ export class AuthService {
     const siteAdmin = await this.adminService.isUserValidAdmin(userId);
 
     // Get store roles
-    const storeRoles = await this.userRoleService.getUserStoreRoles(userId);
+    const storeRoles = await this.storeRoleService.getUserStoreRoles(userId);
     const formattedStoreRoles = storeRoles.map((role) => ({
       storeId: role.store.id,
       storeName: role.store.name,
@@ -415,7 +415,7 @@ export class AuthService {
     }
 
     // Check if user already has a role in this store
-    const existingRole = await this.userRoleService.findByStoreUser(
+    const existingRole = await this.storeRoleService.findByStoreUser(
       targetUserId,
       storeId
     );
@@ -456,7 +456,7 @@ export class AuthService {
     storeId: string,
     revokedByUserId: string
   ): Promise<void> {
-    await this.userRoleService.revokeStoreRole(
+    await this.storeRoleService.revokeStoreRole(
       targetUserId,
       storeId,
       revokedByUserId

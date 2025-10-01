@@ -14,7 +14,7 @@ import { DataSource } from 'typeorm';
 import { CreateOrderItemDto } from 'src/modules/store/orders/order-item/dto/create-order-item.dto';
 import { OrderStatus } from 'src/common/enums/order-status.enum';
 import { RecordEventDto } from 'src/modules/infrastructure/queues/analytics-queue/dto/record-event.dto';
-import { AnalyticsEventType } from 'src/modules/analytics/entities/analytics-event.entity';
+import { AnalyticsEventType } from 'src/entities/infrastructure/analytics-event.entity';
 import { AnalyticsQueueService } from 'src/modules/infrastructure/queues/analytics-queue/analytics-queue.service';
 
 /**

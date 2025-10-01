@@ -6,7 +6,6 @@ import { ProductsService } from 'src/modules/products/products.service';
 import { ProductsController } from 'src/modules/products/products.controller';
 import { ProductsMapper } from 'src/modules/products/products.mapper';
 import { ProductPhotoModule } from 'src/modules/products/product-photo/product-photo.module';
-import { VariantsModule } from 'src/modules/products/variants/variants.module';
 import { StoreModule } from 'src/modules/store/store.module';
 import { CategoriesModule } from 'src/modules/store/categories/categories.module';
 import { InventoryModule } from 'src/modules/store/inventory/inventory.module';
@@ -19,7 +18,6 @@ import { AnalyticsModule } from 'src/modules/analytics/analytics.module';
     StoreModule,
     InventoryModule,
     CategoriesModule,
-    VariantsModule,
     AnalyticsModule,
   ],
   providers: [ProductRepository, ProductsService, ProductsMapper],

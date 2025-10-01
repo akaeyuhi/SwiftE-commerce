@@ -14,7 +14,7 @@ import { AdminModule } from 'src/modules/admin/admin.module';
 import { ConfirmationModule } from './confirmation/confirmation.module';
 import { EmailModule } from 'src/modules/email/email.module';
 import { ConfirmationService } from 'src/modules/auth/confirmation/confirmation.service';
-import { UserRoleModule } from 'src/modules/user/user-role/user-role.module';
+import { StoreRoleModule } from 'src/modules/store/store-role/store-role.module';
 import { UserModule } from 'src/modules/user/user.module';
 
 @Module({
@@ -33,7 +33,7 @@ import { UserModule } from 'src/modules/user/user.module';
     ConfirmationModule,
     EmailModule,
     UserModule,
-    UserRoleModule,
+    StoreRoleModule,
   ],
   controllers: [AuthController],
   providers: [

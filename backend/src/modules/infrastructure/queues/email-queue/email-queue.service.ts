@@ -16,7 +16,7 @@ import { StoreRoles } from 'src/common/enums/store-roles.enum';
  * All email sending is queued for async processing.
  */
 @Injectable()
-export class EmailQueueService extends BaseQueueService<EmailJobData, any> {
+export class EmailQueueService extends BaseQueueService<EmailJobData> {
   protected readonly queueName = 'email';
   protected readonly logger = new Logger(EmailQueueService.name);
 

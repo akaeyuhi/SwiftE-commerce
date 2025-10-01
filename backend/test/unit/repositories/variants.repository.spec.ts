@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { VariantsRepository } from 'src/modules/products/variants/variants.repository';
+import { VariantsRepository } from 'src/modules/store/variants/variants.repository';
 import { ProductVariant } from 'src/entities/store/product/variant.entity';
 import { DataSource, EntityManager } from 'typeorm';
 import { createMock, MockedMethods } from '../utils/helpers';

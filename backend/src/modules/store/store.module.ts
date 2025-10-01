@@ -11,13 +11,17 @@ import { NewsModule } from 'src/modules/store/news/news.module';
 import { OrdersModule } from 'src/modules/store/orders/orders.module';
 import { CategoriesModule } from 'src/modules/store/categories/categories.module';
 import { AnalyticsModule } from 'src/modules/analytics/analytics.module';
+import { VariantsModule } from 'src/modules/store/variants/variants.module';
+import { StoreRoleModule } from 'src/modules/store/store-role/store-role.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Store]),
+    StoreRoleModule,
     CartModule,
     CategoriesModule,
     InventoryModule,
+    VariantsModule,
     NewsModule,
     OrdersModule,
     AnalyticsModule,

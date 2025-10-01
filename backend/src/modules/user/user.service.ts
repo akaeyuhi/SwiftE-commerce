@@ -12,11 +12,11 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { UserDto } from './dto/user.dto';
 import { UserMapper } from 'src/modules/user/user.mapper';
 import * as bcrypt from 'bcrypt';
-import { UserRole } from 'src/entities/user/policy/user-role.entity';
+import { StoreRole } from 'src/entities/user/policy/store-role.entity';
 import { CreateStoreDto } from 'src/modules/store/dto/create-store.dto';
 import { StoreService } from 'src/modules/store/store.service';
 import { StoreDto } from 'src/modules/store/dto/store.dto';
-import { UserRoleService } from 'src/modules/user/user-role/user-role.service';
+import { StoreRoleService } from 'src/modules/store/store-role/store-role.service';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { AdminRoles } from 'src/common/enums/admin.enum';
 
@@ -29,7 +29,7 @@ export class UserService extends BaseService<
 > {
   constructor(
     private readonly userRepo: UserRepository,
-    private readonly userRoleService: UserRoleService,
+    private readonly userRoleService: StoreRoleService,
     private readonly storeService: StoreService,
     protected readonly mapper: UserMapper
   ) {
@@ -79,7 +79,7 @@ export class UserService extends BaseService<
     roleName: StoreRoles,
     storeId: string,
     assignedBy?: string
-  ): Promise<UserRole> {
+  ): Promise<StoreRole> {
     const user = await this.getEntityById(userId);
     if (!user) throw new NotFoundException('User not found');
 
