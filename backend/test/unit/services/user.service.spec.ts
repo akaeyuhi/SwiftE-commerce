@@ -259,7 +259,7 @@ describe('UserService', () => {
       ).rejects.toThrow(NotFoundException);
     });
 
-    it('assignStoreRole throws if store not found', async () => {
+    it('assignStoreRole throws if stores not found', async () => {
       jest
         .spyOn(service, 'getEntityById')
         .mockResolvedValue({ id: 'u1' } as User);
@@ -284,7 +284,7 @@ describe('UserService', () => {
   });
 
   describe('createStore', () => {
-    it('creates store and assigns owner role', async () => {
+    it('creates stores and assigns owner role', async () => {
       const owner = { id: 'owner1' } as User;
       jest.spyOn(service, 'getEntityById').mockResolvedValue(owner);
 

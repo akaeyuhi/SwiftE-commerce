@@ -341,7 +341,7 @@ describe('UserRepository', () => {
       const testCases = [
         ['user1', 'role1', 'store1'],
         ['user2', 'role2', 'store2'],
-        ['user-with-dashes', 'role_with_underscores', 'store.with.dots'],
+        ['user-with-dashes', 'role_with_underscores', 'stores.with.dots'],
       ];
 
       const mockQueryBuilder = {
