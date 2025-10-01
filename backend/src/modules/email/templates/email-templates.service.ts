@@ -121,6 +121,13 @@ export class EmailTemplatesService {
       category: 'notification',
     });
 
+    this.templates.set(EmailJobType.NEWS_PUBLISHED, {
+      templateFile: 'news-published',
+      subject: 'New Post from {{storeName}}: {{newsTitle}}',
+      previewText: '{{newsExcerpt}}',
+      category: 'news',
+    });
+
     this.logger.log(`Initialized ${this.templates.size} email templates`);
   }
 

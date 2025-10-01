@@ -24,16 +24,29 @@ export enum EmailProvider {
 }
 
 export enum EmailJobType {
-  USER_CONFIRMATION = 'USER_CONFIRMATION',
-  WELCOME = 'WELCOME',
-  PASSWORD_RESET = 'PASSWORD_RESET',
-  ROLE_CONFIRMATION = 'ROLE_CONFIRMATION',
-  ORDER_CONFIRMATION = 'ORDER_CONFIRMATION',
-  ORDER_SHIPPED = 'ORDER_SHIPPED',
-  ORDER_DELIVERED = 'ORDER_DELIVERED',
-  STOCK_ALERT = 'STOCK_ALERT',
-  LOW_STOCK_WARNING = 'LOW_STOCK_WARNING',
-  NEWSLETTER = 'NEWSLETTER',
-  MARKETING = 'MARKETING',
-  NOTIFICATION = 'NOTIFICATION',
+  // Authentication
+  USER_CONFIRMATION = 'user_confirmation',
+  WELCOME = 'welcome',
+  PASSWORD_RESET = 'password_reset',
+  ROLE_CONFIRMATION = 'role_confirmation',
+
+  // Orders
+  ORDER_CONFIRMATION = 'order_confirmation',
+  ORDER_SHIPPED = 'order_shipped',
+  ORDER_DELIVERED = 'order_delivered',
+  ORDER_CANCELLED = 'order_cancelled',
+
+  // News
+  NEWS_PUBLISHED = 'news_published',
+
+  // Inventory
+  STOCK_ALERT = 'stock_alert',
+  LOW_STOCK_WARNING = 'low_stock_warning',
+
+  // Marketing
+  NEWSLETTER = 'newsletter',
+  MARKETING = 'marketing',
+
+  // General
+  NOTIFICATION = 'notification',
 }

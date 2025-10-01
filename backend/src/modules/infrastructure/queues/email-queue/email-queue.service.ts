@@ -369,9 +369,6 @@ export class EmailQueueService extends BaseQueueService<EmailJobData> {
     );
   }
 
-  /**
-   * Send order confirmation email
-   */
   async sendOrderConfirmation(
     userEmail: string,
     userName: string,
@@ -387,6 +384,10 @@ export class EmailQueueService extends BaseQueueService<EmailJobData> {
       }>;
       shippingAddress?: string;
       orderUrl: string;
+      storeName?: string;
+      orderDate?: string;
+      shippingMethod?: string;
+      deliveryInstructions?: string;
     },
     options?: QueueOptions
   ): Promise<string> {
@@ -401,13 +402,239 @@ export class EmailQueueService extends BaseQueueService<EmailJobData> {
           templateId: 'order_confirmation',
           templateData: {
             userName,
-            ...orderData,
+            orderNumber: orderData.orderNumber,
+            orderId: orderData.orderId,
+            totalAmount: orderData.totalAmount,
+            currency: orderData.currency,
+            items: orderData.items,
+            shippingAddress: orderData.shippingAddress,
+            orderUrl: orderData.orderUrl,
+            storeName: orderData.storeName,
+            orderDate: orderData.orderDate,
+            shippingMethod: orderData.shippingMethod,
+            deliveryInstructions: orderData.deliveryInstructions,
+            itemCount: orderData.items.length,
+            hasMultipleItems: orderData.items.length > 1,
           },
           priority: EmailPriority.HIGH,
           tags: ['order', 'confirmation'],
         },
       },
       { priority: EmailPriority.HIGH, ...options }
+    );
+  }
+
+  /**
+   * Send order shipped email
+   */
+  async sendOrderShipped(
+    userEmail: string,
+    userName: string,
+    orderData: {
+      orderId: string;
+      orderNumber: string;
+      trackingNumber?: string;
+      trackingUrl?: string;
+      estimatedDeliveryDate?: string;
+      shippingMethod?: string;
+      shippingAddress: string;
+      shippedDate: string;
+      storeName: string;
+      items: Array<{
+        name: string;
+        quantity: number;
+      }>;
+    },
+    options?: QueueOptions
+  ): Promise<string> {
+    return this.scheduleJob(
+      EmailJobType.ORDER_SHIPPED,
+      {
+        type: EmailJobType.ORDER_SHIPPED,
+        emailData: {
+          to: [{ email: userEmail, name: userName }],
+          subject: '',
+          html: '',
+          templateId: 'order_shipped',
+          templateData: {
+            userName,
+            orderNumber: orderData.orderNumber,
+            orderId: orderData.orderId,
+            trackingNumber: orderData.trackingNumber,
+            trackingUrl: orderData.trackingUrl,
+            hasTrackingNumber: !!orderData.trackingNumber,
+            estimatedDeliveryDate: orderData.estimatedDeliveryDate,
+            hasEstimatedDelivery: !!orderData.estimatedDeliveryDate,
+            shippingMethod: orderData.shippingMethod,
+            shippingAddress: orderData.shippingAddress,
+            shippedDate: orderData.shippedDate,
+            storeName: orderData.storeName,
+            items: orderData.items,
+            itemCount: orderData.items.length,
+          },
+          priority: EmailPriority.HIGH,
+          tags: ['order', 'shipped'],
+        },
+      },
+      { priority: EmailPriority.HIGH, ...options }
+    );
+  }
+
+  /**
+   * Send order delivered email
+   */
+  async sendOrderDelivered(
+    userEmail: string,
+    userName: string,
+    orderData: {
+      orderId: string;
+      orderNumber: string;
+      deliveredDate: string;
+      shippingAddress: string;
+      reviewUrl: string;
+      supportUrl: string;
+      storeName: string;
+      items: Array<{
+        name: string;
+        quantity: number;
+      }>;
+    },
+    options?: QueueOptions
+  ): Promise<string> {
+    return this.scheduleJob(
+      EmailJobType.ORDER_DELIVERED,
+      {
+        type: EmailJobType.ORDER_DELIVERED,
+        emailData: {
+          to: [{ email: userEmail, name: userName }],
+          subject: '',
+          html: '',
+          templateId: 'order_delivered',
+          templateData: {
+            userName,
+            orderNumber: orderData.orderNumber,
+            orderId: orderData.orderId,
+            deliveredDate: orderData.deliveredDate,
+            shippingAddress: orderData.shippingAddress,
+            reviewUrl: orderData.reviewUrl,
+            supportUrl: orderData.supportUrl,
+            storeName: orderData.storeName,
+            items: orderData.items,
+            itemCount: orderData.items.length,
+            hasMultipleItems: orderData.items.length > 1,
+          },
+          priority: EmailPriority.NORMAL,
+          tags: ['order', 'delivered'],
+        },
+      },
+      { priority: EmailPriority.NORMAL, ...options }
+    );
+  }
+
+  /**
+   * Send order cancelled email
+   */
+  async sendOrderCancelled(
+    userEmail: string,
+    userName: string,
+    orderData: {
+      orderId: string;
+      orderNumber: string;
+      cancelledDate: string;
+      cancellationReason?: string;
+      refundAmount: number;
+      refundMethod?: string;
+      storeName: string;
+      items: Array<{
+        productName: string;
+        sku: string;
+        quantity: number;
+        unitPrice: number;
+        lineTotal: number;
+      }>;
+    },
+    options?: QueueOptions
+  ): Promise<string> {
+    return this.scheduleJob(
+      EmailJobType.ORDER_CANCELLED,
+      {
+        type: EmailJobType.ORDER_CANCELLED,
+        emailData: {
+          to: [{ email: userEmail, name: userName }],
+          subject: '',
+          html: '',
+          templateId: 'order_cancelled',
+          templateData: {
+            userName,
+            orderNumber: orderData.orderNumber,
+            orderId: orderData.orderId,
+            cancelledDate: orderData.cancelledDate,
+            cancellationReason: orderData.cancellationReason,
+            hasCancellationReason: !!orderData.cancellationReason,
+            refundAmount: orderData.refundAmount,
+            refundMethod: orderData.refundMethod || 'Original payment method',
+            storeName: orderData.storeName,
+            items: orderData.items,
+            itemCount: orderData.items.length,
+          },
+          priority: EmailPriority.HIGH,
+          tags: ['order', 'cancelled'],
+        },
+      },
+      { priority: EmailPriority.HIGH, ...options }
+    );
+  }
+
+  /**
+   * Send news notification email
+   */
+  async sendNewsNotification(
+    userEmail: string,
+    userName: string,
+    newsData: {
+      newsId: string;
+      title: string;
+      excerpt: string;
+      content: string;
+      authorName: string;
+      publishedAt: string;
+      newsUrl: string;
+      coverImageUrl?: string;
+      category?: string;
+      storeName: string;
+      unsubscribeUrl: string;
+    },
+    options?: QueueOptions
+  ): Promise<string> {
+    return this.scheduleJob(
+      EmailJobType.NEWS_PUBLISHED,
+      {
+        type: EmailJobType.NEWS_PUBLISHED,
+        emailData: {
+          to: [{ email: userEmail, name: userName }],
+          subject: '',
+          html: '',
+          templateId: 'news_published',
+          templateData: {
+            userName,
+            newsTitle: newsData.title,
+            newsExcerpt: newsData.excerpt,
+            newsContent: newsData.content,
+            authorName: newsData.authorName,
+            publishedAt: newsData.publishedAt,
+            newsUrl: newsData.newsUrl,
+            coverImageUrl: newsData.coverImageUrl,
+            hasCoverImage: !!newsData.coverImageUrl,
+            category: newsData.category,
+            hasCategory: !!newsData.category,
+            storeName: newsData.storeName,
+            unsubscribeUrl: newsData.unsubscribeUrl,
+          },
+          priority: EmailPriority.NORMAL,
+          tags: ['news', 'announcement'],
+        },
+      },
+      { priority: EmailPriority.NORMAL, ...options }
     );
   }
 
