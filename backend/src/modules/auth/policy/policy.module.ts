@@ -1,13 +1,14 @@
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import { PolicyService } from 'src/modules/auth/policy/policy.service';
-import { AuthAdapterModule } from 'src/modules/auth-adapter/auth-adapter.module';
 import { AdminGuard } from 'src/modules/auth/policy/guards/admin.guard';
 import { EntityOwnerGuard } from 'src/modules/auth/policy/guards/entity-owner.guard';
 import { JwtAuthGuard } from 'src/modules/auth/policy/guards/jwt-auth.guard';
 import { StoreRolesGuard } from 'src/modules/auth/policy/guards/store-roles.guard';
+import { GuardServicesModule } from 'src/modules/auth/policy/guard-services/guard-services.module';
 
+@Global()
 @Module({
-  imports: [AuthAdapterModule],
+  imports: [GuardServicesModule],
   providers: [
     PolicyService,
     AdminGuard,

@@ -237,4 +237,8 @@ export class PolicyService {
       (await this.isStoreAdminForEntity(user, entity as StoreOwnedEntity))
     );
   }
+
+  async isUserActive(userId: string): Promise<boolean> {
+    return this.userService.isActive(userId);
+  }
 }
