@@ -7,7 +7,6 @@ import { BaseAiService } from 'src/common/abstracts/ai/base.ai.service';
 import { AiPredictorRepository } from './ai-predictor.repository';
 import { StoreDailyStatsRepository } from 'src/modules/analytics/repositories/store-daily-stats.repository';
 import { ProductDailyStatsRepository } from 'src/modules/analytics/repositories/product-daily-stats.repository';
-import { ReviewsRepository } from 'src/modules/products/reviews/reviews.repository';
 import { AiLogsService } from '../ai-logs/ai-logs.service';
 import { AiAuditService } from '../ai-audit/ai-audit.service';
 import { ProductVariant } from 'src/entities/store/product/variant.entity';

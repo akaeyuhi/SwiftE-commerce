@@ -4,7 +4,6 @@ import { Between } from 'typeorm';
 import { AnalyticsEventRepository } from './repositories/analytics-event.repository';
 import { StoreDailyStatsRepository } from './repositories/store-daily-stats.repository';
 import { ProductDailyStatsRepository } from './repositories/product-daily-stats.repository';
-import { ReviewsRepository } from 'src/modules/products/reviews/reviews.repository';
 import { RecordEventDto } from 'src/modules/infrastructure/queues/analytics-queue/dto/record-event.dto';
 import { AnalyticsQueueService } from 'src/modules/infrastructure/queues/analytics-queue/analytics-queue.service';
 import { BaseAnalyticsService } from 'src/common/abstracts/analytics/base.analytics.service';

@@ -1,4 +1,4 @@
-import { forwardRef, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { AiAuditsModule } from 'src/modules/ai/ai-audit/ai-audit.module';
 import { AiLogsModule } from 'src/modules/ai/ai-logs/ai-logs.module';
 import { AiGeneratorModule } from 'src/modules/ai/ai-generator/ai-generator.module';

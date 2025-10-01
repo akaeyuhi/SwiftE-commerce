@@ -5,7 +5,6 @@ import {
   CreateDateColumn,
   Index,
 } from 'typeorm';
-import { AdminRoles } from 'src/common/enums/admin.enum';
 
 /**
  * AnalyticsEvent
