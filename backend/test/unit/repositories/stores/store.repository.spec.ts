@@ -147,7 +147,7 @@ describe('StoreRepository', () => {
         'Store-123',
         'Store_test',
         'Store@domain.com',
-        'Store\'s Place',
+        `Store's Place`,
       ];
 
       (repository.findOneBy as jest.Mock).mockResolvedValue(mockStore);
@@ -304,7 +304,6 @@ describe('StoreRepository', () => {
     it('should handle repository method failures', async () => {
       const repositoryError = new Error('Repository operation failed');
       (repository.findOneBy as jest.Mock).mockRejectedValue(repositoryError);
-
 
       await expect(repository.findStoreByName('Test Store')).rejects.toThrow(
         repositoryError

@@ -4,7 +4,6 @@ import { CartRepository } from 'src/modules/store/cart/cart.repository';
 import { CartItemService } from 'src/modules/store/cart/cart-item/cart-item.service';
 import { ShoppingCart } from 'src/entities/store/cart/cart.entity';
 import { CartItem } from 'src/entities/store/cart/cart-item.entity';
-import { BadRequestException } from '@nestjs/common';
 import {
   createRepositoryMock,
   createServiceMock,

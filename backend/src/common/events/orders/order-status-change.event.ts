@@ -1,5 +1,3 @@
-// src/common/events/orders/order-status-change.event.ts
-
 import { OrderStatus } from 'src/common/enums/order-status.enum';
 
 /**
@@ -35,6 +33,14 @@ export interface OrderShippingInfo extends OrderAddressInfo {
   deliveredAt?: Date;
 }
 
+export interface OrderItemInfo {
+  productName: string;
+  sku: string;
+  quantity: number;
+  unitPrice: number;
+  lineTotal: number;
+}
+
 /**
  * OrderStatusChangeEvent
  *
@@ -53,13 +59,7 @@ export class OrderStatusChangeEvent {
     public readonly storeId: string,
     public readonly storeName: string,
     public readonly totalAmount: number,
-    public readonly items: Array<{
-      productName: string;
-      sku: string;
-      quantity: number;
-      unitPrice: number;
-      lineTotal: number;
-    }>,
+    public readonly items: Array<OrderItemInfo>,
     public readonly shipping?: OrderShippingInfo,
     public readonly billing?: OrderAddressInfo
   ) {}

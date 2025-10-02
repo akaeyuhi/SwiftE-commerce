@@ -1,5 +1,3 @@
-// src/modules/store/orders/orders.controller.ts
-
 import {
   Body,
   Controller,

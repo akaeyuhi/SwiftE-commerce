@@ -3,9 +3,9 @@ import {
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
-  OneToMany,
   CreateDateColumn,
   UpdateDateColumn,
+  OneToOne,
 } from 'typeorm';
 import { Product } from 'src/entities/store/product/product.entity';
 import { Inventory } from 'src/entities/store/product/inventory.entity';
@@ -30,8 +30,8 @@ export class ProductVariant implements BaseEntity {
   @Column({ type: 'jsonb', nullable: true })
   attributes?: Record<string, any>;
 
-  @OneToMany(() => Inventory, (inv) => inv.variant)
-  inventories: Inventory[];
+  @OneToOne(() => Inventory, (inv) => inv.variant)
+  inventory: Inventory;
 
   @CreateDateColumn()
   createdAt: Date;

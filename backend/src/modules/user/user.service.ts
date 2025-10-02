@@ -29,7 +29,7 @@ export class UserService extends BaseService<
 > {
   constructor(
     private readonly userRepo: UserRepository,
-    private readonly userRoleService: StoreRoleService,
+    private readonly storeRoleService: StoreRoleService,
     private readonly storeService: StoreService,
     protected readonly mapper: UserMapper
   ) {
@@ -86,10 +86,10 @@ export class UserService extends BaseService<
     const store = await this.storeService.getEntityById(storeId);
     if (!store) throw new NotFoundException('Store not found');
 
-    const exists = await this.userRoleService.findByStoreUser(userId, storeId);
+    const exists = await this.storeRoleService.findByStoreUser(userId, storeId);
     if (exists) throw new BadRequestException('Role already assigned');
 
-    const userRole = await this.userRoleService.assignStoreRole(
+    const userRole = await this.storeRoleService.assignStoreRole(
       userId,
       storeId,
       roleName,
@@ -173,14 +173,14 @@ export class UserService extends BaseService<
     storeId: string,
     roleName: StoreRoles
   ): Promise<boolean> {
-    return this.userRoleService.userHasStoreRole(userId, storeId, roleName);
+    return this.storeRoleService.userHasStoreRole(userId, storeId, roleName);
   }
 
   /**
    * Check if user is store admin (delegates to UserRoleService)
    */
   async userIsStoreAdmin(userId: string, storeId: string): Promise<boolean> {
-    return this.userRoleService.userIsStoreAdmin(userId, storeId);
+    return this.storeRoleService.userIsStoreAdmin(userId, storeId);
   }
 
   /**
