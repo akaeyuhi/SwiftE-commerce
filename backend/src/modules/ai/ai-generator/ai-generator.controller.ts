@@ -1,4 +1,3 @@
-// src/modules/ai/ai-generator/ai-generator.controller.ts
 import {
   Controller,
   Get,
