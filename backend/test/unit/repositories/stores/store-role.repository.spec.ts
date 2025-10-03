@@ -3,7 +3,7 @@ import { StoreRole } from 'src/entities/user/policy/store-role.entity';
 import { DataSource, EntityManager } from 'typeorm';
 import { createMock, MockedMethods } from 'test/unit/utils/helpers';
 import { Test, TestingModule } from '@nestjs/testing';
-import {UpdateStoreRoleDto} from "src/modules/store/store-role/dto/update-store-role.dto";
+import { UpdateStoreRoleDto } from 'src/modules/store/store-role/dto/update-store-role.dto';
 
 describe('StoreRoleRepository', () => {
   let repository: StoreRoleRepository;
