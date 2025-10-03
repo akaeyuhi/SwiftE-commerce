@@ -21,10 +21,7 @@ export class EmailTemplatesService {
   private readonly logger = new Logger(EmailTemplatesService.name);
   private readonly templates = new Map<EmailJobType, TemplateConfig>();
 
-  constructor(
-    private readonly mailerService: MailerService,
-    private readonly smtpProvider: SMTPProvider
-  ) {
+  constructor(private readonly mailerService: MailerService) {
     this.initializeTemplates();
   }
 
