@@ -9,7 +9,7 @@ import {
   STORE_SERVICE,
 } from 'src/common/contracts/policy.contract';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
-import { createServiceMock, MockedMethods } from '../utils/helpers';
+import { createServiceMock, MockedMethods } from 'test/unit/utils/helpers';
 import { UserService } from 'src/modules/user/user.service';
 import { AdminService } from 'src/modules/admin/admin.service';
 import { StoreService } from 'src/modules/store/store.service';
