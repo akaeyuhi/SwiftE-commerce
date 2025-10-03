@@ -4,7 +4,6 @@ import {
   LowStockEvent,
   OutOfStockEvent,
 } from 'src/common/events/inventory/low-stock.event';
-import { ProductVariant } from 'src/entities/store/product/variant.entity';
 import {
   LowStockNotificationData,
   OutOfStockNotificationData,
@@ -12,10 +11,11 @@ import {
 import { InventoryNotificationService } from 'src/modules/infrastructure/notifications/inventory/inventory-notification.service';
 import { StoreRoleService } from 'src/modules/store/store-role/store-role.service';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
-import { VariantsService } from 'src/modules/store/variants/variants.service';
 import { DomainEvent } from 'src/common/interfaces/infrastructure/event.interface';
 import { BaseNotificationListener } from 'src/common/abstracts/infrastucture/base.notification.listener';
 import { Store } from 'src/entities/store/store.entity';
+import { InventoryService } from 'src/modules/store/inventory/inventory.service';
+import { Inventory } from 'src/entities/store/product/inventory.entity';
 
 type InventoryEventType = 'inventory.low-stock' | 'inventory.out-of-stock';
 type InventoryEventData = LowStockEvent | OutOfStockEvent;
@@ -60,8 +60,8 @@ export class InventoryNotificationsListener extends BaseNotificationListener<
 
   constructor(
     eventEmitter: EventEmitter2,
-    private readonly variantService: VariantsService,
     private readonly storeRoleService: StoreRoleService,
+    private readonly inventoryService: InventoryService,
     private readonly inventoryNotifications: InventoryNotificationService
   ) {
     super(eventEmitter);
@@ -116,7 +116,7 @@ export class InventoryNotificationsListener extends BaseNotificationListener<
         `Processing low stock alert for ${event.sku} (current: ${event.currentStock}, threshold: ${event.threshold})`
       );
 
-      const { variant, store } = await this.getVariantWithsStore(
+      const { inventory, store } = await this.getInventoryByVariantId(
         event.variantId
       );
 
@@ -134,7 +134,9 @@ export class InventoryNotificationsListener extends BaseNotificationListener<
       }
 
       // Extract category name
-      const categoryName = this.extractCategoryName(variant.product.categories);
+      const categoryName = this.extractCategoryName(
+        inventory.variant.product.categories
+      );
 
       // Build notification data
       const notificationData: LowStockNotificationData = {
@@ -205,7 +207,7 @@ export class InventoryNotificationsListener extends BaseNotificationListener<
         `Processing OUT OF STOCK alert for ${event.sku} - CRITICAL`
       );
 
-      const { variant, store } = await this.getVariantWithsStore(
+      const { inventory, store } = await this.getInventoryByVariantId(
         event.variantId
       );
 
@@ -223,7 +225,9 @@ export class InventoryNotificationsListener extends BaseNotificationListener<
       }
 
       // Extract category name
-      const categoryName = this.extractCategoryName(variant.product.categories);
+      const categoryName = this.extractCategoryName(
+        inventory.variant.product.categories
+      );
 
       // Build notification data
       const notificationData: OutOfStockNotificationData = {
@@ -281,11 +285,11 @@ export class InventoryNotificationsListener extends BaseNotificationListener<
    *
    * Loads: variant → product → (store, categories)
    */
-  private async loadVariantWithRelations(
+  private async loadInventoryWithRelations(
     variantId: string
-  ): Promise<ProductVariant | null> {
+  ): Promise<Inventory | null> {
     try {
-      return await this.variantService.findWithRelations(variantId);
+      return await this.inventoryService.findInventoryByVariantId(variantId);
     } catch (error) {
       this.logger.error(
         `Failed to load variant ${variantId} with relations`,
@@ -295,23 +299,23 @@ export class InventoryNotificationsListener extends BaseNotificationListener<
     }
   }
 
-  private async getVariantWithsStore(
+  private async getInventoryByVariantId(
     variantId: string
-  ): Promise<{ variant: ProductVariant; store: Store }> {
-    const variant = await this.loadVariantWithRelations(variantId);
+  ): Promise<{ inventory: Inventory; store: Store }> {
+    const inventory = await this.loadInventoryWithRelations(variantId);
 
-    if (!variant) {
-      throw new Error(`Variant ${variantId} not found`);
+    if (!inventory) {
+      throw new Error(`Inventory with variant id  ${variantId} not found`);
     }
 
-    const store = variant.product?.store;
+    const store = inventory.store;
     if (!store) {
       throw new Error(
-        `Store not found for variant ${variantId} (product: ${variant.product.id})`
+        `Store not found for variant ${variantId} (product: ${inventory.variant.product.id})`
       );
     }
 
-    return { variant, store };
+    return { inventory, store };
   }
 
   /**
@@ -545,26 +549,26 @@ export class InventoryNotificationsListener extends BaseNotificationListener<
     notificationType: 'low-stock' | 'out-of-stock'
   ): Promise<{ success: boolean; recipientCount: number; error?: string }> {
     try {
-      const variant = await this.loadVariantWithRelations(variantId);
+      const inventory = await this.loadInventoryWithRelations(variantId);
 
-      if (!variant) {
+      if (!inventory) {
         return {
           success: false,
           recipientCount: 0,
-          error: 'Variant not found',
+          error: 'Inventory not found',
         };
       }
 
-      if (!variant.product?.store) {
+      if (!inventory.store) {
         return {
           success: false,
           recipientCount: 0,
-          error: 'Store not found for variant',
+          error: 'Store not found for inventory',
         };
       }
 
       const recipients = await this.getStoreNotificationRecipients(
-        variant.product.store.id
+        inventory.store.id
       );
 
       if (recipients.length === 0) {
@@ -582,28 +586,30 @@ export class InventoryNotificationsListener extends BaseNotificationListener<
       const syntheticEvent =
         notificationType === 'low-stock'
           ? ({
-              variantId: variant.id,
-              productId: variant.product.id,
-              storeId: variant.product.store.id,
-              sku: variant.sku,
-              productName: variant.product.name,
+              variantId: inventory.variant.id,
+              productId: inventory.variant.product.id,
+              storeId: inventory.store.id,
+              sku: inventory.variant.sku,
+              productName: inventory.variant.product.name,
               currentStock: 5,
               threshold: 10,
               recentSales: 15,
               estimatedDaysUntilStockout: 3,
               category:
-                this.extractCategoryName(variant.product.categories) ||
-                'Test Category',
+                this.extractCategoryName(
+                  inventory.variant.product.categories
+                ) || 'Test Category',
             } as LowStockEvent)
           : ({
-              variantId: variant.id,
-              productId: variant.product.id,
-              storeId: variant.product.store.id,
-              sku: variant.sku,
-              productName: variant.product.name,
+              variantId: inventory.variant.id,
+              productId: inventory.variant.product.id,
+              storeId: inventory.store.id,
+              sku: inventory.variant.sku,
+              productName: inventory.variant.product.name,
               category:
-                this.extractCategoryName(variant.product.categories) ||
-                'Test Category',
+                this.extractCategoryName(
+                  inventory.variant.product.categories
+                ) || 'Test Category',
             } as OutOfStockEvent);
 
       if (notificationType === 'low-stock') {
@@ -613,7 +619,7 @@ export class InventoryNotificationsListener extends BaseNotificationListener<
       }
 
       this.logger.warn(
-        `Manual notification triggered for ${variant.sku} (${notificationType}) - sent to ${recipients.length} recipients`
+        `Manual notification triggered for ${inventory.variant.sku} (${notificationType}) - sent to ${recipients.length} recipients`
       );
 
       return {

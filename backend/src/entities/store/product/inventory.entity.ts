@@ -23,7 +23,7 @@ export class Inventory implements StoreOwnedEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => ProductVariant, (variant) => variant.inventories, {
+  @ManyToOne(() => ProductVariant, (variant) => variant.inventory, {
     onDelete: 'CASCADE',
   })
   variant: ProductVariant;

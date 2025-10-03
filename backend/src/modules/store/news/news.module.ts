@@ -6,13 +6,16 @@ import { NewsPost } from 'src/entities/store/news-post.entity';
 import { NewsRepository } from 'src/modules/store/news/news.repository';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { StoreFollower } from 'src/entities/store/store-follower.entity';
+import { NewsNotificationsListener } from 'src/modules/store/news/listeners/news-notifications.listener';
+import { StoreRoleModule } from 'src/modules/store/store-role/store-role.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([NewsPost, StoreFollower]),
     EventEmitterModule.forRoot(),
+    StoreRoleModule,
   ],
   controllers: [NewsController],
-  providers: [NewsService, NewsRepository],
+  providers: [NewsService, NewsRepository, NewsNotificationsListener],
 })
 export class NewsModule {}

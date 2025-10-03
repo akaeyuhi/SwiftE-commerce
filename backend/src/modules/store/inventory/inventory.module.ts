@@ -8,6 +8,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { InventoryThresholdsConfig } from 'src/modules/store/inventory/config/inventory-thresholds.config';
 import { ConfigModule } from '@nestjs/config';
 import { InventoryNotificationsAdminController } from 'src/modules/store/inventory/controllers/inventory-notifications-admin.controller';
+import { InventoryNotificationsListener } from 'src/modules/store/inventory/listeners/inventory-notifications.listener';
 
 @Module({
   imports: [
@@ -17,7 +18,12 @@ import { InventoryNotificationsAdminController } from 'src/modules/store/invento
     EventEmitterModule.forRoot(),
   ],
   controllers: [InventoryNotificationsAdminController],
-  providers: [InventoryService, InventoryRepository, InventoryThresholdsConfig],
+  providers: [
+    InventoryService,
+    InventoryRepository,
+    InventoryThresholdsConfig,
+    InventoryNotificationsListener,
+  ],
   exports: [InventoryService, InventoryRepository],
 })
 export class InventoryModule {}
