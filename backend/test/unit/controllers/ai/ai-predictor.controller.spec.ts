@@ -16,8 +16,10 @@ import {
 import {
   createGuardMock,
   createMock,
+  createPolicyMock,
   MockedMethods,
 } from '../../utils/helpers';
+import { PolicyService } from 'src/modules/authorization/policy/policy.service';
 
 describe('AiPredictorController', () => {
   let controller: AiPredictorController;
@@ -28,6 +30,7 @@ describe('AiPredictorController', () => {
 
   beforeEach(async () => {
     const guardMock = createGuardMock();
+    const policyMock = createPolicyMock();
 
     predictorService = createMock<AiPredictorService>([
       'buildFeatureVector',
@@ -41,6 +44,7 @@ describe('AiPredictorController', () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AiPredictorController],
       providers: [
+        { provide: PolicyService, useValue: policyMock },
         { provide: AiPredictorService, useValue: predictorService },
         { provide: JwtAuthGuard, useValue: guardMock },
         { provide: AdminGuard, useValue: guardMock },

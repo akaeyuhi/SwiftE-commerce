@@ -7,16 +7,24 @@ import {
   createPolicyMock,
   createGuardMock,
   MockedMethods,
+  createDeepMock,
+  createMockInterceptor,
+  createMockAnalyticsQueue,
 } from 'test/unit/utils/helpers';
 import { Product } from 'src/entities/store/product/product.entity';
 import { CreateProductDto } from 'src/modules/products/dto/create-product.dto';
 import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';
 import { StoreRolesGuard } from 'src/modules/authorization/guards/store-roles.guard';
 import { Store } from 'src/entities/store/store.entity';
+import { BaseQueueService } from 'src/common/abstracts/infrastucture/base.queue.service';
+import { AnalyticsQueueService } from 'src/modules/infrastructure/queues/analytics-queue/analytics-queue.service';
+import { RecordEventInterceptor } from 'src/modules/infrastructure/interceptors/record-event/record-event.interceptor';
+import { ProductPhotosInterceptor } from 'src/modules/infrastructure/interceptors/product-photo/product-photo.interceptor';
 
 describe('ProductsController', () => {
   let ctrl: ProductsController;
   let svc: Partial<MockedMethods<ProductsService>>;
+  let queue: Partial<MockedMethods<BaseQueueService>>;
   const policyMock = createPolicyMock();
   const guardMock = createGuardMock();
 
@@ -39,16 +47,22 @@ describe('ProductsController', () => {
       'findProductsByCategory',
       'attachCategoryToProduct',
     ]);
-    const mod = await Test.createTestingModule({
+    queue = createMockAnalyticsQueue();
+    const interceptorMock = createMockInterceptor();
+
+    const module = await Test.createTestingModule({
       controllers: [ProductsController],
       providers: [
+        { provide: AnalyticsQueueService, useValue: queue },
         { provide: ProductsService, useValue: svc },
         { provide: PolicyService, useValue: policyMock },
         { provide: JwtAuthGuard, useValue: guardMock },
         { provide: StoreRolesGuard, useValue: guardMock },
+        { provide: RecordEventInterceptor, useValue: interceptorMock },
+        { provide: ProductPhotosInterceptor, useValue: interceptorMock },
       ],
     }).compile();
-    ctrl = mod.get<ProductsController>(ProductsController);
+    ctrl = module.get<ProductsController>(ProductsController);
     jest.clearAllMocks();
   });
 

@@ -7,7 +7,7 @@ import { ConfigService } from '@nestjs/config';
  * Centralized configuration for inventory alert thresholds.
  * Supports global defaults and per-category overrides.
  *
- * Best Practice: Store thresholds in database for runtime configuration
+ * Store thresholds in database for runtime configuration
  * without deployments. This implementation uses env vars as fallback.
  */
 @Injectable()
@@ -16,7 +16,7 @@ export class InventoryThresholdsConfig {
   private readonly DEFAULT_LOW_STOCK_THRESHOLD = 10;
   private readonly DEFAULT_CRITICAL_THRESHOLD = 5;
 
-  // Category-specific thresholds (best practice: fetch from database)
+  // Category-specific thresholds
   private readonly categoryThresholds: Map<string, number> = new Map([
     ['electronics', 15],
     ['perishable', 20],

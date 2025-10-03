@@ -575,7 +575,7 @@ describe('UserService', () => {
 
       expect(result).toEqual({
         id: 'u1',
-        email: 'user@example.com',
+        email: mockUser.email,
         firstName: 'John',
         lastName: 'Doe',
         isEmailVerified: true,

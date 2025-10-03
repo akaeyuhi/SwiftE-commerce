@@ -703,11 +703,10 @@ describe('AdminService', () => {
     it('should assign and then revoke admin role', async () => {
       userService.getEntityById!.mockResolvedValue(mockUser);
       jest.spyOn(service, 'findByUserId').mockResolvedValueOnce(null);
-      jest.spyOn(service, 'create').mockResolvedValue(mockAdmin);
-      jest.spyOn(service, 'update').mockResolvedValue({
-        ...mockAdmin,
-        isActive: false,
-      });
+
+      // Mock the repository method instead of the service method
+      const createdAdmin = { ...mockAdmin, isActive: true };
+      adminRepo.createEntity!.mockResolvedValue(createdAdmin);
 
       // Assign role
       const assigned = await service.assignSiteAdminRole(
@@ -716,22 +715,29 @@ describe('AdminService', () => {
       );
       expect(assigned.isActive).toBe(true);
 
-      // Revoke role
-      jest.spyOn(service, 'findByUserId').mockResolvedValueOnce(mockAdmin);
+      // Revoke role - set up new mocks for revocation
+      jest.spyOn(service, 'findByUserId').mockResolvedValueOnce(createdAdmin);
+      adminRepo.findById!.mockResolvedValue(createdAdmin);
+      adminRepo.save!.mockResolvedValue({ ...createdAdmin, isActive: false });
+
       await service.revokeSiteAdminRole('user1', 'super-admin');
 
-      expect(service.update).toHaveBeenCalledWith(
-        mockAdmin.id,
+      expect(adminRepo.save).toHaveBeenCalledWith(
         expect.objectContaining({ isActive: false })
       );
     });
 
     it('should check admin status after assignment', async () => {
-      jest.spyOn(service, 'assignSiteAdminRole').mockResolvedValue(mockAdmin);
-      jest.spyOn(service, 'isUserValidAdmin').mockResolvedValue(true);
-      jest.spyOn(service, 'findByUserId').mockResolvedValue(mockAdmin);
+      userService.getEntityById!.mockResolvedValue(mockUser);
+      jest.spyOn(service, 'findByUserId').mockResolvedValueOnce(null);
+
+      const activeAdmin = { ...mockAdmin, isActive: true };
+      adminRepo.createEntity!.mockResolvedValue(activeAdmin);
 
       await service.assignSiteAdminRole('user1', 'super-admin');
+
+      jest.spyOn(service, 'isUserValidAdmin').mockResolvedValue(true);
+      jest.spyOn(service, 'findByUserId').mockResolvedValue(activeAdmin);
 
       const status = await service.checkAdminStatus('user1');
       expect(status.isAdmin).toBe(true);

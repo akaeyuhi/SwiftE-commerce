@@ -51,7 +51,7 @@ export interface FeatureVector {
 }
 
 /**
- * Enhanced AiPredictorService extending BaseAiService
+ * AiPredictorService extending BaseAiService
  *
  * Provides comprehensive prediction capabilities with:
  * - Feature vector building with caching
@@ -715,6 +715,7 @@ export class AiPredictorService extends BaseAiService<
       string | { productId: string; storeId?: string } | AiPredictRow
     >
   ) {
+    if (!items || !items.length) return [];
     const request: AiServiceRequest<PredictorRequestData> = {
       feature: 'batch_prediction',
       provider: 'predictor',

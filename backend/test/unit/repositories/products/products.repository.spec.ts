@@ -37,7 +37,7 @@ describe('ProductRepository', () => {
     } as any;
     (repo.createQueryBuilder as jest.Mock).mockReturnValue(qb);
     const res = await repo.findAllByStore('s1');
-    expect(qb.leftJoinAndSelect).toHaveBeenCalledWith('p.stores', 's');
+    expect(qb.leftJoinAndSelect).toHaveBeenCalledWith('p.store', 's');
     expect(qb.leftJoinAndSelect).toHaveBeenCalledWith('p.photos', 'photos');
     expect(qb.where).toHaveBeenCalledWith('s.id = :storeId', { storeId: 's1' });
     expect(res).toEqual([mock]);
@@ -68,7 +68,7 @@ describe('ProductRepository', () => {
     (repo.createQueryBuilder as jest.Mock).mockReturnValue(qb);
     const res = await repo.findProductsByCategory('c1');
     expect(qb.leftJoin).toHaveBeenCalledWith('p.categories', 'c');
-    expect(qb.leftJoinAndSelect).toHaveBeenCalledWith('p.stores', 's');
+    expect(qb.leftJoinAndSelect).toHaveBeenCalledWith('p.store', 's');
     expect(qb.leftJoinAndSelect).toHaveBeenCalledWith('p.photos', 'photos');
     expect(qb.where).toHaveBeenCalledWith('c.id = :categoryId', {
       categoryId: 'c1',

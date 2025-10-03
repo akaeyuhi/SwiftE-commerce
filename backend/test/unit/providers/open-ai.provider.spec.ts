@@ -15,6 +15,8 @@ describe('OpenAiProvider', () => {
   let aiAuditService: Partial<MockedMethods<AiAuditService>>;
 
   beforeEach(async () => {
+    process.env.OPENAI_API_KEY = 'sk-test-key';
+
     httpService = createMock<HttpService>(['post']);
     aiLogsService = createServiceMock<AiLogsService>(['record']);
     aiAuditService = createMock<AiAuditService>(['storeEncryptedResponse']);
@@ -188,12 +190,15 @@ describe('OpenAiProvider', () => {
     });
 
     it('should build headers without API key when not configured', () => {
-      delete process.env.OPENAI_API_KEY;
+      const originalApiKey = (provider as any).config.apiKey;
+      (provider as any).config.apiKey = undefined;
 
       const headers = (provider as any).buildHeaders();
 
       expect(headers['Content-Type']).toBe('application/json');
       expect(headers['Authorization']).toBeUndefined();
+
+      (provider as any).config.apiKey = originalApiKey;
     });
   });
 

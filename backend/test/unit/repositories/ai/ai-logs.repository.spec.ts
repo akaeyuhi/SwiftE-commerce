@@ -1,6 +1,10 @@
 import { DataSource, EntityManager, SelectQueryBuilder } from 'typeorm';
 import { AiLog } from 'src/entities/ai/ai-log.entity';
-import { createMock, MockedMethods } from '../../utils/helpers';
+import {
+  createMock,
+  createMockEntityManager,
+  MockedMethods,
+} from '../../utils/helpers';
 import { AiLogsRepository } from 'src/modules/ai/ai-logs/ai-logs.repository';
 
 describe('AiLogsRepository', () => {
@@ -37,7 +41,7 @@ describe('AiLogsRepository', () => {
       execute: jest.fn(),
     } as any;
 
-    manager = createMock<EntityManager>(['createQueryBuilder']);
+    manager = createMockEntityManager();
     manager.createQueryBuilder!.mockReturnValue(queryBuilder as any);
 
     dataSource = createMock<DataSource>(['createEntityManager']);

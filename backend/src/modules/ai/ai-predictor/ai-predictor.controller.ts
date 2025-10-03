@@ -33,7 +33,7 @@ import {
 } from 'src/modules/ai/ai-predictor/dto/predictor-request.dto';
 
 /**
- * Enhanced AI Predictor Controller
+ * AI Predictor Controller
  *
  * Provides comprehensive AI prediction endpoints with:
  * - Feature vector building and caching

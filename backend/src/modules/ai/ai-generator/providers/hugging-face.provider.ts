@@ -10,7 +10,7 @@ import {
 } from 'src/common/interfaces/ai/generator.interface';
 
 /**
- * Enhanced HuggingFace Provider
+ * HuggingFace Provider
  *
  * Supports multiple HuggingFace models with proper error handling,
  * retry logic, and comprehensive monitoring.
@@ -128,10 +128,13 @@ export class HuggingFaceProvider extends BaseAiProvider {
 
     try {
       // Handle different response formats from HuggingFace
-      if (Array.isArray(data)) {
-        if (data.length > 0 && data[0].generated_text !== undefined) {
+      if (Array.isArray(data) && data.length > 0) {
+        // Check for translation first
+        if (data[0].translation_text !== undefined) {
+          text = data[0].translation_text;
+        } else if (data[0].generated_text !== undefined) {
           text = data[0].generated_text;
-        } else if (data.length > 0 && typeof data[0] === 'string') {
+        } else if (typeof data[0] === 'string') {
           text = data[0];
         } else {
           text = JSON.stringify(data);
@@ -140,9 +143,6 @@ export class HuggingFaceProvider extends BaseAiProvider {
         text = data.generated_text;
       } else if (typeof data === 'string') {
         text = data;
-      } else if (data[0]?.translation_text) {
-        // For translation models
-        text = data[0].translation_text;
       } else {
         // Fallback
         text = JSON.stringify(data).substring(0, 2048);

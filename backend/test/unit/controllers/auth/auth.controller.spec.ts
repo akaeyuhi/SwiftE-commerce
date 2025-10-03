@@ -2,10 +2,15 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from 'src/modules/auth/auth.controller';
 import { AuthService } from 'src/modules/auth/auth.service';
 import { Request, Response } from 'express';
-import { createMock, MockedMethods } from '../../utils/helpers';
+import {
+  createMock,
+  createPolicyMock,
+  MockedMethods,
+} from '../../utils/helpers';
 import { BadRequestException } from '@nestjs/common';
 import { ConfirmationType } from 'src/modules/auth/confirmation/enums/confirmation.enum';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
+import { PolicyService } from 'src/modules/authorization/policy/policy.service';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -25,15 +30,12 @@ describe('AuthController', () => {
     },
   };
 
-  const createMockResponse = (): Partial<Response> => {
-    const res: any = {
-      cookie: jest.fn().mockReturnThis(),
-      json: jest.fn().mockReturnThis(),
-      status: jest.fn().mockReturnThis(),
-      clearCookie: jest.fn().mockReturnThis(),
-    };
-    return res;
-  };
+  const createMockResponse = (): Partial<Response> => ({
+    cookie: jest.fn().mockReturnThis(),
+    json: jest.fn().mockReturnThis(),
+    status: jest.fn().mockReturnThis(),
+    clearCookie: jest.fn().mockReturnThis(),
+  });
 
   const createMockRequest = (
     overrides?: Partial<Request>
@@ -73,10 +75,14 @@ describe('AuthController', () => {
 
     mockRequest = createMockRequest();
     mockResponse = createMockResponse();
+    const policyMock = createPolicyMock();
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
-      providers: [{ provide: AuthService, useValue: authService }],
+      providers: [
+        { provide: AuthService, useValue: authService },
+        { provide: PolicyService, useValue: policyMock },
+      ],
     }).compile();
 
     controller = module.get<AuthController>(AuthController);

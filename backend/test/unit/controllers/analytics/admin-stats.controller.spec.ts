@@ -8,8 +8,10 @@ import { GetStatsDto } from 'src/modules/analytics/dto/get-stats.dto';
 import {
   createGuardMock,
   createMock,
+  createPolicyMock,
   MockedMethods,
 } from '../../utils/helpers';
+import { PolicyService } from 'src/modules/authorization/policy/policy.service';
 
 describe('AdminStatsController', () => {
   let controller: AdminStatsController;
@@ -17,6 +19,7 @@ describe('AdminStatsController', () => {
 
   beforeEach(async () => {
     const guardMock = createGuardMock();
+    const policyMock = createPolicyMock();
 
     analyticsService = createMock<AnalyticsService>([
       'computeStoreConversion',
@@ -27,6 +30,7 @@ describe('AdminStatsController', () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AdminStatsController],
       providers: [
+        { provide: PolicyService, useValue: policyMock },
         { provide: AnalyticsService, useValue: analyticsService },
         { provide: JwtAuthGuard, useValue: guardMock },
         { provide: AdminGuard, useValue: guardMock },

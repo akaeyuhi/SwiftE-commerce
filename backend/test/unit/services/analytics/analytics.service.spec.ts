@@ -672,7 +672,7 @@ describe('AnalyticsService', () => {
 
   describe('getAggregationSchema', () => {
     it('should return schema for known aggregator', () => {
-      const schema = service.getAggregationSchema('product_conversion');
+      const schema = service.getAggregationSchema('productConversion');
 
       expect(schema).toBeDefined();
       expect(schema!.name).toBe('product_conversion');

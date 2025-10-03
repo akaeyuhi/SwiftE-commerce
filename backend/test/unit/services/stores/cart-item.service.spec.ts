@@ -32,6 +32,9 @@ describe('CartItemService', () => {
       'findWithRelations',
       'findByCart',
       'createEntity',
+      'save',
+      'deleteById',
+      'create',
     ]);
 
     const entityRepoMock = createMock(['create', 'save', 'delete']);
@@ -86,19 +89,10 @@ describe('CartItemService', () => {
   });
 
   describe('addOrIncrement', () => {
-    const entityRepo = {
-      create: jest.fn(),
-      save: jest.fn(),
-    };
-
-    beforeEach(() => {
-      (repo as any).manager.getRepository.mockReturnValue(entityRepo);
-    });
-
     it('creates new item when not exists', async () => {
       repo.findByCartAndVariant!.mockResolvedValue(null);
-      entityRepo.create.mockReturnValue(mockCartItem);
-      entityRepo.save.mockResolvedValue(mockCartItem);
+      repo.createEntity!.mockResolvedValue(mockCartItem);
+      repo.save!.mockResolvedValue(mockCartItem);
 
       const result = await service.addOrIncrement({
         cartId: 'cart1',
@@ -110,7 +104,7 @@ describe('CartItemService', () => {
         'cart1',
         'variant1'
       );
-      expect(entityRepo.create).toHaveBeenCalledWith({
+      expect(repo.createEntity).toHaveBeenCalledWith({
         cart: { id: 'cart1' },
         variant: { id: 'variant1' },
         quantity: 3,
@@ -121,7 +115,7 @@ describe('CartItemService', () => {
     it('increments existing item', async () => {
       const existing = { ...mockCartItem, quantity: 2 };
       repo.findByCartAndVariant!.mockResolvedValue(existing as any);
-      entityRepo.save.mockResolvedValue({ ...existing, quantity: 5 });
+      repo.save!.mockResolvedValue({ ...existing, quantity: 5 });
 
       const result = await service.addOrIncrement({
         cartId: 'cart1',
@@ -130,7 +124,7 @@ describe('CartItemService', () => {
       });
 
       expect(existing.quantity).toBe(5); // 2 + 3
-      expect(entityRepo.save).toHaveBeenCalledWith(existing);
+      expect(repo!.save).toHaveBeenCalledWith(existing);
       expect(result.quantity).toBe(5);
     });
 
@@ -146,35 +140,26 @@ describe('CartItemService', () => {
   });
 
   describe('updateQuantity', () => {
-    const entityRepo = {
-      save: jest.fn(),
-      delete: jest.fn(),
-    };
-
-    beforeEach(() => {
-      (repo as any).manager.getRepository.mockReturnValue(entityRepo);
-    });
-
     it('updates item quantity', async () => {
       const item = { ...mockCartItem };
       repo.findWithRelations!.mockResolvedValue(item as any);
-      entityRepo.save.mockResolvedValue({ ...item, quantity: 5 });
+      repo.save!.mockResolvedValue({ ...item, quantity: 5 });
 
       const result = await service.updateQuantity('item1', 5);
 
       expect(item.quantity).toBe(5);
-      expect(entityRepo.save).toHaveBeenCalledWith(item);
+      expect(repo.save).toHaveBeenCalledWith(item);
       expect(result.quantity).toBe(5);
     });
 
     it('deletes item when quantity is 0', async () => {
       const item = { ...mockCartItem };
       repo.findWithRelations!.mockResolvedValue(item as any);
-      entityRepo.delete.mockResolvedValue({ affected: 1 });
+      repo.deleteById!.mockResolvedValue();
 
       const result = await service.updateQuantity('item1', 0);
 
-      expect(entityRepo.delete).toHaveBeenCalledWith('item1');
+      expect(repo.deleteById).toHaveBeenCalledWith('item1');
       expect(result.quantity).toBe(0);
     });
 
@@ -193,16 +178,10 @@ describe('CartItemService', () => {
   });
 
   describe('adjustQuantity', () => {
-    const entityRepo = { save: jest.fn() };
-
-    beforeEach(() => {
-      (repo as any).manager.getRepository.mockReturnValue(entityRepo);
-    });
-
     it('adjusts quantity by delta', async () => {
       const item = { ...mockCartItem, quantity: 3 };
       repo.findWithRelations!.mockResolvedValue(item as any);
-      entityRepo.save.mockResolvedValue({ ...item, quantity: 5 });
+      repo.save?.mockResolvedValue({ ...item, quantity: 5 });
 
       const result = await service.adjustQuantity('item1', 2);
 

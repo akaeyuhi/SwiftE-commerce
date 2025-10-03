@@ -12,12 +12,15 @@ describe('EmailService', () => {
   let smtp: Partial<SMTPProvider>;
 
   beforeEach(() => {
+    process.env.EMAIL_PROVIDER = 'sendgrid';
+    process.env.SENDGRID_API_KEY = 'test-key';
     templates = {
       getTemplate: jest.fn().mockReturnValue({
         templateFile: 'tpl',
         subject: 'Hi {{name}}',
         category: 'cat',
       }),
+      processTemplate: jest.fn(),
       sendTemplatedEmail: jest.fn().mockResolvedValue({ success: true }),
     } as any;
     sg = {

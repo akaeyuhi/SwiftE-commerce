@@ -10,7 +10,7 @@ import { EmailJobType } from 'src/common/enums/email.enum';
  *
  * Handles actual email sending with lazy-loaded EmailService.
  * Uses ModuleRef to dynamically load EmailService only when needed.
- * This prevents circular dependencies at module load time.
+ *
  */
 @Injectable()
 @Processor('email')

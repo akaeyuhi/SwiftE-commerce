@@ -162,6 +162,7 @@ export function createPolicyMock(
       async (_user: any, _storeId: string, _roles: StoreRoles[]) => false
     ),
     isOwnerOrAdmin: jest.fn(async (_user: any, _entity: any) => false),
+    isUserActive: jest.fn(async (_userId: string) => false),
   };
 
   // Apply overrides
@@ -227,6 +228,28 @@ export function mockBuilder<T>(): MockBuilder<T> {
   return new MockBuilder<T>();
 }
 
+import { EntityManager } from 'typeorm';
+
+export function createMockEntityManager(
+  ...methods: Array<keyof EntityManager>
+) {
+  const manager = createMock<EntityManager>([
+    'createQueryBuilder',
+    'connection',
+    ...methods,
+  ]);
+  Object.assign(manager, {
+    connection: {
+      getMetadata: jest.fn().mockReturnValue({
+        name: 'EntityName',
+        tableName: 'entity_table',
+        columns: [],
+      }),
+    },
+  });
+  return manager;
+}
+
 import { Injectable, NestInterceptor, CallHandler } from '@nestjs/common';
 import { Observable } from 'rxjs';
 
@@ -235,4 +258,220 @@ export class TestInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     return next.handle();
   }
+}
+
+export const createMockInterceptor = () => new TestInterceptor();
+
+import { AnalyticsQueueService } from 'src/modules/infrastructure/queues/analytics-queue/analytics-queue.service';
+import { EmailQueueService } from 'src/modules/infrastructure/queues/email-queue/email-queue.service';
+import { BaseQueueService } from 'src/common/abstracts/infrastucture/base.queue.service';
+
+/**
+ * Create a fully mocked AnalyticsQueueService
+ * All methods return resolved promises with job IDs
+ */
+export function createMockAnalyticsQueue(): jest.Mocked<AnalyticsQueueService> {
+  const mockJobId = () =>
+    `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+  return {
+    // Core queue methods
+    addEvent: jest.fn().mockResolvedValue(mockJobId()),
+    recordView: jest.fn().mockResolvedValue(mockJobId()),
+    recordLike: jest.fn().mockResolvedValue(mockJobId()),
+    recordAddToCart: jest.fn().mockResolvedValue(mockJobId()),
+    recordPurchase: jest.fn().mockResolvedValue(mockJobId()),
+    recordClick: jest.fn().mockResolvedValue(mockJobId()),
+
+    // Batch operations
+    addBatch: jest.fn().mockResolvedValue(mockJobId()),
+
+    // Scheduling methods
+    scheduleDailyAggregation: jest.fn().mockResolvedValue(mockJobId()),
+    scheduleCleanup: jest.fn().mockResolvedValue(mockJobId()),
+    scheduleMetricsProcessing: jest.fn().mockResolvedValue(mockJobId()),
+    scheduleReportGeneration: jest.fn().mockResolvedValue(mockJobId()),
+    scheduleRecurring: jest.fn().mockResolvedValue(mockJobId()),
+
+    // Setup and management
+    setupRecurringJobs: jest.fn().mockResolvedValue(undefined),
+    retryFailed: jest.fn().mockResolvedValue(0),
+    purgeCompleted: jest.fn().mockResolvedValue(0),
+    close: jest.fn().mockResolvedValue(undefined),
+
+    // Base queue service methods
+    scheduleJob: jest.fn().mockResolvedValue(mockJobId()),
+    getJobStatus: jest.fn().mockResolvedValue({
+      id: mockJobId(),
+      status: 'completed',
+      progress: 100,
+      data: {},
+    } as any),
+    getQueueStatus: jest.fn().mockResolvedValue({
+      waiting: 0,
+      active: 0,
+      completed: 10,
+      failed: 0,
+      delayed: 0,
+      paused: 0,
+    }),
+    pauseQueue: jest.fn().mockResolvedValue(undefined),
+    resumeQueue: jest.fn().mockResolvedValue(undefined),
+    emptyQueue: jest.fn().mockResolvedValue(undefined),
+
+    // Properties
+    queueName: 'analytics',
+    logger: {
+      log: jest.fn(),
+      error: jest.fn(),
+      warn: jest.fn(),
+      debug: jest.fn(),
+    } as any,
+    queue: {
+      add: jest.fn().mockResolvedValue({ id: mockJobId() }),
+      getJob: jest.fn().mockResolvedValue(null),
+      getJobs: jest.fn().mockResolvedValue([]),
+      getCompleted: jest.fn().mockResolvedValue([]),
+      getFailed: jest.fn().mockResolvedValue([]),
+      getWaiting: jest.fn().mockResolvedValue([]),
+      getActive: jest.fn().mockResolvedValue([]),
+      pause: jest.fn().mockResolvedValue(undefined),
+      resume: jest.fn().mockResolvedValue(undefined),
+      empty: jest.fn().mockResolvedValue(undefined),
+      clean: jest.fn().mockResolvedValue([]),
+      close: jest.fn().mockResolvedValue(undefined),
+    } as any,
+  } as unknown as jest.Mocked<AnalyticsQueueService>;
+}
+
+/**
+ * Create a fully mocked EmailQueueService
+ * All methods return resolved promises with job IDs
+ */
+export function createMockEmailQueue(): jest.Mocked<EmailQueueService> {
+  const mockJobId = () =>
+    `email_job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+  return {
+    // User-related emails
+    sendUserConfirmation: jest.fn().mockResolvedValue(mockJobId()),
+    sendWelcomeEmail: jest.fn().mockResolvedValue(mockJobId()),
+    sendPasswordReset: jest.fn().mockResolvedValue(mockJobId()),
+    sendRoleConfirmation: jest.fn().mockResolvedValue(mockJobId()),
+
+    // Stock-related emails
+    sendStockAlert: jest.fn().mockResolvedValue(mockJobId()),
+    sendLowStockWarning: jest.fn().mockResolvedValue(mockJobId()),
+
+    // Order-related emails
+    sendOrderConfirmation: jest.fn().mockResolvedValue(mockJobId()),
+    sendOrderShipped: jest.fn().mockResolvedValue(mockJobId()),
+    sendOrderDelivered: jest.fn().mockResolvedValue(mockJobId()),
+    sendOrderCancelled: jest.fn().mockResolvedValue(mockJobId()),
+
+    // News emails
+    sendNewsNotification: jest.fn().mockResolvedValue(mockJobId()),
+
+    // Queue management
+    scheduleRecurring: jest.fn().mockResolvedValue(mockJobId()),
+    retryFailed: jest.fn().mockResolvedValue(0),
+    purgeCompleted: jest.fn().mockResolvedValue(0),
+
+    // Base queue service methods
+    scheduleJob: jest.fn().mockResolvedValue(mockJobId()),
+    getJobStatus: jest.fn().mockResolvedValue({
+      id: mockJobId(),
+      status: 'completed',
+      progress: 100,
+      data: {},
+    } as any),
+    getQueueStatus: jest.fn().mockResolvedValue({
+      waiting: 0,
+      active: 0,
+      completed: 10,
+      failed: 0,
+      delayed: 0,
+      paused: 0,
+    }),
+    pauseQueue: jest.fn().mockResolvedValue(undefined),
+    resumeQueue: jest.fn().mockResolvedValue(undefined),
+    emptyQueue: jest.fn().mockResolvedValue(undefined),
+
+    // Properties
+    queueName: 'email',
+    logger: {
+      log: jest.fn(),
+      error: jest.fn(),
+      warn: jest.fn(),
+      debug: jest.fn(),
+    } as any,
+    queue: {
+      add: jest.fn().mockResolvedValue({ id: mockJobId() }),
+      getJob: jest.fn().mockResolvedValue(null),
+      getJobs: jest.fn().mockResolvedValue([]),
+      getCompleted: jest.fn().mockResolvedValue([]),
+      getFailed: jest.fn().mockResolvedValue([]),
+      getWaiting: jest.fn().mockResolvedValue([]),
+      getActive: jest.fn().mockResolvedValue([]),
+      pause: jest.fn().mockResolvedValue(undefined),
+      resume: jest.fn().mockResolvedValue(undefined),
+      empty: jest.fn().mockResolvedValue(undefined),
+      clean: jest.fn().mockResolvedValue([]),
+      close: jest.fn().mockResolvedValue(undefined),
+    } as any,
+  } as unknown as jest.Mocked<EmailQueueService>;
+}
+
+/**
+ * Create a generic mock for any BaseQueueService subclass
+ * Useful for custom queue implementations
+ */
+export function createMockBaseQueue<
+  T extends BaseQueueService<any>,
+>(): jest.Mocked<T> {
+  const mockJobId = () =>
+    `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+  return {
+    scheduleJob: jest.fn().mockResolvedValue(mockJobId()),
+    getJobStatus: jest.fn().mockResolvedValue({
+      id: mockJobId(),
+      status: 'completed',
+      progress: 100,
+      data: {},
+    } as any),
+    getQueueStatus: jest.fn().mockResolvedValue({
+      waiting: 0,
+      active: 0,
+      completed: 10,
+      failed: 0,
+      delayed: 0,
+      paused: 0,
+    }),
+    pauseQueue: jest.fn().mockResolvedValue(undefined),
+    resumeQueue: jest.fn().mockResolvedValue(undefined),
+    emptyQueue: jest.fn().mockResolvedValue(undefined),
+
+    queueName: 'generic',
+    logger: {
+      log: jest.fn(),
+      error: jest.fn(),
+      warn: jest.fn(),
+      debug: jest.fn(),
+    } as any,
+    queue: {
+      add: jest.fn().mockResolvedValue({ id: mockJobId() }),
+      getJob: jest.fn().mockResolvedValue(null),
+      getJobs: jest.fn().mockResolvedValue([]),
+      getCompleted: jest.fn().mockResolvedValue([]),
+      getFailed: jest.fn().mockResolvedValue([]),
+      getWaiting: jest.fn().mockResolvedValue([]),
+      getActive: jest.fn().mockResolvedValue([]),
+      pause: jest.fn().mockResolvedValue(undefined),
+      resume: jest.fn().mockResolvedValue(undefined),
+      empty: jest.fn().mockResolvedValue(undefined),
+      clean: jest.fn().mockResolvedValue([]),
+      close: jest.fn().mockResolvedValue(undefined),
+    } as any,
+  } as unknown as jest.Mocked<T>;
 }

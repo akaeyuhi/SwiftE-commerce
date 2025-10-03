@@ -29,6 +29,7 @@ import { Store } from 'src/entities/store/store.entity';
 import { User } from 'src/entities/user/user.entity';
 import { Inventory } from 'src/entities/store/product/inventory.entity';
 import { OrderInfo } from 'src/common/embeddables/order-info.embeddable';
+import { AnalyticsEventType } from 'src/modules/infrastructure/queues/analytics-queue/types/analytics-queue.types';
 
 describe('OrdersService', () => {
   let service: OrdersService;
@@ -179,6 +180,7 @@ describe('OrdersService', () => {
     }).compile();
 
     service = module.get<OrdersService>(OrdersService);
+    jest.spyOn(service as any, 'recordEvent').mockResolvedValue(undefined);
 
     // Suppress logger output
     jest.spyOn(Logger.prototype, 'log').mockImplementation();
@@ -276,7 +278,10 @@ describe('OrdersService', () => {
     it('should record analytics event', async () => {
       await service.createOrder(createOrderDto);
 
-      expect(analyticsQueue.addEvent).toHaveBeenCalled();
+      expect(service['recordEvent']).toHaveBeenCalledWith(
+        expect.any(Object),
+        AnalyticsEventType.PURCHASE
+      );
     });
 
     it('should calculate total amount from items', async () => {
@@ -532,7 +537,7 @@ describe('OrdersService', () => {
     it('should record analytics event', async () => {
       await service.paid('o1');
 
-      expect(analyticsQueue.addEvent).toHaveBeenCalled();
+      expect(service['recordEvent']).toHaveBeenCalled();
     });
 
     it('should throw NotFoundException when order not found', async () => {
@@ -758,8 +763,26 @@ describe('OrdersService', () => {
     });
 
     it('should emit order.status-changed event on status update', async () => {
-      orderRepo.findWithItems!.mockResolvedValue(mockOrder);
-      orderRepo.save!.mockResolvedValue(mockOrder);
+      // Create a fresh copy of mockOrder for this test to avoid mutation issues
+      const testOrder = {
+        ...mockOrder,
+        id: 'o1',
+        status: OrderStatus.PENDING,
+        items: [mockOrderItem],
+        store: mockStore,
+        user: mockUser,
+        shipping: mockOrderInfo,
+        billing: mockOrderInfo,
+      };
+
+      orderRepo.findWithItems!.mockResolvedValue(testOrder);
+
+      // Return a copy with updated status
+      const updatedOrder = {
+        ...testOrder,
+        status: OrderStatus.SHIPPED,
+      };
+      orderRepo.save!.mockResolvedValue(updatedOrder);
 
       await service.updateStatus('o1', OrderStatus.SHIPPED);
 

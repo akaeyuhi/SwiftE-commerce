@@ -78,7 +78,7 @@ describe('CategoriesRepository', () => {
       const res = await repository.findCategoriesByStore('s1');
       expect(repository.createQueryBuilder).toHaveBeenCalledWith('c');
       expect(qb.leftJoin).toHaveBeenCalledWith('c.products', 'p');
-      expect(qb.leftJoin).toHaveBeenCalledWith('p.stores', 's');
+      expect(qb.leftJoin).toHaveBeenCalledWith('p.store', 's');
       expect(qb.where).toHaveBeenCalledWith('s.id = :storeId', {
         storeId: 's1',
       });

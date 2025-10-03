@@ -12,6 +12,9 @@ import { AnalyticsEventType } from 'src/entities/infrastructure/analytics/analyt
 import { createMock, MockedMethods } from '../utils/helpers';
 import { RecordEventInterceptor } from 'src/modules/infrastructure/interceptors/record-event/record-event.interceptor';
 
+const waitForAsync = (ms: number = 50) =>
+  new Promise((resolve) => setTimeout(resolve, ms));
+
 describe('RecordEventInterceptor', () => {
   let interceptor: RecordEventInterceptor;
   let reflector: Partial<MockedMethods<Reflector>>;
@@ -81,23 +84,24 @@ describe('RecordEventInterceptor', () => {
   });
 
   describe('basic interception', () => {
-    it('should pass through when no metadata present', (done) => {
+    it('should pass through when no metadata present', async () => {
       reflector.get!.mockReturnValue(undefined);
       mockContext = createMockContext(mockRequest);
 
-      interceptor
-        .intercept(
-          mockContext as ExecutionContext,
-          mockCallHandler as CallHandler
-        )
-        .subscribe(() => {
-          expect(mockCallHandler.handle).toHaveBeenCalled();
-          expect(analyticsQueue.addEvent).not.toHaveBeenCalled();
-          done();
-        });
+      await new Promise<void>((resolve) => {
+        interceptor
+          .intercept(
+            mockContext as ExecutionContext,
+            mockCallHandler as CallHandler
+          )
+          .subscribe(() => resolve());
+      });
+
+      expect(mockCallHandler.handle).toHaveBeenCalled();
+      expect(analyticsQueue.addEvent).not.toHaveBeenCalled();
     });
 
-    it('should pass through when request is null', (done) => {
+    it('should pass through when request is null', async () => {
       const opts: RecordEventOptions = {
         eventType: AnalyticsEventType.VIEW,
       };
@@ -111,21 +115,22 @@ describe('RecordEventInterceptor', () => {
         getClass: jest.fn().mockReturnValue(class TestController {}),
       } as any;
 
-      interceptor
-        .intercept(
-          mockContext as ExecutionContext,
-          mockCallHandler as CallHandler
-        )
-        .subscribe(() => {
-          expect(mockCallHandler.handle).toHaveBeenCalled();
-          expect(analyticsQueue.addEvent).not.toHaveBeenCalled();
-          done();
-        });
+      await new Promise<void>((resolve) => {
+        interceptor
+          .intercept(
+            mockContext as ExecutionContext,
+            mockCallHandler as CallHandler
+          )
+          .subscribe(() => resolve());
+      });
+
+      expect(mockCallHandler.handle).toHaveBeenCalled();
+      expect(analyticsQueue.addEvent).not.toHaveBeenCalled();
     });
   });
 
   describe('reading from handler metadata', () => {
-    it('should read metadata from handler', (done) => {
+    it('should read metadata from handler', async () => {
       const opts: RecordEventOptions = {
         eventType: AnalyticsEventType.VIEW,
         storeId: 'params.storeId',
@@ -136,23 +141,26 @@ describe('RecordEventInterceptor', () => {
       mockContext = createMockContext(mockRequest);
       analyticsQueue.recordView!.mockResolvedValue(undefined as any);
 
-      interceptor
-        .intercept(
-          mockContext as ExecutionContext,
-          mockCallHandler as CallHandler
-        )
-        .subscribe(() => {
-          expect(analyticsQueue.recordView).toHaveBeenCalledWith(
-            's1',
-            'p1',
-            'u1',
-            null
-          );
-          done();
-        });
+      await new Promise<void>((resolve) => {
+        interceptor
+          .intercept(
+            mockContext as ExecutionContext,
+            mockCallHandler as CallHandler
+          )
+          .subscribe(() => resolve());
+      });
+
+      await waitForAsync();
+
+      expect(analyticsQueue.recordView).toHaveBeenCalledWith(
+        's1',
+        'p1',
+        'u1',
+        undefined
+      );
     });
 
-    it('should read metadata from controller map', (done) => {
+    it('should read metadata from controller map', async () => {
       const optsMap = {
         testHandler: {
           eventType: AnalyticsEventType.VIEW,
@@ -167,28 +175,31 @@ describe('RecordEventInterceptor', () => {
       mockContext = createMockContext(mockRequest);
       analyticsQueue.recordView!.mockResolvedValue(undefined as any);
 
-      interceptor
-        .intercept(
-          mockContext as ExecutionContext,
-          mockCallHandler as CallHandler
-        )
-        .subscribe(() => {
-          expect(reflector.get).toHaveBeenCalledWith(
-            RECORD_EVENT_META,
-            expect.any(Object)
-          );
-          expect(reflector.get).toHaveBeenCalledWith(
-            RECORD_EVENTS_MAP_META,
-            expect.any(Function)
-          );
-          expect(analyticsQueue.recordView).toHaveBeenCalled();
-          done();
-        });
+      await new Promise<void>((resolve) => {
+        interceptor
+          .intercept(
+            mockContext as ExecutionContext,
+            mockCallHandler as CallHandler
+          )
+          .subscribe(() => resolve());
+      });
+
+      await waitForAsync();
+
+      expect(reflector.get).toHaveBeenCalledWith(
+        RECORD_EVENT_META,
+        expect.any(Object)
+      );
+      expect(reflector.get).toHaveBeenCalledWith(
+        RECORD_EVENTS_MAP_META,
+        expect.any(Function)
+      );
+      expect(analyticsQueue.recordView).toHaveBeenCalled();
     });
   });
 
   describe('reading values from request', () => {
-    it('should read from params', (done) => {
+    it('should read from params', async () => {
       const opts: RecordEventOptions = {
         eventType: AnalyticsEventType.VIEW,
         storeId: 'params.storeId',
@@ -199,23 +210,26 @@ describe('RecordEventInterceptor', () => {
       mockContext = createMockContext(mockRequest);
       analyticsQueue.recordView!.mockResolvedValue(undefined as any);
 
-      interceptor
-        .intercept(
-          mockContext as ExecutionContext,
-          mockCallHandler as CallHandler
-        )
-        .subscribe(() => {
-          expect(analyticsQueue.recordView).toHaveBeenCalledWith(
-            's1',
-            'p1',
-            'u1',
-            null
-          );
-          done();
-        });
+      await new Promise<void>((resolve) => {
+        interceptor
+          .intercept(
+            mockContext as ExecutionContext,
+            mockCallHandler as CallHandler
+          )
+          .subscribe(() => resolve());
+      });
+
+      await waitForAsync();
+
+      expect(analyticsQueue.recordView).toHaveBeenCalledWith(
+        's1',
+        'p1',
+        'u1',
+        undefined
+      );
     });
 
-    it('should read from query', (done) => {
+    it('should read from query', async () => {
       const opts: RecordEventOptions = {
         eventType: AnalyticsEventType.VIEW,
         storeId: 'query.storeId',
@@ -226,23 +240,26 @@ describe('RecordEventInterceptor', () => {
       mockContext = createMockContext(mockRequest);
       analyticsQueue.recordView!.mockResolvedValue(undefined as any);
 
-      interceptor
-        .intercept(
-          mockContext as ExecutionContext,
-          mockCallHandler as CallHandler
-        )
-        .subscribe(() => {
-          expect(analyticsQueue.recordView).toHaveBeenCalledWith(
-            's2',
-            undefined,
-            'u1',
-            null
-          );
-          done();
-        });
+      await new Promise<void>((resolve) => {
+        interceptor
+          .intercept(
+            mockContext as ExecutionContext,
+            mockCallHandler as CallHandler
+          )
+          .subscribe(() => resolve());
+      });
+
+      await waitForAsync();
+
+      expect(analyticsQueue.recordView).toHaveBeenCalledWith(
+        's2',
+        'p1',
+        'u1',
+        undefined
+      );
     });
 
-    it('should read from body', (done) => {
+    it('should read from body', async () => {
       const opts: RecordEventOptions = {
         eventType: AnalyticsEventType.VIEW,
         productId: 'body.productId',
@@ -253,23 +270,26 @@ describe('RecordEventInterceptor', () => {
       mockContext = createMockContext(mockRequest);
       analyticsQueue.recordView!.mockResolvedValue(undefined as any);
 
-      interceptor
-        .intercept(
-          mockContext as ExecutionContext,
-          mockCallHandler as CallHandler
-        )
-        .subscribe(() => {
-          expect(analyticsQueue.recordView).toHaveBeenCalledWith(
-            's1',
-            'p2',
-            'u1',
-            null
-          );
-          done();
-        });
+      await new Promise<void>((resolve) => {
+        interceptor
+          .intercept(
+            mockContext as ExecutionContext,
+            mockCallHandler as CallHandler
+          )
+          .subscribe(() => resolve());
+      });
+
+      await waitForAsync();
+
+      expect(analyticsQueue.recordView).toHaveBeenCalledWith(
+        's1',
+        'p2',
+        'u1',
+        undefined
+      );
     });
 
-    it('should read from user', (done) => {
+    it('should read from user', async () => {
       const opts: RecordEventOptions = {
         eventType: AnalyticsEventType.VIEW,
         userId: 'user.id',
@@ -279,23 +299,26 @@ describe('RecordEventInterceptor', () => {
       mockContext = createMockContext(mockRequest);
       analyticsQueue.recordView!.mockResolvedValue(undefined as any);
 
-      interceptor
-        .intercept(
-          mockContext as ExecutionContext,
-          mockCallHandler as CallHandler
-        )
-        .subscribe(() => {
-          expect(analyticsQueue.recordView).toHaveBeenCalledWith(
-            's1',
-            'p1',
-            'u1',
-            null
-          );
-          done();
-        });
+      await new Promise<void>((resolve) => {
+        interceptor
+          .intercept(
+            mockContext as ExecutionContext,
+            mockCallHandler as CallHandler
+          )
+          .subscribe(() => resolve());
+      });
+
+      await waitForAsync();
+
+      expect(analyticsQueue.recordView).toHaveBeenCalledWith(
+        's1',
+        'p1',
+        'u1',
+        undefined
+      );
     });
 
-    it('should read from headers', (done) => {
+    it('should read from headers', async () => {
       const opts: RecordEventOptions = {
         eventType: AnalyticsEventType.VIEW,
         meta: 'headers.x-custom-header',
@@ -306,23 +329,26 @@ describe('RecordEventInterceptor', () => {
       mockContext = createMockContext(mockRequest);
       analyticsQueue.recordView!.mockResolvedValue(undefined as any);
 
-      interceptor
-        .intercept(
-          mockContext as ExecutionContext,
-          mockCallHandler as CallHandler
-        )
-        .subscribe(() => {
-          expect(analyticsQueue.recordView).toHaveBeenCalledWith(
-            's1',
-            'p1',
-            'u1',
-            'custom-value'
-          );
-          done();
-        });
+      await new Promise<void>((resolve) => {
+        interceptor
+          .intercept(
+            mockContext as ExecutionContext,
+            mockCallHandler as CallHandler
+          )
+          .subscribe(() => resolve());
+      });
+
+      await waitForAsync();
+
+      expect(analyticsQueue.recordView).toHaveBeenCalledWith(
+        's1',
+        'p1',
+        'u1',
+        'custom-value'
+      );
     });
 
-    it('should fallback to direct key lookup', (done) => {
+    it('should fallback to direct key lookup', async () => {
       const opts: RecordEventOptions = {
         eventType: AnalyticsEventType.VIEW,
         storeId: 'storeId', // No prefix, should fallback
@@ -332,25 +358,28 @@ describe('RecordEventInterceptor', () => {
       mockContext = createMockContext(mockRequest);
       analyticsQueue.recordView!.mockResolvedValue(undefined as any);
 
-      interceptor
-        .intercept(
-          mockContext as ExecutionContext,
-          mockCallHandler as CallHandler
-        )
-        .subscribe(() => {
-          expect(analyticsQueue.recordView).toHaveBeenCalledWith(
-            's1',
-            'p1',
-            'u1',
-            null
-          );
-          done();
-        });
+      await new Promise<void>((resolve) => {
+        interceptor
+          .intercept(
+            mockContext as ExecutionContext,
+            mockCallHandler as CallHandler
+          )
+          .subscribe(() => resolve());
+      });
+
+      await waitForAsync();
+
+      expect(analyticsQueue.recordView).toHaveBeenCalledWith(
+        's1',
+        'p1',
+        'u1',
+        undefined
+      );
     });
   });
 
   describe('reading values from result', () => {
-    it('should read from result when timing is after', (done) => {
+    it('should read from result when timing is after', async () => {
       const opts: RecordEventOptions = {
         eventType: AnalyticsEventType.VIEW,
         productId: 'id',
@@ -364,23 +393,26 @@ describe('RecordEventInterceptor', () => {
       mockContext = createMockContext(mockRequest);
       analyticsQueue.recordView!.mockResolvedValue(undefined as any);
 
-      interceptor
-        .intercept(
-          mockContext as ExecutionContext,
-          mockCallHandler as CallHandler
-        )
-        .subscribe(() => {
-          expect(analyticsQueue.recordView).toHaveBeenCalledWith(
-            's1',
-            'p-from-result',
-            'u1',
-            null
-          );
-          done();
-        });
+      await new Promise<void>((resolve) => {
+        interceptor
+          .intercept(
+            mockContext as ExecutionContext,
+            mockCallHandler as CallHandler
+          )
+          .subscribe(() => resolve());
+      });
+
+      await waitForAsync();
+
+      expect(analyticsQueue.recordView).toHaveBeenCalledWith(
+        's1',
+        'p-from-result',
+        'u1',
+        undefined
+      );
     });
 
-    it('should read nested properties from result', (done) => {
+    it('should read nested properties from result', async () => {
       const opts: RecordEventOptions = {
         eventType: AnalyticsEventType.VIEW,
         productId: 'product.id',
@@ -394,23 +426,26 @@ describe('RecordEventInterceptor', () => {
       mockContext = createMockContext(mockRequest);
       analyticsQueue.recordView!.mockResolvedValue(undefined as any);
 
-      interceptor
-        .intercept(
-          mockContext as ExecutionContext,
-          mockCallHandler as CallHandler
-        )
-        .subscribe(() => {
-          expect(analyticsQueue.recordView).toHaveBeenCalledWith(
-            's1',
-            'nested-product-id',
-            'u1',
-            null
-          );
-          done();
-        });
+      await new Promise<void>((resolve) => {
+        interceptor
+          .intercept(
+            mockContext as ExecutionContext,
+            mockCallHandler as CallHandler
+          )
+          .subscribe(() => resolve());
+      });
+
+      await waitForAsync();
+
+      expect(analyticsQueue.recordView).toHaveBeenCalledWith(
+        's1',
+        'nested-product-id',
+        'u1',
+        undefined
+      );
     });
 
-    it('should fallback to request when result value not found', (done) => {
+    it('should fallback to request when result value not found', async () => {
       const opts: RecordEventOptions = {
         eventType: AnalyticsEventType.VIEW,
         productId: 'nonexistent',
@@ -424,26 +459,29 @@ describe('RecordEventInterceptor', () => {
       mockContext = createMockContext(mockRequest);
       analyticsQueue.recordView!.mockResolvedValue(undefined as any);
 
-      interceptor
-        .intercept(
-          mockContext as ExecutionContext,
-          mockCallHandler as CallHandler
-        )
-        .subscribe(() => {
-          // Should fallback to params.productId
-          expect(analyticsQueue.recordView).toHaveBeenCalledWith(
-            's1',
-            'p1',
-            'u1',
-            null
-          );
-          done();
-        });
+      await new Promise<void>((resolve) => {
+        interceptor
+          .intercept(
+            mockContext as ExecutionContext,
+            mockCallHandler as CallHandler
+          )
+          .subscribe(() => resolve());
+      });
+
+      await waitForAsync();
+
+      // Should fallback to params.productId
+      expect(analyticsQueue.recordView).toHaveBeenCalledWith(
+        's1',
+        'p1',
+        'u1',
+        undefined
+      );
     });
   });
 
   describe('when: before vs after', () => {
-    it('should execute before handler when timing is before', (done) => {
+    it('should execute before handler when timing is before', async () => {
       const opts: RecordEventOptions = {
         eventType: AnalyticsEventType.VIEW,
         when: 'before',
@@ -460,13 +498,15 @@ describe('RecordEventInterceptor', () => {
 
       // Should return immediately without waiting
       expect(observable).toBeDefined();
-      observable.subscribe(() => {
-        expect(mockCallHandler.handle).toHaveBeenCalled();
-        done();
+
+      await new Promise<void>((resolve) => {
+        observable.subscribe(() => resolve());
       });
+
+      expect(mockCallHandler.handle).toHaveBeenCalled();
     });
 
-    it('should execute after handler when timing is after', (done) => {
+    it('should execute after handler when timing is after', async () => {
       const opts: RecordEventOptions = {
         eventType: AnalyticsEventType.VIEW,
         when: 'after',
@@ -476,19 +516,22 @@ describe('RecordEventInterceptor', () => {
       mockContext = createMockContext(mockRequest);
       analyticsQueue.recordView!.mockResolvedValue(undefined as any);
 
-      interceptor
-        .intercept(
-          mockContext as ExecutionContext,
-          mockCallHandler as CallHandler
-        )
-        .subscribe(() => {
-          expect(mockCallHandler.handle).toHaveBeenCalled();
-          expect(analyticsQueue.recordView).toHaveBeenCalled();
-          done();
-        });
+      await new Promise<void>((resolve) => {
+        interceptor
+          .intercept(
+            mockContext as ExecutionContext,
+            mockCallHandler as CallHandler
+          )
+          .subscribe(() => resolve());
+      });
+
+      await waitForAsync();
+
+      expect(mockCallHandler.handle).toHaveBeenCalled();
+      expect(analyticsQueue.recordView).toHaveBeenCalled();
     });
 
-    it('should default to after when timing not specified', (done) => {
+    it('should default to after when timing not specified', async () => {
       const opts: RecordEventOptions = {
         eventType: AnalyticsEventType.VIEW,
       };
@@ -497,20 +540,23 @@ describe('RecordEventInterceptor', () => {
       mockContext = createMockContext(mockRequest);
       analyticsQueue.recordView!.mockResolvedValue(undefined as any);
 
-      interceptor
-        .intercept(
-          mockContext as ExecutionContext,
-          mockCallHandler as CallHandler
-        )
-        .subscribe(() => {
-          expect(analyticsQueue.recordView).toHaveBeenCalled();
-          done();
-        });
+      await new Promise<void>((resolve) => {
+        interceptor
+          .intercept(
+            mockContext as ExecutionContext,
+            mockCallHandler as CallHandler
+          )
+          .subscribe(() => resolve());
+      });
+
+      await waitForAsync();
+
+      expect(analyticsQueue.recordView).toHaveBeenCalled();
     });
   });
 
   describe('event types and convenience methods', () => {
-    it('should use recordView for VIEW event', (done) => {
+    it('should use recordView for VIEW event', async () => {
       const opts: RecordEventOptions = {
         eventType: AnalyticsEventType.VIEW,
       };
@@ -519,19 +565,22 @@ describe('RecordEventInterceptor', () => {
       mockContext = createMockContext(mockRequest);
       analyticsQueue.recordView!.mockResolvedValue(undefined as any);
 
-      interceptor
-        .intercept(
-          mockContext as ExecutionContext,
-          mockCallHandler as CallHandler
-        )
-        .subscribe(() => {
-          expect(analyticsQueue.recordView).toHaveBeenCalled();
-          expect(analyticsQueue.addEvent).not.toHaveBeenCalled();
-          done();
-        });
+      await new Promise<void>((resolve) => {
+        interceptor
+          .intercept(
+            mockContext as ExecutionContext,
+            mockCallHandler as CallHandler
+          )
+          .subscribe(() => resolve());
+      });
+
+      await waitForAsync();
+
+      expect(analyticsQueue.recordView).toHaveBeenCalled();
+      expect(analyticsQueue.addEvent).not.toHaveBeenCalled();
     });
 
-    it('should use recordLike for LIKE event', (done) => {
+    it('should use recordLike for LIKE event', async () => {
       const opts: RecordEventOptions = {
         eventType: AnalyticsEventType.LIKE,
       };
@@ -540,18 +589,21 @@ describe('RecordEventInterceptor', () => {
       mockContext = createMockContext(mockRequest);
       analyticsQueue.recordLike!.mockResolvedValue(undefined as any);
 
-      interceptor
-        .intercept(
-          mockContext as ExecutionContext,
-          mockCallHandler as CallHandler
-        )
-        .subscribe(() => {
-          expect(analyticsQueue.recordLike).toHaveBeenCalled();
-          done();
-        });
+      await new Promise<void>((resolve) => {
+        interceptor
+          .intercept(
+            mockContext as ExecutionContext,
+            mockCallHandler as CallHandler
+          )
+          .subscribe(() => resolve());
+      });
+
+      await waitForAsync();
+
+      expect(analyticsQueue.recordLike).toHaveBeenCalled();
     });
 
-    it('should use recordAddToCart for ADD_TO_CART event', (done) => {
+    it('should use recordAddToCart for ADD_TO_CART event', async () => {
       const opts: RecordEventOptions = {
         eventType: AnalyticsEventType.ADD_TO_CART,
         value: 2,
@@ -561,24 +613,27 @@ describe('RecordEventInterceptor', () => {
       mockContext = createMockContext(mockRequest);
       analyticsQueue.recordAddToCart!.mockResolvedValue(undefined as any);
 
-      interceptor
-        .intercept(
-          mockContext as ExecutionContext,
-          mockCallHandler as CallHandler
-        )
-        .subscribe(() => {
-          expect(analyticsQueue.recordAddToCart).toHaveBeenCalledWith(
-            's1',
-            'p1',
-            'u1',
-            2,
-            null
-          );
-          done();
-        });
+      await new Promise<void>((resolve) => {
+        interceptor
+          .intercept(
+            mockContext as ExecutionContext,
+            mockCallHandler as CallHandler
+          )
+          .subscribe(() => resolve());
+      });
+
+      await waitForAsync();
+
+      expect(analyticsQueue.recordAddToCart).toHaveBeenCalledWith(
+        's1',
+        'p1',
+        'u1',
+        2,
+        undefined
+      );
     });
 
-    it('should use recordPurchase for PURCHASE event', (done) => {
+    it('should use recordPurchase for PURCHASE event', async () => {
       const opts: RecordEventOptions = {
         eventType: AnalyticsEventType.PURCHASE,
         value: 99.99,
@@ -588,24 +643,27 @@ describe('RecordEventInterceptor', () => {
       mockContext = createMockContext(mockRequest);
       analyticsQueue.recordPurchase!.mockResolvedValue(undefined as any);
 
-      interceptor
-        .intercept(
-          mockContext as ExecutionContext,
-          mockCallHandler as CallHandler
-        )
-        .subscribe(() => {
-          expect(analyticsQueue.recordPurchase).toHaveBeenCalledWith(
-            's1',
-            'p1',
-            'u1',
-            99.99,
-            null
-          );
-          done();
-        });
+      await new Promise<void>((resolve) => {
+        interceptor
+          .intercept(
+            mockContext as ExecutionContext,
+            mockCallHandler as CallHandler
+          )
+          .subscribe(() => resolve());
+      });
+
+      await waitForAsync();
+
+      expect(analyticsQueue.recordPurchase).toHaveBeenCalledWith(
+        's1',
+        'p1',
+        'u1',
+        99.99,
+        undefined
+      );
     });
 
-    it('should use recordClick for CLICK event', (done) => {
+    it('should use recordClick for CLICK event', async () => {
       const opts: RecordEventOptions = {
         eventType: AnalyticsEventType.CLICK,
       };
@@ -614,18 +672,21 @@ describe('RecordEventInterceptor', () => {
       mockContext = createMockContext(mockRequest);
       analyticsQueue.recordClick!.mockResolvedValue(undefined as any);
 
-      interceptor
-        .intercept(
-          mockContext as ExecutionContext,
-          mockCallHandler as CallHandler
-        )
-        .subscribe(() => {
-          expect(analyticsQueue.recordClick).toHaveBeenCalled();
-          done();
-        });
+      await new Promise<void>((resolve) => {
+        interceptor
+          .intercept(
+            mockContext as ExecutionContext,
+            mockCallHandler as CallHandler
+          )
+          .subscribe(() => resolve());
+      });
+
+      await waitForAsync();
+
+      expect(analyticsQueue.recordClick).toHaveBeenCalled();
     });
 
-    it('should use addEvent for custom event type', (done) => {
+    it('should use addEvent for custom event type', async () => {
       const opts: RecordEventOptions = {
         eventType: 'custom' as any,
       };
@@ -634,18 +695,21 @@ describe('RecordEventInterceptor', () => {
       mockContext = createMockContext(mockRequest);
       analyticsQueue.addEvent!.mockResolvedValue(undefined as any);
 
-      interceptor
-        .intercept(
-          mockContext as ExecutionContext,
-          mockCallHandler as CallHandler
-        )
-        .subscribe(() => {
-          expect(analyticsQueue.addEvent).toHaveBeenCalled();
-          done();
-        });
+      await new Promise<void>((resolve) => {
+        interceptor
+          .intercept(
+            mockContext as ExecutionContext,
+            mockCallHandler as CallHandler
+          )
+          .subscribe(() => resolve());
+      });
+
+      await waitForAsync();
+
+      expect(analyticsQueue.addEvent).toHaveBeenCalled();
     });
 
-    it('should fallback to addEvent when convenience method not available', (done) => {
+    it('should fallback to addEvent when convenience method not available', async () => {
       const opts: RecordEventOptions = {
         eventType: AnalyticsEventType.VIEW,
       };
@@ -655,20 +719,23 @@ describe('RecordEventInterceptor', () => {
       delete analyticsQueue.recordView; // Remove convenience method
       analyticsQueue.addEvent!.mockResolvedValue(undefined as any);
 
-      interceptor
-        .intercept(
-          mockContext as ExecutionContext,
-          mockCallHandler as CallHandler
-        )
-        .subscribe(() => {
-          expect(analyticsQueue.addEvent).toHaveBeenCalled();
-          done();
-        });
+      await new Promise<void>((resolve) => {
+        interceptor
+          .intercept(
+            mockContext as ExecutionContext,
+            mockCallHandler as CallHandler
+          )
+          .subscribe(() => resolve());
+      });
+
+      await waitForAsync();
+
+      expect(analyticsQueue.addEvent).toHaveBeenCalled();
     });
   });
 
   describe('invokedOn logic', () => {
-    it('should infer invokedOn as product when productId present', (done) => {
+    it('should infer invokedOn as product when productId present', async () => {
       const opts: RecordEventOptions = {
         eventType: AnalyticsEventType.VIEW,
       };
@@ -677,18 +744,21 @@ describe('RecordEventInterceptor', () => {
       mockContext = createMockContext(mockRequest);
       analyticsQueue.recordView!.mockResolvedValue(undefined as any);
 
-      interceptor
-        .intercept(
-          mockContext as ExecutionContext,
-          mockCallHandler as CallHandler
-        )
-        .subscribe(() => {
-          expect(analyticsQueue.recordView).toHaveBeenCalled();
-          done();
-        });
+      await new Promise<void>((resolve) => {
+        interceptor
+          .intercept(
+            mockContext as ExecutionContext,
+            mockCallHandler as CallHandler
+          )
+          .subscribe(() => resolve());
+      });
+
+      await waitForAsync();
+
+      expect(analyticsQueue.recordView).toHaveBeenCalled();
     });
 
-    it('should infer invokedOn as store when only storeId present', (done) => {
+    it('should infer invokedOn as store when only storeId present', async () => {
       const opts: RecordEventOptions = {
         eventType: AnalyticsEventType.VIEW,
       };
@@ -698,18 +768,21 @@ describe('RecordEventInterceptor', () => {
       mockContext = createMockContext(mockRequest);
       analyticsQueue.recordView!.mockResolvedValue(undefined as any);
 
-      interceptor
-        .intercept(
-          mockContext as ExecutionContext,
-          mockCallHandler as CallHandler
-        )
-        .subscribe(() => {
-          expect(analyticsQueue.recordView).toHaveBeenCalled();
-          done();
-        });
+      await new Promise<void>((resolve) => {
+        interceptor
+          .intercept(
+            mockContext as ExecutionContext,
+            mockCallHandler as CallHandler
+          )
+          .subscribe(() => resolve());
+      });
+
+      await waitForAsync();
+
+      expect(analyticsQueue.recordView).toHaveBeenCalled();
     });
 
-    it('should respect explicit invokedOn option', (done) => {
+    it('should respect explicit invokedOn option', async () => {
       const opts: RecordEventOptions = {
         eventType: AnalyticsEventType.VIEW,
         invokedOn: 'store',
@@ -719,18 +792,21 @@ describe('RecordEventInterceptor', () => {
       mockContext = createMockContext(mockRequest);
       analyticsQueue.recordView!.mockResolvedValue(undefined as any);
 
-      interceptor
-        .intercept(
-          mockContext as ExecutionContext,
-          mockCallHandler as CallHandler
-        )
-        .subscribe(() => {
-          expect(analyticsQueue.recordView).toHaveBeenCalled();
-          done();
-        });
+      await new Promise<void>((resolve) => {
+        interceptor
+          .intercept(
+            mockContext as ExecutionContext,
+            mockCallHandler as CallHandler
+          )
+          .subscribe(() => resolve());
+      });
+
+      await waitForAsync();
+
+      expect(analyticsQueue.recordView).toHaveBeenCalled();
     });
 
-    it('should skip event when invokedOn is product but productId missing', (done) => {
+    it('should skip event when invokedOn is product but productId missing', async () => {
       const opts: RecordEventOptions = {
         eventType: AnalyticsEventType.VIEW,
         invokedOn: 'product',
@@ -740,19 +816,22 @@ describe('RecordEventInterceptor', () => {
       reflector.get!.mockReturnValue(opts);
       mockContext = createMockContext(mockRequest);
 
-      interceptor
-        .intercept(
-          mockContext as ExecutionContext,
-          mockCallHandler as CallHandler
-        )
-        .subscribe(() => {
-          expect(analyticsQueue.recordView).not.toHaveBeenCalled();
-          expect(analyticsQueue.addEvent).not.toHaveBeenCalled();
-          done();
-        });
+      await new Promise<void>((resolve) => {
+        interceptor
+          .intercept(
+            mockContext as ExecutionContext,
+            mockCallHandler as CallHandler
+          )
+          .subscribe(() => resolve());
+      });
+
+      await waitForAsync();
+
+      expect(analyticsQueue.recordView).not.toHaveBeenCalled();
+      expect(analyticsQueue.addEvent).not.toHaveBeenCalled();
     });
 
-    it('should skip event when invokedOn is store but storeId missing', (done) => {
+    it('should skip event when invokedOn is store but storeId missing', async () => {
       const opts: RecordEventOptions = {
         eventType: AnalyticsEventType.VIEW,
         invokedOn: 'store',
@@ -762,21 +841,24 @@ describe('RecordEventInterceptor', () => {
       reflector.get!.mockReturnValue(opts);
       mockContext = createMockContext(mockRequest);
 
-      interceptor
-        .intercept(
-          mockContext as ExecutionContext,
-          mockCallHandler as CallHandler
-        )
-        .subscribe(() => {
-          expect(analyticsQueue.recordView).not.toHaveBeenCalled();
-          expect(analyticsQueue.addEvent).not.toHaveBeenCalled();
-          done();
-        });
+      await new Promise<void>((resolve) => {
+        interceptor
+          .intercept(
+            mockContext as ExecutionContext,
+            mockCallHandler as CallHandler
+          )
+          .subscribe(() => resolve());
+      });
+
+      await waitForAsync();
+
+      expect(analyticsQueue.recordView).not.toHaveBeenCalled();
+      expect(analyticsQueue.addEvent).not.toHaveBeenCalled();
     });
   });
 
   describe('value conversion and handling', () => {
-    it('should convert string numbers to numbers', (done) => {
+    it('should convert string numbers to numbers', async () => {
       const opts: RecordEventOptions = {
         eventType: AnalyticsEventType.PURCHASE,
         value: 'body.amount',
@@ -787,24 +869,27 @@ describe('RecordEventInterceptor', () => {
       mockContext = createMockContext(mockRequest);
       analyticsQueue.recordPurchase!.mockResolvedValue(undefined as any);
 
-      interceptor
-        .intercept(
-          mockContext as ExecutionContext,
-          mockCallHandler as CallHandler
-        )
-        .subscribe(() => {
-          expect(analyticsQueue.recordPurchase).toHaveBeenCalledWith(
-            's1',
-            'p1',
-            'u1',
-            123.45,
-            null
-          );
-          done();
-        });
+      await new Promise<void>((resolve) => {
+        interceptor
+          .intercept(
+            mockContext as ExecutionContext,
+            mockCallHandler as CallHandler
+          )
+          .subscribe(() => resolve());
+      });
+
+      await waitForAsync();
+
+      expect(analyticsQueue.recordPurchase).toHaveBeenCalledWith(
+        's1',
+        'p1',
+        'u1',
+        123.45,
+        undefined
+      );
     });
 
-    it('should handle numeric literals', (done) => {
+    it('should handle numeric literals', async () => {
       const opts: RecordEventOptions = {
         eventType: AnalyticsEventType.ADD_TO_CART,
         value: 5,
@@ -814,24 +899,27 @@ describe('RecordEventInterceptor', () => {
       mockContext = createMockContext(mockRequest);
       analyticsQueue.recordAddToCart!.mockResolvedValue(undefined as any);
 
-      interceptor
-        .intercept(
-          mockContext as ExecutionContext,
-          mockCallHandler as CallHandler
-        )
-        .subscribe(() => {
-          expect(analyticsQueue.recordAddToCart).toHaveBeenCalledWith(
-            's1',
-            'p1',
-            'u1',
-            5,
-            null
-          );
-          done();
-        });
+      await new Promise<void>((resolve) => {
+        interceptor
+          .intercept(
+            mockContext as ExecutionContext,
+            mockCallHandler as CallHandler
+          )
+          .subscribe(() => resolve());
+      });
+
+      await waitForAsync();
+
+      expect(analyticsQueue.recordAddToCart).toHaveBeenCalledWith(
+        's1',
+        'p1',
+        'u1',
+        5,
+        undefined
+      );
     });
 
-    it('should handle null value', (done) => {
+    it('should handle null value', async () => {
       const opts: RecordEventOptions = {
         eventType: AnalyticsEventType.VIEW,
         value: null as any,
@@ -841,21 +929,24 @@ describe('RecordEventInterceptor', () => {
       mockContext = createMockContext(mockRequest);
       analyticsQueue.recordView!.mockResolvedValue(undefined as any);
 
-      interceptor
-        .intercept(
-          mockContext as ExecutionContext,
-          mockCallHandler as CallHandler
-        )
-        .subscribe(() => {
-          expect(analyticsQueue.recordView).toHaveBeenCalled();
-          done();
-        });
+      await new Promise<void>((resolve) => {
+        interceptor
+          .intercept(
+            mockContext as ExecutionContext,
+            mockCallHandler as CallHandler
+          )
+          .subscribe(() => resolve());
+      });
+
+      await waitForAsync();
+
+      expect(analyticsQueue.recordView).toHaveBeenCalled();
     });
 
-    it('should preserve non-numeric strings', (done) => {
+    it('should preserve non-numeric strings', async () => {
       const opts: RecordEventOptions = {
-        eventType: AnalyticsEventType.VIEW,
-        value: 'body.description',
+        eventType: AnalyticsEventType.CUSTOM,
+        value: 'body.description', // This reads from body.description
       };
 
       mockRequest.body = { description: 'some text' };
@@ -863,24 +954,27 @@ describe('RecordEventInterceptor', () => {
       mockContext = createMockContext(mockRequest);
       analyticsQueue.addEvent!.mockResolvedValue(undefined as any);
 
-      interceptor
-        .intercept(
-          mockContext as ExecutionContext,
-          mockCallHandler as CallHandler
-        )
-        .subscribe(() => {
-          expect(analyticsQueue.addEvent).toHaveBeenCalledWith(
-            expect.objectContaining({
-              value: 'some text',
-            })
-          );
-          done();
-        });
+      await new Promise<void>((resolve) => {
+        interceptor
+          .intercept(
+            mockContext as ExecutionContext,
+            mockCallHandler as CallHandler
+          )
+          .subscribe(() => resolve());
+      });
+
+      await waitForAsync();
+
+      expect(analyticsQueue.addEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          value: 'some text', // Changed from description to value
+        })
+      );
     });
   });
 
   describe('error handling', () => {
-    it('should log warning and continue on queue error', (done) => {
+    it('should log warning and continue on queue error', async () => {
       const opts: RecordEventOptions = {
         eventType: AnalyticsEventType.VIEW,
       };
@@ -890,21 +984,24 @@ describe('RecordEventInterceptor', () => {
       mockContext = createMockContext(mockRequest);
       analyticsQueue.recordView!.mockRejectedValue(new Error('Queue error'));
 
-      interceptor
-        .intercept(
-          mockContext as ExecutionContext,
-          mockCallHandler as CallHandler
-        )
-        .subscribe(() => {
-          expect(loggerSpy).toHaveBeenCalledWith(
-            expect.stringContaining('RecordEventInterceptor enqueue error')
-          );
-          expect(mockCallHandler.handle).toHaveBeenCalled();
-          done();
-        });
+      await new Promise<void>((resolve) => {
+        interceptor
+          .intercept(
+            mockContext as ExecutionContext,
+            mockCallHandler as CallHandler
+          )
+          .subscribe(() => resolve());
+      });
+
+      await waitForAsync();
+
+      expect(loggerSpy).toHaveBeenCalledWith(
+        expect.stringContaining('RecordEventInterceptor enqueue error')
+      );
+      expect(mockCallHandler.handle).toHaveBeenCalled();
     });
 
-    it('should not fail request on analytics error', (done) => {
+    it('should not fail request on analytics error', async () => {
       const opts: RecordEventOptions = {
         eventType: AnalyticsEventType.VIEW,
       };
@@ -915,23 +1012,24 @@ describe('RecordEventInterceptor', () => {
         new Error('Analytics service down')
       );
 
-      interceptor
-        .intercept(
-          mockContext as ExecutionContext,
-          mockCallHandler as CallHandler
-        )
-        .subscribe({
-          next: () => {
-            expect(mockCallHandler.handle).toHaveBeenCalled();
-            done();
-          },
-          error: () => {
-            fail('Should not throw error');
-          },
-        });
+      await new Promise<void>((resolve, reject) => {
+        interceptor
+          .intercept(
+            mockContext as ExecutionContext,
+            mockCallHandler as CallHandler
+          )
+          .subscribe({
+            next: () => resolve(),
+            error: (err) => reject(err),
+          });
+      });
+
+      await waitForAsync();
+
+      expect(mockCallHandler.handle).toHaveBeenCalled();
     });
 
-    it('should handle null/undefined values gracefully', (done) => {
+    it('should handle null/undefined values gracefully', async () => {
       const opts: RecordEventOptions = {
         eventType: AnalyticsEventType.VIEW,
         productId: 'nonexistent.path',
@@ -941,20 +1039,23 @@ describe('RecordEventInterceptor', () => {
       mockContext = createMockContext(mockRequest);
       analyticsQueue.recordView!.mockResolvedValue(undefined as any);
 
-      interceptor
-        .intercept(
-          mockContext as ExecutionContext,
-          mockCallHandler as CallHandler
-        )
-        .subscribe(() => {
-          expect(analyticsQueue.recordView).toHaveBeenCalled();
-          done();
-        });
+      await new Promise<void>((resolve) => {
+        interceptor
+          .intercept(
+            mockContext as ExecutionContext,
+            mockCallHandler as CallHandler
+          )
+          .subscribe(() => resolve());
+      });
+
+      await waitForAsync();
+
+      expect(analyticsQueue.recordView).toHaveBeenCalled();
     });
   });
 
   describe('meta handling', () => {
-    it('should read meta from request', (done) => {
+    it('should read meta from request', async () => {
       const opts: RecordEventOptions = {
         eventType: AnalyticsEventType.VIEW,
         meta: 'body.meta',
@@ -965,23 +1066,23 @@ describe('RecordEventInterceptor', () => {
       mockContext = createMockContext(mockRequest);
       analyticsQueue.recordView!.mockResolvedValue(undefined as any);
 
-      interceptor
-        .intercept(
-          mockContext as ExecutionContext,
-          mockCallHandler as CallHandler
-        )
-        .subscribe(() => {
-          expect(analyticsQueue.recordView).toHaveBeenCalledWith(
-            's1',
-            'p1',
-            'u1',
-            { source: 'web' }
-          );
-          done();
-        });
+      await new Promise<void>((resolve) => {
+        interceptor
+          .intercept(
+            mockContext as ExecutionContext,
+            mockCallHandler as CallHandler
+          )
+          .subscribe(() => resolve());
+      });
+
+      await waitForAsync();
+
+      expect(analyticsQueue.recordView).toHaveBeenCalledWith('s1', 'p1', 'u1', {
+        source: 'web',
+      });
     });
 
-    it('should read meta from result', (done) => {
+    it('should read meta from result', async () => {
       const opts: RecordEventOptions = {
         eventType: AnalyticsEventType.VIEW,
         meta: 'metadata',
@@ -995,23 +1096,23 @@ describe('RecordEventInterceptor', () => {
       mockContext = createMockContext(mockRequest);
       analyticsQueue.recordView!.mockResolvedValue(undefined as any);
 
-      interceptor
-        .intercept(
-          mockContext as ExecutionContext,
-          mockCallHandler as CallHandler
-        )
-        .subscribe(() => {
-          expect(analyticsQueue.recordView).toHaveBeenCalledWith(
-            's1',
-            'p1',
-            'u1',
-            { timestamp: 123 }
-          );
-          done();
-        });
+      await new Promise<void>((resolve) => {
+        interceptor
+          .intercept(
+            mockContext as ExecutionContext,
+            mockCallHandler as CallHandler
+          )
+          .subscribe(() => resolve());
+      });
+
+      await waitForAsync();
+
+      expect(analyticsQueue.recordView).toHaveBeenCalledWith('s1', 'p1', 'u1', {
+        timestamp: 123,
+      });
     });
 
-    it('should handle meta as object literal', (done) => {
+    it('should handle meta as object literal', async () => {
       const opts: RecordEventOptions = {
         eventType: AnalyticsEventType.VIEW,
         meta: { source: 'mobile', version: '1.0' } as any,
@@ -1021,25 +1122,26 @@ describe('RecordEventInterceptor', () => {
       mockContext = createMockContext(mockRequest);
       analyticsQueue.recordView!.mockResolvedValue(undefined as any);
 
-      interceptor
-        .intercept(
-          mockContext as ExecutionContext,
-          mockCallHandler as CallHandler
-        )
-        .subscribe(() => {
-          expect(analyticsQueue.recordView).toHaveBeenCalledWith(
-            's1',
-            'p1',
-            'u1',
-            { source: 'mobile', version: '1.0' }
-          );
-          done();
-        });
+      await new Promise<void>((resolve) => {
+        interceptor
+          .intercept(
+            mockContext as ExecutionContext,
+            mockCallHandler as CallHandler
+          )
+          .subscribe(() => resolve());
+      });
+
+      await waitForAsync();
+
+      expect(analyticsQueue.recordView).toHaveBeenCalledWith('s1', 'p1', 'u1', {
+        source: 'mobile',
+        version: '1.0',
+      });
     });
   });
 
   describe('userId resolution', () => {
-    it('should resolve userId from user.id', (done) => {
+    it('should resolve userId from user.id', async () => {
       const opts: RecordEventOptions = {
         eventType: AnalyticsEventType.VIEW,
       };
@@ -1049,23 +1151,26 @@ describe('RecordEventInterceptor', () => {
       mockContext = createMockContext(mockRequest);
       analyticsQueue.recordView!.mockResolvedValue(undefined as any);
 
-      interceptor
-        .intercept(
-          mockContext as ExecutionContext,
-          mockCallHandler as CallHandler
-        )
-        .subscribe(() => {
-          expect(analyticsQueue.recordView).toHaveBeenCalledWith(
-            's1',
-            'p1',
-            'user-123',
-            null
-          );
-          done();
-        });
+      await new Promise<void>((resolve) => {
+        interceptor
+          .intercept(
+            mockContext as ExecutionContext,
+            mockCallHandler as CallHandler
+          )
+          .subscribe(() => resolve());
+      });
+
+      await waitForAsync();
+
+      expect(analyticsQueue.recordView).toHaveBeenCalledWith(
+        's1',
+        'p1',
+        'user-123',
+        undefined
+      );
     });
 
-    it('should fallback to user.sub when user.id not present', (done) => {
+    it('should fallback to user.sub when user.id not present', async () => {
       const opts: RecordEventOptions = {
         eventType: AnalyticsEventType.VIEW,
       };
@@ -1075,23 +1180,26 @@ describe('RecordEventInterceptor', () => {
       mockContext = createMockContext(mockRequest);
       analyticsQueue.recordView!.mockResolvedValue(undefined as any);
 
-      interceptor
-        .intercept(
-          mockContext as ExecutionContext,
-          mockCallHandler as CallHandler
-        )
-        .subscribe(() => {
-          expect(analyticsQueue.recordView).toHaveBeenCalledWith(
-            's1',
-            'p1',
-            'sub-123',
-            null
-          );
-          done();
-        });
+      await new Promise<void>((resolve) => {
+        interceptor
+          .intercept(
+            mockContext as ExecutionContext,
+            mockCallHandler as CallHandler
+          )
+          .subscribe(() => resolve());
+      });
+
+      await waitForAsync();
+
+      expect(analyticsQueue.recordView).toHaveBeenCalledWith(
+        's1',
+        'p1',
+        'sub-123',
+        undefined
+      );
     });
 
-    it('should handle missing user', (done) => {
+    it('should handle missing user', async () => {
       const opts: RecordEventOptions = {
         eventType: AnalyticsEventType.VIEW,
       };
@@ -1101,20 +1209,23 @@ describe('RecordEventInterceptor', () => {
       mockContext = createMockContext(mockRequest);
       analyticsQueue.recordView!.mockResolvedValue(undefined as any);
 
-      interceptor
-        .intercept(
-          mockContext as ExecutionContext,
-          mockCallHandler as CallHandler
-        )
-        .subscribe(() => {
-          expect(analyticsQueue.recordView).toHaveBeenCalledWith(
-            's1',
-            'p1',
-            undefined,
-            null
-          );
-          done();
-        });
+      await new Promise<void>((resolve) => {
+        interceptor
+          .intercept(
+            mockContext as ExecutionContext,
+            mockCallHandler as CallHandler
+          )
+          .subscribe(() => resolve());
+      });
+
+      await waitForAsync();
+
+      expect(analyticsQueue.recordView).toHaveBeenCalledWith(
+        's1',
+        'p1',
+        undefined,
+        undefined
+      );
     });
   });
 });

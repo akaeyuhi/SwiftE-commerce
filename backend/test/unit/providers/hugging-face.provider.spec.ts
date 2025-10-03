@@ -15,6 +15,7 @@ describe('HuggingFaceProvider', () => {
   let aiAuditService: Partial<MockedMethods<AiAuditService>>;
 
   beforeEach(async () => {
+    process.env.HF_API_KEY = 'test-api-key';
     httpService = createMock<HttpService>(['post']);
     aiLogsService = createServiceMock<AiLogsService>(['record']);
     aiAuditService = createMock<AiAuditService>(['storeEncryptedResponse']);
@@ -31,6 +32,10 @@ describe('HuggingFaceProvider', () => {
     provider = module.get<HuggingFaceProvider>(HuggingFaceProvider);
 
     jest.clearAllMocks();
+  });
+
+  afterEach(() => {
+    delete process.env.HF_API_KEY;
   });
 
   describe('makeApiCall', () => {
@@ -173,12 +178,15 @@ describe('HuggingFaceProvider', () => {
     });
 
     it('should build headers without API key when not configured', () => {
-      delete process.env.HF_API_KEY;
+      const originalApiKey = (provider as any).config.apiKey;
+      (provider as any).config.apiKey = undefined;
 
       const headers = (provider as any).buildHeaders();
 
       expect(headers['Content-Type']).toBe('application/json');
       expect(headers['Authorization']).toBeUndefined();
+
+      (provider as any).config.apiKey = originalApiKey;
     });
   });
 

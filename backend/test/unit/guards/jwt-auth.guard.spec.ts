@@ -15,9 +15,7 @@ describe('JwtAuthGuard', () => {
     lastName: 'Doe',
   };
 
-  const createMockExecutionContext = (
-    user: any = mockUser
-  ): ExecutionContext => {
+  const createMockExecutionContext = (user?: any): ExecutionContext => {
     const request = {
       user,
       headers: {},
@@ -70,18 +68,23 @@ describe('JwtAuthGuard', () => {
 
   describe('canActivate', () => {
     it('should return true when user is authenticated and active', async () => {
-      const context = createMockExecutionContext();
+      const context = createMockExecutionContext(mockUser);
 
-      // Mock super.canActivate to return true
+      // Mock super.canActivate properly
+      jest.spyOn(guard as any, 'logIn').mockResolvedValue(undefined);
+      jest.spyOn(guard as any, 'getAuthenticateOptions').mockReturnValue({});
       jest
-        .spyOn(JwtAuthGuard.prototype as any, 'canActivate')
-        .mockResolvedValueOnce(true);
+        .spyOn(guard as any, 'getRequest')
+        .mockReturnValue(context.switchToHttp().getRequest());
+
+      // Mock the passport strategy validation
+      Object.getPrototypeOf(Object.getPrototypeOf(guard)).canActivate = jest
+        .fn()
+        .mockResolvedValue(true);
 
       policyService.isUserActive!.mockResolvedValue(true);
 
-      // Need to call the actual canActivate implementation
-      const actualCanActivate = Object.getPrototypeOf(guard).canActivate;
-      const result = await actualCanActivate.call(guard, context);
+      const result = await guard.canActivate(context);
 
       expect(result).toBe(true);
       expect(policyService.isUserActive).toHaveBeenCalledWith('u1');
@@ -90,12 +93,10 @@ describe('JwtAuthGuard', () => {
     it('should return false when super.canActivate returns false', async () => {
       const context = createMockExecutionContext();
 
-      // Mock passport's canActivate to return false
-      const superCanActivate = jest.spyOn(
-        Object.getPrototypeOf(Object.getPrototypeOf(guard)),
-        'canActivate'
-      );
-      superCanActivate.mockResolvedValue(false);
+      // Mock super.canActivate to return false
+      Object.getPrototypeOf(Object.getPrototypeOf(guard)).canActivate = jest
+        .fn()
+        .mockResolvedValue(false);
 
       const result = await guard.canActivate(context);
 
@@ -107,11 +108,9 @@ describe('JwtAuthGuard', () => {
       const userWithoutId = { email: 'user@example.com' };
       const context = createMockExecutionContext(userWithoutId);
 
-      const superCanActivate = jest.spyOn(
-        Object.getPrototypeOf(Object.getPrototypeOf(guard)),
-        'canActivate'
-      );
-      superCanActivate.mockResolvedValue(true);
+      Object.getPrototypeOf(Object.getPrototypeOf(guard)).canActivate = jest
+        .fn()
+        .mockResolvedValue(true);
 
       const result = await guard.canActivate(context);
 
@@ -122,11 +121,9 @@ describe('JwtAuthGuard', () => {
     it('should return false when user is null', async () => {
       const context = createMockExecutionContext(null);
 
-      const superCanActivate = jest.spyOn(
-        Object.getPrototypeOf(Object.getPrototypeOf(guard)),
-        'canActivate'
-      );
-      superCanActivate.mockResolvedValue(true);
+      Object.getPrototypeOf(Object.getPrototypeOf(guard)).canActivate = jest
+        .fn()
+        .mockResolvedValue(true);
 
       const result = await guard.canActivate(context);
 
@@ -137,11 +134,9 @@ describe('JwtAuthGuard', () => {
     it('should return false when user is undefined', async () => {
       const context = createMockExecutionContext(undefined);
 
-      const superCanActivate = jest.spyOn(
-        Object.getPrototypeOf(Object.getPrototypeOf(guard)),
-        'canActivate'
-      );
-      superCanActivate.mockResolvedValue(true);
+      Object.getPrototypeOf(Object.getPrototypeOf(guard)).canActivate = jest
+        .fn()
+        .mockResolvedValue(true);
 
       const result = await guard.canActivate(context);
 
@@ -150,14 +145,11 @@ describe('JwtAuthGuard', () => {
     });
 
     it('should throw UnauthorizedException when user is inactive', async () => {
-      const context = createMockExecutionContext();
+      const context = createMockExecutionContext(mockUser);
 
-      const superCanActivate = jest.spyOn(
-        Object.getPrototypeOf(Object.getPrototypeOf(guard)),
-        'canActivate'
-      );
-      superCanActivate.mockResolvedValue(true);
-
+      Object.getPrototypeOf(Object.getPrototypeOf(guard)).canActivate = jest
+        .fn()
+        .mockResolvedValue(true);
       policyService.isUserActive!.mockResolvedValue(false);
 
       await expect(guard.canActivate(context)).rejects.toThrow(
@@ -170,14 +162,11 @@ describe('JwtAuthGuard', () => {
     });
 
     it('should check user active status after successful authentication', async () => {
-      const context = createMockExecutionContext();
+      const context = createMockExecutionContext(mockUser);
 
-      const superCanActivate = jest.spyOn(
-        Object.getPrototypeOf(Object.getPrototypeOf(guard)),
-        'canActivate'
-      );
-      superCanActivate.mockResolvedValue(true);
-
+      Object.getPrototypeOf(Object.getPrototypeOf(guard)).canActivate = jest
+        .fn()
+        .mockResolvedValue(true);
       policyService.isUserActive!.mockResolvedValue(true);
 
       await guard.canActivate(context);
@@ -190,12 +179,9 @@ describe('JwtAuthGuard', () => {
       const customUser = { id: 'custom-id', email: 'custom@example.com' };
       const context = createMockExecutionContext(customUser);
 
-      const superCanActivate = jest.spyOn(
-        Object.getPrototypeOf(Object.getPrototypeOf(guard)),
-        'canActivate'
-      );
-      superCanActivate.mockResolvedValue(true);
-
+      Object.getPrototypeOf(Object.getPrototypeOf(guard)).canActivate = jest
+        .fn()
+        .mockResolvedValue(true);
       policyService.isUserActive!.mockResolvedValue(true);
 
       await guard.canActivate(context);
@@ -204,14 +190,11 @@ describe('JwtAuthGuard', () => {
     });
 
     it('should handle policyService errors', async () => {
-      const context = createMockExecutionContext();
+      const context = createMockExecutionContext(mockUser);
 
-      const superCanActivate = jest.spyOn(
-        Object.getPrototypeOf(Object.getPrototypeOf(guard)),
-        'canActivate'
-      );
-      superCanActivate.mockResolvedValue(true);
-
+      Object.getPrototypeOf(Object.getPrototypeOf(guard)).canActivate = jest
+        .fn()
+        .mockResolvedValue(true);
       policyService.isUserActive!.mockRejectedValue(
         new Error('Database error')
       );
@@ -222,15 +205,12 @@ describe('JwtAuthGuard', () => {
     });
 
     it('should call switchToHttp().getRequest()', async () => {
-      const context = createMockExecutionContext();
+      const context = createMockExecutionContext(mockUser);
       const switchToHttp = context.switchToHttp();
 
-      const superCanActivate = jest.spyOn(
-        Object.getPrototypeOf(Object.getPrototypeOf(guard)),
-        'canActivate'
-      );
-      superCanActivate.mockResolvedValue(true);
-
+      Object.getPrototypeOf(Object.getPrototypeOf(guard)).canActivate = jest
+        .fn()
+        .mockResolvedValue(true);
       policyService.isUserActive!.mockResolvedValue(true);
 
       await guard.canActivate(context);
@@ -325,34 +305,26 @@ describe('JwtAuthGuard', () => {
 
   describe('integration scenarios', () => {
     it('should successfully authenticate active user through full flow', async () => {
-      const context = createMockExecutionContext();
+      const context = createMockExecutionContext(mockUser);
 
-      const superCanActivate = jest.spyOn(
-        Object.getPrototypeOf(Object.getPrototypeOf(guard)),
-        'canActivate'
-      );
-      superCanActivate.mockResolvedValue(true);
-
+      Object.getPrototypeOf(Object.getPrototypeOf(guard)).canActivate = jest
+        .fn()
+        .mockResolvedValue(true);
       policyService.isUserActive!.mockResolvedValue(true);
 
-      // canActivate should succeed
       const canActivateResult = await guard.canActivate(context);
       expect(canActivateResult).toBe(true);
 
-      // handleRequest should return user
       const handleRequestResult = guard.handleRequest(null, mockUser, null);
       expect(handleRequestResult).toEqual(mockUser);
     });
 
     it('should block inactive user even with valid token', async () => {
-      const context = createMockExecutionContext();
+      const context = createMockExecutionContext(mockUser);
 
-      const superCanActivate = jest.spyOn(
-        Object.getPrototypeOf(Object.getPrototypeOf(guard)),
-        'canActivate'
-      );
-      superCanActivate.mockResolvedValue(true);
-
+      Object.getPrototypeOf(Object.getPrototypeOf(guard)).canActivate = jest
+        .fn()
+        .mockResolvedValue(true);
       policyService.isUserActive!.mockResolvedValue(false);
 
       await expect(guard.canActivate(context)).rejects.toThrow(
@@ -365,12 +337,9 @@ describe('JwtAuthGuard', () => {
       const context2 = createMockExecutionContext({ id: 'u2' });
       const context3 = createMockExecutionContext({ id: 'u3' });
 
-      const superCanActivate = jest.spyOn(
-        Object.getPrototypeOf(Object.getPrototypeOf(guard)),
-        'canActivate'
-      );
-      superCanActivate.mockResolvedValue(true);
-
+      Object.getPrototypeOf(Object.getPrototypeOf(guard)).canActivate = jest
+        .fn()
+        .mockResolvedValue(true);
       policyService.isUserActive!.mockResolvedValue(true);
 
       await guard.canActivate(context1);
@@ -388,11 +357,9 @@ describe('JwtAuthGuard', () => {
     it('should handle user with id = 0', async () => {
       const context = createMockExecutionContext({ id: 0 });
 
-      const superCanActivate = jest.spyOn(
-        Object.getPrototypeOf(Object.getPrototypeOf(guard)),
-        'canActivate'
-      );
-      superCanActivate.mockResolvedValue(true);
+      Object.getPrototypeOf(Object.getPrototypeOf(guard)).canActivate = jest
+        .fn()
+        .mockResolvedValue(true);
 
       const result = await guard.canActivate(context);
 
@@ -402,11 +369,9 @@ describe('JwtAuthGuard', () => {
     it('should handle user with empty string id', async () => {
       const context = createMockExecutionContext({ id: '' });
 
-      const superCanActivate = jest.spyOn(
-        Object.getPrototypeOf(Object.getPrototypeOf(guard)),
-        'canActivate'
-      );
-      superCanActivate.mockResolvedValue(true);
+      Object.getPrototypeOf(Object.getPrototypeOf(guard)).canActivate = jest
+        .fn()
+        .mockResolvedValue(true);
 
       const result = await guard.canActivate(context);
 
@@ -416,11 +381,9 @@ describe('JwtAuthGuard', () => {
     it('should handle user object without id property', async () => {
       const context = createMockExecutionContext({ email: 'test@example.com' });
 
-      const superCanActivate = jest.spyOn(
-        Object.getPrototypeOf(Object.getPrototypeOf(guard)),
-        'canActivate'
-      );
-      superCanActivate.mockResolvedValue(true);
+      Object.getPrototypeOf(Object.getPrototypeOf(guard)).canActivate = jest
+        .fn()
+        .mockResolvedValue(true);
 
       const result = await guard.canActivate(context);
 
@@ -434,11 +397,9 @@ describe('JwtAuthGuard', () => {
         }),
       } as any;
 
-      const superCanActivate = jest.spyOn(
-        Object.getPrototypeOf(Object.getPrototypeOf(guard)),
-        'canActivate'
-      );
-      superCanActivate.mockResolvedValue(true);
+      Object.getPrototypeOf(Object.getPrototypeOf(guard)).canActivate = jest
+        .fn()
+        .mockResolvedValue(true);
 
       const result = await guard.canActivate(badContext);
 
@@ -446,14 +407,11 @@ describe('JwtAuthGuard', () => {
     });
 
     it('should handle UnauthorizedException from policyService', async () => {
-      const context = createMockExecutionContext();
+      const context = createMockExecutionContext(mockUser);
 
-      const superCanActivate = jest.spyOn(
-        Object.getPrototypeOf(Object.getPrototypeOf(guard)),
-        'canActivate'
-      );
-      superCanActivate.mockResolvedValue(true);
-
+      Object.getPrototypeOf(Object.getPrototypeOf(guard)).canActivate = jest
+        .fn()
+        .mockResolvedValue(true);
       policyService.isUserActive!.mockRejectedValue(
         new UnauthorizedException('User banned')
       );
@@ -491,14 +449,11 @@ describe('JwtAuthGuard', () => {
 
   describe('error messages', () => {
     it('should have descriptive error message for inactive user', async () => {
-      const context = createMockExecutionContext();
+      const context = createMockExecutionContext(mockUser);
 
-      const superCanActivate = jest.spyOn(
-        Object.getPrototypeOf(Object.getPrototypeOf(guard)),
-        'canActivate'
-      );
-      superCanActivate.mockResolvedValue(true);
-
+      Object.getPrototypeOf(Object.getPrototypeOf(guard)).canActivate = jest
+        .fn()
+        .mockResolvedValue(true);
       policyService.isUserActive!.mockResolvedValue(false);
 
       try {

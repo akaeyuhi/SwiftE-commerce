@@ -1,6 +1,7 @@
 import { SendGridProvider } from 'src/modules/email/providers/sendgrid.provider';
 import * as sgMail from '@sendgrid/mail';
 import { EmailData } from 'src/common/interfaces/infrastructure/email.interface';
+import { Logger } from '@nestjs/common';
 
 describe('SendGridProvider', () => {
   let provider: SendGridProvider;
@@ -17,7 +18,7 @@ describe('SendGridProvider', () => {
   });
 
   it('should warn when API key not configured', () => {
-    const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
+    const warnSpy = jest.spyOn(Logger.prototype, 'warn').mockImplementation();
     new SendGridProvider();
     expect(warnSpy).toHaveBeenCalled();
     warnSpy.mockRestore();

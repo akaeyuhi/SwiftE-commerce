@@ -1,7 +1,11 @@
 import { DataSource, EntityManager, SelectQueryBuilder } from 'typeorm';
 import { StoreDailyStatsRepository } from 'src/modules/analytics/repositories/store-daily-stats.repository';
 import { StoreDailyStats } from 'src/entities/infrastructure/analytics/store-daily-stats.entity';
-import { createMock, MockedMethods } from '../../utils/helpers';
+import {
+  createMock,
+  createMockEntityManager,
+  MockedMethods,
+} from '../../utils/helpers';
 
 describe('StoreDailyStatsRepository', () => {
   let repo: StoreDailyStatsRepository;
@@ -22,7 +26,7 @@ describe('StoreDailyStatsRepository', () => {
       getMany: jest.fn(),
     } as any;
 
-    manager = createMock<EntityManager>(['createQueryBuilder']);
+    manager = createMockEntityManager();
     manager.createQueryBuilder!.mockReturnValue(queryBuilder as any);
 
     dataSource = createMock<DataSource>(['createEntityManager']);

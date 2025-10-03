@@ -12,9 +12,11 @@ import {
 } from 'src/modules/ai/ai-logs/dto/create-ai-log.dto';
 import {
   createGuardMock,
+  createPolicyMock,
   createServiceMock,
   MockedMethods,
 } from '../../utils/helpers';
+import { PolicyService } from 'src/modules/authorization/policy/policy.service';
 
 describe('AiLogsController', () => {
   let controller: AiLogsController;
@@ -27,6 +29,7 @@ describe('AiLogsController', () => {
 
   beforeEach(async () => {
     const guardMock = createGuardMock();
+    const policyMock = createPolicyMock();
 
     logsService = createServiceMock<AiLogsService>([
       'record',
@@ -43,6 +46,7 @@ describe('AiLogsController', () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AiLogsController],
       providers: [
+        { provide: PolicyService, useValue: policyMock },
         { provide: AiLogsService, useValue: logsService },
         { provide: JwtAuthGuard, useValue: guardMock },
         { provide: AdminGuard, useValue: guardMock },

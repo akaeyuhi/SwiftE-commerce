@@ -15,8 +15,10 @@ import {
 import {
   createGuardMock,
   createMock,
+  createPolicyMock,
   MockedMethods,
 } from '../../utils/helpers';
+import { PolicyService } from 'src/modules/authorization/policy/policy.service';
 
 describe('AnalyticsController', () => {
   let controller: AnalyticsController;
@@ -34,6 +36,7 @@ describe('AnalyticsController', () => {
       'getSupportedAggregators',
       'getAggregationSchema',
     ]);
+    const policyMock = createPolicyMock();
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AnalyticsController],
@@ -42,6 +45,7 @@ describe('AnalyticsController', () => {
         { provide: JwtAuthGuard, useValue: guardMock },
         { provide: AdminGuard, useValue: guardMock },
         { provide: StoreRolesGuard, useValue: guardMock },
+        { provide: PolicyService, useValue: policyMock },
       ],
     }).compile();
 

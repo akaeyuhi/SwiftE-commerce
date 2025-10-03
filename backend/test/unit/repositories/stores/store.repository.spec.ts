@@ -117,7 +117,7 @@ describe('StoreRepository', () => {
       (repository.findOneBy as jest.Mock).mockResolvedValue(mockStore);
 
       await repository.findStoreByName('Test Store');
-      await repository.findStoreByName('test stores');
+      await repository.findStoreByName('test store');
       await repository.findStoreByName('TEST STORE');
 
       expect(repository.findOneBy).toHaveBeenCalledTimes(3);

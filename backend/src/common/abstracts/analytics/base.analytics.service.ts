@@ -314,7 +314,25 @@ export abstract class BaseAnalyticsService<EventPayload = any> {
    * @returns Array of supported aggregator names
    */
   getSupportedAggregators(): string[] {
-    return [];
+    return [
+      'product_conversion',
+      'store_conversion',
+      'top_products_by_conversion',
+      'store_stats',
+      'product_stats',
+      'product_rating',
+      'store_ratings_summary',
+      'funnel_analysis',
+      'user_journey',
+      'cohort_analysis',
+      'revenue_trends',
+      'store_comparison',
+      'product_comparison',
+      'period_comparison',
+      'top_performing_stores',
+      'top_performing_products',
+      'underperforming_analysis',
+    ];
   }
 
   /**
@@ -325,9 +343,29 @@ export abstract class BaseAnalyticsService<EventPayload = any> {
    * @param aggregatorName - name of aggregation
    * @returns Schema or documentation object
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  getAggregationSchema(aggregatorName: string): Record<string, any> | null {
-    return null;
+  getAggregationSchema(aggregatorName: string): any {
+    const schemas: Record<string, any> = {
+      productConversion: {
+        name: 'product_conversion',
+        description: 'Compute product conversion metrics',
+        requiredParams: ['productId'],
+        optionalParams: ['from', 'to'],
+      },
+      storeConversion: {
+        name: 'store_conversion',
+        description: 'Compute store conversion metrics',
+        requiredParams: ['storeId'],
+        optionalParams: ['from', 'to'],
+      },
+      topProductsByConversion: {
+        name: 'top_products_by_conversion',
+        description: 'Get top products by conversion rate',
+        requiredParams: ['storeId'],
+        optionalParams: ['from', 'to', 'limit'],
+      },
+    };
+
+    return schemas[aggregatorName] || null;
   }
 
   /**

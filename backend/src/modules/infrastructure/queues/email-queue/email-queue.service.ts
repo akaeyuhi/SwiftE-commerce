@@ -11,8 +11,6 @@ import { StoreRoles } from 'src/common/enums/store-roles.enum';
 /**
  * EmailQueueService (Global)
  *
- * Pure infrastructure service - NO business logic dependencies.
- * Does NOT import EmailService - processing is done in EmailQueueProcessor.
  * All email sending is queued for async processing.
  */
 @Injectable()

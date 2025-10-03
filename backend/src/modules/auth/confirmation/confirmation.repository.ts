@@ -143,7 +143,6 @@ export class ConfirmationRepository extends BaseRepository<Confirmation> {
     };
   }
 
-  // Find confirmations by email (useful for admin purposes)
   async findByEmail(email: string): Promise<Confirmation[]> {
     return this.find({
       where: { email },

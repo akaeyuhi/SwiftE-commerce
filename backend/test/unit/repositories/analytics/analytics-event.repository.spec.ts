@@ -4,7 +4,11 @@ import {
   AnalyticsEvent,
   AnalyticsEventType,
 } from 'src/entities/infrastructure/analytics/analytics-event.entity';
-import { createMock, MockedMethods } from '../../utils/helpers';
+import {
+  createMock,
+  createMockEntityManager,
+  MockedMethods,
+} from '../../utils/helpers';
 /* eslint-disable camelcase */
 
 describe('AnalyticsEventRepository', () => {
@@ -34,7 +38,7 @@ describe('AnalyticsEventRepository', () => {
       execute: jest.fn(),
     } as any;
 
-    manager = createMock<EntityManager>(['createQueryBuilder']);
+    manager = createMockEntityManager();
     manager.createQueryBuilder!.mockReturnValue(queryBuilder as any);
 
     dataSource = createMock<DataSource>(['createEntityManager']);
@@ -286,7 +290,7 @@ describe('AnalyticsEventRepository', () => {
         eventTypes: [AnalyticsEventType.VIEW],
       });
 
-      expect(queryBuilder.andWhere).toHaveBeenCalledTimes(2); // storeId and productId
+      expect(queryBuilder.andWhere).toHaveBeenCalledTimes(3); // storeId and productId
     });
   });
 

@@ -268,11 +268,12 @@ describe('AnalyticsQueueProcessor', () => {
 
       await processor.handleAggregateDaily(job as Job);
 
-      const today = new Date().toISOString().split('T')[0];
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
       expect(mockEventsRepo.where).toHaveBeenCalledWith(
         'DATE(event.createdAt) = :date',
         {
-          date: today,
+          date: today.toISOString().split('T')[0],
         }
       );
     });
@@ -429,11 +430,15 @@ describe('AnalyticsQueueProcessor', () => {
     });
 
     it('should handle repository loading errors', async () => {
-      moduleRef.get!.mockRejectedValue(new Error('Module not found') as never);
+      moduleRef.get!.mockImplementation(() => {
+        throw new Error('Module not found');
+      });
 
       await expect(
         (processor as any).getAnalyticsEventRepository()
-      ).rejects.toThrow('AnalyticsEventRepository not available');
+      ).rejects.toThrow(
+        'AnalyticsEventRepository not available. Make sure AnalyticsModule is loaded.'
+      );
     });
   });
 

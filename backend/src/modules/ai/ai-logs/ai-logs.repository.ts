@@ -8,7 +8,7 @@ import {
 } from 'src/common/interfaces/ai/ai-log.interface';
 
 /**
- * Enhanced AiLogsRepository with advanced querying and statistics
+ * AiLogsRepository with advanced querying and statistics
  */
 @Injectable()
 export class AiLogsRepository extends BaseRepository<AiLog> {

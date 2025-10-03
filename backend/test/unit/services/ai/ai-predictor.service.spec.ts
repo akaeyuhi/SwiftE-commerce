@@ -57,7 +57,15 @@ describe('AiPredictorService', () => {
     };
 
     // Mock query builder for price and inventory stats
-    const mockQueryBuilder = {
+    const priceQueryBuilder = {
+      select: jest.fn().mockReturnThis(),
+      addSelect: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      innerJoin: jest.fn().mockReturnThis(),
+      getRawOne: jest.fn(),
+    };
+
+    const inventoryQueryBuilder = {
       select: jest.fn().mockReturnThis(),
       addSelect: jest.fn().mockReturnThis(),
       where: jest.fn().mockReturnThis(),
@@ -66,11 +74,11 @@ describe('AiPredictorService', () => {
     };
 
     variantRepo = {
-      createQueryBuilder: jest.fn().mockReturnValue(mockQueryBuilder),
+      createQueryBuilder: jest.fn().mockReturnValue(priceQueryBuilder),
     } as any;
 
     inventoryRepo = {
-      createQueryBuilder: jest.fn().mockReturnValue(mockQueryBuilder),
+      createQueryBuilder: jest.fn().mockReturnValue(inventoryQueryBuilder),
     } as any;
 
     dataSource = {
@@ -150,7 +158,11 @@ describe('AiPredictorService', () => {
 
   describe('buildFeatureVector', () => {
     beforeEach(() => {
-      // Setup default mocks for feature building
+      // Get the query builders from the repos
+      const priceQueryBuilder = variantRepo.createQueryBuilder!();
+      const inventoryQueryBuilder = inventoryRepo.createQueryBuilder!();
+
+      // Setup default mocks
       productStatsRepo.getAggregatedMetrics!.mockResolvedValue({
         views: 100,
         purchases: 10,
@@ -166,15 +178,15 @@ describe('AiPredictorService', () => {
         checkouts: 60,
       });
 
-      const priceQueryBuilder = variantRepo.createQueryBuilder!() as any;
-      priceQueryBuilder.getRawOne.mockResolvedValue({
+      // Setup price query builder
+      (priceQueryBuilder.getRawOne as jest.Mock).mockResolvedValue({
         avg_price: '99.99',
         min_price: '79.99',
         max_price: '119.99',
       });
 
-      const inventoryQueryBuilder = inventoryRepo.createQueryBuilder!() as any;
-      inventoryQueryBuilder.getRawOne.mockResolvedValue({
+      // Setup inventory query builder
+      (inventoryQueryBuilder.getRawOne as jest.Mock).mockResolvedValue({
         inventory_qty: '50',
         last_updated_at: new Date('2025-01-01').toISOString(),
       });
@@ -191,17 +203,22 @@ describe('AiPredictorService', () => {
       expect(features).toBeDefined();
       expect(features.sales_7d).toBeGreaterThanOrEqual(0);
       expect(features.views_7d).toBeGreaterThanOrEqual(0);
-      expect(features.avg_price).toBeCloseTo(99.99);
+      expect(features.avg_price).toBeCloseTo(99.99, 2);
       expect(features.avg_rating).toBe(4.5);
       expect(features.inventory_qty).toBe(50);
     });
 
     it('should cache feature vectors', async () => {
       await service.buildFeatureVector('p1', 's1');
+
+      // Clear all mocks
+      jest.clearAllMocks();
+
       await service.buildFeatureVector('p1', 's1');
 
-      // Should only call stats once due to caching
-      expect(productStatsRepo.getAggregatedMetrics).toHaveBeenCalledTimes(3); // 7d, 14d, 30d
+      // Should not call stats again due to caching
+      expect(productStatsRepo.getAggregatedMetrics).not.toHaveBeenCalled();
+      expect(storeStatsRepo.getAggregatedMetrics).not.toHaveBeenCalled();
     });
 
     it('should handle missing store context', async () => {
@@ -231,6 +248,36 @@ describe('AiPredictorService', () => {
       expect(features.day_of_week).toBeGreaterThanOrEqual(0);
       expect(features.day_of_week).toBeLessThanOrEqual(6);
       expect([0, 1]).toContain(features.is_weekend);
+    });
+
+    it('should handle missing price data', async () => {
+      const priceQueryBuilder = variantRepo.createQueryBuilder!();
+      (priceQueryBuilder.getRawOne as jest.Mock)!.mockResolvedValue(null);
+
+      const features = await service.buildFeatureVector('p1', 's1');
+
+      expect(features.avg_price).toBe(0);
+      expect(features.min_price).toBe(0);
+      expect(features.max_price).toBe(0);
+    });
+
+    it('should handle missing inventory data', async () => {
+      const inventoryQueryBuilder = inventoryRepo.createQueryBuilder!();
+      (inventoryQueryBuilder.getRawOne as jest.Mock).mockResolvedValue(null);
+
+      const features = await service.buildFeatureVector('p1', 's1');
+
+      expect(features.inventory_qty).toBe(0);
+      expect(features.days_since_restock).toBe(365);
+    });
+
+    it('should handle missing reviews', async () => {
+      reviewsRepo.getRatingAggregate.mockResolvedValue(null);
+
+      const features = await service.buildFeatureVector('p1', 's1');
+
+      expect(features.avg_rating).toBe(0);
+      expect(features.rating_count).toBe(0);
     });
   });
 
@@ -525,7 +572,9 @@ describe('AiPredictorService', () => {
 
       httpService.post!.mockReturnValue(of(mockResponse) as any);
       aiLogsService.record!.mockResolvedValue({} as any);
-      aiAuditService.storeEncryptedResponse!.mockResolvedValue(undefined as any);
+      aiAuditService.storeEncryptedResponse!.mockResolvedValue(
+        undefined as any
+      );
     });
 
     it('should process request successfully', async () => {

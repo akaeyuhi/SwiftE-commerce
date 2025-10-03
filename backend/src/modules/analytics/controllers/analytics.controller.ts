@@ -1,4 +1,3 @@
-// src/modules/analytics/controllers/analytics.controller.ts
 import {
   Controller,
   UseGuards,

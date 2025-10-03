@@ -24,7 +24,7 @@ export interface AnalyticsAggregationOptions {
 /**
  * AnalyticsService
  *
- * Refactored service extending BaseAnalyticsService to provide comprehensive
+ * Service extending BaseAnalyticsService to provide comprehensive
  * analytics functionality including event tracking, aggregations, conversions,
  * and AI predictions.
  *
@@ -91,6 +91,13 @@ export class AnalyticsService extends BaseAnalyticsService<RecordEventDto> {
       'top_performing_products',
       'underperforming_analysis',
     ];
+
+    if (
+      options?.limit !== undefined &&
+      (options.limit < 1 || options.limit > 1000)
+    ) {
+      throw new Error('limit must be between 1 and 1000');
+    }
 
     if (!validAggregators.includes(name)) {
       throw new Error(

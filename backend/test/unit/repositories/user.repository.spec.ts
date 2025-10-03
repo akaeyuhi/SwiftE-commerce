@@ -1,7 +1,11 @@
 import { UserRepository } from 'src/modules/user/user.repository';
 import { User } from 'src/entities/user/user.entity';
 import { DataSource, EntityManager } from 'typeorm';
-import { createMock, MockedMethods } from '../utils/helpers';
+import {
+  createMock,
+  createMockEntityManager,
+  MockedMethods,
+} from '../utils/helpers';
 import { Test, TestingModule } from '@nestjs/testing';
 
 describe('UserRepository', () => {
@@ -25,7 +29,7 @@ describe('UserRepository', () => {
   };
 
   beforeEach(async () => {
-    entityManager = createMock<EntityManager>(['getRepository']);
+    entityManager = createMockEntityManager('getRepository');
     dataSource = createMock<DataSource>(['createEntityManager']);
     dataSource.createEntityManager!.mockReturnValue(
       entityManager as unknown as EntityManager

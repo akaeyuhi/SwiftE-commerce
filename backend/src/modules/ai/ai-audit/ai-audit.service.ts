@@ -28,7 +28,7 @@ export interface DecryptedAuditResponse {
 }
 
 /**
- * Enhanced AiAuditService with advanced encryption, monitoring, and compliance features
+ * AiAuditService with encryption, monitoring, and compliance features
  *
  * Provides secure audit trail for AI operations with:
  * - Strong encryption using AES-256-GCM

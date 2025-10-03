@@ -23,7 +23,7 @@ import {
 /**
  * ProductPhotosInterceptor
  *
- * Class-based interceptor for handling multiple product photo uploads.
+ * Interceptor for handling multiple product photo uploads.
  * Extends NestInterceptor to provide proper integration with NestJS.
  *
  * Features:

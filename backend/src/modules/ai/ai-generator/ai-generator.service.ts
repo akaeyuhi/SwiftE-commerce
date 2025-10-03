@@ -40,7 +40,7 @@ export interface GenerationResponse {
 }
 
 /**
- * Enhanced AI Generator Service
+ * AI Generator Service
  *
  * Extends BaseAiService to provide business-level AI generation methods.
  * Features:
@@ -517,8 +517,10 @@ Return as JSON array.`,
     basePrompt: string,
     context: any = {}
   ): string {
+    // Map request type to template key
+    const templateKey = this.getTemplateKey(type);
     const templateConfig =
-      this.promptTemplates.get(type === 'name' ? 'productName' : type) ||
+      this.promptTemplates.get(templateKey) ||
       this.promptTemplates.get('custom')!;
 
     let prompt = templateConfig.template;
@@ -555,6 +557,20 @@ Return as JSON array.`,
 
     // Clean up extra whitespace
     return prompt.replace(/\s+/g, ' ').trim();
+  }
+
+  /**
+   * Map request type to template key
+   */
+  private getTemplateKey(type: string): string {
+    const typeToTemplateMap: Record<string, string> = {
+      name: 'productName',
+      description: 'productDescription',
+      ideas: 'productIdeas',
+      custom: 'custom',
+    };
+
+    return typeToTemplateMap[type] || 'custom';
   }
 
   private parseGenerationResult(type: string, aiResult: AiGenerateResult): any {

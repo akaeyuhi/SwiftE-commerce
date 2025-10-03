@@ -15,8 +15,10 @@ import {
 import {
   createGuardMock,
   createMock,
+  createPolicyMock,
   MockedMethods,
 } from '../../utils/helpers';
+import { PolicyService } from 'src/modules/authorization/policy/policy.service';
 
 describe('AiGeneratorController', () => {
   let controller: AiGeneratorController;
@@ -27,6 +29,7 @@ describe('AiGeneratorController', () => {
 
   beforeEach(async () => {
     const guardMock = createGuardMock();
+    const policyMock = createPolicyMock();
 
     generatorService = createMock<AiGeneratorService>([
       'generateProductNames',
@@ -41,6 +44,7 @@ describe('AiGeneratorController', () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AiGeneratorController],
       providers: [
+        { provide: PolicyService, useValue: policyMock },
         { provide: AiGeneratorService, useValue: generatorService },
         { provide: JwtAuthGuard, useValue: guardMock },
         { provide: AdminGuard, useValue: guardMock },

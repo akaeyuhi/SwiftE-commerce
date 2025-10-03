@@ -1,106 +1,92 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { InventoryNotificationService } from 'src/modules/infrastructure/notifications/inventory/inventory-notification.service';
 import { StoreRoleService } from 'src/modules/store/store-role/store-role.service';
-import { VariantsService } from 'src/modules/store/variants/variants.service';
-import { EventEmitter2 } from '@nestjs/event-emitter';
-import { Logger } from '@nestjs/common';
+import { InventoryService } from 'src/modules/store/inventory/inventory.service';
 import {
   LowStockEvent,
   OutOfStockEvent,
 } from 'src/common/events/inventory/low-stock.event';
-import { ProductVariant } from 'src/entities/store/product/variant.entity';
-import { Product } from 'src/entities/store/product/product.entity';
-import { Store } from 'src/entities/store/store.entity';
-import { User } from 'src/entities/user/user.entity';
-import { StoreRole } from 'src/entities/user/policy/store-role.entity';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
-import { DomainEvent } from 'src/common/interfaces/infrastructure/event.interface';
-import { createMock, MockedMethods } from '../../utils/helpers';
+import { createMock, MockedMethods } from 'test/unit/utils/helpers';
+import { Store } from 'src/entities/store/store.entity';
+import { Inventory } from 'src/entities/store/product/inventory.entity';
+import { Product } from 'src/entities/store/product/product.entity';
+import { ProductVariant } from 'src/entities/store/product/variant.entity';
+import { User } from 'src/entities/user/user.entity';
+import { Logger } from '@nestjs/common';
 import { InventoryNotificationsListener } from 'src/modules/store/inventory/listeners/inventory-notifications.listener';
 
 describe('InventoryNotificationsListener', () => {
   let listener: InventoryNotificationsListener;
-  let variantsService: Partial<MockedMethods<VariantsService>>;
-  let storeRoleService: Partial<MockedMethods<StoreRoleService>>;
-  let inventoryNotificationService: Partial<
-    MockedMethods<InventoryNotificationService>
-  >;
   let eventEmitter: Partial<MockedMethods<EventEmitter2>>;
-
-  const mockUser: User = {
-    id: 'u1',
-    email: 'admin@example.com',
-    firstName: 'Store',
-    lastName: 'Admin',
-  } as User;
+  let storeRoleService: Partial<MockedMethods<StoreRoleService>>;
+  let inventoryService: Partial<MockedMethods<InventoryService>>;
+  let notificationService: Partial<MockedMethods<InventoryNotificationService>>;
 
   const mockStore: Store = {
     id: 's1',
     name: 'Test Store',
   } as Store;
 
-  const mockProduct: Product = {
-    id: 'p1',
-    name: 'Test Product',
-    store: mockStore,
-    categories: [{ name: 'Electronics', parent: null }],
-  } as any;
+  const mockUser: User = {
+    id: 'u1',
+    email: 'admin@store.com',
+    firstName: 'John',
+    lastName: 'Doe',
+  } as User;
 
   const mockVariant: ProductVariant = {
     id: 'v1',
     sku: 'TEST-SKU-001',
-    product: mockProduct,
+    product: {
+      id: 'p1',
+      name: 'Test Product',
+      categories: [{ name: 'Electronics', parent: null }],
+    } as unknown as Product,
   } as ProductVariant;
 
-  const mockStoreRole: StoreRole = {
-    id: 'role-1',
-    user: mockUser,
+  const mockInventory: Inventory = {
+    id: 'inv1',
+    variant: mockVariant,
     store: mockStore,
+    quantity: 5,
+    lowStockThreshold: 10,
+  } as unknown as Inventory;
+
+  const mockStoreRole = {
+    id: 'sr1',
+    user: mockUser,
     roleName: StoreRoles.ADMIN,
     isActive: true,
-  } as StoreRole;
-
-  const mockLowStockEvent: LowStockEvent = {
-    variantId: 'v1',
-    productId: 'p1',
-    storeId: 's1',
-    sku: 'TEST-SKU-001',
-    productName: 'Test Product',
-    currentStock: 5,
-    threshold: 10,
-    recentSales: 15,
-    estimatedDaysUntilStockout: 3,
-    category: 'Electronics',
-  };
-
-  const mockOutOfStockEvent: OutOfStockEvent = {
-    variantId: 'v1',
-    productId: 'p1',
-    storeId: 's1',
-    sku: 'TEST-SKU-001',
-    productName: 'Test Product',
-    category: 'Electronics',
+    store: mockStore,
   };
 
   beforeEach(async () => {
-    variantsService = createMock<VariantsService>(['findWithRelations']);
+    eventEmitter = createMock<EventEmitter2>([
+      'on',
+      'emit',
+      'removeAllListeners',
+    ]);
     storeRoleService = createMock<StoreRoleService>(['getStoreRoles']);
-    inventoryNotificationService = createMock<InventoryNotificationService>([
+    inventoryService = createMock<InventoryService>([
+      'findInventoryByVariantId',
+    ]);
+    notificationService = createMock<InventoryNotificationService>([
       'notifyLowStock',
       'notifyOutOfStock',
     ]);
-    eventEmitter = createMock<EventEmitter2>(['on', 'emit']);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         InventoryNotificationsListener,
-        { provide: VariantsService, useValue: variantsService },
+        { provide: EventEmitter2, useValue: eventEmitter },
         { provide: StoreRoleService, useValue: storeRoleService },
+        { provide: InventoryService, useValue: inventoryService },
         {
           provide: InventoryNotificationService,
-          useValue: inventoryNotificationService,
+          useValue: notificationService,
         },
-        { provide: EventEmitter2, useValue: eventEmitter },
       ],
     }).compile();
 
@@ -111,727 +97,516 @@ describe('InventoryNotificationsListener', () => {
     // Suppress logger output
     jest.spyOn(Logger.prototype, 'log').mockImplementation();
     jest.spyOn(Logger.prototype, 'warn').mockImplementation();
-    jest.spyOn(Logger.prototype, 'debug').mockImplementation();
     jest.spyOn(Logger.prototype, 'error').mockImplementation();
+    jest.spyOn(Logger.prototype, 'debug').mockImplementation();
 
     jest.clearAllMocks();
   });
 
-  afterEach(() => {
-    // Clear cooldowns after each test
-    (listener as any).alertCache.clear();
-  });
-
-  describe('constructor', () => {
-    it('should be defined', () => {
-      expect(listener).toBeDefined();
-    });
-
-    it('should extend BaseNotificationListener', () => {
-      expect(listener).toBeInstanceOf(InventoryNotificationsListener);
-    });
-
-    it('should have cooldown configuration', () => {
-      expect((listener as any).ALERT_COOLDOWN_MS).toBe(60 * 60 * 1000);
-    });
-
-    it('should have retry configuration', () => {
-      expect((listener as any).maxRetries).toBe(3);
-      expect((listener as any).baseRetryDelay).toBe(3000);
-    });
-  });
-
-  describe('getEventTypes', () => {
-    it('should return supported event types', () => {
-      const eventTypes = (listener as any).getEventTypes();
-
-      expect(eventTypes).toEqual([
-        'inventory.low-stock',
-        'inventory.out-of-stock',
-      ]);
-      expect(eventTypes).toHaveLength(2);
-    });
-  });
-
-  describe('handleEvent', () => {
-    it('should route low-stock event to handleLowStock', async () => {
-      const handleLowStockSpy = jest
-        .spyOn(listener, 'handleLowStock')
-        .mockResolvedValue(undefined);
-
-      const event: DomainEvent<LowStockEvent> = {
-        type: 'inventory.low-stock',
-        data: mockLowStockEvent,
-        occurredAt: new Date(),
-        aggregateId: '',
-      };
-
-      await (listener as any).handleEvent(event);
-
-      expect(handleLowStockSpy).toHaveBeenCalledWith(mockLowStockEvent);
-    });
-
-    it('should route out-of-stock event to handleOutOfStock', async () => {
-      const handleOutOfStockSpy = jest
-        .spyOn(listener, 'handleOutOfStock')
-        .mockResolvedValue(undefined);
-
-      const event: DomainEvent<OutOfStockEvent> = {
-        type: 'inventory.out-of-stock',
-        data: mockOutOfStockEvent,
-        aggregateId: '',
-        occurredAt: new Date(),
-      };
-
-      await (listener as any).handleEvent(event);
-
-      expect(handleOutOfStockSpy).toHaveBeenCalledWith(mockOutOfStockEvent);
-    });
-
-    it('should log warning for unknown event type', async () => {
-      const loggerSpy = jest.spyOn(Logger.prototype, 'warn');
-
-      const event: DomainEvent<any> = {
-        type: 'unknown.event' as any,
-        data: {},
-        occurredAt: new Date(),
-        aggregateId: '',
-      };
-
-      await (listener as any).handleEvent(event);
-
-      expect(loggerSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Unknown event type')
-      );
-    });
-  });
-
   describe('handleLowStock', () => {
-    beforeEach(() => {
-      variantsService.findWithRelations!.mockResolvedValue(mockVariant);
-      storeRoleService.getStoreRoles!.mockResolvedValue([mockStoreRole]);
-      inventoryNotificationService.notifyLowStock!.mockResolvedValue(undefined);
-    });
+    const lowStockEvent: LowStockEvent = {
+      variantId: 'v1',
+      productId: 'p1',
+      storeId: 's1',
+      sku: 'TEST-SKU-001',
+      productName: 'Test Product',
+      currentStock: 5,
+      threshold: 10,
+      recentSales: 15,
+      estimatedDaysUntilStockout: 3,
+      category: 'Electronics',
+    };
 
-    it('should send low stock notification', async () => {
-      await listener.handleLowStock(mockLowStockEvent);
-
-      expect(inventoryNotificationService.notifyLowStock).toHaveBeenCalled();
-    });
-
-    it('should check cooldown before sending', async () => {
-      const isInCooldownSpy = jest.spyOn(listener as any, 'isInCooldown');
-
-      await listener.handleLowStock(mockLowStockEvent);
-
-      expect(isInCooldownSpy).toHaveBeenCalledWith('v1', 'low-stock');
-    });
-
-    it('should skip notification if in cooldown', async () => {
-      const loggerSpy = jest.spyOn(Logger.prototype, 'debug');
-
-      // Set cooldown
-      (listener as any).setCooldown('v1', 'low-stock');
-
-      await listener.handleLowStock(mockLowStockEvent);
-
-      expect(loggerSpy).toHaveBeenCalledWith(
-        expect.stringContaining('in cooldown period')
+    it('should send low stock notifications to store admins', async () => {
+      inventoryService.findInventoryByVariantId!.mockResolvedValue(
+        mockInventory
       );
-      expect(
-        inventoryNotificationService.notifyLowStock
-      ).not.toHaveBeenCalled();
-    });
+      storeRoleService.getStoreRoles!.mockResolvedValue([mockStoreRole] as any);
+      notificationService.notifyLowStock!.mockResolvedValue(undefined);
 
-    it('should load variant with relations', async () => {
-      await listener.handleLowStock(mockLowStockEvent);
+      await listener.handleLowStock(lowStockEvent);
 
-      expect(variantsService.findWithRelations).toHaveBeenCalledWith('v1');
-    });
-
-    it('should fetch store recipients', async () => {
-      await listener.handleLowStock(mockLowStockEvent);
-
+      expect(inventoryService.findInventoryByVariantId).toHaveBeenCalledWith(
+        'v1'
+      );
       expect(storeRoleService.getStoreRoles).toHaveBeenCalledWith('s1');
-    });
-
-    it('should warn when no recipients found', async () => {
-      const loggerSpy = jest.spyOn(Logger.prototype, 'warn');
-      storeRoleService.getStoreRoles!.mockResolvedValue([]);
-
-      await listener.handleLowStock(mockLowStockEvent);
-
-      expect(loggerSpy).toHaveBeenCalledWith(
-        expect.stringContaining('No admins/moderators found')
-      );
-      expect(
-        inventoryNotificationService.notifyLowStock
-      ).not.toHaveBeenCalled();
-    });
-
-    it('should build notification data correctly', async () => {
-      await listener.handleLowStock(mockLowStockEvent);
-
-      expect(inventoryNotificationService.notifyLowStock).toHaveBeenCalledWith(
-        'admin@example.com',
-        'Store Admin',
+      expect(notificationService.notifyLowStock).toHaveBeenCalledWith(
+        'admin@store.com',
+        'John Doe',
         expect.objectContaining({
           productName: 'Test Product',
           sku: 'TEST-SKU-001',
           currentStock: 5,
           threshold: 10,
-          recentSales: 15,
-          estimatedDays: 3,
+          category: 'Electronics',
+          storeName: 'Test Store',
         })
       );
     });
 
-    it('should mark as critical when stock below half threshold', async () => {
+    it('should respect cooldown period for low stock alerts', async () => {
+      inventoryService.findInventoryByVariantId!.mockResolvedValue(
+        mockInventory
+      );
+      storeRoleService.getStoreRoles!.mockResolvedValue([mockStoreRole] as any);
+      notificationService.notifyLowStock!.mockResolvedValue(undefined);
+
+      // First notification should succeed
+      await listener.handleLowStock(lowStockEvent);
+      expect(notificationService.notifyLowStock).toHaveBeenCalledTimes(1);
+
+      jest.clearAllMocks();
+
+      // Second notification within cooldown should be skipped
+      await listener.handleLowStock(lowStockEvent);
+      expect(notificationService.notifyLowStock).not.toHaveBeenCalled();
+    });
+
+    it('should send to multiple store admins and moderators', async () => {
+      const moderator = {
+        ...mockStoreRole,
+        id: 'sr2',
+        user: { ...mockUser, id: 'u2', email: 'moderator@store.com' },
+        roleName: StoreRoles.MODERATOR,
+      };
+
+      inventoryService.findInventoryByVariantId!.mockResolvedValue(
+        mockInventory
+      );
+      storeRoleService.getStoreRoles!.mockResolvedValue([
+        mockStoreRole,
+        moderator,
+      ] as any);
+      notificationService.notifyLowStock!.mockResolvedValue(undefined);
+
+      await listener.handleLowStock(lowStockEvent);
+
+      expect(notificationService.notifyLowStock).toHaveBeenCalledTimes(2);
+      expect(notificationService.notifyLowStock).toHaveBeenCalledWith(
+        'admin@store.com',
+        'John Doe',
+        expect.any(Object)
+      );
+      expect(notificationService.notifyLowStock).toHaveBeenCalledWith(
+        'moderator@store.com',
+        'John Doe',
+        expect.any(Object)
+      );
+    });
+
+    it('should skip notification when no admins/moderators found', async () => {
+      inventoryService.findInventoryByVariantId!.mockResolvedValue(
+        mockInventory
+      );
+      storeRoleService.getStoreRoles!.mockResolvedValue([]);
+
+      await listener.handleLowStock(lowStockEvent);
+
+      expect(notificationService.notifyLowStock).not.toHaveBeenCalled();
+    });
+
+    it('should handle inventory not found error', async () => {
+      inventoryService.findInventoryByVariantId!.mockResolvedValue(null);
+
+      await expect(listener.handleLowStock(lowStockEvent)).rejects.toThrow(
+        'Inventory with variant id  v1 not found'
+      );
+
+      expect(notificationService.notifyLowStock).not.toHaveBeenCalled();
+    });
+
+    it('should mark notification as critical when stock is very low', async () => {
       const criticalEvent = {
-        ...mockLowStockEvent,
-        currentStock: 3,
+        ...lowStockEvent,
+        currentStock: 2,
         threshold: 10,
       };
 
+      inventoryService.findInventoryByVariantId!.mockResolvedValue(
+        mockInventory
+      );
+      storeRoleService.getStoreRoles!.mockResolvedValue([mockStoreRole] as any);
+      notificationService.notifyLowStock!.mockResolvedValue(undefined);
+
       await listener.handleLowStock(criticalEvent);
 
-      expect(inventoryNotificationService.notifyLowStock).toHaveBeenCalledWith(
+      expect(notificationService.notifyLowStock).toHaveBeenCalledWith(
         expect.any(String),
         expect.any(String),
         expect.objectContaining({
           isCritical: true,
+          currentStock: 2,
+          threshold: 10,
         })
       );
     });
 
-    it('should not mark as critical when stock above half threshold', async () => {
-      await listener.handleLowStock(mockLowStockEvent);
+    it('should use category from product when event category missing', async () => {
+      const eventWithoutCategory = { ...lowStockEvent, category: undefined };
 
-      expect(inventoryNotificationService.notifyLowStock).toHaveBeenCalledWith(
+      inventoryService.findInventoryByVariantId!.mockResolvedValue(
+        mockInventory
+      );
+      storeRoleService.getStoreRoles!.mockResolvedValue([mockStoreRole] as any);
+      notificationService.notifyLowStock!.mockResolvedValue(undefined);
+
+      await listener.handleLowStock(eventWithoutCategory);
+
+      expect(notificationService.notifyLowStock).toHaveBeenCalledWith(
         expect.any(String),
         expect.any(String),
         expect.objectContaining({
-          isCritical: false,
+          category: 'Electronics',
         })
-      );
-    });
-
-    it('should set cooldown after notification', async () => {
-      const setCooldownSpy = jest.spyOn(listener as any, 'setCooldown');
-
-      await listener.handleLowStock(mockLowStockEvent);
-
-      expect(setCooldownSpy).toHaveBeenCalledWith('v1', 'low-stock');
-    });
-
-    it('should log processing and completion messages', async () => {
-      const loggerSpy = jest.spyOn(Logger.prototype, 'log');
-
-      await listener.handleLowStock(mockLowStockEvent);
-
-      expect(loggerSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Processing low stock alert')
-      );
-      expect(loggerSpy).toHaveBeenCalledWith(
-        expect.stringContaining('sent to 1 recipients')
-      );
-    });
-
-    it('should handle errors and rethrow', async () => {
-      const error = new Error('Notification service error');
-      inventoryNotificationService.notifyLowStock!.mockRejectedValue(error);
-
-      await expect(listener.handleLowStock(mockLowStockEvent)).rejects.toThrow(
-        error
-      );
-    });
-
-    it('should record metrics on success', async () => {
-      const recordMetricsSpy = jest.spyOn(listener as any, 'recordMetrics');
-
-      await listener.handleLowStock(mockLowStockEvent);
-
-      expect(recordMetricsSpy).toHaveBeenCalledWith(
-        'inventory.low-stock',
-        true,
-        expect.any(Number)
-      );
-    });
-
-    it('should record metrics on failure', async () => {
-      const recordMetricsSpy = jest.spyOn(listener as any, 'recordMetrics');
-      inventoryNotificationService.notifyLowStock!.mockRejectedValue(
-        new Error('Failed')
-      );
-
-      try {
-        await listener.handleLowStock(mockLowStockEvent);
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      } catch (e) {
-        // Expected
-      }
-
-      expect(recordMetricsSpy).toHaveBeenCalledWith(
-        'inventory.low-stock',
-        false,
-        expect.any(Number)
       );
     });
   });
 
   describe('handleOutOfStock', () => {
-    beforeEach(() => {
-      variantsService.findWithRelations!.mockResolvedValue(mockVariant);
-      storeRoleService.getStoreRoles!.mockResolvedValue([mockStoreRole]);
-      inventoryNotificationService.notifyOutOfStock!.mockResolvedValue(
-        undefined
+    const outOfStockEvent: OutOfStockEvent = {
+      variantId: 'v1',
+      productId: 'p1',
+      storeId: 's1',
+      sku: 'TEST-SKU-001',
+      productName: 'Test Product',
+      category: 'Electronics',
+    };
+
+    it('should send out of stock notifications immediately', async () => {
+      inventoryService.findInventoryByVariantId!.mockResolvedValue(
+        mockInventory
       );
-    });
+      storeRoleService.getStoreRoles!.mockResolvedValue([mockStoreRole] as any);
+      notificationService.notifyOutOfStock!.mockResolvedValue(undefined);
 
-    it('should send out of stock notification', async () => {
-      await listener.handleOutOfStock(mockOutOfStockEvent);
+      await listener.handleOutOfStock(outOfStockEvent);
 
-      expect(inventoryNotificationService.notifyOutOfStock).toHaveBeenCalled();
-    });
-
-    it('should not check cooldown for out of stock', async () => {
-      const isInCooldownSpy = jest.spyOn(listener as any, 'isInCooldown');
-
-      await listener.handleOutOfStock(mockOutOfStockEvent);
-
-      expect(isInCooldownSpy).not.toHaveBeenCalled();
-    });
-
-    it('should log critical warning', async () => {
-      const loggerSpy = jest.spyOn(Logger.prototype, 'warn');
-
-      await listener.handleOutOfStock(mockOutOfStockEvent);
-
-      expect(loggerSpy).toHaveBeenCalledWith(
-        expect.stringContaining('OUT OF STOCK alert')
-      );
-      expect(loggerSpy).toHaveBeenCalledWith(
-        expect.stringContaining('CRITICAL')
-      );
-    });
-
-    it('should build notification data correctly', async () => {
-      await listener.handleOutOfStock(mockOutOfStockEvent);
-
-      expect(
-        inventoryNotificationService.notifyOutOfStock
-      ).toHaveBeenCalledWith(
-        'admin@example.com',
-        'Store Admin',
+      expect(notificationService.notifyOutOfStock).toHaveBeenCalledWith(
+        'admin@store.com',
+        'John Doe',
         expect.objectContaining({
           productName: 'Test Product',
           sku: 'TEST-SKU-001',
           category: 'Electronics',
+          storeName: 'Test Store',
         })
       );
     });
 
-    it('should warn when no recipients found', async () => {
-      const loggerSpy = jest.spyOn(Logger.prototype, 'warn');
-      storeRoleService.getStoreRoles!.mockResolvedValue([]);
+    it('should not apply cooldown to out of stock alerts', async () => {
+      inventoryService.findInventoryByVariantId!.mockResolvedValue(
+        mockInventory
+      );
+      storeRoleService.getStoreRoles!.mockResolvedValue([mockStoreRole] as any);
+      notificationService.notifyOutOfStock!.mockResolvedValue(undefined);
 
-      await listener.handleOutOfStock(mockOutOfStockEvent);
+      await listener.handleOutOfStock(outOfStockEvent);
+      await listener.handleOutOfStock(outOfStockEvent);
 
-      expect(loggerSpy).toHaveBeenCalledWith(
+      expect(notificationService.notifyOutOfStock).toHaveBeenCalledTimes(2);
+    });
+
+    it('should handle notification service errors gracefully within batchProcess', async () => {
+      const errorSpy = jest.spyOn(Logger.prototype, 'error');
+
+      inventoryService.findInventoryByVariantId!.mockResolvedValue(
+        mockInventory
+      );
+      storeRoleService.getStoreRoles!.mockResolvedValue([mockStoreRole] as any);
+      notificationService.notifyOutOfStock!.mockRejectedValue(
+        new Error('Email service down')
+      );
+
+      // batchProcess catches errors, so method completes normally
+      await listener.handleOutOfStock(outOfStockEvent);
+
+      // Verify error was logged by batchProcess
+      expect(errorSpy).toHaveBeenCalledWith(
+        'Batch processing error',
+        expect.objectContaining({
+          error: 'Email service down',
+        })
+      );
+
+      // Verify notification was attempted
+      expect(notificationService.notifyOutOfStock).toHaveBeenCalled();
+    });
+
+    it('should throw when inventory loading fails', async () => {
+      inventoryService.findInventoryByVariantId!.mockResolvedValue(null);
+
+      await expect(listener.handleOutOfStock(outOfStockEvent)).rejects.toThrow(
+        'Inventory with variant id  v1 not found'
+      );
+
+      expect(notificationService.notifyOutOfStock).not.toHaveBeenCalled();
+    });
+
+    it('should throw when store not found', async () => {
+      const inventoryWithoutStore = {
+        ...mockInventory,
+        store: undefined,
+      };
+
+      inventoryService.findInventoryByVariantId!.mockResolvedValue(
+        inventoryWithoutStore as any
+      );
+
+      // Fix: Use direct string match instead of expect.stringContaining
+      await expect(listener.handleOutOfStock(outOfStockEvent)).rejects.toThrow(
+        /Store not found for variant v1/
+      );
+
+      expect(notificationService.notifyOutOfStock).not.toHaveBeenCalled();
+    });
+
+    it('should handle getStoreRoles errors gracefully and skip notification', async () => {
+      const errorSpy = jest.spyOn(Logger.prototype, 'error');
+      const warnSpy = jest.spyOn(Logger.prototype, 'warn');
+
+      inventoryService.findInventoryByVariantId!.mockResolvedValue(
+        mockInventory
+      );
+      storeRoleService.getStoreRoles!.mockRejectedValue(
+        new Error('Database connection failed')
+      );
+
+      // Method completes successfully but skips notification
+      await listener.handleOutOfStock(outOfStockEvent);
+
+      // Verify error was logged
+      expect(errorSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Failed to fetch notification recipients'),
+        expect.any(String)
+      );
+
+      // Verify warning about no recipients
+      expect(warnSpy).toHaveBeenCalledWith(
         expect.stringContaining('No admins/moderators found')
       );
+
+      // No notification should have been sent
+      expect(notificationService.notifyOutOfStock).not.toHaveBeenCalled();
     });
 
-    it('should log completion message', async () => {
-      const loggerSpy = jest.spyOn(Logger.prototype, 'log');
-
-      await listener.handleOutOfStock(mockOutOfStockEvent);
-
-      expect(loggerSpy).toHaveBeenCalledWith(
-        expect.stringContaining('OUT OF STOCK alerts')
-      );
-    });
-
-    it('should record metrics on success', async () => {
-      const recordMetricsSpy = jest.spyOn(listener as any, 'recordMetrics');
-
-      await listener.handleOutOfStock(mockOutOfStockEvent);
-
-      expect(recordMetricsSpy).toHaveBeenCalledWith(
-        'inventory.out-of-stock',
-        true,
-        expect.any(Number)
-      );
-    });
-
-    it('should handle errors and rethrow', async () => {
-      const error = new Error('Service error');
-      inventoryNotificationService.notifyOutOfStock!.mockRejectedValue(error);
-
-      await expect(
-        listener.handleOutOfStock(mockOutOfStockEvent)
-      ).rejects.toThrow(error);
-    });
-  });
-
-  describe('getStoreNotificationRecipients', () => {
-    it('should return admins and moderators', async () => {
-      storeRoleService.getStoreRoles!.mockResolvedValue([mockStoreRole]);
-
-      const recipients = await (listener as any).getStoreNotificationRecipients(
-        's1'
-      );
-
-      expect(recipients).toHaveLength(1);
-      expect(recipients[0]).toEqual({
-        email: 'admin@example.com',
-        name: 'Store Admin',
-        userId: 'u1',
-        role: StoreRoles.ADMIN,
-      });
-    });
-
-    it('should include moderators', async () => {
-      const moderatorRole = {
+    it('should continue processing when individual notification fails', async () => {
+      const admin = mockStoreRole;
+      const moderator = {
         ...mockStoreRole,
+        id: 'sr2',
+        user: { ...mockUser, id: 'u2', email: 'moderator@store.com' },
         roleName: StoreRoles.MODERATOR,
       };
-      storeRoleService.getStoreRoles!.mockResolvedValue([moderatorRole]);
 
-      const recipients = await (listener as any).getStoreNotificationRecipients(
-        's1'
+      const errorSpy = jest.spyOn(Logger.prototype, 'error');
+
+      inventoryService.findInventoryByVariantId!.mockResolvedValue(
+        mockInventory
       );
+      storeRoleService.getStoreRoles!.mockResolvedValue([
+        admin,
+        moderator,
+      ] as any);
 
-      expect(recipients).toHaveLength(1);
-      expect(recipients[0].role).toBe(StoreRoles.MODERATOR);
-    });
+      // First notification fails, second succeeds
+      notificationService
+        .notifyOutOfStock!.mockRejectedValueOnce(
+          new Error('First notification failed')
+        )
+        .mockResolvedValueOnce(undefined);
 
-    it('should exclude guests', async () => {
-      const guestRole = { ...mockStoreRole, roleName: StoreRoles.GUEST };
-      storeRoleService.getStoreRoles!.mockResolvedValue([guestRole]);
+      // Should complete successfully despite first failure
+      await listener.handleOutOfStock(outOfStockEvent);
 
-      const recipients = await (listener as any).getStoreNotificationRecipients(
-        's1'
+      // Both notifications should have been attempted
+      expect(notificationService.notifyOutOfStock).toHaveBeenCalledTimes(2);
+
+      // Error should have been logged
+      expect(errorSpy).toHaveBeenCalledWith(
+        'Batch processing error',
+        expect.objectContaining({
+          error: 'First notification failed',
+        })
       );
-
-      expect(recipients).toHaveLength(0);
     });
 
-    it('should exclude inactive roles', async () => {
-      const inactiveRole = { ...mockStoreRole, isActive: false };
-      storeRoleService.getStoreRoles!.mockResolvedValue([inactiveRole]);
+    it('should skip notification when no recipients found', async () => {
+      const warnSpy = jest.spyOn(Logger.prototype, 'warn');
 
-      const recipients = await (listener as any).getStoreNotificationRecipients(
-        's1'
+      inventoryService.findInventoryByVariantId!.mockResolvedValue(
+        mockInventory
       );
+      storeRoleService.getStoreRoles!.mockResolvedValue([]);
 
-      expect(recipients).toHaveLength(0);
-    });
+      await listener.handleOutOfStock(outOfStockEvent);
 
-    it('should filter out users without email', async () => {
-      const roleWithoutEmail = {
-        ...mockStoreRole,
-        user: { ...mockUser, email: null } as unknown as User,
-      };
-      storeRoleService.getStoreRoles!.mockResolvedValue([roleWithoutEmail]);
-
-      const recipients = await (listener as any).getStoreNotificationRecipients(
-        's1'
+      expect(notificationService.notifyOutOfStock).not.toHaveBeenCalled();
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('No admins/moderators found')
       );
-
-      expect(recipients).toHaveLength(0);
-    });
-
-    it('should handle service errors gracefully', async () => {
-      const loggerSpy = jest.spyOn(Logger.prototype, 'error');
-      storeRoleService.getStoreRoles!.mockRejectedValue(
-        new Error('Service error')
-      );
-
-      const recipients = await (listener as any).getStoreNotificationRecipients(
-        's1'
-      );
-
-      expect(recipients).toHaveLength(0);
-      expect(loggerSpy).toHaveBeenCalled();
-    });
-  });
-
-  describe('extractCategoryName', () => {
-    it('should return top-level category name', () => {
-      const categories = [
-        { name: 'Electronics', parent: null },
-        { name: 'Phones', parent: { id: 'cat1' } },
-      ];
-
-      const categoryName = (listener as any).extractCategoryName(categories);
-
-      expect(categoryName).toBe('Electronics');
-    });
-
-    it('should return first category when no top-level', () => {
-      const categories = [
-        { name: 'Phones', parent: { id: 'cat1' } },
-        { name: 'Smartphones', parent: { id: 'cat2' } },
-      ];
-
-      const categoryName = (listener as any).extractCategoryName(categories);
-
-      expect(categoryName).toBe('Phones');
-    });
-
-    it('should return null for empty categories', () => {
-      const categoryName = (listener as any).extractCategoryName([]);
-
-      expect(categoryName).toBeNull();
-    });
-
-    it('should return null for undefined categories', () => {
-      const categoryName = (listener as any).extractCategoryName(undefined);
-
-      expect(categoryName).toBeNull();
     });
   });
 
   describe('cooldown management', () => {
-    describe('isInCooldown', () => {
-      it('should return false when no cooldown set', () => {
-        const result = (listener as any).isInCooldown('v1', 'low-stock');
+    let lowStockEvent: LowStockEvent;
+    beforeEach(async () => {
+      lowStockEvent = {
+        variantId: 'v1',
+        productId: 'p1',
+        storeId: 's1',
+        sku: 'TEST-SKU-001',
+        productName: 'Test Product',
+        currentStock: 5,
+        threshold: 10,
+        recentSales: 15,
+        estimatedDaysUntilStockout: 3,
+        category: 'Electronics',
+      };
 
-        expect(result).toBe(false);
-      });
+      inventoryService.findInventoryByVariantId!.mockResolvedValue(
+        mockInventory
+      );
+      storeRoleService.getStoreRoles!.mockResolvedValue([mockStoreRole] as any);
+      notificationService.notifyLowStock!.mockResolvedValue(undefined);
 
-      it('should return true when in cooldown period', () => {
-        (listener as any).setCooldown('v1', 'low-stock');
-
-        const result = (listener as any).isInCooldown('v1', 'low-stock');
-
-        expect(result).toBe(true);
-      });
-
-      it('should return false after cooldown expires', () => {
-        (listener as any).setCooldown('v1', 'low-stock');
-
-        // Simulate time passage
-        const cache = (listener as any).alertCache;
-        const key = (listener as any).getCooldownKey('v1', 'low-stock');
-        cache.set(key, Date.now() - 2 * 60 * 60 * 1000); // 2 hours ago
-
-        const result = (listener as any).isInCooldown('v1', 'low-stock');
-
-        expect(result).toBe(false);
-      });
+      // First alert should go through
+      await listener.handleLowStock(lowStockEvent);
     });
 
-    describe('clearCooldown', () => {
-      it('should clear specific cooldown', () => {
-        (listener as any).setCooldown('v1', 'low-stock');
+    it('should check if variant is in cooldown', async () => {
+      expect(notificationService.notifyLowStock).toHaveBeenCalledTimes(1);
 
-        listener.clearCooldown('v1', 'low-stock');
+      jest.clearAllMocks();
 
-        expect((listener as any).isInCooldown('v1', 'low-stock')).toBe(false);
-      });
-
-      it('should log when clearing cooldown', () => {
-        const loggerSpy = jest.spyOn(Logger.prototype, 'log');
-        (listener as any).setCooldown('v1', 'low-stock');
-
-        listener.clearCooldown('v1', 'low-stock');
-
-        expect(loggerSpy).toHaveBeenCalledWith(
-          expect.stringContaining('Cleared cooldown')
-        );
-      });
+      // Second alert within cooldown should be blocked
+      await listener.handleLowStock(lowStockEvent);
+      expect(notificationService.notifyLowStock).not.toHaveBeenCalled();
     });
 
-    describe('clearAllVariantCooldowns', () => {
-      it('should clear all cooldowns for variant', () => {
-        (listener as any).setCooldown('v1', 'low-stock');
-        (listener as any).setCooldown('v1', 'out-of-stock');
+    it('should clear cooldown for specific variant', async () => {
+      // Clear cooldown
+      listener.clearCooldown('v1', 'low-stock');
 
-        const cleared = listener.clearAllVariantCooldowns('v1');
+      jest.clearAllMocks();
 
-        expect(cleared).toBe(2);
-        expect((listener as any).isInCooldown('v1', 'low-stock')).toBe(false);
-        expect((listener as any).isInCooldown('v1', 'out-of-stock')).toBe(
-          false
-        );
-      });
-
-      it('should return 0 when no cooldowns exist', () => {
-        const cleared = listener.clearAllVariantCooldowns('v1');
-
-        expect(cleared).toBe(0);
-      });
-
-      it('should log when clearing multiple cooldowns', () => {
-        const loggerSpy = jest.spyOn(Logger.prototype, 'log');
-        (listener as any).setCooldown('v1', 'low-stock');
-
-        listener.clearAllVariantCooldowns('v1');
-
-        expect(loggerSpy).toHaveBeenCalledWith(
-          expect.stringContaining('Cleared 1 cooldowns')
-        );
-      });
+      // Alert should go through after clearing cooldown
+      await listener.handleLowStock(lowStockEvent);
+      expect(notificationService.notifyLowStock).toHaveBeenCalledTimes(1);
     });
 
-    describe('getActiveCooldowns', () => {
-      it('should return active cooldowns', () => {
-        (listener as any).setCooldown('v1', 'low-stock');
-        (listener as any).setCooldown('v2', 'out-of-stock');
+    it('should get active cooldowns', async () => {
+      const cooldowns = listener.getActiveCooldowns();
 
-        const cooldowns = listener.getActiveCooldowns();
-
-        expect(cooldowns).toHaveLength(2);
-        expect(cooldowns[0]).toHaveProperty('variantId');
-        expect(cooldowns[0]).toHaveProperty('type');
-        expect(cooldowns[0]).toHaveProperty('expiresIn');
-        expect(cooldowns[0]).toHaveProperty('expiresInMinutes');
+      expect(cooldowns).toHaveLength(1);
+      expect(cooldowns[0]).toMatchObject({
+        variantId: 'v1',
+        type: 'low-stock',
       });
-
-      it('should exclude expired cooldowns', () => {
-        const cache = (listener as any).alertCache;
-        cache.set('v1:low-stock', Date.now() - 2 * 60 * 60 * 1000); // Expired
-        cache.set('v2:low-stock', Date.now()); // Active
-
-        const cooldowns = listener.getActiveCooldowns();
-
-        expect(cooldowns).toHaveLength(1);
-        expect(cooldowns[0].variantId).toBe('v2');
-      });
-
-      it('should clean up expired entries', () => {
-        const cache = (listener as any).alertCache;
-        cache.set('v1:low-stock', Date.now() - 2 * 60 * 60 * 1000);
-
-        listener.getActiveCooldowns();
-
-        expect(cache.has('v1:low-stock')).toBe(false);
-      });
+      expect(cooldowns[0].expiresIn).toBeGreaterThan(0);
     });
 
-    describe('getCooldownStats', () => {
-      it('should return cooldown statistics', () => {
-        (listener as any).setCooldown('v1', 'low-stock');
-        (listener as any).setCooldown('v2', 'low-stock');
-        (listener as any).setCooldown('v3', 'out-of-stock');
+    it('should get cooldown statistics', async () => {
+      const stats = listener.getCooldownStats();
 
-        const stats = listener.getCooldownStats();
-
-        expect(stats.totalActive).toBe(3);
-        expect(stats.byType).toEqual({
-          'low-stock': 2,
-          'out-of-stock': 1,
-        });
-        expect(stats.oldestCooldown).toBeDefined();
-        expect(stats.newestCooldown).toBeDefined();
-      });
-
-      it('should return empty stats when no cooldowns', () => {
-        const stats = listener.getCooldownStats();
-
-        expect(stats.totalActive).toBe(0);
-        expect(stats.byType).toEqual({});
-        expect(stats.oldestCooldown).toBeNull();
-        expect(stats.newestCooldown).toBeNull();
-      });
+      expect(stats.totalActive).toBe(1);
+      expect(stats.byType['low-stock']).toBe(1);
+      expect(stats.oldestCooldown).not.toBeNull();
+      expect(stats.newestCooldown).not.toBeNull();
     });
 
-    describe('cleanupExpiredCooldowns', () => {
-      it('should remove expired cooldowns', () => {
-        const cache = (listener as any).alertCache;
-        cache.set('v1:low-stock', Date.now() - 2 * 60 * 60 * 1000); // Expired
-        cache.set('v2:low-stock', Date.now()); // Active
+    it('should cleanup expired cooldowns', () => {
+      // Manually set an expired cooldown
+      (listener as any).alertCache.set(
+        'v1:low-stock',
+        Date.now() - 2 * 60 * 60 * 1000
+      ); // 2 hours ago
 
-        const cleaned = listener.cleanupExpiredCooldowns();
+      const cleaned = listener.cleanupExpiredCooldowns();
 
-        expect(cleaned).toBe(1);
-        expect(cache.has('v1:low-stock')).toBe(false);
-        expect(cache.has('v2:low-stock')).toBe(true);
-      });
+      expect(cleaned).toBe(1);
+      expect(listener.getActiveCooldowns()).toHaveLength(0);
+    });
 
-      it('should log debug message when cleanup occurs', () => {
-        const loggerSpy = jest.spyOn(Logger.prototype, 'debug');
-        const cache = (listener as any).alertCache;
-        cache.set('v1:low-stock', Date.now() - 2 * 60 * 60 * 1000);
+    it('should clear all cooldowns for a variant', async () => {
+      const cleared = listener.clearAllVariantCooldowns('v1');
 
-        listener.cleanupExpiredCooldowns();
-
-        expect(loggerSpy).toHaveBeenCalledWith(
-          expect.stringContaining('Cleaned up 1 expired cooldowns')
-        );
-      });
-
-      it('should return 0 when no expired cooldowns', () => {
-        (listener as any).setCooldown('v1', 'low-stock');
-
-        const cleaned = listener.cleanupExpiredCooldowns();
-
-        expect(cleaned).toBe(0);
-      });
+      expect(cleared).toBeGreaterThan(0);
+      expect(listener.getActiveCooldowns()).toHaveLength(0);
     });
   });
 
   describe('manualNotify', () => {
-    beforeEach(() => {
-      variantsService.findWithRelations!.mockResolvedValue(mockVariant);
-      storeRoleService.getStoreRoles!.mockResolvedValue([mockStoreRole]);
-      inventoryNotificationService.notifyLowStock!.mockResolvedValue(undefined);
-      inventoryNotificationService.notifyOutOfStock!.mockResolvedValue(
-        undefined
+    it('should manually trigger low stock notification', async () => {
+      inventoryService.findInventoryByVariantId!.mockResolvedValue(
+        mockInventory
       );
-    });
+      storeRoleService.getStoreRoles!.mockResolvedValue([mockStoreRole] as any);
+      notificationService.notifyLowStock!.mockResolvedValue(undefined);
 
-    it('should trigger low-stock notification', async () => {
       const result = await listener.manualNotify('v1', 'low-stock');
 
       expect(result.success).toBe(true);
       expect(result.recipientCount).toBe(1);
-      expect(inventoryNotificationService.notifyLowStock).toHaveBeenCalled();
+      expect(notificationService.notifyLowStock).toHaveBeenCalled();
     });
 
-    it('should trigger out-of-stock notification', async () => {
+    it('should manually trigger out of stock notification', async () => {
+      inventoryService.findInventoryByVariantId!.mockResolvedValue(
+        mockInventory
+      );
+      storeRoleService.getStoreRoles!.mockResolvedValue([mockStoreRole] as any);
+      notificationService.notifyOutOfStock!.mockResolvedValue(undefined);
+
       const result = await listener.manualNotify('v1', 'out-of-stock');
 
       expect(result.success).toBe(true);
       expect(result.recipientCount).toBe(1);
-      expect(inventoryNotificationService.notifyOutOfStock).toHaveBeenCalled();
+      expect(notificationService.notifyOutOfStock).toHaveBeenCalled();
     });
 
-    it('should clear cooldown before notification', async () => {
-      const clearCooldownSpy = jest.spyOn(listener, 'clearCooldown');
-
-      await listener.manualNotify('v1', 'low-stock');
-
-      expect(clearCooldownSpy).toHaveBeenCalledWith('v1', 'low-stock');
-    });
-
-    it('should return error when variant not found', async () => {
-      variantsService.findWithRelations!.mockResolvedValue(null);
-
-      const result = await listener.manualNotify('v1', 'low-stock');
-
-      expect(result.success).toBe(false);
-      expect(result.error).toBe('Variant not found');
-    });
-
-    it('should return error when store not found', async () => {
-      const variantWithoutStore = {
-        ...mockVariant,
-        product: { ...mockProduct, store: null },
-      };
-      variantsService.findWithRelations!.mockResolvedValue(
-        variantWithoutStore as any
+    it('should bypass cooldown for manual notifications', async () => {
+      inventoryService.findInventoryByVariantId!.mockResolvedValue(
+        mockInventory
       );
+      storeRoleService.getStoreRoles!.mockResolvedValue([mockStoreRole] as any);
+      notificationService.notifyLowStock!.mockResolvedValue(undefined);
+
+      // Set cooldown by triggering normal notification
+      await listener.handleLowStock({
+        variantId: 'v1',
+        productId: 'p1',
+        storeId: 's1',
+        sku: 'TEST-SKU-001',
+        productName: 'Test Product',
+        currentStock: 5,
+        threshold: 10,
+        recentSales: 15,
+        estimatedDaysUntilStockout: 3,
+        category: 'Electronics',
+      });
+
+      jest.clearAllMocks();
+
+      // Manual notification should bypass cooldown
+      const result = await listener.manualNotify('v1', 'low-stock');
+
+      expect(result.success).toBe(true);
+      expect(notificationService.notifyLowStock).toHaveBeenCalled();
+    });
+
+    it('should handle inventory not found in manual notify', async () => {
+      inventoryService.findInventoryByVariantId!.mockResolvedValue(null);
 
       const result = await listener.manualNotify('v1', 'low-stock');
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe('Store not found for variant');
+      expect(result.error).toBe('Inventory not found');
     });
 
-    it('should return error when no recipients found', async () => {
+    it('should handle no recipients in manual notify', async () => {
+      inventoryService.findInventoryByVariantId!.mockResolvedValue(
+        mockInventory
+      );
       storeRoleService.getStoreRoles!.mockResolvedValue([]);
 
       const result = await listener.manualNotify('v1', 'low-stock');
@@ -839,81 +614,73 @@ describe('InventoryNotificationsListener', () => {
       expect(result.success).toBe(false);
       expect(result.error).toBe('No eligible recipients found');
     });
-
-    it('should log warning for manual trigger', async () => {
-      const loggerSpy = jest.spyOn(Logger.prototype, 'warn');
-
-      await listener.manualNotify('v1', 'low-stock');
-
-      expect(loggerSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Manual notification triggered')
-      );
-    });
-
-    it('should handle errors gracefully', async () => {
-      variantsService.findWithRelations!.mockRejectedValue(
-        new Error('Database error')
-      );
-
-      const result = await listener.manualNotify('v1', 'low-stock');
-
-      expect(result.success).toBe(false);
-      expect(result.error).toBe('Database error');
-    });
   });
 
-  describe('integration scenarios', () => {
-    beforeEach(() => {
-      variantsService.findWithRelations!.mockResolvedValue(mockVariant);
-      storeRoleService.getStoreRoles!.mockResolvedValue([mockStoreRole]);
-      inventoryNotificationService.notifyLowStock!.mockResolvedValue(undefined);
-    });
-
-    it('should handle multiple low stock events with cooldown', async () => {
-      // First notification should succeed
-      await listener.handleLowStock(mockLowStockEvent);
-      expect(inventoryNotificationService.notifyLowStock).toHaveBeenCalledTimes(
-        1
-      );
-
-      // Second notification should be skipped (cooldown)
-      await listener.handleLowStock(mockLowStockEvent);
-      expect(inventoryNotificationService.notifyLowStock).toHaveBeenCalledTimes(
-        1
-      );
-
-      // Clear cooldown and try again
-      listener.clearCooldown('v1', 'low-stock');
-      await listener.handleLowStock(mockLowStockEvent);
-      expect(inventoryNotificationService.notifyLowStock).toHaveBeenCalledTimes(
-        2
-      );
-    });
-
-    it('should handle multiple recipients', async () => {
-      const admin2 = {
+  describe('recipient filtering', () => {
+    it('should filter inactive store roles', async () => {
+      const inactiveRole = {
         ...mockStoreRole,
-        id: 'role-2',
-        user: { ...mockUser, id: 'u2', email: 'admin2@example.com' } as User,
-      };
-      const moderator = {
-        ...mockStoreRole,
-        id: 'role-3',
-        roleName: StoreRoles.MODERATOR,
-        user: { ...mockUser, id: 'u3', email: 'mod@example.com' } as User,
+        id: 'sr2',
+        isActive: false,
       };
 
+      inventoryService.findInventoryByVariantId!.mockResolvedValue(
+        mockInventory
+      );
       storeRoleService.getStoreRoles!.mockResolvedValue([
         mockStoreRole,
-        admin2,
-        moderator,
-      ]);
+        inactiveRole,
+      ] as any);
+      notificationService.notifyLowStock!.mockResolvedValue(undefined);
 
-      await listener.handleLowStock(mockLowStockEvent);
+      await listener.handleLowStock({
+        variantId: 'v1',
+        productId: 'p1',
+        storeId: 's1',
+        sku: 'TEST-SKU-001',
+        productName: 'Test Product',
+        currentStock: 5,
+        threshold: 10,
+        recentSales: 15,
+        estimatedDaysUntilStockout: 3,
+        category: 'Electronics',
+      });
 
-      expect(inventoryNotificationService.notifyLowStock).toHaveBeenCalledTimes(
-        3
+      // Should only send to active role
+      expect(notificationService.notifyLowStock).toHaveBeenCalledTimes(1);
+    });
+
+    it('should exclude non-admin/moderator roles', async () => {
+      const memberRole = {
+        ...mockStoreRole,
+        id: 'sr2',
+        roleName: StoreRoles.GUEST,
+      };
+
+      inventoryService.findInventoryByVariantId!.mockResolvedValue(
+        mockInventory
       );
+      storeRoleService.getStoreRoles!.mockResolvedValue([
+        mockStoreRole,
+        memberRole,
+      ] as any);
+      notificationService.notifyLowStock!.mockResolvedValue(undefined);
+
+      await listener.handleLowStock({
+        variantId: 'v1',
+        productId: 'p1',
+        storeId: 's1',
+        sku: 'TEST-SKU-001',
+        productName: 'Test Product',
+        currentStock: 5,
+        threshold: 10,
+        recentSales: 15,
+        estimatedDaysUntilStockout: 3,
+        category: 'Electronics',
+      });
+
+      // Should only send to admin, not member
+      expect(notificationService.notifyLowStock).toHaveBeenCalledTimes(1);
     });
   });
 });

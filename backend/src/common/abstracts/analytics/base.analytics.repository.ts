@@ -42,10 +42,29 @@ export abstract class BaseAnalyticsRepository<
     const result: AggregationResult = {};
 
     for (const [key, value] of Object.entries(raw || {})) {
-      result[key] = Number(value || 0);
+      result[key] = Number(value || 0) ?? value;
     }
 
     return result;
+  }
+
+  /**
+   * Parse aggregation result with safe handling of ID fields
+   */
+  protected parseMetricsWithId(raw: any): {
+    productId: string;
+    views: number;
+    purchases: number;
+    addToCarts: number;
+    revenue: number;
+  } {
+    return {
+      productId: raw.p_productId || raw.productId, // Keep as string
+      views: Number(raw.views || 0),
+      purchases: Number(raw.purchases || 0),
+      addToCarts: Number(raw.addToCarts || 0),
+      revenue: Number(raw.revenue || 0),
+    };
   }
 
   /**

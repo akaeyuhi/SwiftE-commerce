@@ -9,15 +9,22 @@ import {
   createServiceMock,
   createPolicyMock,
   MockedMethods,
+  createDeepMock,
+  createMockInterceptor,
+  createMockAnalyticsQueue,
 } from 'test/unit/utils/helpers';
 import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';
 import { StoreRolesGuard } from 'src/modules/authorization/guards/store-roles.guard';
 import { AdminGuard } from 'src/modules/authorization/guards/admin.guard';
 import { PolicyService } from 'src/modules/authorization/policy/policy.service';
+import { AnalyticsQueueService } from 'src/modules/infrastructure/queues/analytics-queue/analytics-queue.service';
+import { BaseQueueService } from 'src/common/abstracts/infrastucture/base.queue.service';
+import { RecordEventInterceptor } from 'src/modules/infrastructure/interceptors/record-event/record-event.interceptor';
 
 describe('CartController', () => {
   let controller: CartController;
   let service: Partial<MockedMethods<CartService>>;
+  let queue: Partial<MockedMethods<BaseQueueService>>;
 
   beforeEach(async () => {
     const mockGuard = createGuardMock();
@@ -29,12 +36,16 @@ describe('CartController', () => {
       'update',
       'remove',
     ]);
+    queue = createMockAnalyticsQueue();
+    const interceptorMock = createMockInterceptor();
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [CartController],
       providers: [
         { provide: CartService, useValue: service },
         { provide: PolicyService, useValue: policyMock },
+        { provide: AnalyticsQueueService, useValue: queue },
+        { provide: RecordEventInterceptor, useValue: interceptorMock },
         {
           provide: JwtAuthGuard,
           useValue: mockGuard,

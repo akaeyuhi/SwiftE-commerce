@@ -5,6 +5,9 @@ import { AiAuditRepository } from 'src/modules/ai/ai-audit/ai-audit.repository';
 import { AiAudit } from 'src/entities/ai/ai-audit.entity';
 import { createRepositoryMock, MockedMethods } from '../../utils/helpers';
 /* eslint-disable camelcase */
+function expectArrayToContainString(array: string[], substring: string) {
+  expect(array.some((item) => item.includes(substring))).toBe(true);
+}
 
 describe('AiAuditService', () => {
   let service: AiAuditService;
@@ -72,17 +75,25 @@ describe('AiAuditService', () => {
       expect((service as any).algorithm).toBe('aes-256-gcm');
     });
 
-    it('should warn when encryption key not set', () => {
+    it('should warn when encryption key not set', async () => {
       delete process.env.AI_AUDIT_ENC_KEY;
 
-      Test.createTestingModule({
+      // Clear previous spy
+      jest.clearAllMocks();
+
+      const warnSpy = jest.spyOn(Logger.prototype, 'warn');
+
+      // Create new module without encryption key
+      await Test.createTestingModule({
         providers: [
           AiAuditService,
           { provide: AiAuditRepository, useValue: auditRepo },
         ],
       }).compile();
 
-      expect(Logger.prototype.warn).toHaveBeenCalled();
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('AI_AUDIT_ENC_KEY')
+      );
     });
   });
 
@@ -451,11 +462,10 @@ describe('AiAuditService', () => {
 
       const result = await service.validateIntegrity();
 
-      expect(result.recommendations).toContain(
-        expect.stringContaining('integrity below 95%')
-      );
-      expect(result.recommendations).toContain(
-        expect.stringContaining('corrupted encryption entries')
+      expectArrayToContainString(result.recommendations, 'integrity below 95%');
+      expectArrayToContainString(
+        result.recommendations,
+        'corrupted encryption entries'
       );
     });
 
@@ -473,8 +483,9 @@ describe('AiAuditService', () => {
 
       const result = await service.validateIntegrity();
 
-      expect(result.recommendations).toContain(
-        expect.stringContaining('Encryption integrity is excellent')
+      expectArrayToContainString(
+        result.recommendations,
+        'Encryption integrity is excellent'
       );
     });
   });
@@ -603,11 +614,13 @@ describe('AiAuditService', () => {
         complianceMode: true,
       });
 
-      expect(result.complianceWarnings).toContain(
-        expect.stringContaining('Retention period less than 30 days')
+      expectArrayToContainString(
+        result.complianceWarnings,
+        'Retention period less than 30 days'
       );
-      expect(result.complianceWarnings).toContain(
-        expect.stringContaining('Preserving fewer than 100 entries')
+      expectArrayToContainString(
+        result.complianceWarnings,
+        'Preserving fewer than 100 entries'
       );
     });
 

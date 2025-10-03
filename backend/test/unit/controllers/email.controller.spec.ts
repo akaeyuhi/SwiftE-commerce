@@ -13,17 +13,29 @@ import {
   SendStockAlertDto,
   SendLowStockWarningDto,
 } from 'src/modules/email/dto/email.dto';
-import { createGuardMock, createMock, MockedMethods } from '../utils/helpers';
+import {
+  createGuardMock,
+  createMock,
+  createPolicyMock,
+  MockedMethods,
+} from '../utils/helpers';
+import { PolicyService } from 'src/modules/authorization/policy/policy.service';
+import { AdminRoles } from 'src/common/enums/admin.enum';
+import { StoreRoles } from 'src/common/enums/store-roles.enum';
+import { STORE_ROLES_META } from 'src/common/decorators/store-role.decorator';
+import { ADMIN_ROLE_META } from 'src/common/decorators/admin-role.decorator';
 
 describe('EmailController', () => {
   let controller: EmailController;
   let emailService: Partial<MockedMethods<EmailService>>;
   let emailQueueService: Partial<MockedMethods<EmailQueueService>>;
+  let policyMock: Partial<MockedMethods<PolicyService>>;
 
   beforeEach(async () => {
     const guardMock = createGuardMock();
 
     emailService = createMock<EmailService>(['sendEmail', 'healthCheck']);
+    policyMock = createPolicyMock();
 
     emailQueueService = createMock<EmailQueueService>([
       'sendUserConfirmation',
@@ -36,6 +48,7 @@ describe('EmailController', () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [EmailController],
       providers: [
+        { provide: PolicyService, useValue: policyMock },
         { provide: EmailService, useValue: emailService },
         { provide: EmailQueueService, useValue: emailQueueService },
         { provide: JwtAuthGuard, useValue: guardMock },
@@ -413,7 +426,7 @@ describe('EmailController', () => {
     it('should have admin-only endpoints protected', () => {
       // sendEmail should require admin role
       const sendEmailMetadata = Reflect.getMetadata(
-        '__adminRole__',
+        ADMIN_ROLE_META,
         controller.sendEmail
       );
       expect(sendEmailMetadata).toBeDefined();
@@ -422,7 +435,7 @@ describe('EmailController', () => {
     it('should have store role endpoints protected', () => {
       // sendUserConfirmation should require store admin/moderator
       const roleMetadata = Reflect.getMetadata(
-        '__storeRole__',
+        STORE_ROLES_META,
         controller.sendUserConfirmation
       );
       expect(roleMetadata).toBeDefined();

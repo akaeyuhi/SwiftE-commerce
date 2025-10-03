@@ -320,10 +320,12 @@ describe('EmailQueueProcessor', () => {
     });
 
     it('should handle service loading errors', async () => {
-      moduleRef.get!.mockRejectedValue(new Error('Module not found') as never);
+      moduleRef.get!.mockImplementation(() => {
+        throw new Error('Module not found');
+      });
 
       await expect((processor as any).getEmailService()).rejects.toThrow(
-        'EmailService not available'
+        'EmailService not available. Make sure EmailModule is loaded.'
       );
     });
   });

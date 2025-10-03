@@ -4,7 +4,10 @@ import { StoreService } from 'src/modules/store/store.service';
 import { CreateStoreDto } from 'src/modules/store/dto/create-store.dto';
 import { UpdateStoreDto } from 'src/modules/store/dto/update-store.dto';
 import {
+  createDeepMock,
   createGuardMock,
+  createMockAnalyticsQueue,
+  createMockInterceptor,
   createPolicyMock,
   createServiceMock,
   MockedMethods,
@@ -14,11 +17,15 @@ import { StoreRolesGuard } from 'src/modules/authorization/guards/store-roles.gu
 import { AdminGuard } from 'src/modules/authorization/guards/admin.guard';
 import { PolicyService } from 'src/modules/authorization/policy/policy.service';
 import { jest } from '@jest/globals';
+import { BaseQueueService } from 'src/common/abstracts/infrastucture/base.queue.service';
+import { AnalyticsQueueService } from 'src/modules/infrastructure/queues/analytics-queue/analytics-queue.service';
+import { RecordEventInterceptor } from 'src/modules/infrastructure/interceptors/record-event/record-event.interceptor';
 
 describe('StoreController', () => {
   let controller: StoreController;
   let service: Partial<MockedMethods<StoreService>>;
   let policyMock: Partial<MockedMethods<PolicyService>>;
+  let queue: Partial<MockedMethods<BaseQueueService>>;
 
   beforeEach(async () => {
     service = createServiceMock<StoreService>([
@@ -29,13 +36,17 @@ describe('StoreController', () => {
       'remove',
     ]);
     policyMock = createPolicyMock();
+    queue = createMockAnalyticsQueue();
     const guardMock = createGuardMock();
+    const interceptorMock = createMockInterceptor();
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [StoreController],
       providers: [
+        { provide: AnalyticsQueueService, useValue: queue },
         { provide: StoreService, useValue: service },
         { provide: PolicyService, useValue: policyMock },
+        { provide: RecordEventInterceptor, useValue: interceptorMock },
         {
           provide: JwtAuthGuard,
           useValue: guardMock,

@@ -11,11 +11,7 @@ import {
 import { AnalyticsEventType } from 'src/entities/infrastructure/analytics/analytics-event.entity';
 
 /**
- * AnalyticsQueueService (Global)
- *
- * Pure infrastructure service - NO business logic dependencies.
- * Does NOT import AnalyticsEventRepository or any analytics business modules.
- * All processing logic is in AnalyticsQueueProcessor.
+ * AnalyticsQueueService
  */
 @Injectable()
 export class AnalyticsQueueService extends BaseQueueService<AnalyticsJobData> {

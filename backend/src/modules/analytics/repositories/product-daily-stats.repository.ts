@@ -73,8 +73,8 @@ export class ProductDailyStatsRepository extends BaseAnalyticsRepository<Product
     const raw = await qb.getRawMany();
 
     return raw.map((r) => ({
-      productId: r.productId,
       ...this.parseAggregationResult(r),
+      productId: r.productId,
     }));
   }
 

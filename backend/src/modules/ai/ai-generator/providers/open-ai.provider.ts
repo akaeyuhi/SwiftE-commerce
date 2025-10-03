@@ -10,7 +10,7 @@ import {
 } from 'src/common/interfaces/ai/generator.interface';
 
 /**
- * Enhanced OpenAI Provider
+ * OpenAI Provider
  *
  * Supports multiple OpenAI models with proper error handling,
  * cost tracking, and comprehensive monitoring.
@@ -140,13 +140,13 @@ export class OpenAiProvider extends BaseAiProvider {
   private parseResponse(data: any, model: string): AiGenerateResult {
     let text: string;
 
+    const choice = data.choices?.[0];
+
+    if (!choice) {
+      throw new Error('No choices in OpenAI response');
+    }
+
     try {
-      const choice = data.choices?.[0];
-
-      if (!choice) {
-        throw new Error('No choices in OpenAI response');
-      }
-
       // Extract text based on model type
       text = choice.message?.content || choice.text || '';
 

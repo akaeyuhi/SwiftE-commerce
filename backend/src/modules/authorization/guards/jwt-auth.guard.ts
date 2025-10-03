@@ -17,9 +17,9 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     if (!result) return false;
 
     const request = context.switchToHttp().getRequest();
-    const user = request.user;
+    const user = request?.user;
 
-    if (!user?.id) return false;
+    if (!user || !user?.id) return false;
 
     const isActive = await this.policyService.isUserActive(user.id);
     if (!isActive) {

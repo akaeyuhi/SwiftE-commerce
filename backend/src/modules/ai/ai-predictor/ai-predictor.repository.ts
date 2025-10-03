@@ -8,7 +8,7 @@ import {
 } from 'src/common/interfaces/ai/predictor.interface';
 
 /**
- * Enhanced AiPredictorRepository with advanced query methods
+ * AiPredictorRepository with advanced query methods
  */
 @Injectable()
 export class AiPredictorRepository extends BaseRepository<AiPredictorStat> {

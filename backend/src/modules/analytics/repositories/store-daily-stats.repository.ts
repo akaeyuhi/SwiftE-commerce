@@ -27,6 +27,18 @@ export class StoreDailyStatsRepository extends BaseAnalyticsRepository<StoreDail
     this.applyDateRange(qb, options, 's.date');
 
     const raw = await qb.getRawOne();
+
+    // Handle empty result
+    if (!raw || Object.keys(raw).length === 0) {
+      return {
+        views: 0,
+        purchases: 0,
+        addToCarts: 0,
+        revenue: 0,
+        checkouts: 0,
+      };
+    }
+
     return this.parseAggregationResult(raw);
   }
 

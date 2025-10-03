@@ -30,7 +30,7 @@ import {
 } from 'src/modules/ai/ai-logs/dto/create-ai-log.dto';
 
 /**
- * Enhanced AI Logs Controller
+ * AI Logs Controller
  *
  * Provides comprehensive AI usage logging and analytics with:
  * - Log creation and querying

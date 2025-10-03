@@ -1,6 +1,10 @@
 import { DataSource, EntityManager, SelectQueryBuilder } from 'typeorm';
 import { AiPredictorStat } from 'src/entities/ai/ai-predictor-stat.entity';
-import { createMock, MockedMethods } from '../../utils/helpers';
+import {
+  createMock,
+  createMockEntityManager,
+  MockedMethods,
+} from '../../utils/helpers';
 import { AiPredictorRepository } from 'src/modules/ai/ai-predictor/ai-predictor.repository';
 
 describe('AiPredictorRepository', () => {
@@ -36,7 +40,7 @@ describe('AiPredictorRepository', () => {
       execute: jest.fn(),
     } as any;
 
-    manager = createMock<EntityManager>(['createQueryBuilder']);
+    manager = createMockEntityManager();
     manager.createQueryBuilder!.mockReturnValue(queryBuilder as any);
 
     dataSource = createMock<DataSource>(['createEntityManager']);
@@ -135,7 +139,7 @@ describe('AiPredictorRepository', () => {
       expect(stats.totalPredictions).toBe(2);
       expect(stats.averageScore).toBeCloseTo(0.7);
       expect(stats.scoreDistribution).toBeDefined();
-      expect(stats.byModelVersion).toHaveProperty('v1.0', 2);
+      expect(stats.byModelVersion['v1.0']).toBe(2);
     });
 
     it('should handle invalid scores', async () => {

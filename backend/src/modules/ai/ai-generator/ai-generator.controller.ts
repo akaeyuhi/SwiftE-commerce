@@ -32,7 +32,7 @@ import {
 } from './dto/generator-request.dto';
 
 /**
- * Enhanced AI Generator Controller
+ * AI Generator Controller
  *
  * Provides AI text generation endpoints with:
  * - Product name generation

@@ -165,16 +165,25 @@ describe('VariantsService', () => {
     });
 
     it('should use fallback SKU with random number after max retries', async () => {
-      // Mock all attempts to return existing variant
-      repo.findOne!.mockResolvedValue(mockVariant);
+      let callCount = 0;
+
+      repo.findOne!.mockImplementation(async () => {
+        callCount++;
+        // First 6 attempts fail, fallback succeeds
+        return callCount <= 6 ? mockVariant : null;
+      });
 
       repo.create!.mockReturnValue(mockVariant);
       repo.save!.mockResolvedValue(mockVariant);
 
       await service.create(createDto);
 
-      // Should have tried generation multiple times plus final fallback check
-      expect(repo.findOne).toHaveBeenCalled();
+      // Verify fallback SKU format includes random number
+      const createCall = (repo.create as jest.Mock).mock.calls[0][0];
+      expect(createCall.sku).toMatch(/^P-P1-[A-F0-9]+-\d+\.\d+$/);
+
+      // Should have tried generation 6 times plus final fallback check
+      expect(repo.findOne).toHaveBeenCalledTimes(7);
     });
 
     it('should create with attributes if provided', async () => {

@@ -18,7 +18,7 @@ export interface RecordAiLogParams {
 }
 
 /**
- * Enhanced AiLogsService with comprehensive logging capabilities
+ * AiLogsService with comprehensive logging capabilities
  *
  * Extends BaseService for CRUD operations and adds:
  * - Smart prompt sanitization
@@ -429,7 +429,16 @@ export class AiLogsService extends BaseService<
   }
 
   private sanitizeObject(obj: any): any {
-    if (typeof obj !== 'object' || obj === null) {
+    // Handle primitives
+    if (obj === null || obj === undefined) {
+      return obj;
+    }
+
+    if (typeof obj === 'string') {
+      return this.sanitizeText(obj);
+    }
+
+    if (typeof obj !== 'object') {
       return obj;
     }
 
@@ -446,13 +455,7 @@ export class AiLogsService extends BaseService<
         continue;
       }
 
-      if (typeof value === 'string') {
-        sanitized[key] = this.sanitizeText(value);
-      } else if (typeof value === 'object') {
-        sanitized[key] = this.sanitizeObject(value);
-      } else {
-        sanitized[key] = value;
-      }
+      sanitized[key] = this.sanitizeObject(value); // Recursive call handles all types now
     }
 
     return sanitized;

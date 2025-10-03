@@ -2,8 +2,13 @@ import { DataSource, EntityManager, LessThan } from 'typeorm';
 import { ConfirmationRepository } from 'src/modules/auth/confirmation/confirmation.repository';
 import { Confirmation } from 'src/modules/auth/confirmation/entities/confirmation.entity';
 import { ConfirmationType } from 'src/modules/auth/confirmation/enums/confirmation.enum';
-import { createMock, MockedMethods } from 'test/unit/utils/helpers';
+import {
+  createMock,
+  createMockEntityManager,
+  MockedMethods,
+} from 'test/unit/utils/helpers';
 import { User } from 'src/entities/user/user.entity';
+import { Test, TestingModule } from '@nestjs/testing';
 
 describe('ConfirmationRepository', () => {
   let repo: ConfirmationRepository;
@@ -24,31 +29,46 @@ describe('ConfirmationRepository', () => {
     user: {} as User,
   } as Confirmation;
 
-  beforeEach(() => {
-    manager = createMock<EntityManager>([
+  beforeEach(async () => {
+    manager = createMockEntityManager(
       'findOne',
       'find',
       'update',
       'delete',
-      'count',
-      'createQueryBuilder',
-    ]);
-
+      'count'
+    );
     dataSource = createMock<DataSource>(['createEntityManager']);
     dataSource.createEntityManager!.mockReturnValue(manager as any);
 
-    repo = new ConfirmationRepository(dataSource as any);
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        ConfirmationRepository,
+        { provide: DataSource, useValue: dataSource },
+      ],
+    }).compile();
+
+    repo = module.get<ConfirmationRepository>(ConfirmationRepository);
+
+    // Mock the inherited Repository methods
+    jest.spyOn(repo, 'find').mockImplementation(jest.fn());
+    jest.spyOn(repo, 'findOne').mockImplementation(jest.fn());
+    jest.spyOn(repo, 'findOneBy').mockImplementation(jest.fn());
+    jest.spyOn(repo, 'delete').mockImplementation(jest.fn());
+    jest.spyOn(repo, 'create').mockImplementation(jest.fn());
+    jest.spyOn(repo, 'save').mockImplementation(jest.fn());
+    jest.spyOn(repo, 'update').mockImplementation(jest.fn());
+    jest.spyOn(repo, 'count').mockImplementation(jest.fn());
 
     jest.clearAllMocks();
   });
 
   describe('findByToken', () => {
     it('should find confirmation by hashed token', async () => {
-      manager.findOne!.mockResolvedValue(mockConfirmation);
+      (repo.findOne as jest.Mock)!.mockResolvedValue(mockConfirmation);
 
       const result = await repo.findByToken('hashedToken');
 
-      expect(manager.findOne).toHaveBeenCalledWith(Confirmation, {
+      expect(repo.findOne).toHaveBeenCalledWith({
         where: { token: 'hashedToken' },
         relations: ['user'],
       });
@@ -56,7 +76,7 @@ describe('ConfirmationRepository', () => {
     });
 
     it('should return null when token not found', async () => {
-      manager.findOne!.mockResolvedValue(null);
+      (repo.findOne as jest.Mock)!.mockResolvedValue(null);
 
       const result = await repo.findByToken('nonexistent');
 
@@ -66,14 +86,14 @@ describe('ConfirmationRepository', () => {
 
   describe('findPendingByUserAndType', () => {
     it('should find pending confirmation by user and type', async () => {
-      manager.findOne!.mockResolvedValue(mockConfirmation);
+      (repo.findOne as jest.Mock)!.mockResolvedValue(mockConfirmation);
 
       const result = await repo.findPendingByUserAndType(
         'u1',
         ConfirmationType.ACCOUNT_VERIFICATION
       );
 
-      expect(manager.findOne).toHaveBeenCalledWith(Confirmation, {
+      expect(repo.findOne).toHaveBeenCalledWith({
         where: {
           userId: 'u1',
           type: ConfirmationType.ACCOUNT_VERIFICATION,
@@ -88,11 +108,11 @@ describe('ConfirmationRepository', () => {
   describe('findPendingByUser', () => {
     it('should find all pending confirmations by user', async () => {
       const confirmations = [mockConfirmation];
-      manager.find!.mockResolvedValue(confirmations);
+      (repo.find as jest.Mock)!.mockResolvedValue(confirmations);
 
       const result = await repo.findPendingByUser('u1');
 
-      expect(manager.find).toHaveBeenCalledWith(Confirmation, {
+      expect(repo.find).toHaveBeenCalledWith({
         where: {
           userId: 'u1',
           isUsed: false,
@@ -105,12 +125,11 @@ describe('ConfirmationRepository', () => {
 
   describe('markAsUsed', () => {
     it('should mark confirmation as used', async () => {
-      manager.update!.mockResolvedValue({ affected: 1 } as any);
+      (repo.update as jest.Mock)!.mockResolvedValue({ affected: 1 } as any);
 
       await repo.markAsUsed('c1');
 
-      expect(manager.update).toHaveBeenCalledWith(
-        Confirmation,
+      expect(repo.update).toHaveBeenCalledWith(
         'c1',
         expect.objectContaining({
           isUsed: true,
@@ -122,15 +141,14 @@ describe('ConfirmationRepository', () => {
 
   describe('invalidateByUserAndType', () => {
     it('should invalidate confirmations by user and type', async () => {
-      manager.update!.mockResolvedValue({ affected: 2 } as any);
+      (repo.update as jest.Mock)!.mockResolvedValue({ affected: 2 } as any);
 
       await repo.invalidateByUserAndType(
         'u1',
         ConfirmationType.ACCOUNT_VERIFICATION
       );
 
-      expect(manager.update).toHaveBeenCalledWith(
-        Confirmation,
+      expect(repo.update).toHaveBeenCalledWith(
         {
           userId: 'u1',
           type: ConfirmationType.ACCOUNT_VERIFICATION,
@@ -146,18 +164,18 @@ describe('ConfirmationRepository', () => {
 
   describe('cleanupExpiredTokens', () => {
     it('should delete expired tokens', async () => {
-      manager.delete!.mockResolvedValue({ affected: 5 } as any);
+      (repo.delete as jest.Mock)!.mockResolvedValue({ affected: 5 } as any);
 
       const result = await repo.cleanupExpiredTokens();
 
-      expect(manager.delete).toHaveBeenCalledWith(Confirmation, {
+      expect(repo.delete).toHaveBeenCalledWith({
         expiresAt: LessThan(expect.any(Date)),
       });
       expect(result).toBe(5);
     });
 
     it('should return 0 when no tokens deleted', async () => {
-      manager.delete!.mockResolvedValue({ affected: 0 } as any);
+      (repo.delete as jest.Mock)!.mockResolvedValue({ affected: 0 } as any);
 
       const result = await repo.cleanupExpiredTokens();
 
@@ -167,13 +185,13 @@ describe('ConfirmationRepository', () => {
 
   describe('cleanupExpiredTokensByType', () => {
     it('should delete expired tokens of specific type', async () => {
-      manager.delete!.mockResolvedValue({ affected: 3 } as any);
+      (repo.delete as jest.Mock)!.mockResolvedValue({ affected: 3 } as any);
 
       const result = await repo.cleanupExpiredTokensByType(
         ConfirmationType.ACCOUNT_VERIFICATION
       );
 
-      expect(manager.delete).toHaveBeenCalledWith(Confirmation, {
+      expect(repo.delete).toHaveBeenCalledWith({
         type: ConfirmationType.ACCOUNT_VERIFICATION,
         expiresAt: LessThan(expect.any(Date)),
       });
@@ -183,11 +201,11 @@ describe('ConfirmationRepository', () => {
 
   describe('cleanupOldUsedTokens', () => {
     it('should delete used tokens older than specified days', async () => {
-      manager.delete!.mockResolvedValue({ affected: 10 } as any);
+      (repo.delete as jest.Mock)!.mockResolvedValue({ affected: 10 } as any);
 
       const result = await repo.cleanupOldUsedTokens(30);
 
-      expect(manager.delete).toHaveBeenCalledWith(Confirmation, {
+      expect(repo.delete).toHaveBeenCalledWith({
         isUsed: true,
         usedAt: LessThan(expect.any(Date)),
       });
@@ -195,21 +213,21 @@ describe('ConfirmationRepository', () => {
     });
 
     it('should use default 30 days when not specified', async () => {
-      manager.delete!.mockResolvedValue({ affected: 5 } as any);
+      (repo.delete as jest.Mock)!.mockResolvedValue({ affected: 5 } as any);
 
       await repo.cleanupOldUsedTokens();
 
-      expect(manager.delete).toHaveBeenCalled();
+      expect(repo.delete).toHaveBeenCalled();
     });
   });
 
   describe('getExpiredTokensCount', () => {
     it('should return count of expired tokens', async () => {
-      manager.count!.mockResolvedValue(15);
+      (repo.count as jest.Mock)!.mockResolvedValue(15);
 
       const result = await repo.getExpiredTokensCount();
 
-      expect(manager.count).toHaveBeenCalledWith(Confirmation, {
+      expect(repo.count).toHaveBeenCalledWith({
         where: {
           expiresAt: LessThan(expect.any(Date)),
         },
@@ -221,11 +239,11 @@ describe('ConfirmationRepository', () => {
   describe('getTokensExpiringSoon', () => {
     it('should return tokens expiring within specified hours', async () => {
       const confirmations = [mockConfirmation];
-      manager.find!.mockResolvedValue(confirmations);
+      (repo.find as jest.Mock)!.mockResolvedValue(confirmations);
 
       const result = await repo.getTokensExpiringSoon(24);
 
-      expect(manager.find).toHaveBeenCalledWith(Confirmation, {
+      expect(repo.find).toHaveBeenCalledWith({
         where: {
           expiresAt: LessThan(expect.any(Date)),
           isUsed: false,
@@ -239,8 +257,8 @@ describe('ConfirmationRepository', () => {
 
   describe('performMaintenance', () => {
     it('should perform full maintenance cleanup', async () => {
-      manager.delete!.mockResolvedValueOnce({ affected: 5 } as any);
-      manager.delete!.mockResolvedValueOnce({ affected: 3 } as any);
+      (repo.delete as jest.Mock)!.mockResolvedValueOnce({ affected: 5 } as any);
+      (repo.delete as jest.Mock)!.mockResolvedValueOnce({ affected: 3 } as any);
 
       const result = await repo.performMaintenance();
 
@@ -255,11 +273,11 @@ describe('ConfirmationRepository', () => {
   describe('findByEmail', () => {
     it('should find confirmations by email', async () => {
       const confirmations = [mockConfirmation];
-      manager.find!.mockResolvedValue(confirmations);
+      (repo.find as jest.Mock)!.mockResolvedValue(confirmations);
 
       const result = await repo.findByEmail('user@example.com');
 
-      expect(manager.find).toHaveBeenCalledWith(Confirmation, {
+      expect(repo.find).toHaveBeenCalledWith({
         where: { email: 'user@example.com' },
         relations: ['user'],
         order: { createdAt: 'DESC' },
@@ -270,8 +288,8 @@ describe('ConfirmationRepository', () => {
 
   describe('getConfirmationStats', () => {
     it('should return confirmation statistics', async () => {
-      manager
-        .count!.mockResolvedValueOnce(100) // total
+      (repo.count as jest.Mock)!
+        .mockResolvedValueOnce(100) // total
         .mockResolvedValueOnce(20) // pending
         .mockResolvedValueOnce(75) // used
         .mockResolvedValueOnce(5) // expired

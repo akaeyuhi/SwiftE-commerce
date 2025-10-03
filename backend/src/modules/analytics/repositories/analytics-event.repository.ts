@@ -14,7 +14,7 @@ import {
 /**
  * AnalyticsEventRepository
  *
- * Enhanced repository for raw analytics events with improved query patterns,
+ * Repository for raw analytics events with improved query patterns,
  * better type safety, and reusable aggregation methods.
  */
 @Injectable()

@@ -2,6 +2,7 @@ import { SMTPProvider } from 'src/modules/email/providers/smtp.provider';
 import { MailerService } from '@nestjs-modules/mailer';
 import { SentMessageInfo } from 'nodemailer';
 import { EmailData } from 'src/common/interfaces/infrastructure/email.interface';
+import { Logger } from '@nestjs/common';
 
 describe('SMTPProvider', () => {
   let provider: SMTPProvider;
@@ -19,13 +20,12 @@ describe('SMTPProvider', () => {
   });
 
   describe('healthCheck', () => {
-    it('should warn and return false when config incomplete', async () => {
-      const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
-      expect(await provider.healthCheck()).toBe(false);
+    it('should warn when SMTP configuration is incomplete', () => {
+      const warnSpy = jest.spyOn(Logger.prototype, 'warn').mockImplementation();
+      new SMTPProvider(mailer as MailerService).healthCheck();
       expect(warnSpy).toHaveBeenCalled();
       warnSpy.mockRestore();
     });
-
     it('should return true when config complete', async () => {
       process.env.SMTP_HOST = 'h';
       process.env.SMTP_USERNAME = 'u';

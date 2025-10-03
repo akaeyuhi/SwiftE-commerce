@@ -13,7 +13,7 @@ import {
  *
  * Handles actual job processing with lazy-loaded dependencies.
  * Uses ModuleRef to dynamically load repositories only when needed.
- * This prevents circular dependencies at module load time.
+ *
  */
 @Injectable()
 @Processor('analytics')

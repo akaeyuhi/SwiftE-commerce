@@ -8,7 +8,7 @@ import {
 } from 'src/common/interfaces/ai/audit.interface';
 
 /**
- * Enhanced AiAuditRepository with advanced querying and security features
+ * AiAuditRepository with advanced querying and security features
  */
 @Injectable()
 export class AiAuditRepository extends BaseRepository<AiAudit> {
@@ -20,21 +20,21 @@ export class AiAuditRepository extends BaseRepository<AiAudit> {
    * Find audits with comprehensive filtering
    */
   async findByFilter(
-    filter: {
-      storeId?: string;
-      userId?: string;
-      feature?: string;
-      provider?: string;
-      model?: string;
-      dateFrom?: Date;
-      dateTo?: Date;
-    },
-    options: AuditQueryOptions = {}
+      filter: {
+        storeId?: string;
+        userId?: string;
+        feature?: string;
+        provider?: string;
+        model?: string;
+        dateFrom?: Date;
+        dateTo?: Date;
+      },
+      options: AuditQueryOptions = {}
   ): Promise<AiAudit[]> {
     const qb = this.createQueryBuilder('a')
-      .leftJoinAndSelect('a.user', 'u')
-      .leftJoinAndSelect('a.store', 's')
-      .orderBy('a.createdAt', 'DESC');
+        .leftJoinAndSelect('a.user', 'u')
+        .leftJoinAndSelect('a.store', 's')
+        .orderBy('a.createdAt', 'DESC');
 
     if (filter.storeId) {
       qb.andWhere('s.id = :storeId', { storeId: filter.storeId });
@@ -64,11 +64,12 @@ export class AiAuditRepository extends BaseRepository<AiAudit> {
       qb.andWhere('a.createdAt <= :dateTo', { dateTo: filter.dateTo });
     }
 
-    if (options.limit) {
+    // Fix: Check for undefined instead of falsy value
+    if (options.limit !== undefined) {
       qb.limit(options.limit);
     }
 
-    if (options.offset) {
+    if (options.offset !== undefined) {
       qb.offset(options.offset);
     }
 
