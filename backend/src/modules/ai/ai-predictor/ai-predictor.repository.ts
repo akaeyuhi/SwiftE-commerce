@@ -1,4 +1,3 @@
-// src/modules/ai/ai-predictor/ai-predictor.repository.ts
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { BaseRepository } from 'src/common/abstracts/base.repository';
