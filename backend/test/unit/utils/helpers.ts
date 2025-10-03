@@ -226,3 +226,13 @@ export class MockBuilder<T> {
 export function mockBuilder<T>(): MockBuilder<T> {
   return new MockBuilder<T>();
 }
+
+import { Injectable, NestInterceptor, CallHandler } from '@nestjs/common';
+import { Observable } from 'rxjs';
+
+@Injectable()
+export class TestInterceptor implements NestInterceptor {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+    return next.handle();
+  }
+}
