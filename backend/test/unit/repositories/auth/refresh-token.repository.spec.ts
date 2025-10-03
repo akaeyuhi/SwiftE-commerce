@@ -1,7 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { RefreshTokenRepository } from 'src/modules/auth/refresh-token/refresh-token.repository';
 import { DataSource, EntityManager } from 'typeorm';
-import { createMock, MockedMethods } from '../utils/helpers';
+import { createMock, MockedMethods } from 'test/unit/utils/helpers';
 
 describe('RefreshTokenRepository', () => {
   let repo: RefreshTokenRepository;

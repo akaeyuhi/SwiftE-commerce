@@ -4,7 +4,6 @@ import {
   EmailTemplate,
   EmailSendResult,
 } from 'src/common/interfaces/infrastructure/email.interface';
-import { SMTPProvider } from '../providers/smtp.provider';
 import * as fs from 'node:fs';
 import { join } from 'path';
 import { EmailJobType } from 'src/common/enums/email.enum';
