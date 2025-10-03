@@ -1,4 +1,3 @@
-// src/modules/likes/likes.controller.ts
 import {
   Controller,
   UseGuards,

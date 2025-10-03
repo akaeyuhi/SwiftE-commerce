@@ -2,7 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { BaseService } from 'src/common/abstracts/base.service';
 import { CreateLikeDto } from './dto/create-like.dto';
 import { Like } from 'src/entities/user/like.entity';
-import { LikesRepository } from 'src/modules/user/likes/likes/like.repository';
+import { LikesRepository } from 'src/modules/user/likes/likes/likes.repository';
 import { LikeDto } from 'src/modules/user/likes/likes/dto/like.dto';
 
 @Injectable()
