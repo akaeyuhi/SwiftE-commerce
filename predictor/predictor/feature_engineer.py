@@ -161,7 +161,7 @@ class FeatureEngineer:
         # Derived metrics
         sales7dPerDay = sales7d / 7.0
         sales30dPerDay = sales30d / 30.0
-        salesRatio7To30 = sales7 / sales30d if sales30d > 0 else 0.0
+        salesRatio7To30 = sales7d / sales30d if sales30d > 0 else 0.0
         viewToPurchase7d = sales7d / views7d if views7d > 0 else 0.0
 
         # Store metrics

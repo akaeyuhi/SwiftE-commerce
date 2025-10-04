@@ -149,11 +149,11 @@ class ModelTrainer:
         return self.model
 
     def trainKeras(
-        self,
-        XTrain: np.ndarray,
-        yTrain: np.ndarray,
-        XVal: np.ndarray,
-        yVal: np.ndarray
+            self,
+            XTrain: np.ndarray,
+            yTrain: np.ndarray,
+            XVal: np.ndarray,
+            yVal: np.ndarray
     ):
         """Train Keras neural network"""
         if not HAS_TENSORFLOW:
@@ -196,7 +196,7 @@ class ModelTrainer:
 
         logger.info("Training completed")
 
-        return self.model, history
+        return self.model, self.scaler  # Changed from returning history
 
     def _buildKerasModel(self, inputDim: int):
         """Build Keras neural network architecture"""

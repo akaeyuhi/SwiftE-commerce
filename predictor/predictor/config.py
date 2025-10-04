@@ -7,19 +7,53 @@ from dataclasses import dataclass
 from typing import Optional
 
 
-@dataclass
 class DatabaseConfig:
-    """Database connection configuration"""
-    host: str = os.getenv("PGHOST", "localhost")
-    port: int = int(os.getenv("PGPORT", "5432"))
-    database: str = os.getenv("PGDATABASE", "postgres")
-    user: str = os.getenv("PGUSER", "postgres")
-    password: str = os.getenv("PGPASSWORD", "")
+    """Database configuration"""
+
+    def __init__(
+            self,
+            host: Optional[str] = None,
+            port: Optional[int] = None,
+            database: Optional[str] = None,
+            user: Optional[str] = None,
+            password: Optional[str] = None
+    ):
+        # Use provided values or fall back to environment or defaults
+        self.host = host or os.getenv('PGHOST', 'localhost')
+        self.port = port or int(os.getenv('PGPORT', '5432'))
+        self.database = database or os.getenv('PGDATABASE', 'postgres')
+        self.user = user or os.getenv('PGUSER', 'postgres')
+        self.password = password or os.getenv('PGPASSWORD', '')
 
     @property
     def connectionString(self) -> str:
-        """Get SQLAlchemy connection string"""
+        """Generate connection string"""
         return f"postgresql+psycopg2://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}"
+
+
+class ServerConfig:
+    """Server configuration"""
+
+    def __init__(
+            self,
+            modelPath: Optional[str] = None,
+            scalerPath: Optional[str] = None,
+            modelType: Optional[str] = None,
+            authToken: Optional[str] = None,
+            modelVersion: Optional[str] = None,
+            host: Optional[str] = None,
+            port: Optional[int] = None,
+            logLevel: Optional[str] = None
+    ):
+        # Use provided values or fall back to environment or defaults
+        self.modelPath = modelPath or os.getenv('MODEL_PATH', './model/model.bin')
+        self.scalerPath = scalerPath or os.getenv('SCALER_PATH', './model/scaler.pkl')
+        self.modelType = modelType or os.getenv('MODEL_TYPE', 'lightgbm')
+        self.authToken = authToken or os.getenv('PREDICTOR_AUTH_TOKEN', '')
+        self.modelVersion = modelVersion or os.getenv('MODEL_VERSION', 'v1.0')
+        self.host = host or os.getenv('HOST', '0.0.0.0')
+        self.port = port or int(os.getenv('PORT', '8080'))
+        self.logLevel = logLevel or os.getenv('LOG_LEVEL', 'info')
 
 
 @dataclass
@@ -86,18 +120,6 @@ class ModelConfig:
         if self.kerasHiddenLayers is None:
             self.kerasHiddenLayers = [128, 64]
 
-
-@dataclass
-class ServerConfig:
-    """Predictor server configuration"""
-    modelPath: str = os.getenv("MODEL_PATH", "./model/model.bin")
-    scalerPath: str = os.getenv("SCALER_PATH", "./model/scaler.pkl")
-    modelType: Optional[str] = os.getenv("MODEL_TYPE")
-    authToken: Optional[str] = os.getenv("PREDICTOR_AUTH_TOKEN")
-    modelVersion: str = os.getenv("MODEL_VERSION", "v1.0")
-    host: str = os.getenv("HOST", "0.0.0.0")
-    port: int = int(os.getenv("PORT", "8080"))
-    logLevel: str = os.getenv("LOG_LEVEL", "info")
 
 
 # Global config instances
