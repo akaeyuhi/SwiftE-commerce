@@ -6,7 +6,7 @@ import {
 } from 'src/modules/ai/ai-logs/ai-logs.service';
 import { AiLogsRepository } from 'src/modules/ai/ai-logs/ai-logs.repository';
 import { AiLog } from 'src/entities/ai/ai-log.entity';
-import { createRepositoryMock, MockedMethods } from '../../../utils/helpers';
+import { createRepositoryMock, MockedMethods } from 'test/utils/helpers';
 
 describe('AiLogsService', () => {
   let service: AiLogsService;
@@ -421,7 +421,7 @@ describe('AiLogsService', () => {
       const firstHalfStats = {
         totalLogs: 100,
         topFeatures: [{ feature: 'old_feature', count: 100, percentage: 100 }],
-        byFeature: { old_feature: 100 },
+        byFeature: { oldFeature: 100 },
         byUser: { u1: 100 },
         byStore: { s1: 100 },
         dailyUsage: [],
@@ -431,7 +431,7 @@ describe('AiLogsService', () => {
       const secondHalfStats = {
         totalLogs: 100,
         topFeatures: [{ feature: 'new_feature', count: 100, percentage: 100 }],
-        byFeature: { new_feature: 100 },
+        byFeature: { newFeature: 100 },
         byUser: { u1: 100 },
         byStore: { s1: 100 },
         dailyUsage: [],

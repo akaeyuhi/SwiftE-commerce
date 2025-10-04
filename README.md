@@ -132,7 +132,7 @@ cd predictor
 pip install -r requirements.txt
 
 # Train initial model (optional)
-python train.py --in example_features.csv --model lightgbm --out model/model.bin
+python train_model.py --in example_features.csv --model lightgbm --out model/model.bin
 
 # Start predictor service
 python serve.py
@@ -242,7 +242,7 @@ npm run test:cov
 cd predictor
 
 # Test model training
-python train.py --in example_features.csv --model lightgbm --test-size 0.2
+python train_model.py --in example_features.csv --model lightgbm --test-size 0.2
 
 # Test prediction API
 curl -X POST http://localhost:8080/predict \
@@ -274,7 +274,7 @@ npm run start:prod
 ```bash
 # Train production model with historical data
 python export_features.py --output data/production_features.csv
-python train.py --in data/production_features.csv --model lightgbm --out model/production_model.bin
+python train_model.py --in data/production_features.csv --model lightgbm --out model/production_model.bin
 
 # Deploy with Docker
 docker build -t swiftecommerce-predictor -f predictor/Dockerfile .

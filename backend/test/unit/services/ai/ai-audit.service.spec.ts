@@ -4,7 +4,6 @@ import { AiAuditService } from 'src/modules/ai/ai-audit/ai-audit.service';
 import { AiAuditRepository } from 'src/modules/ai/ai-audit/ai-audit.repository';
 import { AiAudit } from 'src/entities/ai/ai-audit.entity';
 import { createRepositoryMock, MockedMethods } from '../../../utils/helpers';
-/* eslint-disable camelcase */
 function expectArrayToContainString(array: string[], substring: string) {
   expect(array.some((item) => item.includes(substring))).toBe(true);
 }
@@ -387,7 +386,7 @@ describe('AiAuditService', () => {
     it('should get audit statistics', async () => {
       const stats = {
         totalAudits: 100,
-        byFeature: { description_generator: 50, title_generator: 50 },
+        byFeature: { descriptionGenerator: 50, titleGenerator: 50 },
         byProvider: { openai: 80, anthropic: 20 },
         byUser: { u1: 60, u2: 40 },
         byStore: { s1: 100 },

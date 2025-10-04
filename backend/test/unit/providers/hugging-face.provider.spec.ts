@@ -4,9 +4,12 @@ import { AiLogsService } from 'src/modules/ai/ai-logs/ai-logs.service';
 import { AiAuditService } from 'src/modules/ai/ai-audit/ai-audit.service';
 import { of, throwError } from 'rxjs';
 import { AxiosResponse } from 'axios';
-import { createMock, createServiceMock, MockedMethods } from '../../utils/helpers';
+import {
+  createMock,
+  createServiceMock,
+  MockedMethods,
+} from 'test/utils/helpers';
 import { HuggingFaceProvider } from 'src/modules/ai/ai-generator/providers/hugging-face.provider';
-/* eslint-disable camelcase */
 
 describe('HuggingFaceProvider', () => {
   let provider: HuggingFaceProvider;
@@ -41,7 +44,7 @@ describe('HuggingFaceProvider', () => {
   describe('makeApiCall', () => {
     it('should make successful API call', async () => {
       const mockResponse: AxiosResponse = {
-        data: [{ generated_text: 'Generated response' }],
+        data: [{ generatedText: 'Generated response' }],
         status: 200,
         statusText: 'OK',
         headers: {},
@@ -61,7 +64,7 @@ describe('HuggingFaceProvider', () => {
 
     it('should use default model when not specified', async () => {
       const mockResponse: AxiosResponse = {
-        data: [{ generated_text: 'Response' }],
+        data: [{ generatedText: 'Response' }],
         status: 200,
         statusText: 'OK',
         headers: {},
@@ -192,7 +195,7 @@ describe('HuggingFaceProvider', () => {
 
   describe('parseResponse', () => {
     it('should parse array response with generated_text', () => {
-      const data = [{ generated_text: 'Generated output' }];
+      const data = [{ generatedText: 'Generated output' }];
       const payload = { inputs: 'Original prompt' };
 
       const result = (provider as any).parseResponse(data, payload);
@@ -203,7 +206,7 @@ describe('HuggingFaceProvider', () => {
     });
 
     it('should parse object response with generated_text', () => {
-      const data = { generated_text: 'Generated output' };
+      const data = { generatedText: 'Generated output' };
       const payload = { inputs: 'Original prompt' };
 
       const result = (provider as any).parseResponse(data, payload);
@@ -221,7 +224,7 @@ describe('HuggingFaceProvider', () => {
     });
 
     it('should parse translation response', () => {
-      const data = [{ translation_text: 'Translated text' }];
+      const data = [{ translationText: 'Translated text' }];
       const payload = { inputs: 'Original prompt' };
 
       const result = (provider as any).parseResponse(data, payload);
@@ -239,7 +242,7 @@ describe('HuggingFaceProvider', () => {
     });
 
     it('should clean generated text', () => {
-      const data = [{ generated_text: 'Original prompt Generated output' }];
+      const data = [{ generatedText: 'Original prompt Generated output' }];
       const payload = { inputs: 'Original prompt' };
 
       const result = (provider as any).parseResponse(data, payload);

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Inject, Injectable } from '@nestjs/common';
 import { Between } from 'typeorm';
 import { AnalyticsEventRepository } from './repositories/analytics-event.repository';
@@ -21,15 +20,48 @@ export interface AnalyticsAggregationOptions {
   includeTimeseries?: boolean;
 }
 
+export interface ConversionMetrics {
+  views: number;
+  purchases: number;
+  addToCarts: number;
+  revenue: number;
+  conversionRate: number;
+  addToCartRate: number;
+  source: 'aggregated_stats' | 'raw_events';
+}
+
+export interface StoreConversionMetrics extends ConversionMetrics {
+  storeId: string;
+  checkouts: number;
+  checkoutRate: number;
+}
+
+export interface ProductConversionMetrics extends ConversionMetrics {
+  productId: string;
+}
+
+export interface FunnelAnalysisResult {
+  funnel: {
+    views: number;
+    addToCarts: number;
+    purchases: number;
+  };
+  rates: {
+    viewToCart: string;
+    cartToPurchase: string;
+    overallConversion: string;
+  };
+}
+
 /**
- * AnalyticsService
+ * AnalyticsService with CamelCase Conventions
  *
- * Service extending BaseAnalyticsService to provide comprehensive
- * analytics functionality including event tracking, aggregations, conversions,
- * and AI predictions.
- *
- * Implements the abstract methods from BaseAnalyticsService while maintaining
- * all existing functionality for store/product analytics, ratings, and predictions.
+ * Provides comprehensive analytics functionality including:
+ * - Event tracking with queue-based processing
+ * - Conversion analytics (product & store)
+ * - Funnel analysis and user journey tracking
+ * - Revenue trends and comparative analytics
+ * - Performance analysis (top/underperforming)
  */
 @Injectable()
 export class AnalyticsService extends BaseAnalyticsService<RecordEventDto> {
@@ -61,43 +93,7 @@ export class AnalyticsService extends BaseAnalyticsService<RecordEventDto> {
     name: string,
     options?: AnalyticsAggregationOptions
   ): void {
-    const validAggregators = [
-      // Conversion analytics
-      'product_conversion',
-      'store_conversion',
-      'top_products_by_conversion',
-
-      // Stats with timeseries
-      'store_stats',
-      'product_stats',
-
-      // Rating analytics
-      'product_rating',
-      'store_ratings_summary',
-
-      // Advanced analytics
-      'funnel_analysis',
-      'user_journey',
-      'cohort_analysis',
-      'revenue_trends',
-
-      // Comparative analytics
-      'store_comparison',
-      'product_comparison',
-      'period_comparison',
-
-      // Performance analytics
-      'top_performing_stores',
-      'top_performing_products',
-      'underperforming_analysis',
-    ];
-
-    if (
-      options?.limit !== undefined &&
-      (options.limit < 1 || options.limit > 1000)
-    ) {
-      throw new Error('limit must be between 1 and 1000');
-    }
+    const validAggregators = this.getSupportedAggregators();
 
     if (!validAggregators.includes(name)) {
       throw new Error(
@@ -118,7 +114,6 @@ export class AnalyticsService extends BaseAnalyticsService<RecordEventDto> {
         throw new Error('from date must be before or equal to to date');
       }
 
-      // Prevent very large date ranges (optional business rule)
       const daysDiff =
         (toDate.getTime() - fromDate.getTime()) / (1000 * 60 * 60 * 24);
       if (daysDiff > 365) {
@@ -127,15 +122,22 @@ export class AnalyticsService extends BaseAnalyticsService<RecordEventDto> {
     }
 
     // Validate required parameters for specific aggregators
-    if (name.includes('product_') && !options?.productId) {
+    const productAggregators = [
+      'productConversion',
+      'productStats',
+      'productRating',
+    ];
+    if (productAggregators.includes(name) && !options?.productId) {
       throw new Error(`${name} requires productId parameter`);
     }
 
-    if (
-      name.includes('store_') &&
-      name !== 'top_performing_stores' &&
-      !options?.storeId
-    ) {
+    const storeAggregators = [
+      'storeConversion',
+      'storeStats',
+      'storeRatingsSummary',
+      'cohortAnalysis',
+    ];
+    if (storeAggregators.includes(name) && !options?.storeId) {
       throw new Error(`${name} requires storeId parameter`);
     }
 
@@ -152,71 +154,64 @@ export class AnalyticsService extends BaseAnalyticsService<RecordEventDto> {
     name: string,
     options: AnalyticsAggregationOptions = {}
   ): Promise<any> {
-    const {
-      from,
-      to,
-      storeId,
-      productId,
-      limit = 10,
-      includeTimeseries = false,
-    } = options;
+    const { from, to, storeId, productId, limit = 10 } = options;
 
     switch (name) {
       // Conversion Analytics
-      case 'product_conversion':
+      case 'productConversion':
         return this.computeProductConversion(productId!, from, to);
 
-      case 'store_conversion':
+      case 'storeConversion':
         return this.computeStoreConversion(storeId!, from, to);
 
-      case 'top_products_by_conversion':
+      case 'topProductsByConversion':
         return this.getTopProductsByConversion(storeId!, from, to, limit);
 
       // Stats with Timeseries
-      case 'store_stats':
+      case 'storeStats':
         return this.getStoreStats(storeId!, from, to);
 
-      case 'product_stats':
+      case 'productStats':
         return this.getProductStats(productId!, from, to);
 
       // Rating Analytics
-      case 'product_rating':
+      case 'productRating':
         return this.recomputeProductRating(productId!);
 
-      case 'store_ratings_summary':
+      case 'storeRatingsSummary':
         return this.getStoreRatingsSummary(storeId!, from, to);
 
       // Advanced Analytics
-      case 'funnel_analysis':
+      case 'funnelAnalysis':
         return this.getFunnelAnalysis(storeId, productId, from, to);
 
-      case 'user_journey':
+      case 'userJourney':
         return this.getUserJourneyAnalysis(storeId, from, to);
 
-      case 'cohort_analysis':
+      case 'cohortAnalysis':
         return this.getCohortAnalysis(storeId!, from, to);
 
-      case 'revenue_trends':
+      case 'revenueTrends':
         return this.getRevenueTrends(storeId, from, to);
 
       // Comparative Analytics
-      case 'store_comparison':
+      case 'storeComparison':
         return this.getStoreComparison([storeId!], from, to);
 
-      case 'product_comparison':
+      case 'productComparison':
         return this.getProductComparison([productId!], from, to);
 
-      case 'period_comparison':
+      case 'periodComparison':
         return this.getPeriodComparison(storeId, productId, from, to);
 
       // Performance Analytics
-      case 'top_performing_stores':
+      case 'topPerformingStores':
         return this.getTopPerformingStores(limit, from, to);
 
-      case 'top_performing_products':
+      case 'topPerformingProducts':
         return this.getTopPerformingProducts(storeId, limit, from, to);
 
-      case 'underperforming_analysis':
+      case 'underperformingAnalysis':
         return this.getUnderperformingAnalysis(storeId, from, to);
 
       default:
@@ -225,7 +220,7 @@ export class AnalyticsService extends BaseAnalyticsService<RecordEventDto> {
   }
 
   // ===============================
-  // Existing Methods (Preserved)
+  // Core Analytics Methods
   // ===============================
 
   /**
@@ -245,11 +240,14 @@ export class AnalyticsService extends BaseAnalyticsService<RecordEventDto> {
     return this.eventsRepo.save(event);
   }
 
+  /**
+   * Compute product conversion metrics
+   */
   async computeProductConversion(
     productId: string,
     from?: string,
     to?: string
-  ) {
+  ): Promise<ProductConversionMetrics> {
     // Try aggregated stats first for better performance
     const agg = await this.productStatsRepo.getAggregateRange(
       productId,
@@ -288,7 +286,14 @@ export class AnalyticsService extends BaseAnalyticsService<RecordEventDto> {
     };
   }
 
-  async computeStoreConversion(storeId: string, from?: string, to?: string) {
+  /**
+   * Compute store conversion metrics
+   */
+  async computeStoreConversion(
+    storeId: string,
+    from?: string,
+    to?: string
+  ): Promise<StoreConversionMetrics> {
     const agg = await this.storeStatsRepo.getAggregateRange(storeId, from, to);
 
     if (agg.views > 0) {
@@ -324,6 +329,9 @@ export class AnalyticsService extends BaseAnalyticsService<RecordEventDto> {
     };
   }
 
+  /**
+   * Get top products by conversion rate
+   */
   async getTopProductsByConversion(
     storeId: string,
     from?: string,
@@ -337,10 +345,16 @@ export class AnalyticsService extends BaseAnalyticsService<RecordEventDto> {
     });
   }
 
+  /**
+   * Recompute product rating from reviews
+   */
   async recomputeProductRating(productId: string) {
     return this.reviewsRepo.getRatingAggregate(productId);
   }
 
+  /**
+   * Get store statistics with optional timeseries
+   */
   async getStoreStats(storeId: string, from?: string, to?: string) {
     // Get summary
     const agg = await this.storeStatsRepo.getAggregatedMetrics(storeId, {
@@ -378,6 +392,9 @@ export class AnalyticsService extends BaseAnalyticsService<RecordEventDto> {
     return { storeId, summary, series };
   }
 
+  /**
+   * Get product statistics with optional timeseries and rating
+   */
   async getProductStats(productId: string, from?: string, to?: string) {
     // Get summary
     const agg = await this.productStatsRepo.getAggregatedMetrics(productId, {
@@ -416,39 +433,43 @@ export class AnalyticsService extends BaseAnalyticsService<RecordEventDto> {
   }
 
   // ===============================
-  // New Advanced Analytics Methods
+  // Advanced Analytics Methods
   // ===============================
 
+  /**
+   * Get store ratings summary across all products
+   */
   private async getStoreRatingsSummary(
     storeId: string,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     from?: string,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     to?: string
   ) {
-    const query = `
-      SELECT 
-        COUNT(r.id) as total_reviews,
-        AVG(r.rating) as average_rating,
-        COUNT(CASE WHEN r.rating >= 4 THEN 1 END) as positive_reviews,
-        COUNT(CASE WHEN r.rating <= 2 THEN 1 END) as negative_reviews
-      FROM reviews r
-      INNER JOIN products p ON r.product_id = p.id
-      WHERE p.store_id = $1
-      ${from ? 'AND r.created_at >= $2' : ''}
-      ${to ? 'AND r.created_at <= $3' : ''}
-    `;
-
-    // Execute raw query or implement using query builder
-    return { storeId, summary: 'Implementation needed based on your schema' };
+    // This would require a proper query to the reviews system
+    // Implementation depends on your reviews schema
+    return {
+      storeId,
+      summary: {
+        totalReviews: 0,
+        averageRating: 0,
+        positiveReviews: 0,
+        negativeReviews: 0,
+      },
+      message: 'Implementation requires reviews schema integration',
+    };
   }
 
+  /**
+   * Analyze conversion funnel: View → Add to Cart → Purchase
+   */
   private async getFunnelAnalysis(
     storeId?: string,
     productId?: string,
     from?: string,
     to?: string
-  ) {
-    // Analyze conversion funnel: View -> Add to Cart -> Purchase
-    const baseQuery = this.eventsRepo.createQueryBuilder('event').where('1=1'); // Base condition
+  ): Promise<FunnelAnalysisResult> {
+    const baseQuery = this.eventsRepo.createQueryBuilder('event');
 
     if (storeId) baseQuery.andWhere('event.storeId = :storeId', { storeId });
     if (productId)
@@ -484,29 +505,43 @@ export class AnalyticsService extends BaseAnalyticsService<RecordEventDto> {
     };
   }
 
+  /**
+   * Analyze common user paths and drop-off points
+   */
   private async getUserJourneyAnalysis(
     storeId?: string,
     from?: string,
     to?: string
   ) {
-    // Analyze common user paths and drop-off points
-    return { message: 'User journey analysis - implementation needed' };
+    // Complex analysis requiring session tracking and path analysis
+    return {
+      message:
+        'User journey analysis - requires session tracking implementation',
+      storeId,
+      dateRange: { from, to },
+    };
   }
 
+  /**
+   * Analyze user retention and behavior over time
+   */
   private async getCohortAnalysis(storeId: string, from?: string, to?: string) {
-    // Analyze user retention and behavior over time
-    return { message: 'Cohort analysis - implementation needed' };
+    return {
+      message: 'Cohort analysis - requires user cohort tracking implementation',
+      storeId,
+      dateRange: { from, to },
+    };
   }
 
+  /**
+   * Analyze revenue trends over time
+   */
   private async getRevenueTrends(storeId?: string, from?: string, to?: string) {
-    // Analyze revenue trends over time
     const query = this.eventsRepo
       .createQueryBuilder('event')
-      .select([
-        'DATE(event.createdAt) as date',
-        'SUM(event.value) as revenue',
-        'COUNT(*) as transactions',
-      ])
+      .select('DATE(event.createdAt)', 'date')
+      .addSelect('SUM(event.value)', 'revenue')
+      .addSelect('COUNT(*)', 'transactions')
       .where('event.eventType = :type', { type: 'purchase' })
       .groupBy('DATE(event.createdAt)')
       .orderBy('date', 'ASC');
@@ -515,9 +550,19 @@ export class AnalyticsService extends BaseAnalyticsService<RecordEventDto> {
     if (from) query.andWhere('event.createdAt >= :from', { from });
     if (to) query.andWhere('event.createdAt <= :to', { to });
 
-    return query.getRawMany();
+    const results = await query.getRawMany();
+
+    // Transform to camelCase
+    return results.map((row) => ({
+      date: row.date,
+      revenue: parseFloat(row.revenue || '0'),
+      transactions: parseInt(row.transactions || '0'),
+    }));
   }
 
+  /**
+   * Compare multiple stores
+   */
   private async getStoreComparison(
     storeIds: string[],
     from?: string,
@@ -529,6 +574,9 @@ export class AnalyticsService extends BaseAnalyticsService<RecordEventDto> {
     return { stores: comparisons };
   }
 
+  /**
+   * Compare multiple products
+   */
   private async getProductComparison(
     productIds: string[],
     from?: string,
@@ -542,25 +590,40 @@ export class AnalyticsService extends BaseAnalyticsService<RecordEventDto> {
     return { products: comparisons };
   }
 
+  /**
+   * Compare current period with previous period
+   */
   private async getPeriodComparison(
     storeId?: string,
     productId?: string,
     from?: string,
     to?: string
   ) {
-    // Compare current period with previous period
-    return { message: 'Period comparison - implementation needed' };
+    return {
+      message:
+        'Period comparison - requires date range calculation implementation',
+      params: { storeId, productId, from, to },
+    };
   }
 
+  /**
+   * Get top performing stores by revenue and conversion
+   */
   private async getTopPerformingStores(
     limit: number,
     from?: string,
     to?: string
   ) {
-    // Get top stores by revenue, conversion rate, etc.
-    return { message: 'Top performing stores - implementation needed' };
+    return {
+      message: 'Top performing stores - requires cross-store aggregation',
+      limit,
+      dateRange: { from, to },
+    };
   }
 
+  /**
+   * Get top performing products for a store
+   */
   private async getTopPerformingProducts(
     storeId?: string,
     limit: number = 10,
@@ -570,12 +633,73 @@ export class AnalyticsService extends BaseAnalyticsService<RecordEventDto> {
     return this.getTopProductsByConversion(storeId!, from, to, limit);
   }
 
+  /**
+   * Identify underperforming products or stores
+   */
   private async getUnderperformingAnalysis(
     storeId?: string,
     from?: string,
     to?: string
   ) {
-    // Identify products/stores that are underperforming
-    return { message: 'Underperforming analysis - implementation needed' };
+    return {
+      message: 'Underperforming analysis - requires performance benchmarks',
+      storeId,
+      dateRange: { from, to },
+    };
+  }
+
+  // ===============================
+  // Helper Methods
+  // ===============================
+
+  /**
+   * Get service health and statistics
+   */
+  async healthCheck() {
+    try {
+      // Test database connectivity
+      await this.eventsRepo.count({ take: 1 } as any);
+
+      return {
+        healthy: true,
+        message: 'Analytics service operational',
+        details: {
+          eventsRepo: 'connected',
+          statsRepos: 'connected',
+          queueService: 'available',
+        },
+      };
+    } catch (error) {
+      return {
+        healthy: false,
+        message: 'Analytics service error',
+        details: {
+          error: error.message,
+        },
+      };
+    }
+  }
+
+  /**
+   * Get service statistics
+   */
+  async getStats() {
+    const [totalEvents, recentEvents] = await Promise.all([
+      this.eventsRepo.count(),
+      this.eventsRepo.count({
+        where: {
+          createdAt: Between(
+            new Date(Date.now() - 24 * 60 * 60 * 1000),
+            new Date()
+          ),
+        },
+      } as any),
+    ]);
+
+    return {
+      totalEvents,
+      recentEvents,
+      supportedAggregators: this.getSupportedAggregators().length,
+    };
   }
 }

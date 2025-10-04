@@ -4,9 +4,12 @@ import { AiLogsService } from 'src/modules/ai/ai-logs/ai-logs.service';
 import { AiAuditService } from 'src/modules/ai/ai-audit/ai-audit.service';
 import { of } from 'rxjs';
 import { AxiosResponse } from 'axios';
-import { createMock, createServiceMock, MockedMethods } from '../../utils/helpers';
+import {
+  createMock,
+  createServiceMock,
+  MockedMethods,
+} from 'test/utils/helpers';
 import { OpenAiProvider } from 'src/modules/ai/ai-generator/providers/open-ai.provider';
-/* eslint-disable camelcase */
 
 describe('OpenAiProvider', () => {
   let provider: OpenAiProvider;
@@ -40,7 +43,7 @@ describe('OpenAiProvider', () => {
       const mockResponse: AxiosResponse = {
         data: {
           choices: [{ message: { content: 'Generated response' } }],
-          usage: { prompt_tokens: 10, completion_tokens: 20, total_tokens: 30 },
+          usage: { promptTokens: 10, completionTokens: 20, totalTokens: 30 },
         },
         status: 200,
         statusText: 'OK',
@@ -63,7 +66,7 @@ describe('OpenAiProvider', () => {
       const mockResponse: AxiosResponse = {
         data: {
           choices: [{ text: 'Completion response' }],
-          usage: { prompt_tokens: 15, completion_tokens: 25, total_tokens: 40 },
+          usage: { promptTokens: 15, completionTokens: 25, totalTokens: 40 },
         },
         status: 200,
         statusText: 'OK',
@@ -91,7 +94,7 @@ describe('OpenAiProvider', () => {
       const mockResponse: AxiosResponse = {
         data: {
           choices: [{ message: { content: 'Response' } }],
-          usage: { prompt_tokens: 10, completion_tokens: 20, total_tokens: 30 },
+          usage: { promptTokens: 10, completionTokens: 20, totalTokens: 30 },
         },
         status: 200,
         statusText: 'OK',
@@ -206,7 +209,7 @@ describe('OpenAiProvider', () => {
     it('should parse chat model response', () => {
       const data = {
         choices: [{ message: { content: 'Chat response' } }],
-        usage: { prompt_tokens: 10, completion_tokens: 20, total_tokens: 30 },
+        usage: { promptTokens: 10, completionTokens: 20, totalTokens: 30 },
       };
 
       const result = (provider as any).parseResponse(data, 'gpt-3.5-turbo');
@@ -221,7 +224,7 @@ describe('OpenAiProvider', () => {
     it('should parse completion model response', () => {
       const data = {
         choices: [{ text: 'Completion response' }],
-        usage: { prompt_tokens: 15, completion_tokens: 25, total_tokens: 40 },
+        usage: { promptTokens: 15, completionTokens: 25, totalTokens: 40 },
       };
 
       const result = (provider as any).parseResponse(data, 'text-davinci-003');
@@ -253,7 +256,7 @@ describe('OpenAiProvider', () => {
     it('should trim response text', () => {
       const data = {
         choices: [{ message: { content: '  Response with spaces  ' } }],
-        usage: { prompt_tokens: 10, completion_tokens: 20, total_tokens: 30 },
+        usage: { promptTokens: 10, completionTokens: 20, totalTokens: 30 },
       };
 
       const result = (provider as any).parseResponse(data, 'gpt-3.5-turbo');
@@ -264,7 +267,7 @@ describe('OpenAiProvider', () => {
 
   describe('calculateCost', () => {
     it('should calculate cost correctly', () => {
-      const usage = { prompt_tokens: 1000, completion_tokens: 2000 };
+      const usage = { promptTokens: 1000, completionTokens: 2000 };
       const pricing = { input: 0.0015, output: 0.002 };
 
       const cost = (provider as any).calculateCost(usage, pricing);
@@ -283,7 +286,7 @@ describe('OpenAiProvider', () => {
     });
 
     it('should round to 6 decimal places', () => {
-      const usage = { prompt_tokens: 333, completion_tokens: 666 };
+      const usage = { promptTokens: 333, completionTokens: 666 };
       const pricing = { input: 0.0015, output: 0.002 };
 
       const cost = (provider as any).calculateCost(usage, pricing);

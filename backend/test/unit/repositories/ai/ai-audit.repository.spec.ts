@@ -15,7 +15,7 @@ describe('AiAuditRepository', () => {
 
   const mockAudit: AiAudit = {
     id: 'a1',
-    feature: 'description_generator',
+    feature: 'descriptionGenerator',
     provider: 'openai',
     model: 'gpt-4',
     encryptedResponse: {
@@ -65,7 +65,7 @@ describe('AiAuditRepository', () => {
         {
           storeId: 's1',
           userId: 'u1',
-          feature: 'description_generator',
+          feature: 'descriptionGenerator',
           provider: 'openai',
           model: 'gpt-4',
           dateFrom: new Date('2025-01-01'),
@@ -100,7 +100,7 @@ describe('AiAuditRepository', () => {
       const audits = [
         {
           ...mockAudit,
-          feature: 'description_generator',
+          feature: 'descriptionGenerator',
           provider: 'openai',
           encryptedResponse: { ciphertext: 'enc', iv: 'iv', tag: 'tag' },
           user: { id: 'u1' },
@@ -110,7 +110,7 @@ describe('AiAuditRepository', () => {
         {
           ...mockAudit,
           id: 'a2',
-          feature: 'title_generator',
+          feature: 'titleGenerator',
           provider: 'anthropic',
           encryptedResponse: { ciphertext: 'enc2', iv: 'iv2', tag: 'tag2' },
           user: { id: 'u2' },
@@ -124,8 +124,8 @@ describe('AiAuditRepository', () => {
       const stats = await repo.getAuditStats({ storeId: 's1' });
 
       expect(stats.totalAudits).toBe(2);
-      expect(stats.byFeature).toHaveProperty('description_generator', 1);
-      expect(stats.byFeature).toHaveProperty('title_generator', 1);
+      expect(stats.byFeature).toHaveProperty('descriptionGenerator', 1);
+      expect(stats.byFeature).toHaveProperty('titleGenerator', 1);
       expect(stats.byProvider).toHaveProperty('openai', 1);
       expect(stats.byProvider).toHaveProperty('anthropic', 1);
       expect(stats.encryptionHealth.healthPercentage).toBe(100);
@@ -270,8 +270,7 @@ describe('AiAuditRepository', () => {
 
   describe('cleanupOldAudits', () => {
     it('should cleanup old audits while preserving recent ones', async () => {
-      // eslint-disable-next-line camelcase
-      const preserveIds = [{ a_id: 'a1' }, { a_id: 'a2' }];
+      const preserveIds = [{ aId: 'a1' }, { aId: 'a2' }];
       queryBuilder.getRawMany!.mockResolvedValue(preserveIds);
       queryBuilder.execute!.mockResolvedValue({ affected: 10 });
 

@@ -30,6 +30,7 @@ import {
   GenerateCustomDto,
   GenerationQueryDto,
 } from './dto/generator-request.dto';
+import { AiTransform } from 'src/modules/ai/decorators/ai-transform.decorator';
 
 /**
  * AI Generator Controller
@@ -48,6 +49,7 @@ import {
  */
 @Controller('ai/generator')
 @UseGuards(JwtAuthGuard, AdminGuard, StoreRolesGuard)
+@AiTransform()
 export class AiGeneratorController {
   static accessPolicies: AccessPolicies = {
     // Generation endpoints - store level access

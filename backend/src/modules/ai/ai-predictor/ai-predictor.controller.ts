@@ -31,6 +31,7 @@ import {
   SinglePredictDto,
   TrendingQueryDto,
 } from 'src/modules/ai/ai-predictor/dto/predictor-request.dto';
+import { AiTransform } from 'src/modules/ai/decorators/ai-transform.decorator';
 
 /**
  * AI Predictor Controller
@@ -49,6 +50,7 @@ import {
  */
 @Controller('ai/predictor')
 @UseGuards(JwtAuthGuard, AdminGuard, StoreRolesGuard, EntityOwnerGuard)
+@AiTransform()
 export class AiPredictorController {
   static accessPolicies: AccessPolicies = {
     buildFeatureVector: {

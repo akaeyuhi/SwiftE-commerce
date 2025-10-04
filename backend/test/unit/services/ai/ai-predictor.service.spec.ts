@@ -17,8 +17,7 @@ import {
   createRepositoryMock,
   createServiceMock,
   MockedMethods,
-} from '../../../utils/helpers';
-/* eslint-disable camelcase */
+} from 'test/utils/helpers';
 
 describe('AiPredictorService', () => {
   let service: AiPredictorService;
@@ -180,15 +179,15 @@ describe('AiPredictorService', () => {
 
       // Setup price query builder
       (priceQueryBuilder.getRawOne as jest.Mock).mockResolvedValue({
-        avg_price: '99.99',
-        min_price: '79.99',
-        max_price: '119.99',
+        avgPrice: '99.99',
+        minPrice: '79.99',
+        maxPrice: '119.99',
       });
 
       // Setup inventory query builder
       (inventoryQueryBuilder.getRawOne as jest.Mock).mockResolvedValue({
-        inventory_qty: '50',
-        last_updated_at: new Date('2025-01-01').toISOString(),
+        inventoryQty: '50',
+        lastUpdatedAt: new Date('2025-01-01').toISOString(),
       });
 
       reviewsRepo.getRatingAggregate.mockResolvedValue({
@@ -201,11 +200,11 @@ describe('AiPredictorService', () => {
       const features = await service.buildFeatureVector('p1', 's1');
 
       expect(features).toBeDefined();
-      expect(features.sales_7d).toBeGreaterThanOrEqual(0);
-      expect(features.views_7d).toBeGreaterThanOrEqual(0);
-      expect(features.avg_price).toBeCloseTo(99.99, 2);
-      expect(features.avg_rating).toBe(4.5);
-      expect(features.inventory_qty).toBe(50);
+      expect(features.sales7d).toBeGreaterThanOrEqual(0);
+      expect(features.views7d).toBeGreaterThanOrEqual(0);
+      expect(features.avgPrice).toBeCloseTo(99.99, 2);
+      expect(features.avgRating).toBe(4.5);
+      expect(features.inventoryQty).toBe(50);
     });
 
     it('should cache feature vectors', async () => {
@@ -224,8 +223,8 @@ describe('AiPredictorService', () => {
     it('should handle missing store context', async () => {
       const features = await service.buildFeatureVector('p1');
 
-      expect(features.store_views_7d).toBe(0);
-      expect(features.store_purchases_7d).toBe(0);
+      expect(features.storeViews7d).toBe(0);
+      expect(features.storePurchases7d).toBe(0);
     });
 
     it('should replace NaN values with 0', async () => {
@@ -238,16 +237,16 @@ describe('AiPredictorService', () => {
 
       const features = await service.buildFeatureVector('p1');
 
-      expect(features.view_to_purchase_7d).toBe(0);
-      expect(features.sales_ratio_7_30).toBe(0);
+      expect(features.viewToPurchase7d).toBe(0);
+      expect(features.salesRatio7To30).toBe(0);
     });
 
     it('should calculate temporal features', async () => {
       const features = await service.buildFeatureVector('p1');
 
-      expect(features.day_of_week).toBeGreaterThanOrEqual(0);
-      expect(features.day_of_week).toBeLessThanOrEqual(6);
-      expect([0, 1]).toContain(features.is_weekend);
+      expect(features.dayOfWeek).toBeGreaterThanOrEqual(0);
+      expect(features.dayOfWeek).toBeLessThanOrEqual(6);
+      expect([0, 1]).toContain(features.isWeekend);
     });
 
     it('should handle missing price data', async () => {
@@ -256,9 +255,9 @@ describe('AiPredictorService', () => {
 
       const features = await service.buildFeatureVector('p1', 's1');
 
-      expect(features.avg_price).toBe(0);
-      expect(features.min_price).toBe(0);
-      expect(features.max_price).toBe(0);
+      expect(features.avgPrice).toBe(0);
+      expect(features.minPrice).toBe(0);
+      expect(features.maxPrice).toBe(0);
     });
 
     it('should handle missing inventory data', async () => {
@@ -267,8 +266,8 @@ describe('AiPredictorService', () => {
 
       const features = await service.buildFeatureVector('p1', 's1');
 
-      expect(features.inventory_qty).toBe(0);
-      expect(features.days_since_restock).toBe(365);
+      expect(features.inventoryQty).toBe(0);
+      expect(features.daysSinceRestock).toBe(365);
     });
 
     it('should handle missing reviews', async () => {
@@ -276,8 +275,8 @@ describe('AiPredictorService', () => {
 
       const features = await service.buildFeatureVector('p1', 's1');
 
-      expect(features.avg_rating).toBe(0);
-      expect(features.rating_count).toBe(0);
+      expect(features.avgRating).toBe(0);
+      expect(features.ratingCount).toBe(0);
     });
   });
 
@@ -285,11 +284,11 @@ describe('AiPredictorService', () => {
     beforeEach(() => {
       // Mock feature building
       jest.spyOn(service, 'buildFeatureVector').mockResolvedValue({
-        sales_7d: 10,
-        sales_14d: 20,
-        sales_30d: 30,
-        views_7d: 100,
-        avg_price: 99.99,
+        sales7d: 10,
+        sales14d: 20,
+        sales30d: 30,
+        views7d: 100,
+        avgPrice: 99.99,
       } as any);
 
       // Mock HTTP response
@@ -343,7 +342,7 @@ describe('AiPredictorService', () => {
         {
           productId: 'p1',
           storeId: 's1',
-          features: { sales_7d: 15, views_7d: 150 } as any,
+          features: { sales7d: 15, views7d: 150 } as any,
         },
       ];
 
@@ -558,8 +557,8 @@ describe('AiPredictorService', () => {
   describe('processRequest', () => {
     beforeEach(() => {
       jest.spyOn(service, 'buildFeatureVector').mockResolvedValue({
-        sales_7d: 10,
-        views_7d: 100,
+        sales7d: 10,
+        views7d: 100,
       } as any);
 
       const mockResponse: AxiosResponse = {
@@ -625,12 +624,12 @@ describe('AiPredictorService', () => {
 
       const priceQueryBuilder = variantRepo.createQueryBuilder!() as any;
       priceQueryBuilder.getRawOne.mockResolvedValue({
-        avg_price: '99.99',
+        avgPrice: '99.99',
       });
 
       const inventoryQueryBuilder = inventoryRepo.createQueryBuilder!() as any;
       inventoryQueryBuilder.getRawOne.mockResolvedValue({
-        inventory_qty: '50',
+        inventoryQty: '50',
       });
 
       reviewsRepo.getRatingAggregate.mockResolvedValue({

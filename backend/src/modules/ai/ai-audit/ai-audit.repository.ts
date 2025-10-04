@@ -294,7 +294,7 @@ export class AiAuditRepository extends BaseRepository<AiAudit> {
       .limit(preserveCount)
       .getRawMany();
 
-    const preserveIdList = preserveIds.map((row) => row.a_id);
+    const preserveIdList = preserveIds.map((row) => row.aId);
 
     // Delete old entries except preserved ones
     const deleteQb = this.createQueryBuilder()

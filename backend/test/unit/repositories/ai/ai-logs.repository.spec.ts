@@ -4,7 +4,7 @@ import {
   createMock,
   createMockEntityManager,
   MockedMethods,
-} from '../../../utils/helpers';
+} from 'test/utils/helpers';
 import { AiLogsRepository } from 'src/modules/ai/ai-logs/ai-logs.repository';
 
 describe('AiLogsRepository', () => {
@@ -15,7 +15,7 @@ describe('AiLogsRepository', () => {
 
   const mockLog: AiLog = {
     id: 'l1',
-    feature: 'description_generator',
+    feature: 'descriptionGenerator',
     details: { success: true },
     createdAt: new Date('2025-01-15'),
     user: { id: 'u1' } as any,
@@ -61,7 +61,7 @@ describe('AiLogsRepository', () => {
         {
           storeId: 's1',
           userId: 'u1',
-          feature: 'description_generator',
+          feature: 'descriptionGenerator',
           dateFrom: new Date('2025-01-01'),
           dateTo: new Date('2025-01-31'),
           hasDetails: true,
@@ -97,7 +97,7 @@ describe('AiLogsRepository', () => {
       const logs = [
         {
           ...mockLog,
-          feature: 'description_generator',
+          feature: 'descriptionGenerator',
           details: { test: 'data' },
           user: { id: 'u1' },
           store: { id: 's1' },
@@ -106,7 +106,7 @@ describe('AiLogsRepository', () => {
         {
           ...mockLog,
           id: 'l2',
-          feature: 'title_generator',
+          feature: 'titleGenerator',
           details: { test: 'data2' },
           user: { id: 'u2' },
           store: { id: 's2' },
@@ -119,8 +119,8 @@ describe('AiLogsRepository', () => {
       const stats = await repo.getUsageStats({ storeId: 's1' });
 
       expect(stats.totalLogs).toBe(2);
-      expect(stats.byFeature).toHaveProperty('description_generator', 1);
-      expect(stats.byFeature).toHaveProperty('title_generator', 1);
+      expect(stats.byFeature).toHaveProperty('descriptionGenerator', 1);
+      expect(stats.byFeature).toHaveProperty('titleGenerator', 1);
       expect(stats.topFeatures).toHaveLength(2);
       expect(stats.dailyUsage).toBeDefined();
     });
@@ -130,9 +130,9 @@ describe('AiLogsRepository', () => {
     it('should return top features by usage', async () => {
       const rawResults = [
         // eslint-disable-next-line camelcase
-        { l_feature: 'description_generator', count: '100' },
+        { l_feature: 'descriptionGenerator', count: '100' },
         // eslint-disable-next-line camelcase
-        { l_feature: 'title_generator', count: '50' },
+        { l_feature: 'titleGenerator', count: '50' },
       ];
 
       queryBuilder.getRawMany!.mockResolvedValue(rawResults);
@@ -141,7 +141,7 @@ describe('AiLogsRepository', () => {
 
       expect(result).toHaveLength(2);
       expect(result[0]).toEqual({
-        feature: 'description_generator',
+        feature: 'descriptionGenerator',
         count: 100,
         percentage: expect.any(Number),
       });
@@ -172,7 +172,7 @@ describe('AiLogsRepository', () => {
       // Mock getTopFeaturesByDate
       jest
         .spyOn(repo as any, 'getTopFeaturesByDate')
-        .mockResolvedValue(['description_generator', 'title_generator']);
+        .mockResolvedValue(['descriptionGenerator', 'titleGenerator']);
 
       const result = await repo.getDailyUsage(30, { storeId: 's1' });
 

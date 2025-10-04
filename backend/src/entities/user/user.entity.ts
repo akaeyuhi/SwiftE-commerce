@@ -16,6 +16,7 @@ import { BaseEntity } from 'src/common/interfaces/crud/base-entity.interface';
 import { AdminRoles } from 'src/common/enums/admin.enum';
 import { Store } from 'src/entities/store/store.entity';
 import { Like } from 'src/entities/user/like.entity';
+import { Exclude } from 'class-transformer';
 
 @Entity({ name: 'users' })
 export class User implements BaseEntity {
@@ -32,6 +33,7 @@ export class User implements BaseEntity {
   lastName: string;
 
   @Column({ type: 'text' })
+  @Exclude()
   passwordHash: string;
 
   @Column({ default: false })
