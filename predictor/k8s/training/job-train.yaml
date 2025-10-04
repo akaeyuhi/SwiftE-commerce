@@ -1,0 +1,61 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: predictor-train
+  namespace: predictor
+  labels:
+    app: predictor
+    component: train
+spec:
+  backoffLimit: 2
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        app: predictor
+        component: train
+    spec:
+      restartPolicy: OnFailure
+
+      containers:
+        - name: train
+          image: your-registry.io/predictor-train:latest
+          imagePullPolicy: IfNotPresent
+
+          command:
+            - python
+            - -m
+            - predictor.train_model
+
+          args:
+            - --in
+            - "/data/features.csv"
+            - --model
+            - "lightgbm"
+            - --out
+            - "/models/model.bin"
+            - --test-size
+            - "0.15"
+
+          volumeMounts:
+            - name: data
+              mountPath: /data
+              readOnly: true
+            - name: models
+              mountPath: /models
+
+          resources:
+            requests:
+              memory: "4Gi"
+              cpu: "2000m"
+            limits:
+              memory: "16Gi"
+              cpu: "8000m"
+
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: predictor-data-pvc
+        - name: models
+          persistentVolumeClaim:
+            claimName: predictor-models-pvc

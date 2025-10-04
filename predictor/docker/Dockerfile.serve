@@ -1,0 +1,77 @@
+# Multi-stage build for minimal production image
+FROM python:3.10-slim AS builder
+
+# Build arguments
+ARG MODEL_VERSION=v1.0
+
+# Environment
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+WORKDIR /build
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy and install Python dependencies
+COPY requirements.txt requirements-serve.txt ./
+RUN pip install --user --no-warn-script-location \
+    -r requirements-serve.txt
+
+# Copy application code
+COPY predictor/ ./predictor/
+COPY setup.py ./
+
+# Install package
+RUN pip install --user --no-warn-script-location -e .
+
+# ================================
+# Runtime stage
+# ================================
+FROM python:3.10-slim AS runtime
+
+# Metadata
+LABEL maintainer="your-team@example.com"
+LABEL version="${MODEL_VERSION}"
+LABEL description="Stockout prediction serving API"
+
+# Environment
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PATH=/root/.local/bin:$PATH \
+    MODEL_VERSION=${MODEL_VERSION}
+
+WORKDIR /app
+
+# Install runtime dependencies only
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy Python packages from builder
+COPY --from=builder /root/.local /root/.local
+
+# Copy application
+COPY --from=builder /build/predictor /app/predictor
+
+# Create model directory
+RUN mkdir -p /app/models
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD python -c "import requests; requests.get('http://localhost:8080/health')"
+
+# Non-root user for security
+RUN useradd -m -u 1000 predictor && \
+    chown -R predictor:predictor /app
+USER predictor
+
+# Expose port
+EXPOSE 8080
+
+# Run server
+CMD ["python", "-m", "predictor.serve"]
