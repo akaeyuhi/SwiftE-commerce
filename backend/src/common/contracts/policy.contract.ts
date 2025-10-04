@@ -4,9 +4,9 @@ import { Store } from 'src/entities/store/store.entity';
 import { User } from 'src/entities/user/user.entity';
 import { Admin } from 'src/entities/user/policy/admin.entity';
 
-export const USER_SERVICE = 'USER_SERVICE';
-export const STORE_SERVICE = 'STORE_SERVICE';
-export const ADMIN_SERVICE = 'ADMIN_SERVICE';
+export const USER_SERVICE = 'USER_POLICY_SERVICE';
+export const STORE_SERVICE = 'STORE_POLICY_SERVICE';
+export const ADMIN_SERVICE = 'ADMIN_POLICY_SERVICE';
 
 export interface IUserService {
   getUserStoreRoles(userId: string): Promise<StoreRole[]>;
