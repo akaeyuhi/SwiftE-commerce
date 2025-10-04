@@ -142,7 +142,10 @@ export class AnalyticsService extends BaseAnalyticsService<RecordEventDto> {
     }
 
     // Validate limit parameter
-    if (options?.limit && (options.limit < 1 || options.limit > 1000)) {
+    if (
+      options?.limit !== undefined &&
+      (options.limit < 1 || options.limit > 1000)
+    ) {
       throw new Error('limit must be between 1 and 1000');
     }
   }

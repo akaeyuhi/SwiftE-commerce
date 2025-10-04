@@ -14,6 +14,7 @@ import { OpenAiProvider } from 'src/modules/ai/ai-generator/providers/open-ai.pr
 import { HuggingFaceProvider } from 'src/modules/ai/ai-generator/providers/hugging-face.provider';
 import { HttpModule } from '@nestjs/axios';
 import { AnalyticsModule } from 'src/modules/analytics/analytics.module';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { AnalyticsModule } from 'src/modules/analytics/analytics.module';
     AiLogsModule,
     AiGeneratorModule,
     AiPredictorModule,
+    ConfigModule,
   ],
   providers: [
     AiAuditService,

@@ -28,6 +28,7 @@ describe('AnalyticsService', () => {
       where: jest.fn().mockReturnThis(),
       andWhere: jest.fn().mockReturnThis(),
       select: jest.fn().mockReturnThis(),
+      addSelect: jest.fn().mockReturnThis(),
       groupBy: jest.fn().mockReturnThis(),
       orderBy: jest.fn().mockReturnThis(),
       getCount: jest.fn(),
@@ -98,7 +99,7 @@ describe('AnalyticsService', () => {
   describe('validateAggregator', () => {
     it('should validate known aggregators', () => {
       expect(() =>
-        (service as any).validateAggregator('product_conversion', {
+        (service as any).validateAggregator('productConversion', {
           productId: 'p1',
         })
       ).not.toThrow();
@@ -106,13 +107,13 @@ describe('AnalyticsService', () => {
 
     it('should throw for unknown aggregator', () => {
       expect(() =>
-        (service as any).validateAggregator('unknown_aggregator')
-      ).toThrow('Unknown aggregator: unknown_aggregator');
+        (service as any).validateAggregator('unknownAggregator')
+      ).toThrow('Unknown aggregator: unknownAggregator');
     });
 
     it('should validate date format', () => {
       expect(() =>
-        (service as any).validateAggregator('store_conversion', {
+        (service as any).validateAggregator('storeConversion', {
           storeId: 's1',
           from: 'invalid-date',
           to: '2025-01-31',
@@ -122,7 +123,7 @@ describe('AnalyticsService', () => {
 
     it('should validate date order', () => {
       expect(() =>
-        (service as any).validateAggregator('store_conversion', {
+        (service as any).validateAggregator('storeConversion', {
           storeId: 's1',
           from: '2025-12-31',
           to: '2025-01-01',
@@ -132,7 +133,7 @@ describe('AnalyticsService', () => {
 
     it('should prevent date ranges exceeding 365 days', () => {
       expect(() =>
-        (service as any).validateAggregator('store_conversion', {
+        (service as any).validateAggregator('storeConversion', {
           storeId: 's1',
           from: '2023-01-01',
           to: '2025-01-01',
@@ -142,26 +143,26 @@ describe('AnalyticsService', () => {
 
     it('should require productId for product aggregators', () => {
       expect(() =>
-        (service as any).validateAggregator('product_conversion', {})
-      ).toThrow('product_conversion requires productId parameter');
+        (service as any).validateAggregator('productConversion', {})
+      ).toThrow('productConversion requires productId parameter');
     });
 
     it('should require storeId for store aggregators', () => {
       expect(() =>
-        (service as any).validateAggregator('store_conversion', {})
-      ).toThrow('store_conversion requires storeId parameter');
+        (service as any).validateAggregator('storeConversion', {})
+      ).toThrow('storeConversion requires storeId parameter');
     });
 
     it('should validate limit range', () => {
       expect(() =>
-        (service as any).validateAggregator('top_products_by_conversion', {
+        (service as any).validateAggregator('topProductsByConversion', {
           storeId: 's1',
           limit: 0,
         })
       ).toThrow('limit must be between 1 and 1000');
 
       expect(() =>
-        (service as any).validateAggregator('top_products_by_conversion', {
+        (service as any).validateAggregator('topProductsByConversion', {
           storeId: 's1',
           limit: 1001,
         })
@@ -170,7 +171,7 @@ describe('AnalyticsService', () => {
 
     it('should allow valid limit values', () => {
       expect(() =>
-        (service as any).validateAggregator('top_products_by_conversion', {
+        (service as any).validateAggregator('topProductsByConversion', {
           storeId: 's1',
           limit: 10,
         })
@@ -187,7 +188,7 @@ describe('AnalyticsService', () => {
         revenue: 1000,
       });
 
-      const result = await service.aggregate('product_conversion', {
+      const result = await service.aggregate('productConversion', {
         productId: 'p1',
       });
 
@@ -195,8 +196,8 @@ describe('AnalyticsService', () => {
     });
 
     it('should throw for invalid aggregator', async () => {
-      await expect(service.aggregate('invalid_aggregator', {})).rejects.toThrow(
-        'Unknown aggregator: invalid_aggregator'
+      await expect(service.aggregate('invalidAggregator', {})).rejects.toThrow(
+        'Unknown aggregator: invalidAggregator'
       );
     });
   });
@@ -543,8 +544,8 @@ describe('AnalyticsService', () => {
   describe('getRevenueTrends', () => {
     it('should return revenue trends over time', async () => {
       const trends = [
-        { date: '2025-01-01', revenue: '1000', transactions: '10' },
-        { date: '2025-01-02', revenue: '1500', transactions: '15' },
+        { date: '2025-01-01', revenue: 1000, transactions: 10 },
+        { date: '2025-01-02', revenue: 1500, transactions: 15 },
       ];
 
       (queryBuilder.getRawMany as jest.Mock)!.mockResolvedValue(trends);
@@ -664,9 +665,9 @@ describe('AnalyticsService', () => {
       const aggregators = service.getSupportedAggregators();
 
       expect(Array.isArray(aggregators)).toBe(true);
-      expect(aggregators).toContain('product_conversion');
-      expect(aggregators).toContain('store_conversion');
-      expect(aggregators).toContain('top_products_by_conversion');
+      expect(aggregators).toContain('productConversion');
+      expect(aggregators).toContain('storeConversion');
+      expect(aggregators).toContain('topProductsByConversion');
     });
   });
 
@@ -675,7 +676,7 @@ describe('AnalyticsService', () => {
       const schema = service.getAggregationSchema('productConversion');
 
       expect(schema).toBeDefined();
-      expect(schema!.name).toBe('product_conversion');
+      expect(schema!.name).toBe('productConversion');
     });
 
     it('should return null for unknown aggregator', () => {
@@ -698,7 +699,7 @@ describe('AnalyticsService', () => {
 
     it('should handle invalid aggregation requests', async () => {
       await expect(
-        service.aggregate('invalid_aggregator', {})
+        service.aggregate('invalidAggregator', {})
       ).rejects.toThrow();
     });
   });

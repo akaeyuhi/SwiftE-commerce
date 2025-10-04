@@ -130,7 +130,7 @@ describe('OpenAiProvider', () => {
       expect(payload.messages).toEqual([
         { role: 'user', content: 'Test prompt' },
       ]);
-      expect(payload.max_tokens).toBe(512);
+      expect(payload.maxTokens).toBe(512);
       expect(payload.temperature).toBe(0.8);
       expect(payload.stop).toEqual(['\n']);
       expect(payload.stream).toBe(false);
@@ -149,7 +149,7 @@ describe('OpenAiProvider', () => {
 
       expect(payload.model).toBe('text-davinci-003');
       expect(payload.prompt).toBe('Test prompt');
-      expect(payload.max_tokens).toBe(256);
+      expect(payload.maxTokens).toBe(256);
       expect(payload.echo).toBe(false);
     });
 
@@ -164,7 +164,7 @@ describe('OpenAiProvider', () => {
         modelConfig
       );
 
-      expect(payload.max_tokens).toBe(800); // 80% of 1000
+      expect(payload.maxTokens).toBe(800); // 80% of 1000
     });
 
     it('should use default temperature when not provided', () => {

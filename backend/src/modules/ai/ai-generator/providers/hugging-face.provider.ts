@@ -84,23 +84,22 @@ export class HuggingFaceProvider extends BaseAiProvider {
     const payload: any = {
       inputs: prompt,
       parameters: {
-        /* eslint-disable camelcase */
-        max_new_tokens: maxTokens,
+        maxNewTokens: maxTokens,
         temperature: options.temperature ?? 0.7,
-        do_sample: true,
-        pad_token_id: 50256, // Standard padding token
+        doSample: true,
+        padTokenId: 50256, // Standard padding token
       },
       options: {
-        wait_for_model: true,
-        use_cache: false,
+        waitForModel: true,
+        useCache: false,
       },
     };
 
     // Add model-specific parameters
     if (modelConfig.type === 'text-generation') {
-      payload.parameters.return_full_text = false;
+      payload.parameters.returnFullText = false;
       if (options.stop) {
-        payload.parameters.stop_sequences = Array.isArray(options.stop)
+        payload.parameters.stopSequences = Array.isArray(options.stop)
           ? options.stop
           : [options.stop];
       }
@@ -130,17 +129,17 @@ export class HuggingFaceProvider extends BaseAiProvider {
       // Handle different response formats from HuggingFace
       if (Array.isArray(data) && data.length > 0) {
         // Check for translation first
-        if (data[0].translation_text !== undefined) {
-          text = data[0].translation_text;
-        } else if (data[0].generated_text !== undefined) {
-          text = data[0].generated_text;
+        if (data[0].translationText !== undefined) {
+          text = data[0].translationText;
+        } else if (data[0].generatedText !== undefined) {
+          text = data[0].generatedText;
         } else if (typeof data[0] === 'string') {
           text = data[0];
         } else {
           text = JSON.stringify(data);
         }
-      } else if (data.generated_text !== undefined) {
-        text = data.generated_text;
+      } else if (data.generatedText !== undefined) {
+        text = data.generatedText;
       } else if (typeof data === 'string') {
         text = data;
       } else {

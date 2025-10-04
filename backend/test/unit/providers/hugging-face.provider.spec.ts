@@ -111,10 +111,10 @@ describe('HuggingFaceProvider', () => {
       );
 
       expect(payload.inputs).toBe('Test prompt');
-      expect(payload.parameters.max_new_tokens).toBe(512);
+      expect(payload.parameters.maxNewTokens).toBe(512);
       expect(payload.parameters.temperature).toBe(0.8);
-      expect(payload.parameters.return_full_text).toBe(false);
-      expect(payload.options.wait_for_model).toBe(true);
+      expect(payload.parameters.returnFullText).toBe(false);
+      expect(payload.options.waitForModel).toBe(true);
     });
 
     it('should limit max tokens to model maximum', () => {
@@ -127,7 +127,7 @@ describe('HuggingFaceProvider', () => {
         modelConfig
       );
 
-      expect(payload.parameters.max_new_tokens).toBe(256);
+      expect(payload.parameters.maxNewTokens).toBe(256);
     });
 
     it('should add stop sequences for text-generation', () => {
@@ -140,7 +140,7 @@ describe('HuggingFaceProvider', () => {
         modelConfig
       );
 
-      expect(payload.parameters.stop_sequences).toEqual(['\n', '###']);
+      expect(payload.parameters.stopSequences).toEqual(['\n', '###']);
     });
 
     it('should handle single stop string', () => {
@@ -153,7 +153,7 @@ describe('HuggingFaceProvider', () => {
         modelConfig
       );
 
-      expect(payload.parameters.stop_sequences).toEqual(['\n']);
+      expect(payload.parameters.stopSequences).toEqual(['\n']);
     });
 
     it('should use default temperature', () => {

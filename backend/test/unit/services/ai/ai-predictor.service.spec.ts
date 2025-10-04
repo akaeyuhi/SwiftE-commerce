@@ -18,6 +18,7 @@ import {
   createServiceMock,
   MockedMethods,
 } from 'test/utils/helpers';
+import { ConfigModule } from '@nestjs/config';
 
 describe('AiPredictorService', () => {
   let service: AiPredictorService;
@@ -89,8 +90,10 @@ describe('AiPredictorService', () => {
     } as any;
 
     const module: TestingModule = await Test.createTestingModule({
+      imports: [ConfigModule],
       providers: [
         AiPredictorService,
+        ConfigModule,
         { provide: HttpService, useValue: httpService },
         { provide: AiPredictorRepository, useValue: predictorRepo },
         { provide: DataSource, useValue: dataSource },

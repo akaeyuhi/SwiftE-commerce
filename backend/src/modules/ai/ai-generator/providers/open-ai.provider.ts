@@ -101,20 +101,19 @@ export class OpenAiProvider extends BaseAiProvider {
       return {
         model,
         messages: [{ role: 'user', content: prompt }],
-        /* eslint-disable camelcase */
-        max_tokens: maxTokens,
+        maxTokens,
         temperature: options.temperature ?? 0.7,
         n: 1,
         stream: false,
         stop: options.stop,
-        presence_penalty: 0,
-        frequency_penalty: 0,
+        presencePenalty: 0,
+        frequencyPenalty: 0,
       };
     } else {
       return {
         model,
         prompt,
-        max_tokens: maxTokens,
+        maxTokens,
         temperature: options.temperature ?? 0.7,
         n: 1,
         stream: false,
@@ -160,9 +159,9 @@ export class OpenAiProvider extends BaseAiProvider {
         text: text.trim(),
         raw: data,
         usage: {
-          promptTokens: usage.prompt_tokens || 0,
-          completionTokens: usage.completion_tokens || 0,
-          totalTokens: usage.total_tokens || 0,
+          promptTokens: usage.promptTokens || 0,
+          completionTokens: usage.completionTokens || 0,
+          totalTokens: usage.totalTokens || 0,
           cost,
         },
       };
@@ -176,8 +175,8 @@ export class OpenAiProvider extends BaseAiProvider {
     usage: any,
     pricing: { input: number; output: number }
   ): number {
-    const inputCost = ((usage.prompt_tokens || 0) / 1000) * pricing.input;
-    const outputCost = ((usage.completion_tokens || 0) / 1000) * pricing.output;
+    const inputCost = ((usage.promptTokens || 0) / 1000) * pricing.input;
+    const outputCost = ((usage.completionTokens || 0) / 1000) * pricing.output;
     return Number((inputCost + outputCost).toFixed(6));
   }
 

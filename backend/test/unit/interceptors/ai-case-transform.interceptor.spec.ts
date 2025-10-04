@@ -34,9 +34,16 @@ describe('AiCaseTransformInterceptor', () => {
         query: {},
       };
 
-      (mockExecutionContext.switchToHttp as jest.Mock).mockReturnValue({
-        getRequest: () => mockRequest,
-      });
+      // Fix: Mock the entire chain properly
+      const mockHttpContext = {
+        getRequest: jest.fn().mockReturnValue(mockRequest),
+        getResponse: jest.fn(),
+        getNext: jest.fn(),
+      };
+
+      jest
+        .spyOn(mockExecutionContext, 'switchToHttp')
+        .mockReturnValue(mockHttpContext as any);
 
       mockCallHandler.handle!.mockReturnValue(of({}));
 
@@ -63,9 +70,15 @@ describe('AiCaseTransformInterceptor', () => {
         },
       };
 
-      (mockExecutionContext.switchToHttp as jest.Mock).mockReturnValue({
-        getRequest: () => mockRequest,
-      });
+      const mockHttpContext = {
+        getRequest: jest.fn().mockReturnValue(mockRequest),
+        getResponse: jest.fn(),
+        getNext: jest.fn(),
+      };
+
+      jest
+        .spyOn(mockExecutionContext, 'switchToHttp')
+        .mockReturnValue(mockHttpContext as any);
 
       mockCallHandler.handle!.mockReturnValue(of({}));
 
@@ -75,7 +88,7 @@ describe('AiCaseTransformInterceptor', () => {
 
       expect(mockRequest.query).toEqual({
         user_id: '123',
-        sort_by: 'created_at',
+        sort_by: 'createdAt',
       });
     });
 
@@ -96,9 +109,15 @@ describe('AiCaseTransformInterceptor', () => {
         query: {},
       };
 
-      (mockExecutionContext.switchToHttp as jest.Mock).mockReturnValue({
-        getRequest: () => mockRequest,
-      });
+      const mockHttpContext = {
+        getRequest: jest.fn().mockReturnValue(mockRequest),
+        getResponse: jest.fn(),
+        getNext: jest.fn(),
+      };
+
+      jest
+        .spyOn(mockExecutionContext, 'switchToHttp')
+        .mockReturnValue(mockHttpContext as any);
 
       mockCallHandler.handle!.mockReturnValue(of({}));
 
@@ -132,9 +151,15 @@ describe('AiCaseTransformInterceptor', () => {
         },
       };
 
-      (mockExecutionContext.switchToHttp as jest.Mock).mockReturnValue({
-        getRequest: () => mockRequest,
-      });
+      const mockHttpContext = {
+        getRequest: jest.fn().mockReturnValue(mockRequest),
+        getResponse: jest.fn(),
+        getNext: jest.fn(),
+      };
+
+      jest
+        .spyOn(mockExecutionContext, 'switchToHttp')
+        .mockReturnValue(mockHttpContext as any);
 
       mockCallHandler.handle!.mockReturnValue(of(mockResponse));
 
@@ -165,9 +190,15 @@ describe('AiCaseTransformInterceptor', () => {
         ],
       };
 
-      (mockExecutionContext.switchToHttp as jest.Mock).mockReturnValue({
-        getRequest: () => mockRequest,
-      });
+      const mockHttpContext = {
+        getRequest: jest.fn().mockReturnValue(mockRequest),
+        getResponse: jest.fn(),
+        getNext: jest.fn(),
+      };
+
+      jest
+        .spyOn(mockExecutionContext, 'switchToHttp')
+        .mockReturnValue(mockHttpContext as any);
 
       mockCallHandler.handle!.mockReturnValue(of(mockResponse));
 
@@ -200,9 +231,15 @@ describe('AiCaseTransformInterceptor', () => {
         createdAt: '2024-01-01',
       };
 
-      (mockExecutionContext.switchToHttp as jest.Mock).mockReturnValue({
-        getRequest: () => mockRequest,
-      });
+      const mockHttpContext = {
+        getRequest: jest.fn().mockReturnValue(mockRequest),
+        getResponse: jest.fn(),
+        getNext: jest.fn(),
+      };
+
+      jest
+        .spyOn(mockExecutionContext, 'switchToHttp')
+        .mockReturnValue(mockHttpContext as any);
 
       mockCallHandler.handle!.mockReturnValue(of(mockResponse));
 
@@ -223,9 +260,15 @@ describe('AiCaseTransformInterceptor', () => {
         query: {},
       };
 
-      (mockExecutionContext.switchToHttp as jest.Mock).mockReturnValue({
-        getRequest: () => mockRequest,
-      });
+      const mockHttpContext = {
+        getRequest: jest.fn().mockReturnValue(mockRequest),
+        getResponse: jest.fn(),
+        getNext: jest.fn(),
+      };
+
+      jest
+        .spyOn(mockExecutionContext, 'switchToHttp')
+        .mockReturnValue(mockHttpContext as any);
 
       mockCallHandler.handle!.mockReturnValue(of(null));
 
@@ -242,9 +285,15 @@ describe('AiCaseTransformInterceptor', () => {
         query: {},
       };
 
-      (mockExecutionContext.switchToHttp as jest.Mock).mockReturnValue({
-        getRequest: () => mockRequest,
-      });
+      const mockHttpContext = {
+        getRequest: jest.fn().mockReturnValue(mockRequest),
+        getResponse: jest.fn(),
+        getNext: jest.fn(),
+      };
+
+      jest
+        .spyOn(mockExecutionContext, 'switchToHttp')
+        .mockReturnValue(mockHttpContext as any);
 
       mockCallHandler.handle!.mockReturnValue(of('success'));
 
