@@ -11,7 +11,7 @@ import {
   createMock,
   createRepositoryMock,
   MockedMethods,
-} from '../../../utils/helpers';
+} from 'test/utils/helpers';
 import { SelectQueryBuilder } from 'typeorm';
 
 describe('AnalyticsService', () => {
