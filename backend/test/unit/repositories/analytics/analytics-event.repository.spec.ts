@@ -8,7 +8,7 @@ import {
   createMock,
   createMockEntityManager,
   MockedMethods,
-} from '../../utils/helpers';
+} from '../../../utils/helpers';
 /* eslint-disable camelcase */
 
 describe('AnalyticsEventRepository', () => {

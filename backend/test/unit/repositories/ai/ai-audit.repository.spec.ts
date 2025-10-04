@@ -4,7 +4,7 @@ import {
   createMock,
   createMockEntityManager,
   MockedMethods,
-} from '../../utils/helpers';
+} from '../../../utils/helpers';
 import { AiAuditRepository } from 'src/modules/ai/ai-audit/ai-audit.repository';
 
 describe('AiAuditRepository', () => {

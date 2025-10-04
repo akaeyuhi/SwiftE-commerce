@@ -1,6 +1,6 @@
 import { UnauthorizedException, ExecutionContext } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';
-import { createPolicyMock, MockedMethods } from '../utils/helpers';
+import { createPolicyMock, MockedMethods } from '../../utils/helpers';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PolicyService } from 'src/modules/authorization/policy/policy.service';
 

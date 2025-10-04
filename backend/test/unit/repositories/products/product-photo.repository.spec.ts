@@ -1,6 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { ProductPhotoRepository } from 'src/modules/products/product-photo/product-photo.repository';
-import { createMock, MockedMethods } from 'test/unit/utils/helpers';
+import { createMock, MockedMethods } from 'test/utils/helpers';
 import { DataSource, EntityManager } from 'typeorm';
 
 describe('ProductPhotoRepository', () => {

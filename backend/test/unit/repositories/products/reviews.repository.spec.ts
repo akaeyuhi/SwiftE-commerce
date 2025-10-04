@@ -2,7 +2,7 @@ import { Test } from '@nestjs/testing';
 import { ReviewsRepository } from 'src/modules/products/reviews/reviews.repository';
 import { Review } from 'src/entities/store/review.entity';
 import { DataSource, EntityManager, SelectQueryBuilder } from 'typeorm';
-import { createMock, MockedMethods } from 'test/unit/utils/helpers';
+import { createMock, MockedMethods } from 'test/utils/helpers';
 
 describe('ReviewsRepository', () => {
   let repo: ReviewsRepository;

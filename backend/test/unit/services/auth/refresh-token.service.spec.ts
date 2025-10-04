@@ -1,7 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { RefreshTokenService } from 'src/modules/auth/refresh-token/refresh-token.service';
 import { RefreshTokenRepository } from 'src/modules/auth/refresh-token/refresh-token.repository';
-import { createRepositoryMock, MockedMethods } from 'test/unit/utils/helpers';
+import { createRepositoryMock, MockedMethods } from 'test/utils/helpers';
 import { RefreshToken } from 'src/entities/user/policy/refresh-token.entity';
 import { User } from 'src/entities/user/user.entity';
 

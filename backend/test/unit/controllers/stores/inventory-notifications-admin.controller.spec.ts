@@ -6,7 +6,7 @@ import {
   createGuardMock,
   createPolicyMock,
   MockedMethods,
-} from '../../utils/helpers';
+} from '../../../utils/helpers';
 import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';
 import { AdminGuard } from 'src/modules/authorization/guards/admin.guard';
 import { PolicyService } from 'src/modules/authorization/policy/policy.service';

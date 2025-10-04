@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { OrdersRepository } from 'src/modules/store/orders/orders.repository';
 import { Order } from 'src/entities/store/product/order.entity';
 import { DataSource, EntityManager } from 'typeorm';
-import { createMock, MockedMethods } from 'test/unit/utils/helpers';
+import { createMock, MockedMethods } from 'test/utils/helpers';
 import { User } from 'src/entities/user/user.entity';
 import { Store } from 'src/entities/store/store.entity';
 

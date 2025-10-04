@@ -17,7 +17,7 @@ import {
   createRepositoryMock,
   createServiceMock,
   MockedMethods,
-} from '../../utils/helpers';
+} from '../../../utils/helpers';
 import { OrderStatus } from 'src/common/enums/order-status.enum';
 import {
   OrderCreatedEvent,

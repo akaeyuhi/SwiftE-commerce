@@ -10,7 +10,7 @@ import {
   createMock,
   createServiceMock,
   MockedMethods,
-} from '../../utils/helpers';
+} from '../../../utils/helpers';
 import { BaseAiProvider } from 'src/modules/ai/ai-generator/providers/base.provider';
 
 describe('AiGeneratorService', () => {

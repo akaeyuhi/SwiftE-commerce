@@ -6,7 +6,7 @@ import {
 } from 'src/modules/ai/ai-logs/ai-logs.service';
 import { AiLogsRepository } from 'src/modules/ai/ai-logs/ai-logs.repository';
 import { AiLog } from 'src/entities/ai/ai-log.entity';
-import { createRepositoryMock, MockedMethods } from '../../utils/helpers';
+import { createRepositoryMock, MockedMethods } from '../../../utils/helpers';
 
 describe('AiLogsService', () => {
   let service: AiLogsService;

@@ -18,7 +18,7 @@ import {
   createMock,
   createPolicyMock,
   MockedMethods,
-} from '../utils/helpers';
+} from '../../utils/helpers';
 import { PolicyService } from 'src/modules/authorization/policy/policy.service';
 import { AdminRoles } from 'src/common/enums/admin.enum';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';

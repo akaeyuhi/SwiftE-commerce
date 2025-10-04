@@ -3,7 +3,7 @@ import { EventsController } from 'src/modules/analytics/controllers/events.contr
 import { AnalyticsService } from 'src/modules/analytics/analytics.service';
 import { RecordEventDto } from 'src/modules/infrastructure/queues/analytics-queue/dto/record-event.dto';
 import { AnalyticsEventType } from 'src/entities/infrastructure/analytics/analytics-event.entity';
-import { createMock, MockedMethods } from '../../utils/helpers';
+import { createMock, MockedMethods } from '../../../utils/helpers';
 
 describe('EventsController', () => {
   let controller: EventsController;

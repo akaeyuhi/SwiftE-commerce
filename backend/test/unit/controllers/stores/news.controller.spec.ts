@@ -7,7 +7,7 @@ import {
   createPolicyMock,
   createGuardMock,
   MockedMethods,
-} from 'test/unit/utils/helpers';
+} from 'test/utils/helpers';
 import { NewsPost } from 'src/entities/store/news-post.entity';
 import { Store } from 'src/entities/store/store.entity';
 import { User } from 'src/entities/user/user.entity';

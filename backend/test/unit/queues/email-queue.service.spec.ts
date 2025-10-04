@@ -6,7 +6,7 @@ import { EmailQueueService } from 'src/modules/infrastructure/queues/email-queue
 import { EmailJobType, EmailPriority } from 'src/common/enums/email.enum';
 import { AdminRoles } from 'src/common/enums/admin.enum';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
-import { createMock, MockedMethods } from '../utils/helpers';
+import { createMock, MockedMethods } from '../../utils/helpers';
 
 describe('EmailQueueService', () => {
   let service: EmailQueueService;

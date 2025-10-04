@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { CartRepository } from 'src/modules/store/cart/cart.repository';
 import { ShoppingCart } from 'src/entities/store/cart/cart.entity';
 import { DataSource, EntityManager } from 'typeorm';
-import { createMock, MockedMethods } from 'test/unit/utils/helpers';
+import { createMock, MockedMethods } from 'test/utils/helpers';
 
 describe('CartRepository', () => {
   let repository: CartRepository;

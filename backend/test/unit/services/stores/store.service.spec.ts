@@ -9,7 +9,7 @@ import {
   createMapperMock,
   createRepositoryMock,
   MockedMethods,
-} from 'test/unit/utils/helpers';
+} from 'test/utils/helpers';
 import { Store } from 'src/entities/store/store.entity';
 import { CreateStoreDto } from 'src/modules/store/dto/create-store.dto';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';

@@ -10,7 +10,7 @@ import {
   createDeepMock,
   createMockInterceptor,
   createMockAnalyticsQueue,
-} from 'test/unit/utils/helpers';
+} from 'test/utils/helpers';
 import { Product } from 'src/entities/store/product/product.entity';
 import { CreateProductDto } from 'src/modules/products/dto/create-product.dto';
 import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';

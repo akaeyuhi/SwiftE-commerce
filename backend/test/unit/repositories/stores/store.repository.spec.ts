@@ -1,7 +1,7 @@
 import { StoreRepository } from 'src/modules/store/store.repository';
 import { Store } from 'src/entities/store/store.entity';
 import { DataSource, EntityManager } from 'typeorm';
-import { createMock, MockedMethods } from 'test/unit/utils/helpers';
+import { createMock, MockedMethods } from 'test/utils/helpers';
 import { Test, TestingModule } from '@nestjs/testing';
 
 describe('StoreRepository', () => {

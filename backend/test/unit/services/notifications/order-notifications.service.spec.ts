@@ -18,7 +18,7 @@ import {
   OrderCancelledNotificationData,
 } from 'src/common/interfaces/notifications/order-notification.types';
 import { NotificationPayload } from 'src/common/interfaces/infrastructure/notification.interface';
-import { createMock, MockedMethods } from '../../utils/helpers';
+import { createMock, MockedMethods } from '../../../utils/helpers';
 
 describe('OrderNotificationService', () => {
   let service: OrderNotificationService;

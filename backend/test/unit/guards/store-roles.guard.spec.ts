@@ -5,7 +5,7 @@ import {
   createMockExecutionContext,
   createPolicyMock,
   MockedMethods,
-} from '../utils/helpers';
+} from '../../utils/helpers';
 import { jest } from '@jest/globals';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { StoreRolesGuard } from 'src/modules/authorization/guards/store-roles.guard';

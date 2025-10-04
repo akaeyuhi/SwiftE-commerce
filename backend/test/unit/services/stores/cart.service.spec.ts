@@ -8,7 +8,7 @@ import {
   createRepositoryMock,
   createServiceMock,
   MockedMethods,
-} from 'test/unit/utils/helpers';
+} from 'test/utils/helpers';
 
 describe('CartService', () => {
   let service: CartService;

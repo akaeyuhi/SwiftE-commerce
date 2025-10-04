@@ -11,7 +11,7 @@ import {
   createRepositoryMock,
   createServiceMock,
   MockedMethods,
-} from 'test/unit/utils/helpers';
+} from 'test/utils/helpers';
 import { Store } from 'src/entities/store/store.entity';
 
 describe('ProductsService', () => {

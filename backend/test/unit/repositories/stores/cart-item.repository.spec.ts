@@ -1,7 +1,7 @@
 import { CartItemRepository } from 'src/modules/store/cart/cart-item/cart-item.repository';
 import { CartItem } from 'src/entities/store/cart/cart-item.entity';
 import { DataSource, EntityManager } from 'typeorm';
-import { createMock, MockedMethods } from 'test/unit/utils/helpers';
+import { createMock, MockedMethods } from 'test/utils/helpers';
 import { Test, TestingModule } from '@nestjs/testing';
 
 describe('CartItemRepository', () => {

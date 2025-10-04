@@ -4,7 +4,7 @@ import { AiLogsService } from 'src/modules/ai/ai-logs/ai-logs.service';
 import { AiAuditService } from 'src/modules/ai/ai-audit/ai-audit.service';
 import { of } from 'rxjs';
 import { AxiosResponse } from 'axios';
-import { createMock, createServiceMock, MockedMethods } from '../utils/helpers';
+import { createMock, createServiceMock, MockedMethods } from '../../utils/helpers';
 import { OpenAiProvider } from 'src/modules/ai/ai-generator/providers/open-ai.provider';
 /* eslint-disable camelcase */
 

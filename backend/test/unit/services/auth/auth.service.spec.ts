@@ -20,7 +20,7 @@ import {
   createMock,
   createServiceMock,
   MockedMethods,
-} from '../../utils/helpers';
+} from '../../../utils/helpers';
 import { User } from 'src/entities/user/user.entity';
 import { AdminRoles } from 'src/common/enums/admin.enum';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';

@@ -8,7 +8,7 @@ import {
   OutOfStockEvent,
 } from 'src/common/events/inventory/low-stock.event';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
-import { createMock, MockedMethods } from 'test/unit/utils/helpers';
+import { createMock, MockedMethods } from 'test/utils/helpers';
 import { Store } from 'src/entities/store/store.entity';
 import { Inventory } from 'src/entities/store/product/inventory.entity';
 import { Product } from 'src/entities/store/product/product.entity';

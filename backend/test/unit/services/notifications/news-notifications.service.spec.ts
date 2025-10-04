@@ -13,7 +13,7 @@ import {
 import { EmailPriority } from 'src/common/enums/email.enum';
 import { NewsNotificationData } from 'src/common/interfaces/notifications/news-notification.types';
 import { NotificationPayload } from 'src/common/interfaces/infrastructure/notification.interface';
-import { createMock, MockedMethods } from '../../utils/helpers';
+import { createMock, MockedMethods } from '../../../utils/helpers';
 
 describe('NewsNotificationService', () => {
   let service: NewsNotificationService;

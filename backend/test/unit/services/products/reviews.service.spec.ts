@@ -3,7 +3,7 @@ import { ReviewsService } from 'src/modules/products/reviews/reviews.service';
 import { ReviewsRepository } from 'src/modules/products/reviews/reviews.repository';
 import { Review } from 'src/entities/store/review.entity';
 import { CreateReviewDto } from 'src/modules/products/reviews/dto/create-review.dto';
-import { createRepositoryMock, MockedMethods } from 'test/unit/utils/helpers';
+import { createRepositoryMock, MockedMethods } from 'test/utils/helpers';
 import { User } from 'src/entities/user/user.entity';
 import { Product } from 'src/entities/store/product/product.entity';
 

@@ -7,7 +7,7 @@ import {
   createMock,
   createRepositoryMock,
   MockedMethods,
-} from 'test/unit/utils/helpers';
+} from 'test/utils/helpers';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { ShoppingCart } from 'src/entities/store/cart/cart.entity';
 import { ProductVariant } from 'src/entities/store/product/variant.entity';

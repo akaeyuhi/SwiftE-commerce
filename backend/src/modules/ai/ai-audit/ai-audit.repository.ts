@@ -20,21 +20,21 @@ export class AiAuditRepository extends BaseRepository<AiAudit> {
    * Find audits with comprehensive filtering
    */
   async findByFilter(
-      filter: {
-        storeId?: string;
-        userId?: string;
-        feature?: string;
-        provider?: string;
-        model?: string;
-        dateFrom?: Date;
-        dateTo?: Date;
-      },
-      options: AuditQueryOptions = {}
+    filter: {
+      storeId?: string;
+      userId?: string;
+      feature?: string;
+      provider?: string;
+      model?: string;
+      dateFrom?: Date;
+      dateTo?: Date;
+    },
+    options: AuditQueryOptions = {}
   ): Promise<AiAudit[]> {
     const qb = this.createQueryBuilder('a')
-        .leftJoinAndSelect('a.user', 'u')
-        .leftJoinAndSelect('a.store', 's')
-        .orderBy('a.createdAt', 'DESC');
+      .leftJoinAndSelect('a.user', 'u')
+      .leftJoinAndSelect('a.store', 's')
+      .orderBy('a.createdAt', 'DESC');
 
     if (filter.storeId) {
       qb.andWhere('s.id = :storeId', { storeId: filter.storeId });

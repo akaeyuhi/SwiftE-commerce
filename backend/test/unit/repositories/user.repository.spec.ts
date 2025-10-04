@@ -5,7 +5,7 @@ import {
   createMock,
   createMockEntityManager,
   MockedMethods,
-} from '../utils/helpers';
+} from '../../utils/helpers';
 import { Test, TestingModule } from '@nestjs/testing';
 
 describe('UserRepository', () => {

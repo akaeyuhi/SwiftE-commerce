@@ -17,7 +17,7 @@ import {
   createMock,
   createPolicyMock,
   MockedMethods,
-} from '../../utils/helpers';
+} from '../../../utils/helpers';
 import { PolicyService } from 'src/modules/authorization/policy/policy.service';
 
 describe('AiGeneratorController', () => {

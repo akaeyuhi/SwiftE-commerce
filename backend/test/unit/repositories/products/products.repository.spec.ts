@@ -2,7 +2,7 @@ import { Test } from '@nestjs/testing';
 import { ProductRepository } from 'src/modules/products/products.repository';
 import { Product } from 'src/entities/store/product/product.entity';
 import { DataSource, EntityManager } from 'typeorm';
-import { createMock, MockedMethods } from 'test/unit/utils/helpers';
+import { createMock, MockedMethods } from 'test/utils/helpers';
 
 describe('ProductRepository', () => {
   let repo: ProductRepository;

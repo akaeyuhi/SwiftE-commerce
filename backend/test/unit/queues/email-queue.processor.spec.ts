@@ -4,7 +4,7 @@ import { Job } from 'bull';
 import { Logger } from '@nestjs/common';
 import { EmailQueueProcessor } from 'src/modules/infrastructure/queues/email-queue/email-queue.processor';
 import { EmailJobType } from 'src/common/enums/email.enum';
-import { createMock, MockedMethods } from '../utils/helpers';
+import { createMock, MockedMethods } from '../../utils/helpers';
 
 describe('EmailQueueProcessor', () => {
   let processor: EmailQueueProcessor;
