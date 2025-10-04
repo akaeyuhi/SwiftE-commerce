@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  postgres_db:
+    ports:
+      - "5432:5432"  # Expose for local tools
+    environment:
+      POSTGRES_LOG_STATEMENT: all  # Verbose logging
+
+  redis:
+    ports:
+      - "6379:6379"  # Expose for local tools
+    command: redis-server --appendonly yes
+
+  predictor:
+    build:
+      context: ./predictor
+      dockerfile: docker/Dockerfile.serve
+      target: development  # Use dev stage if multi-stage
+    environment:
+      LOG_LEVEL: debug
+      RELOAD: "true"
+    volumes:
+      # Mount source for hot reload
+      - ./predictor/predictor:/app/predictor
+      - ./predictor/models:/models
+    command: >
+      uvicorn predictor.serve:app
+        --host 0.0.0.0
+        --port 8080
+        --reload
+        --log-level debug
+
+  backend:
+    build:
+      context: ./backend
+      target: development
+    environment:
+      NODE_ENV: development
+      DATABASE_SYNC: true
+      DATABASE_LOGGING: true
+      ENABLE_SWAGGER: true
+      LOG_LEVEL: debug
+    volumes:
+      # Hot reload
+      - ./backend/src:/app/src
+      - ./backend/node_modules:/app/node_modules
+    command: npm run start:dev
+
+  frontend:
+    build:
+      context: ./frontend
+      target: development
+    environment:
+      NODE_ENV: development
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+      - ./frontend/node_modules:/app/node_modules
+    command: npm run dev
+
+  # Enable admin tools in dev
+  pgadmin:
+    profiles: []  # Always start in dev

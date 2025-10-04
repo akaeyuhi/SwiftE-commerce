@@ -1,0 +1,14 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: predictor-metrics
+  namespace: predictor
+spec:
+  selector:
+    matchLabels:
+      app: predictor
+      component: serve
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 30s

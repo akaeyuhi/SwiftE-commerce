@@ -26,6 +26,7 @@ import {
   IReviewsRepository,
   REVIEWS_REPOSITORY,
 } from 'src/common/contracts/reviews.contract';
+import { ConfigService } from '@nestjs/config';
 
 export interface FeatureVector {
   sales7d: number;
@@ -82,6 +83,7 @@ export class AiPredictorService extends BaseAiService<
 
   constructor(
     private readonly httpService: HttpService,
+    private readonly configService: ConfigService,
     private readonly predictorRepo: AiPredictorRepository,
     private readonly dataSource: DataSource,
     private readonly storeStatsRepo: StoreDailyStatsRepository,
@@ -92,10 +94,14 @@ export class AiPredictorService extends BaseAiService<
   ) {
     super();
 
-    this.predictorUrl =
-      process.env.PREDICTOR_URL ?? 'http://predictor:8080/predict_batch';
-    this.authToken = process.env.PREDICTOR_AUTH_TOKEN;
-    this.chunkSize = parseInt(process.env.PREDICTOR_CHUNK_SIZE ?? '50');
+    this.predictorUrl = this.configService.get<string>(
+      'PREDICTOR_URL',
+      'http://predictor:8080'
+    );
+    this.authToken = this.configService.get<string>('PREDICTOR_AUTH_TOKEN');
+    this.chunkSize = parseInt(
+      this.configService.get<string>('PREDICTOR_CHUNK_SIZE') ?? '50'
+    );
   }
 
   protected validateRequest(
