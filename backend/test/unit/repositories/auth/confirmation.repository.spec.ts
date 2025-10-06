@@ -1,6 +1,6 @@
 import { DataSource, EntityManager, LessThan } from 'typeorm';
 import { ConfirmationRepository } from 'src/modules/auth/confirmation/confirmation.repository';
-import { Confirmation } from 'src/modules/auth/confirmation/entities/confirmation.entity';
+import { Confirmation } from 'src/entities/user/authentication/confirmation.entity';
 import { ConfirmationType } from 'src/modules/auth/confirmation/enums/confirmation.enum';
 import {
   createMock,

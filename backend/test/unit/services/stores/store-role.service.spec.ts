@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { StoreRoleService } from 'src/modules/store/store-role/store-role.service';
 import { StoreRoleRepository } from 'src/modules/store/store-role/store-role.repository';
 import { NotFoundException } from '@nestjs/common';
-import { StoreRole } from 'src/entities/user/policy/store-role.entity';
+import { StoreRole } from 'src/entities/user/authentication/store-role.entity';
 import { createRepositoryMock, MockedMethods } from '../../../utils/helpers';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { User } from 'src/entities/user/user.entity';

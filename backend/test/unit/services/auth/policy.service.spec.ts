@@ -4,16 +4,13 @@ import {
   IUserService,
   IAdminService,
   IStoreService,
-  USER_SERVICE,
-  ADMIN_SERVICE,
-  STORE_SERVICE,
 } from 'src/common/contracts/policy.contract';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { createServiceMock, MockedMethods } from 'test/utils/helpers';
 import { UserService } from 'src/modules/user/user.service';
 import { AdminService } from 'src/modules/admin/admin.service';
 import { StoreService } from 'src/modules/store/store.service';
-import { StoreRole } from 'src/entities/user/policy/store-role.entity';
+import { StoreRole } from 'src/entities/user/authentication/store-role.entity';
 import { User } from 'src/entities/user/user.entity';
 import { PolicyEntry } from 'src/modules/authorization/policy/policy.types';
 import { UserOwnedEntity } from 'src/common/interfaces/crud/user-owned.entity.interface';
@@ -36,9 +33,9 @@ describe('PolicyService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PolicyService,
-        { provide: USER_SERVICE, useValue: userService },
-        { provide: ADMIN_SERVICE, useValue: adminService },
-        { provide: STORE_SERVICE, useValue: storeService },
+        { provide: IUserService, useValue: userService },
+        { provide: IAdminService, useValue: adminService },
+        { provide: IStoreService, useValue: storeService },
       ],
     }).compile();
 

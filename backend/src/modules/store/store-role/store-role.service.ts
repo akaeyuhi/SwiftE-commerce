@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { StoreRoleRepository } from 'src/modules/store/store-role/store-role.repository';
-import { StoreRole } from 'src/entities/user/policy/store-role.entity';
+import { StoreRole } from 'src/entities/user/authentication/store-role.entity';
 import { BaseService } from 'src/common/abstracts/base.service';
 import { CreateStoreRoleDto } from 'src/modules/store/store-role/dto/create-store-role.dto';
 import { UpdateStoreRoleDto } from 'src/modules/store/store-role/dto/update-store-role.dto';

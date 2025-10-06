@@ -3,7 +3,7 @@ import { StoreService } from 'src/modules/store/store.service';
 import { StoreRepository } from 'src/modules/store/store.repository';
 import { StoreMapper } from 'src/modules/store/store.mapper';
 import { BadRequestException } from '@nestjs/common';
-import { StoreRole } from 'src/entities/user/policy/store-role.entity';
+import { StoreRole } from 'src/entities/user/authentication/store-role.entity';
 import { jest } from '@jest/globals';
 import {
   createMapperMock,

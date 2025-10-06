@@ -20,7 +20,7 @@ import { User } from 'src/entities/user/user.entity';
 import { UserDto } from 'src/modules/user/dto/user.dto';
 import { DeleteResult } from 'typeorm';
 import { Store } from 'src/entities/store/store.entity';
-import { StoreRole } from 'src/entities/user/policy/store-role.entity';
+import { StoreRole } from 'src/entities/user/authentication/store-role.entity';
 import { CreateStoreDto } from 'src/modules/store/dto/create-store.dto';
 
 describe('UserService', () => {

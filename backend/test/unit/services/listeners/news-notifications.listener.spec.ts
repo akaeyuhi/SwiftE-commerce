@@ -7,12 +7,12 @@ import { Repository } from 'typeorm';
 import { Logger } from '@nestjs/common';
 import { NewsPublishedEvent } from 'src/common/events/news/news-published.event';
 import { StoreFollower } from 'src/entities/store/store-follower.entity';
-import { StoreRole } from 'src/entities/user/policy/store-role.entity';
+import { StoreRole } from 'src/entities/user/authentication/store-role.entity';
 import { User } from 'src/entities/user/user.entity';
 import { Store } from 'src/entities/store/store.entity';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { DomainEvent } from 'src/common/interfaces/infrastructure/event.interface';
-import { createMock, MockedMethods } from '../../../utils/helpers';
+import { createMock, MockedMethods } from 'test/utils/helpers';
 import { NewsNotificationsListener } from 'src/modules/store/news/listeners/news-notifications.listener';
 
 describe('NewsNotificationsListener', () => {

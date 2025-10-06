@@ -9,7 +9,7 @@ import { ConfirmationRepository } from './confirmation.repository';
 import { UserService } from 'src/modules/user/user.service';
 import { AdminService } from 'src/modules/admin/admin.service';
 import { ConfirmationType } from './enums/confirmation.enum';
-import { Confirmation } from './entities/confirmation.entity';
+import { Confirmation } from 'src/entities/user/authentication/confirmation.entity';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { AdminRoles } from 'src/common/enums/admin.enum';
 import { EmailQueueService } from 'src/modules/infrastructure/queues/email-queue/email-queue.service';

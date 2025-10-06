@@ -12,7 +12,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { UserDto } from './dto/user.dto';
 import { UserMapper } from 'src/modules/user/user.mapper';
 import * as bcrypt from 'bcrypt';
-import { StoreRole } from 'src/entities/user/policy/store-role.entity';
+import { StoreRole } from 'src/entities/user/authentication/store-role.entity';
 import { CreateStoreDto } from 'src/modules/store/dto/create-store.dto';
 import { StoreService } from 'src/modules/store/store.service';
 import { StoreDto } from 'src/modules/store/dto/store.dto';

@@ -17,7 +17,7 @@ import { AdminGuard } from 'src/modules/authorization/guards/admin.guard';
 import { PolicyService } from 'src/modules/authorization/policy/policy.service';
 import { jest } from '@jest/globals';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
-import { StoreRole } from 'src/entities/user/policy/store-role.entity';
+import { StoreRole } from 'src/entities/user/authentication/store-role.entity';
 import { Store } from 'src/entities/store/store.entity';
 import { User } from 'src/entities/user/user.entity';
 

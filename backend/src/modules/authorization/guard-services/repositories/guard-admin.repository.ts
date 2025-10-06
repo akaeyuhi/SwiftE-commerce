@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Admin } from 'src/entities/user/policy/admin.entity';
+import { Admin } from 'src/entities/user/authentication/admin.entity';
 import { IAdminRepository } from 'src/common/contracts/policy.contract';
 
 @Injectable()

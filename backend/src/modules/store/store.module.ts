@@ -10,7 +10,6 @@ import { InventoryModule } from 'src/modules/store/inventory/inventory.module';
 import { NewsModule } from 'src/modules/store/news/news.module';
 import { OrdersModule } from 'src/modules/store/orders/orders.module';
 import { CategoriesModule } from 'src/modules/store/categories/categories.module';
-import { AnalyticsModule } from 'src/modules/analytics/analytics.module';
 import { VariantsModule } from 'src/modules/store/variants/variants.module';
 import { StoreRoleModule } from 'src/modules/store/store-role/store-role.module';
 
@@ -24,7 +23,6 @@ import { StoreRoleModule } from 'src/modules/store/store-role/store-role.module'
     VariantsModule,
     NewsModule,
     OrdersModule,
-    AnalyticsModule,
   ],
   controllers: [StoreController],
   providers: [StoreService, StoreRepository, StoreMapper],

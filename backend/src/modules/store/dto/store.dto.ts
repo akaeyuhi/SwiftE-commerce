@@ -4,7 +4,7 @@ import { Order } from 'src/entities/store/product/order.entity';
 import { ShoppingCart } from 'src/entities/store/cart/cart.entity';
 import { NewsPost } from 'src/entities/store/news-post.entity';
 import { AiLog } from 'src/entities/ai/ai-log.entity';
-import { StoreRole } from 'src/entities/user/policy/store-role.entity';
+import { StoreRole } from 'src/entities/user/authentication/store-role.entity';
 
 export class StoreDto {
   id?: string;

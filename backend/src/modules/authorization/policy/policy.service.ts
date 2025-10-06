@@ -1,19 +1,16 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { PolicyEntry } from 'src/modules/authorization/policy/policy.types';
-import { StoreRole } from 'src/entities/user/policy/store-role.entity';
+import { StoreRole } from 'src/entities/user/authentication/store-role.entity';
 import { DeepPartial } from 'typeorm';
 import { User } from 'src/entities/user/user.entity';
 import { StoreOwnedEntity } from 'src/common/interfaces/crud/store-owned.entity.interface';
 import { UserOwnedEntity } from 'src/common/interfaces/crud/user-owned.entity.interface';
 import { Store } from 'src/entities/store/store.entity';
 import {
-  ADMIN_SERVICE,
   IAdminService,
   IStoreService,
   IUserService,
-  STORE_SERVICE,
-  USER_SERVICE,
 } from 'src/common/contracts/policy.contract';
 
 /**
@@ -28,9 +25,9 @@ import {
 @Injectable()
 export class PolicyService {
   constructor(
-    @Inject(USER_SERVICE) private readonly userService: IUserService,
-    @Inject(ADMIN_SERVICE) private readonly adminService: IAdminService,
-    @Inject(STORE_SERVICE) private readonly storeService: IStoreService
+    @Inject(IUserService) private readonly userService: IUserService,
+    @Inject(IAdminService) private readonly adminService: IAdminService,
+    @Inject(IStoreService) private readonly storeService: IStoreService
   ) {}
 
   /**

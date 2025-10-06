@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { GuardStoreRepository } from 'src/modules/authorization/guard-services/repositories/guard-store.repository';
 import { IStoreService } from 'src/common/contracts/policy.contract';
-import { StoreRole } from 'src/entities/user/policy/store-role.entity';
+import { StoreRole } from 'src/entities/user/authentication/store-role.entity';
 import { Store } from 'src/entities/store/store.entity';
 
 @Injectable()

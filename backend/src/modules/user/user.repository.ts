@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { User } from 'src/entities/user/user.entity';
 import { BaseRepository } from 'src/common/abstracts/base.repository';
-import { StoreRole } from 'src/entities/user/policy/store-role.entity';
+import { StoreRole } from 'src/entities/user/authentication/store-role.entity';
 
 @Injectable()
 export class UserRepository extends BaseRepository<User> {

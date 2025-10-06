@@ -5,7 +5,7 @@ import { UserService } from 'src/modules/user/user.service';
 import { AdminService } from 'src/modules/admin/admin.service';
 import { EmailQueueService } from 'src/modules/infrastructure/queues/email-queue/email-queue.service';
 import { ConfirmationType } from 'src/modules/auth/confirmation/enums/confirmation.enum';
-import { Confirmation } from 'src/modules/auth/confirmation/entities/confirmation.entity';
+import { Confirmation } from 'src/entities/user/authentication/confirmation.entity';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { AdminRoles } from 'src/common/enums/admin.enum';
 import { BadRequestException, NotFoundException } from '@nestjs/common';

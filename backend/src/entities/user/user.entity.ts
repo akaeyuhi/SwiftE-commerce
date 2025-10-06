@@ -6,7 +6,7 @@ import {
   UpdateDateColumn,
   OneToMany,
 } from 'typeorm';
-import { StoreRole } from 'src/entities/user/policy/store-role.entity';
+import { StoreRole } from 'src/entities/user/authentication/store-role.entity';
 import { ShoppingCart } from 'src/entities/store/cart/cart.entity';
 import { Order } from 'src/entities/store/product/order.entity';
 import { Review } from 'src/entities/store/review.entity';

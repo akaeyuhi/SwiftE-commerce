@@ -1,5 +1,5 @@
 import { StoreRoleRepository } from 'src/modules/store/store-role/store-role.repository';
-import { StoreRole } from 'src/entities/user/policy/store-role.entity';
+import { StoreRole } from 'src/entities/user/authentication/store-role.entity';
 import { DataSource, EntityManager } from 'typeorm';
 import { createMock, MockedMethods } from 'test/utils/helpers';
 import { Test, TestingModule } from '@nestjs/testing';

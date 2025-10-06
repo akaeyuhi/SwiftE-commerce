@@ -6,7 +6,7 @@ import { Store } from 'src/entities/store/store.entity';
 import { StoreRepository } from 'src/modules/store/store.repository';
 import { StoreDto } from 'src/modules/store/dto/store.dto';
 import { StoreMapper } from 'src/modules/store/store.mapper';
-import { StoreRole } from 'src/entities/user/policy/store-role.entity';
+import { StoreRole } from 'src/entities/user/authentication/store-role.entity';
 
 @Injectable()
 export class StoreService extends BaseService<

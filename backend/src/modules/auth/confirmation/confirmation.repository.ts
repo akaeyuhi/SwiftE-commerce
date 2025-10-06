@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource, LessThan } from 'typeorm';
 import { BaseRepository } from 'src/common/abstracts/base.repository';
-import { Confirmation } from 'src/modules/auth/confirmation/entities/confirmation.entity';
+import { Confirmation } from 'src/entities/user/authentication/confirmation.entity';
 import { ConfirmationType } from 'src/modules/auth/confirmation/enums/confirmation.enum';
 
 @Injectable()
