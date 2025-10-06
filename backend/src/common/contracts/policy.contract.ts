@@ -1,12 +1,12 @@
-import { StoreRole } from 'src/entities/user/policy/store-role.entity';
+import { StoreRole } from 'src/entities/user/authentication/store-role.entity';
 import { StoreDto } from 'src/modules/store/dto/store.dto';
 import { Store } from 'src/entities/store/store.entity';
 import { User } from 'src/entities/user/user.entity';
-import { Admin } from 'src/entities/user/policy/admin.entity';
+import { Admin } from 'src/entities/user/authentication/admin.entity';
 
-export const USER_SERVICE = 'USER_POLICY_SERVICE';
-export const STORE_SERVICE = 'STORE_POLICY_SERVICE';
-export const ADMIN_SERVICE = 'ADMIN_POLICY_SERVICE';
+export const IUserService = Symbol('USER_POLICY_SERVICE');
+export const IStoreService = Symbol('STORE_POLICY_SERVICE');
+export const IAdminService = Symbol('ADMIN_POLICY_SERVICE');
 
 export interface IUserService {
   getUserStoreRoles(userId: string): Promise<StoreRole[]>;
