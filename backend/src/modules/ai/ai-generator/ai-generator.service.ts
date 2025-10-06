@@ -1,10 +1,9 @@
 import { Injectable, BadRequestException, Inject } from '@nestjs/common';
 import { BaseAiService } from 'src/common/abstracts/ai/base.ai.service';
-import { MultiTenantRateLimiter, RateLimitConfig } from './utils/rate-limiter';
+import { MultiTenantRateLimiter } from './utils/rate-limiter';
 import { AiLogsService } from '../ai-logs/ai-logs.service';
 import { AiAuditService } from '../ai-audit/ai-audit.service';
 import {
-  AiGenerateOptions,
   AiGenerateResult,
   AiProvider,
 } from 'src/common/interfaces/ai/generator.interface';
@@ -12,32 +11,21 @@ import {
   AiServiceRequest,
   AiServiceResponse,
 } from 'src/common/interfaces/ai/ai.interface';
+import {
+  CustomGenerationParams,
+  DescriptionGenerationParams,
+  GenerationRequest,
+  GenerationResponse,
+  GenerationType,
+  HealthCheckResult,
+  IdeasGenerationParams,
+  NameGenerationParams,
+} from 'src/modules/ai/ai-generator/types';
+import { ConfigService } from '@nestjs/config';
+import { promptTemplates } from 'src/modules/ai/ai-generator/utils/prompt-templates';
+import { RateLimitConfig } from 'src/modules/ai/ai-generator/utils/types';
 
 export const AI_PROVIDER = Symbol('AI_PROVIDER');
-
-export interface GenerationRequest {
-  type: 'name' | 'description' | 'ideas' | 'custom';
-  prompt: string;
-  options: AiGenerateOptions;
-  context?: {
-    storeStyle?: string;
-    productSpec?: string;
-    tone?: string;
-    seed?: string;
-    count?: number;
-  };
-}
-
-export interface GenerationResponse {
-  type: string;
-  result: any;
-  raw: string;
-  metadata: {
-    processingTime: number;
-    tokensUsed: number;
-    cost?: number;
-  };
-}
 
 /**
  * AI Generator Service
@@ -57,52 +45,10 @@ export class AiGeneratorService extends BaseAiService<
 > {
   private readonly rateLimiter: MultiTenantRateLimiter;
 
-  // Template configurations
-  private readonly promptTemplates = new Map([
-    [
-      'productName',
-      {
-        template: `You are a creative product naming expert.
-Context: {{storeStyle}}
-Seed words: {{seed}}
-Generate {{count}} short, catchy product names (2-4 words each).
-Return only a JSON array of strings.`,
-        defaultOptions: { maxTokens: 200, temperature: 0.8 },
-      },
-    ],
-    [
-      'productDescription',
-      {
-        template: `Write a compelling product description for "{{productName}}".
-{{productSpec}}
-Tone: {{tone}}
-Length: 40-100 words.
-Return JSON: {"title": "<short title>", "description": "<description>"}`,
-        defaultOptions: { maxTokens: 300, temperature: 0.7 },
-      },
-    ],
-    [
-      'productIdeas',
-      {
-        template: `You are a product ideation assistant.
-Store style: {{storeStyle}}
-Seed concepts: {{seed}}
-Generate {{count}} innovative product ideas.
-For each idea provide: {"name": "...", "concept": "...", "rationale": "..."}
-Return as JSON array.`,
-        defaultOptions: { maxTokens: 500, temperature: 0.9 },
-      },
-    ],
-    [
-      'custom',
-      {
-        template: '{{prompt}}',
-        defaultOptions: { maxTokens: 256, temperature: 0.7 },
-      },
-    ],
-  ]);
+  private readonly promptTemplates = promptTemplates;
 
   constructor(
+    private readonly configService: ConfigService,
     @Inject(AI_PROVIDER) private readonly provider: AiProvider,
     private readonly aiLogsService: AiLogsService,
     private readonly aiAuditService: AiAuditService
@@ -111,9 +57,15 @@ Return as JSON array.`,
 
     // Initialize rate limiter with configuration from environment
     const rateLimitConfig: RateLimitConfig = {
-      capacity: parseInt(process.env.AI_RATE_CAPACITY || '30'),
-      refillRate: parseFloat(process.env.AI_RATE_REFILL_PER_SEC || '0.5'),
-      burstSize: parseInt(process.env.AI_RATE_BURST_SIZE || '10'),
+      capacity: parseInt(
+        this.configService.get<string>('AI_RATE_CAPACITY') ?? '30'
+      ),
+      refillRate: parseFloat(
+        this.configService.get<string>('AI_RATE_REFILL_PER_SEC') ?? '0.5'
+      ),
+      burstSize: parseInt(
+        this.configService.get<string>('AI_RATE_BURST_SIZE') ?? '10'
+      ),
     };
 
     this.rateLimiter = new MultiTenantRateLimiter(rateLimitConfig);
@@ -265,14 +217,7 @@ Return as JSON array.`,
   /**
    * Generate product names
    */
-  async generateProductNames(params: {
-    storeStyle?: string;
-    seed?: string;
-    count?: number;
-    options?: AiGenerateOptions;
-    userId?: string;
-    storeId?: string;
-  }): Promise<string[]> {
+  async generateProductNames(params: NameGenerationParams): Promise<string[]> {
     const {
       storeStyle,
       seed,
@@ -283,7 +228,7 @@ Return as JSON array.`,
     } = params;
 
     const request: AiServiceRequest<GenerationRequest> = {
-      feature: 'generator_names',
+      feature: 'generatorNames',
       provider: 'ai_generator',
       data: {
         type: 'name',
@@ -307,14 +252,9 @@ Return as JSON array.`,
   /**
    * Generate product description
    */
-  async generateProductDescription(params: {
-    name: string;
-    productSpec?: string;
-    tone?: string;
-    options?: AiGenerateOptions;
-    userId?: string;
-    storeId?: string;
-  }): Promise<{ title: string; description: string }> {
+  async generateProductDescription(
+    params: DescriptionGenerationParams
+  ): Promise<{ title: string; description: string }> {
     const {
       name,
       productSpec,
@@ -325,7 +265,7 @@ Return as JSON array.`,
     } = params;
 
     const request: AiServiceRequest<GenerationRequest> = {
-      feature: 'generator_description',
+      feature: 'generatorDescription',
       provider: 'ai_generator',
       data: {
         type: 'description',
@@ -349,14 +289,9 @@ Return as JSON array.`,
   /**
    * Generate product ideas
    */
-  async generateProductIdeas(params: {
-    storeStyle?: string;
-    seed?: string;
-    count?: number;
-    options?: AiGenerateOptions;
-    userId?: string;
-    storeId?: string;
-  }): Promise<Array<{ name: string; concept: string; rationale: string }>> {
+  async generateProductIdeas(
+    params: IdeasGenerationParams
+  ): Promise<Array<{ name: string; concept: string; rationale: string }>> {
     const {
       storeStyle,
       seed,
@@ -391,12 +326,7 @@ Return as JSON array.`,
   /**
    * Custom generation with prompt
    */
-  async generateCustom(params: {
-    prompt: string;
-    options?: AiGenerateOptions;
-    userId?: string;
-    storeId?: string;
-  }): Promise<string> {
+  async generateCustom(params: CustomGenerationParams): Promise<string> {
     const { prompt, options = {}, userId, storeId } = params;
 
     const request: AiServiceRequest<GenerationRequest> = {
@@ -427,12 +357,7 @@ Return as JSON array.`,
   /**
    * Get service health status
    */
-  async healthCheck(): Promise<{
-    healthy: boolean;
-    provider: any;
-    rateLimiter: any;
-    lastError?: string;
-  }> {
+  async healthCheck(): Promise<HealthCheckResult> {
     try {
       // Test the provider
       const providerHealth = (await (this.provider as any).healthCheck?.()) || {
@@ -477,11 +402,7 @@ Return as JSON array.`,
   /**
    * Get available generation types and their templates
    */
-  getGenerationTypes(): Array<{
-    type: string;
-    description: string;
-    defaultOptions: AiGenerateOptions;
-  }> {
+  getGenerationTypes(): Array<GenerationType> {
     return [
       {
         type: 'name',

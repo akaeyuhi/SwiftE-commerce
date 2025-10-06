@@ -8,6 +8,8 @@ import {
   AiGenerateOptions,
   AiGenerateResult,
 } from 'src/common/interfaces/ai/generator.interface';
+import { huggingFaceModelConfigs } from 'src/modules/ai/ai-generator/providers/configs';
+import { ConfigService } from '@nestjs/config';
 
 /**
  * HuggingFace Provider
@@ -27,20 +29,12 @@ export class HuggingFaceProvider extends BaseAiProvider {
   };
 
   // Model-specific configurations
-  private readonly modelConfigs = new Map([
-    ['gpt2', { type: 'text-generation', maxTokens: 1024 }],
-    ['microsoft/DialoGPT-medium', { type: 'text-generation', maxTokens: 512 }],
-    [
-      'facebook/blenderbot-400M-distill',
-      { type: 'text2text-generation', maxTokens: 256 },
-    ],
-    ['google/flan-t5-small', { type: 'text2text-generation', maxTokens: 512 }],
-  ]);
+  private readonly modelConfigs = huggingFaceModelConfigs;
 
   constructor(
-    httpService: HttpService,
-    aiLogsService: AiLogsService,
-    aiAuditService: AiAuditService
+    protected readonly httpService: HttpService,
+    protected readonly aiLogsService: AiLogsService,
+    protected readonly aiAuditService: AiAuditService
   ) {
     super(httpService, aiLogsService, aiAuditService);
   }

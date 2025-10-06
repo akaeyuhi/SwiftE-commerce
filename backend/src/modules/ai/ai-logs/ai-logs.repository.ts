@@ -6,6 +6,14 @@ import {
   LogQueryOptions,
   UsageStats,
 } from 'src/common/interfaces/ai/ai-log.interface';
+import {
+  DailyUsageStats,
+  ErrorLogsFilterOptions,
+  LogDailyUsageFilterOptions,
+  LogFilterOptions,
+  LogTopFeaturesFilterOptions,
+  LogUsageStatsFilterOptions,
+} from 'src/modules/ai/ai-logs/types';
 
 /**
  * AiLogsRepository with advanced querying and statistics
@@ -20,14 +28,7 @@ export class AiLogsRepository extends BaseRepository<AiLog> {
    * Find logs with comprehensive filtering options
    */
   async findByFilter(
-    filter: {
-      storeId?: string;
-      userId?: string;
-      feature?: string;
-      dateFrom?: Date;
-      dateTo?: Date;
-      hasDetails?: boolean;
-    },
+    filter: LogFilterOptions,
     options: LogQueryOptions = {}
   ): Promise<AiLog[]> {
     const qb = this.createQueryBuilder('l')
@@ -78,13 +79,7 @@ export class AiLogsRepository extends BaseRepository<AiLog> {
    * Get comprehensive usage statistics
    */
   async getUsageStats(
-    filters: {
-      storeId?: string;
-      userId?: string;
-      feature?: string;
-      dateFrom?: Date;
-      dateTo?: Date;
-    } = {}
+    filters: LogUsageStatsFilterOptions = {}
   ): Promise<UsageStats> {
     const qb = this.createQueryBuilder('l')
       .leftJoin('l.user', 'u')
@@ -119,12 +114,7 @@ export class AiLogsRepository extends BaseRepository<AiLog> {
    */
   async getTopFeatures(
     limit: number = 10,
-    filters: {
-      storeId?: string;
-      userId?: string;
-      dateFrom?: Date;
-      dateTo?: Date;
-    } = {}
+    filters: LogTopFeaturesFilterOptions = {}
   ): Promise<Array<{ feature: string; count: number; percentage: number }>> {
     const qb = this.createQueryBuilder('l')
       .select(['l.feature', 'COUNT(*) as count'])
@@ -165,20 +155,8 @@ export class AiLogsRepository extends BaseRepository<AiLog> {
    */
   async getDailyUsage(
     days: number = 30,
-    filters: {
-      storeId?: string;
-      userId?: string;
-      feature?: string;
-    } = {}
-  ): Promise<
-    Array<{
-      date: string;
-      count: number;
-      uniqueUsers: number;
-      uniqueStores: number;
-      topFeatures: string[];
-    }>
-  > {
+    filters: LogDailyUsageFilterOptions = {}
+  ): Promise<Array<DailyUsageStats>> {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
@@ -230,13 +208,7 @@ export class AiLogsRepository extends BaseRepository<AiLog> {
    */
   async getErrorLogs(
     limit: number = 100,
-    filters: {
-      storeId?: string;
-      userId?: string;
-      feature?: string;
-      dateFrom?: Date;
-      dateTo?: Date;
-    } = {}
+    filters: ErrorLogsFilterOptions = {}
   ): Promise<AiLog[]> {
     const qb = this.createQueryBuilder('l')
       .leftJoinAndSelect('l.user', 'u')

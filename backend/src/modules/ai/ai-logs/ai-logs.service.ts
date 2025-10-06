@@ -8,14 +8,16 @@ import {
   LogQueryOptions,
   UsageStats,
 } from 'src/common/interfaces/ai/ai-log.interface';
-
-export interface RecordAiLogParams {
-  userId?: string | null;
-  storeId?: string | null;
-  feature: string;
-  prompt?: string | null;
-  details?: Record<string, any> | null;
-}
+import {
+  ErrorLogsFilterOptions,
+  HealthCheckReport,
+  LogDailyUsageFilterOptions,
+  LogFilterOptions,
+  LogTopFeaturesFilterOptions,
+  LogUsageStatsFilterOptions,
+  RecordAiLogParams,
+  UsageTrend,
+} from 'src/modules/ai/ai-logs/types';
 
 /**
  * AiLogsService with comprehensive logging capabilities
@@ -138,14 +140,7 @@ export class AiLogsService extends BaseService<
    * Enhanced query with comprehensive filtering
    */
   async findByFilter(
-    filter: {
-      storeId?: string;
-      userId?: string;
-      feature?: string;
-      dateFrom?: Date;
-      dateTo?: Date;
-      hasDetails?: boolean;
-    },
+    filter: LogFilterOptions,
     options: LogQueryOptions = {}
   ): Promise<AiLog[]> {
     return this.logRepo.findByFilter(filter, options);
@@ -155,13 +150,7 @@ export class AiLogsService extends BaseService<
    * Get comprehensive usage statistics
    */
   async getUsageStats(
-    filters: {
-      storeId?: string;
-      userId?: string;
-      feature?: string;
-      dateFrom?: Date;
-      dateTo?: Date;
-    } = {}
+    filters: LogUsageStatsFilterOptions = {}
   ): Promise<UsageStats> {
     return this.logRepo.getUsageStats(filters);
   }
@@ -171,12 +160,7 @@ export class AiLogsService extends BaseService<
    */
   async getTopFeatures(
     limit: number = 10,
-    filters: {
-      storeId?: string;
-      userId?: string;
-      dateFrom?: Date;
-      dateTo?: Date;
-    } = {}
+    filters: LogTopFeaturesFilterOptions = {}
   ) {
     return this.logRepo.getTopFeatures(limit, filters);
   }
@@ -186,11 +170,7 @@ export class AiLogsService extends BaseService<
    */
   async getDailyUsage(
     days: number = 30,
-    filters: {
-      storeId?: string;
-      userId?: string;
-      feature?: string;
-    } = {}
+    filters: LogDailyUsageFilterOptions = {}
   ) {
     return this.logRepo.getDailyUsage(days, filters);
   }
@@ -200,13 +180,7 @@ export class AiLogsService extends BaseService<
    */
   async getErrorLogs(
     limit: number = 100,
-    filters: {
-      storeId?: string;
-      userId?: string;
-      feature?: string;
-      dateFrom?: Date;
-      dateTo?: Date;
-    } = {}
+    filters: ErrorLogsFilterOptions = {}
   ) {
     return this.logRepo.getErrorLogs(limit, filters);
   }
@@ -220,12 +194,7 @@ export class AiLogsService extends BaseService<
       storeId?: string;
       userId?: string;
     } = {}
-  ): Promise<{
-    trend: 'up' | 'down' | 'stable';
-    changePercentage: number;
-    insights: string[];
-    recommendations: string[];
-  }> {
+  ): Promise<UsageTrend> {
     const endDate = new Date();
     const startDate = new Date(endDate.getTime() - days * 24 * 60 * 60 * 1000);
     const midDate = new Date(
@@ -309,14 +278,7 @@ export class AiLogsService extends BaseService<
   /**
    * Health check for logging service
    */
-  async healthCheck(): Promise<{
-    healthy: boolean;
-    metrics: {
-      recentLogsCount: number;
-      errorRate: number;
-      averageLogSize: number;
-    };
-  }> {
+  async healthCheck(): Promise<HealthCheckReport> {
     try {
       const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 

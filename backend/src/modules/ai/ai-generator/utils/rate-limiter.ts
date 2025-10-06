@@ -1,18 +1,8 @@
-// src/modules/ai/ai-generator/utils/rate-limiter.ts
 import { Injectable, Logger } from '@nestjs/common';
-
-export interface RateLimitConfig {
-  capacity: number;
-  refillRate: number; // tokens per second
-  burstSize?: number; // max tokens that can be consumed at once
-}
-
-export interface RateLimitResult {
-  allowed: boolean;
-  remainingTokens: number;
-  resetTime: number;
-  retryAfter?: number;
-}
+import {
+  RateLimitConfig,
+  RateLimitResult,
+} from 'src/modules/ai/ai-generator/utils/types';
 
 /**
  * Enhanced token bucket rate limiter with burst support

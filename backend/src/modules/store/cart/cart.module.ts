@@ -5,14 +5,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ShoppingCart } from 'src/entities/store/cart/cart.entity';
 import { CartItemModule } from 'src/modules/store/cart/cart-item/cart-item.module';
 import { CartRepository } from 'src/modules/store/cart/cart.repository';
-import { AnalyticsModule } from 'src/modules/analytics/analytics.module';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([ShoppingCart]),
-    CartItemModule,
-    AnalyticsModule,
-  ],
+  imports: [TypeOrmModule.forFeature([ShoppingCart]), CartItemModule],
   controllers: [CartController],
   providers: [CartService, CartRepository],
 })

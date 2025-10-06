@@ -27,30 +27,11 @@ import {
   REVIEWS_REPOSITORY,
 } from 'src/common/contracts/reviews.contract';
 import { ConfigService } from '@nestjs/config';
-
-export interface FeatureVector {
-  sales7d: number;
-  sales14d: number;
-  sales30d: number;
-  sales7dPerDay: number;
-  sales30dPerDay: number;
-  salesRatio7To30: number;
-  views7d: number;
-  views30d: number;
-  addToCarts7d: number;
-  viewToPurchase7d: number;
-  avgPrice: number;
-  minPrice: number;
-  maxPrice: number;
-  avgRating: number;
-  ratingCount: number;
-  inventoryQty: number;
-  daysSinceRestock: number;
-  dayOfWeek: number;
-  isWeekend: number;
-  storeViews7d: number;
-  storePurchases7d: number;
-}
+import {
+  ChunkResult,
+  ErrorResult,
+  FeatureVector,
+} from 'src/modules/ai/ai-predictor/types';
 
 /**
  * AiPredictorService with CamelCase Conventions
@@ -422,7 +403,7 @@ export class AiPredictorService extends BaseAiService<
     chunk: Array<AiPredictRow & { meta: any }>,
     predictions: any[],
     startIndex: number
-  ) {
+  ): Array<ChunkResult | ErrorResult> {
     return chunk.map((item, chunkIndex) => {
       const globalIndex = startIndex + chunkIndex;
       const buildError = (item as any).__buildError;
@@ -468,7 +449,7 @@ export class AiPredictorService extends BaseAiService<
         label,
         productId: item.meta.productId,
         storeId: item.meta.storeId,
-        features: item.features, // Already in camelCase
+        features: item.features,
         rawPrediction: prediction,
       };
     });
@@ -478,7 +459,7 @@ export class AiPredictorService extends BaseAiService<
     chunk: Array<AiPredictRow & { meta: any }>,
     startIndex: number,
     errorMessage: string
-  ) {
+  ): ErrorResult[] {
     return chunk.map((item, chunkIndex) => ({
       index: startIndex + chunkIndex,
       score: NaN,

@@ -8,6 +8,10 @@ import {
   AiGenerateOptions,
   AiGenerateResult,
 } from 'src/common/interfaces/ai/generator.interface';
+import {
+  openAiModelConfigs,
+  openAiModelPricing,
+} from 'src/modules/ai/ai-generator/providers/configs';
 
 /**
  * OpenAI Provider
@@ -27,24 +31,10 @@ export class OpenAiProvider extends BaseAiProvider {
   };
 
   // Pricing per 1K tokens (update as needed)
-  private readonly modelPricing = new Map([
-    ['gpt-3.5-turbo', { input: 0.0015, output: 0.002 }],
-    ['gpt-3.5-turbo-16k', { input: 0.003, output: 0.004 }],
-    ['gpt-4', { input: 0.03, output: 0.06 }],
-    ['gpt-4-32k', { input: 0.06, output: 0.12 }],
-    ['text-davinci-003', { input: 0.02, output: 0.02 }],
-    ['text-curie-001', { input: 0.002, output: 0.002 }],
-  ]);
+  private readonly modelPricing = openAiModelPricing;
 
   // Model capabilities
-  private readonly modelConfigs = new Map([
-    ['gpt-3.5-turbo', { maxTokens: 4096, type: 'chat' }],
-    ['gpt-3.5-turbo-16k', { maxTokens: 16384, type: 'chat' }],
-    ['gpt-4', { maxTokens: 8192, type: 'chat' }],
-    ['gpt-4-32k', { maxTokens: 32768, type: 'chat' }],
-    ['text-davinci-003', { maxTokens: 4000, type: 'completion' }],
-    ['text-curie-001', { maxTokens: 2048, type: 'completion' }],
-  ]);
+  private readonly modelConfigs = openAiModelConfigs;
 
   constructor(
     httpService: HttpService,

@@ -6,6 +6,7 @@ import {
   AuditQueryOptions,
   AuditStats,
 } from 'src/common/interfaces/ai/audit.interface';
+import {AuditFilterOptions, AuditStatsFilterOptions, EncryptionIntegrityResult} from "src/modules/ai/ai-audit/types";
 
 /**
  * AiAuditRepository with advanced querying and security features
@@ -20,15 +21,7 @@ export class AiAuditRepository extends BaseRepository<AiAudit> {
    * Find audits with comprehensive filtering
    */
   async findByFilter(
-    filter: {
-      storeId?: string;
-      userId?: string;
-      feature?: string;
-      provider?: string;
-      model?: string;
-      dateFrom?: Date;
-      dateTo?: Date;
-    },
+    filter: AuditFilterOptions,
     options: AuditQueryOptions = {}
   ): Promise<AiAudit[]> {
     const qb = this.createQueryBuilder('a')
@@ -80,14 +73,7 @@ export class AiAuditRepository extends BaseRepository<AiAudit> {
    * Get comprehensive audit statistics
    */
   async getAuditStats(
-    filters: {
-      storeId?: string;
-      userId?: string;
-      feature?: string;
-      provider?: string;
-      dateFrom?: Date;
-      dateTo?: Date;
-    } = {}
+    filters: AuditStatsFilterOptions = {}
   ): Promise<AuditStats> {
     const qb = this.createQueryBuilder('a')
       .leftJoin('a.user', 'u')
@@ -227,12 +213,9 @@ export class AiAuditRepository extends BaseRepository<AiAudit> {
   /**
    * Validate encryption integrity
    */
-  async validateEncryptionIntegrity(sampleSize: number = 100): Promise<{
-    totalChecked: number;
-    validEntries: number;
-    corruptedEntries: number;
-    healthPercentage: number;
-  }> {
+  async validateEncryptionIntegrity(
+    sampleSize: number = 100
+  ): Promise<EncryptionIntegrityResult> {
     const recentAudits = await this.createQueryBuilder('a')
       .orderBy('RANDOM()')
       .limit(sampleSize)
