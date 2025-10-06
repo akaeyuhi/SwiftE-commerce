@@ -23,6 +23,7 @@ import { RecordEventInterceptor } from 'src/modules/infrastructure/interceptors/
 import { RecordEvents } from 'src/common/decorators/record-event.decorator';
 import { AnalyticsEventType } from 'src/entities/infrastructure/analytics/analytics-event.entity';
 import { UploadProductPhotos } from 'src/common/decorators/upload-product-photos.decorator';
+import { ProductDto } from 'src/modules/products/dto/product.dto';
 
 /**
  * ProductsController
@@ -55,7 +56,8 @@ import { UploadProductPhotos } from 'src/common/decorators/upload-product-photos
 export class ProductsController extends BaseController<
   Product,
   CreateProductDto,
-  UpdateProductDto
+  UpdateProductDto,
+  ProductDto
 > {
   constructor(private readonly productsService: ProductsService) {
     super(productsService);

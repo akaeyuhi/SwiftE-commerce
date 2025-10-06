@@ -8,6 +8,13 @@ import { ProductPhotoService } from 'src/modules/products/product-photo/product-
 import { CategoriesService } from 'src/modules/store/categories/categories.service';
 import { ProductPhoto } from 'src/entities/store/product/product-photo.entity';
 import { IStoreService } from 'src/common/contracts/products.contract';
+import {
+  ProductDetailDto,
+  ProductDto,
+  ProductListDto,
+  ProductStatsDto,
+} from 'src/modules/products/dto/product.dto';
+import { ProductsMapper } from 'src/modules/products/products.mapper';
 
 /**
  * ProductsService
@@ -31,15 +38,17 @@ import { IStoreService } from 'src/common/contracts/products.contract';
 export class ProductsService extends BaseService<
   Product,
   CreateProductDto,
-  UpdateProductDto
+  UpdateProductDto,
+  ProductDto
 > {
   constructor(
     private readonly productRepo: ProductRepository,
     private readonly categoriesService: CategoriesService,
     private readonly photoService: ProductPhotoService,
+    private readonly productsMapper: ProductsMapper,
     @Inject(IStoreService) private readonly storeService: IStoreService
   ) {
-    super(productRepo);
+    super(productRepo, productsMapper);
   }
 
   /**
@@ -52,6 +61,23 @@ export class ProductsService extends BaseService<
    */
   async findProductWithRelations(id: string): Promise<Product | null> {
     return this.productRepo.findWithRelations(id);
+  }
+
+  /**
+   * Get product with all relations mapped to DetailDto
+   */
+  async findProductDetail(id: string): Promise<ProductDetailDto> {
+    const product = await this.productRepo.findWithRelations(id);
+    if (!product) throw new NotFoundException('Product not found');
+
+    return this.productsMapper.toDetailDto(product);
+  }
+  /**
+   * Get all products for a store as list DTOs
+   */
+  async findAllByStoreAsList(storeId: string): Promise<ProductListDto[]> {
+    const products = await this.productRepo.findAllByStore(storeId);
+    return this.productsMapper.toListDtos(products);
   }
 
   /**
@@ -270,5 +296,58 @@ export class ProductsService extends BaseService<
       await this.attachCategory(categoryId, product);
     }
     return product;
+  }
+
+  /**
+   * Get product statistics
+   */
+  async getProductStats(productId: string): Promise<ProductStatsDto> {
+    const product = await this.productRepo.findOne({
+      where: { id: productId },
+      select: [
+        'id',
+        'name',
+        'averageRating',
+        'reviewCount',
+        'likeCount',
+        'viewCount',
+        'totalSales',
+      ],
+    });
+
+    if (!product) throw new NotFoundException('Product not found');
+
+    return this.productsMapper.toStatsDto(product);
+  }
+
+  /**
+   * Get trending products
+   */
+  async getTrendingProducts(
+    limit: number = 10,
+    sortBy: 'views' | 'likes' | 'sales' = 'views'
+  ): Promise<ProductListDto[]> {
+    return await this.productRepo.findTrendingProducts(limit, sortBy);
+  }
+
+  /**
+   * Get top rated products
+   */
+  async getTopRatedProducts(limit: number = 10): Promise<ProductListDto[]> {
+    return await this.productRepo.findTopRatedProducts(limit);
+  }
+
+  /**
+   * Increment view count when product is viewed
+   */
+  async incrementViewCount(productId: string): Promise<void> {
+    await this.productRepo.increment({ id: productId }, 'viewCount', 1);
+  }
+
+  /**
+   * Recalculate all cached stats for a product
+   */
+  async recalculateProductStats(productId: string): Promise<void> {
+    await this.productRepo.recalculateStats(productId);
   }
 }
