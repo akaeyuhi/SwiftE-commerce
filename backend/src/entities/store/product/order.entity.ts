@@ -6,6 +6,7 @@ import {
   OneToMany,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
 } from 'typeorm';
 import { User } from 'src/entities/user/user.entity';
 import { Store } from 'src/entities/store/store.entity';
@@ -15,28 +16,27 @@ import { StoreOwnedEntity } from 'src/common/interfaces/crud/store-owned.entity.
 import { OrderInfo } from 'src/common/embeddables/order-info.embeddable';
 import { OrderStatus } from 'src/common/enums/order-status.enum';
 
-/**
- * Order
- *
- * Represents a placed order belonging to a user and a store. The order stores
- * an embedded shipping and (optionally) billing address snapshot so historical
- * data doesn't depend on later user profile changes.
- */
 @Entity({ name: 'orders' })
+@Index(['userId', 'status', 'createdAt'])
+@Index(['storeId', 'status', 'createdAt'])
+@Index(['status', 'createdAt'])
+@Index(['createdAt'])
 export class Order implements UserOwnedEntity, StoreOwnedEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Column({ name: 'user_id' })
+  userId: string;
+
   @ManyToOne(() => User, (user) => user.orders, { onDelete: 'CASCADE' })
   user: User;
+
+  @Column({ name: 'store_id' })
+  storeId: string;
 
   @ManyToOne(() => Store, (store) => store.orders, { onDelete: 'CASCADE' })
   store: Store;
 
-  /**
-   * Order status. You may want to convert this to an enum in code.
-   * Examples: 'pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'
-   */
   @Column({
     type: 'enum',
     enum: OrderStatus,
@@ -44,24 +44,13 @@ export class Order implements UserOwnedEntity, StoreOwnedEntity {
   })
   status: OrderStatus;
 
-  /**
-   * Monetary total for the order (currency handled at application level).
-   * Use numeric for precise decimal storage (Postgres).
-   */
-  @Column({ type: 'numeric' })
+  @Column({ type: 'numeric', precision: 12, scale: 2 })
   totalAmount: number;
 
-  /**
-   * Embedded shipping information snapshot for this order.
-   * Columns will be named like `shippingFirstName` unless you prefer a prefix.
-   */
-  @Column(() => OrderInfo)
+  @Column(() => OrderInfo, { prefix: 'shipping_' })
   shipping: OrderInfo;
 
-  /**
-   * Optional embedded billing info. If omitted, billing may equal shipping.
-   */
-  @Column(() => OrderInfo)
+  @Column(() => OrderInfo, { prefix: 'billing_' })
   billing?: OrderInfo;
 
   @OneToMany(() => OrderItem, (item) => item.order)

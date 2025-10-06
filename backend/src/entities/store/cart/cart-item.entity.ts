@@ -5,23 +5,33 @@ import {
   ManyToOne,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
 } from 'typeorm';
 import { ShoppingCart } from 'src/entities/store/cart/cart.entity';
 import { ProductVariant } from 'src/entities/store/product/variant.entity';
 import { BaseEntity } from 'src/common/interfaces/crud/base-entity.interface';
 
 @Entity({ name: 'cart_items' })
+@Index(['cartId', 'variantId'], { unique: true })
+@Index(['variantId'])
 export class CartItem implements BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Column({ name: 'cart_id' })
+  cartId: string;
+
   @ManyToOne(() => ShoppingCart, (cart) => cart.items, { onDelete: 'CASCADE' })
   cart: ShoppingCart;
 
+  @Column({ name: 'variant_id' })
+  variantId: string;
+
+  @ManyToOne(() => ProductVariant, { onDelete: 'CASCADE' })
   variant: ProductVariant;
 
-  @Column({ type: 'int' })
-  quantity: number = 1;
+  @Column({ type: 'int', default: 1 })
+  quantity: number;
 
   @CreateDateColumn()
   createdAt: Date;

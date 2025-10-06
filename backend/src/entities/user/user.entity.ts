@@ -5,6 +5,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
+  Index,
 } from 'typeorm';
 import { StoreRole } from 'src/entities/user/authentication/store-role.entity';
 import { ShoppingCart } from 'src/entities/store/cart/cart.entity';
@@ -19,6 +20,8 @@ import { Like } from 'src/entities/user/like.entity';
 import { Exclude } from 'class-transformer';
 
 @Entity({ name: 'users' })
+@Index(['email'])
+@Index(['isActive', 'createdAt'])
 export class User implements BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;

@@ -13,17 +13,13 @@ import {
   NotificationType,
 } from 'src/common/enums/notification.enum';
 
-/**
- * InventoryNotificationLog
- *
- * Audit log for inventory-related notifications.
- * Tracks delivery attempts, status, and metadata for compliance and debugging.
- */
 @Entity('inventory_notification_logs')
 @Index(['storeId', 'createdAt'])
 @Index(['variantId', 'notificationType', 'status'])
+@Index(['status', 'retryCount'], { where: "status != 'DELIVERED'" })
+@Index(['createdAt']) // For partitioning
 export class InventoryNotificationLog implements NotificationLog {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn('increment', { type: 'bigint' })
   id: string;
 
   @Column({ type: 'uuid' })
@@ -35,7 +31,7 @@ export class InventoryNotificationLog implements NotificationLog {
   @Column({ type: 'uuid' })
   productId: string;
 
-  @Column()
+  @Column({ type: 'varchar', length: 255 })
   recipient: string;
 
   @Column({
@@ -66,7 +62,7 @@ export class InventoryNotificationLog implements NotificationLog {
   @Column({ type: 'text', nullable: true })
   errorMessage: string;
 
-  @Column({ type: 'int', default: 0 })
+  @Column({ type: 'smallint', default: 0 })
   retryCount: number;
 
   @CreateDateColumn()

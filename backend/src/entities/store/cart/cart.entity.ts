@@ -6,6 +6,8 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   Unique,
+  Column,
+  Index,
 } from 'typeorm';
 import { User } from 'src/entities/user/user.entity';
 import { Store } from 'src/entities/store/store.entity';
@@ -15,6 +17,7 @@ import { StoreOwnedEntity } from 'src/common/interfaces/crud/store-owned.entity.
 
 @Entity({ name: 'shopping_carts' })
 @Unique(['user', 'store'])
+@Index(['expiresAt'])
 export class ShoppingCart implements UserOwnedEntity, StoreOwnedEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -27,6 +30,10 @@ export class ShoppingCart implements UserOwnedEntity, StoreOwnedEntity {
 
   @OneToMany(() => CartItem, (item) => item.cart)
   items: CartItem[];
+
+  // Auto-cleanup abandoned carts after 30 days
+  @Column({ type: 'timestamp', nullable: true })
+  expiresAt?: Date;
 
   @CreateDateColumn()
   createdAt: Date;

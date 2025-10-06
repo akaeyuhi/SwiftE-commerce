@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
   ManyToOne,
   OneToMany,
+  Index,
 } from 'typeorm';
 import { User } from 'src/entities/user/user.entity';
 import { Product } from 'src/entities/store/product/product.entity';
@@ -18,7 +19,9 @@ import { Inventory } from 'src/entities/store/product/inventory.entity';
 import { Category } from 'src/entities/store/product/category.entity';
 import { UserOwnedEntity } from 'src/common/interfaces/crud/user-owned.entity.interface';
 
-@Entity({ name: 'store' })
+@Entity({ name: 'stores' })
+@Index(['name'])
+@Index(['ownerId', 'createdAt'])
 export class Store implements UserOwnedEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -29,8 +32,24 @@ export class Store implements UserOwnedEntity {
   @Column({ type: 'text' })
   description: string;
 
+  @Column({ name: 'owner_id' })
+  ownerId: string;
+
   @ManyToOne(() => User, (user) => user.ownedStores, { onDelete: 'SET NULL' })
   owner: User;
+
+  // Cached/denormalized fields for performance
+  @Column({ type: 'int', default: 0 })
+  productCount: number;
+
+  @Column({ type: 'int', default: 0 })
+  followerCount: number;
+
+  @Column({ type: 'numeric', precision: 12, scale: 2, default: 0 })
+  totalRevenue: number;
+
+  @Column({ type: 'int', default: 0 })
+  orderCount: number;
 
   @CreateDateColumn()
   createdAt: Date;
