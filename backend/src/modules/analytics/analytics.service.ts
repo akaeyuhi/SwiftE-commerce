@@ -778,8 +778,6 @@ export class AnalyticsService extends BaseAnalyticsService<RecordEventDto> {
   // Advanced Analytics Methods
   // ===============================
 
-  //TODO
-
   /**
    * Get store ratings summary across all products
    */
