@@ -518,6 +518,8 @@ export class AiAuditService {
     }
   }
 
+  //TODO
+
   private validateDecryptionAccess(audit: AiAudit, requesterId?: string): void {
     // Basic access control - extend as needed
     if (requesterId && audit.user?.id && audit.user.id !== requesterId) {
