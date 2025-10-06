@@ -1,7 +1,7 @@
 import { User } from 'src/entities/user/user.entity';
 
-export const USER_SERVICE = 'USER_ADMIN_SERVICE';
-export const USER_REPOSITORY = 'USER_ADMIN_REPOSITORY';
+export const IUserService = Symbol('USER_ADMIN_SERVICE');
+export const IUserRepository = Symbol('USER_ADMIN_REPOSITORY');
 
 export interface IUserService {
   getEntityById(id: string): Promise<User | null>;

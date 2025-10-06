@@ -1,5 +1,5 @@
 import { AdminRepository } from 'src/modules/admin/admin.repository';
-import { Admin } from 'src/entities/user/policy/admin.entity';
+import { Admin } from 'src/entities/user/authentication/admin.entity';
 import { DataSource, EntityManager } from 'typeorm';
 import { createMock, MockedMethods } from 'test/utils/helpers';
 import { NotFoundException } from '@nestjs/common';

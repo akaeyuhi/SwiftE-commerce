@@ -13,7 +13,7 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 import { AdminService } from 'src/modules/admin/admin.service';
-import { Admin } from 'src/entities/user/policy/admin.entity';
+import { Admin } from 'src/entities/user/authentication/admin.entity';
 import { BaseController } from 'src/common/abstracts/base.controller';
 import { CreateAdminDto } from 'src/modules/admin/dto/create-admin.dto';
 import { UpdateAdminDto } from 'src/modules/admin/dto/update-admin.dto';

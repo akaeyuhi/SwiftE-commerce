@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AdminController } from 'src/modules/admin/admin.controller';
 import { AdminService } from 'src/modules/admin/admin.service';
-import { Admin } from 'src/entities/user/policy/admin.entity';
+import { Admin } from 'src/entities/user/authentication/admin.entity';
 import { CreateAdminDto } from 'src/modules/admin/dto/create-admin.dto';
 import { UpdateAdminDto } from 'src/modules/admin/dto/update-admin.dto';
 import {

@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AdminService } from 'src/modules/admin/admin.service';
 import { AdminRepository } from 'src/modules/admin/admin.repository';
 import { UserService } from 'src/modules/user/user.service';
-import { Admin } from 'src/entities/user/policy/admin.entity';
+import { Admin } from 'src/entities/user/authentication/admin.entity';
 import { User } from 'src/entities/user/user.entity';
 import {
   createRepositoryMock,
