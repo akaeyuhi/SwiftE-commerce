@@ -13,7 +13,7 @@ import {
   createRepositoryMock,
   createServiceMock,
   MockedMethods,
-} from '../../utils/helpers';
+} from 'test/utils/helpers';
 import { CreateUserDto } from 'src/modules/user/dto/create-user.dto';
 import { UpdateUserDto } from 'src/modules/user/dto/update-user.dto';
 import { User } from 'src/entities/user/user.entity';

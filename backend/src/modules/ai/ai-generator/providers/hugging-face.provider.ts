@@ -9,7 +9,6 @@ import {
   AiGenerateResult,
 } from 'src/common/interfaces/ai/generator.interface';
 import { huggingFaceModelConfigs } from 'src/modules/ai/ai-generator/providers/configs';
-import { ConfigService } from '@nestjs/config';
 
 /**
  * HuggingFace Provider
