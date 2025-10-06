@@ -6,52 +6,13 @@ import { ProductDailyStatsRepository } from './repositories/product-daily-stats.
 import { RecordEventDto } from 'src/modules/infrastructure/queues/analytics-queue/dto/record-event.dto';
 import { AnalyticsQueueService } from 'src/modules/infrastructure/queues/analytics-queue/analytics-queue.service';
 import { BaseAnalyticsService } from 'src/common/abstracts/analytics/base.analytics.service';
+import { IReviewsRepository } from 'src/common/contracts/reviews.contract';
 import {
-  IReviewsRepository,
-  REVIEWS_REPOSITORY,
-} from 'src/common/contracts/reviews.contract';
-
-export interface AnalyticsAggregationOptions {
-  from?: string;
-  to?: string;
-  storeId?: string;
-  productId?: string;
-  limit?: number;
-  includeTimeseries?: boolean;
-}
-
-export interface ConversionMetrics {
-  views: number;
-  purchases: number;
-  addToCarts: number;
-  revenue: number;
-  conversionRate: number;
-  addToCartRate: number;
-  source: 'aggregated_stats' | 'raw_events';
-}
-
-export interface StoreConversionMetrics extends ConversionMetrics {
-  storeId: string;
-  checkouts: number;
-  checkoutRate: number;
-}
-
-export interface ProductConversionMetrics extends ConversionMetrics {
-  productId: string;
-}
-
-export interface FunnelAnalysisResult {
-  funnel: {
-    views: number;
-    addToCarts: number;
-    purchases: number;
-  };
-  rates: {
-    viewToCart: string;
-    cartToPurchase: string;
-    overallConversion: string;
-  };
-}
+  AnalyticsAggregationOptions,
+  FunnelAnalysisResult,
+  ProductConversionMetrics,
+  StoreConversionMetrics,
+} from 'src/modules/analytics/types';
 
 /**
  * AnalyticsService with CamelCase Conventions
@@ -70,7 +31,7 @@ export class AnalyticsService extends BaseAnalyticsService<RecordEventDto> {
     private readonly eventsRepo: AnalyticsEventRepository,
     private readonly storeStatsRepo: StoreDailyStatsRepository,
     private readonly productStatsRepo: ProductDailyStatsRepository,
-    @Inject(REVIEWS_REPOSITORY) private readonly reviewsRepo: IReviewsRepository
+    @Inject(IReviewsRepository) private readonly reviewsRepo: IReviewsRepository
   ) {
     super();
   }
@@ -267,16 +228,15 @@ export class AnalyticsService extends BaseAnalyticsService<RecordEventDto> {
         revenue: agg.revenue,
         conversionRate: agg.views > 0 ? agg.purchases / agg.views : 0,
         addToCartRate: agg.views > 0 ? agg.addToCarts / agg.views : 0,
-        source: 'aggregated_stats',
+        source: 'aggregatedStats',
       };
     }
 
     // Fallback to raw events if no aggregated data
-    const raw = await this.eventsRepo.aggregateProductRange(
-      productId,
+    const raw = await this.eventsRepo.aggregateProductMetrics(productId, {
       from,
-      to
-    );
+      to,
+    });
     return {
       productId,
       views: raw.views,
@@ -285,7 +245,7 @@ export class AnalyticsService extends BaseAnalyticsService<RecordEventDto> {
       revenue: raw.revenue,
       conversionRate: raw.views > 0 ? raw.purchases / raw.views : 0,
       addToCartRate: raw.views > 0 ? raw.addToCarts / raw.views : 0,
-      source: 'raw_events',
+      source: 'rawEvents',
     };
   }
 
@@ -297,7 +257,10 @@ export class AnalyticsService extends BaseAnalyticsService<RecordEventDto> {
     from?: string,
     to?: string
   ): Promise<StoreConversionMetrics> {
-    const agg = await this.storeStatsRepo.getAggregateRange(storeId, from, to);
+    const agg = await this.storeStatsRepo.getAggregatedMetrics(storeId, {
+      from,
+      to,
+    });
 
     if (agg.views > 0) {
       return {
@@ -310,7 +273,7 @@ export class AnalyticsService extends BaseAnalyticsService<RecordEventDto> {
         conversionRate: agg.views > 0 ? agg.purchases / agg.views : 0,
         addToCartRate: agg.views > 0 ? agg.addToCarts / agg.views : 0,
         checkoutRate: agg.addToCarts > 0 ? agg.checkouts / agg.addToCarts : 0,
-        source: 'aggregated_stats',
+        source: 'aggregatedStats',
       };
     }
 
@@ -328,7 +291,7 @@ export class AnalyticsService extends BaseAnalyticsService<RecordEventDto> {
       conversionRate: raw.views > 0 ? raw.purchases / raw.views : 0,
       addToCartRate: raw.views > 0 ? raw.addToCarts / raw.views : 0,
       checkoutRate: raw.addToCarts > 0 ? raw.checkouts / raw.addToCarts : 0,
-      source: 'raw_events',
+      source: 'rawEvents',
     };
   }
 
@@ -439,6 +402,8 @@ export class AnalyticsService extends BaseAnalyticsService<RecordEventDto> {
   // Advanced Analytics Methods
   // ===============================
 
+  //TODO
+
   /**
    * Get store ratings summary across all products
    */
@@ -472,28 +437,12 @@ export class AnalyticsService extends BaseAnalyticsService<RecordEventDto> {
     from?: string,
     to?: string
   ): Promise<FunnelAnalysisResult> {
-    const baseQuery = this.eventsRepo.createQueryBuilder('event');
-
-    if (storeId) baseQuery.andWhere('event.storeId = :storeId', { storeId });
-    if (productId)
-      baseQuery.andWhere('event.productId = :productId', { productId });
-    if (from) baseQuery.andWhere('event.createdAt >= :from', { from });
-    if (to) baseQuery.andWhere('event.createdAt <= :to', { to });
-
-    const [views, addToCarts, purchases] = await Promise.all([
-      baseQuery
-        .clone()
-        .andWhere('event.eventType = :type', { type: 'view' })
-        .getCount(),
-      baseQuery
-        .clone()
-        .andWhere('event.eventType = :type', { type: 'add_to_cart' })
-        .getCount(),
-      baseQuery
-        .clone()
-        .andWhere('event.eventType = :type', { type: 'purchase' })
-        .getCount(),
-    ]);
+    const [views, addToCarts, purchases] = await this.eventsRepo.getFunnelData(
+      storeId,
+      productId,
+      from,
+      to
+    );
 
     return {
       funnel: { views, addToCarts, purchases },
@@ -540,27 +489,7 @@ export class AnalyticsService extends BaseAnalyticsService<RecordEventDto> {
    * Analyze revenue trends over time
    */
   private async getRevenueTrends(storeId?: string, from?: string, to?: string) {
-    const query = this.eventsRepo
-      .createQueryBuilder('event')
-      .select('DATE(event.createdAt)', 'date')
-      .addSelect('SUM(event.value)', 'revenue')
-      .addSelect('COUNT(*)', 'transactions')
-      .where('event.eventType = :type', { type: 'purchase' })
-      .groupBy('DATE(event.createdAt)')
-      .orderBy('date', 'ASC');
-
-    if (storeId) query.andWhere('event.storeId = :storeId', { storeId });
-    if (from) query.andWhere('event.createdAt >= :from', { from });
-    if (to) query.andWhere('event.createdAt <= :to', { to });
-
-    const results = await query.getRawMany();
-
-    // Transform to camelCase
-    return results.map((row) => ({
-      date: row.date,
-      revenue: parseFloat(row.revenue || '0'),
-      transactions: parseInt(row.transactions || '0'),
-    }));
+    return this.eventsRepo.getRevenueTrends(storeId, from, to);
   }
 
   /**

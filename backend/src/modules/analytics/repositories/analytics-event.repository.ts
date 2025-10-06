@@ -203,6 +203,59 @@ export class AnalyticsEventRepository extends BaseAnalyticsRepository<AnalyticsE
     }));
   }
 
+  async getRevenueTrends(storeId?: string, from?: string, to?: string) {
+    const query = this.createQueryBuilder('event')
+      .select('DATE(event.createdAt)', 'date')
+      .addSelect('SUM(event.value)', 'revenue')
+      .addSelect('COUNT(*)', 'transactions')
+      .where('event.eventType = :type', { type: 'purchase' })
+      .groupBy('DATE(event.createdAt)')
+      .orderBy('date', 'ASC');
+
+    if (storeId) query.andWhere('event.storeId = :storeId', { storeId });
+    if (from) query.andWhere('event.createdAt >= :from', { from });
+    if (to) query.andWhere('event.createdAt <= :to', { to });
+
+    const results = await query.getRawMany();
+
+    // Transform to camelCase
+    return results.map((row) => ({
+      date: row.date,
+      revenue: parseFloat(row.revenue || '0'),
+      transactions: parseInt(row.transactions || '0'),
+    }));
+  }
+
+  async getFunnelData(
+    storeId?: string,
+    productId?: string,
+    from?: string,
+    to?: string
+  ) {
+    const baseQuery = this.createQueryBuilder('event');
+
+    if (storeId) baseQuery.andWhere('event.storeId = :storeId', { storeId });
+    if (productId)
+      baseQuery.andWhere('event.productId = :productId', { productId });
+    if (from) baseQuery.andWhere('event.createdAt >= :from', { from });
+    if (to) baseQuery.andWhere('event.createdAt <= :to', { to });
+
+    return Promise.all([
+      baseQuery
+        .clone()
+        .andWhere('event.eventType = :type', { type: 'view' })
+        .getCount(),
+      baseQuery
+        .clone()
+        .andWhere('event.eventType = :type', { type: 'addToCart' })
+        .getCount(),
+      baseQuery
+        .clone()
+        .andWhere('event.eventType = :type', { type: 'purchase' })
+        .getCount(),
+    ]);
+  }
+
   /**
    * Efficient bulk insert for events
    */
