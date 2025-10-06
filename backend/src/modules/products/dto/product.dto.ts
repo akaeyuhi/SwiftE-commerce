@@ -130,3 +130,17 @@ export class ProductMinimalDto {
   mainPhotoUrl?: string;
   minPrice?: number;
 }
+
+export class TrendingProductDto extends ProductListDto {
+  trendingScore?: number;
+  recentViews?: number;
+  recentLikes?: number;
+  recentSales?: number;
+}
+
+export class HotProductDto extends ProductListDto {
+  growthRate: number;
+  recentActivity: number;
+  historicalActivity: number;
+}
+

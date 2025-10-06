@@ -54,3 +54,8 @@ export class StoreStatsDto {
   orderCount: number;
   averageOrderValue?: number; // calculated: totalRevenue / orderCount
 }
+
+export class StoreSearchResultDto extends StoreListDto {
+  relevanceScore: number;
+  matchType: 'exact' | 'starts_with' | 'contains' | 'none';
+}

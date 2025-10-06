@@ -1,8 +1,9 @@
 import { DataSourceOptions } from 'typeorm';
-import { ProductStatsSubscriber } from 'src/entities/subscribers/product-stats.subscriber';
-import { LikeCountSubscriber } from 'src/entities/subscribers/like-count.subscriber';
-import { StoreProductCountSubscriber } from 'src/entities/subscribers/store-product-count.subscriber';
-import { StoreRevenueSubscriber } from 'src/entities/subscribers/store-revenue.subscriber';
+import { ProductStatsSubscriber } from 'src/database/subscribers/product-stats.subscriber';
+import { LikeCountSubscriber } from 'src/database/subscribers/like-count.subscriber';
+import { StoreProductCountSubscriber } from 'src/database/subscribers/store-product-count.subscriber';
+import { StoreRevenueSubscriber } from 'src/database/subscribers/store-revenue.subscriber';
+import { AnalyticsSyncSubscriber } from 'src/database/subscribers/analytics-sync.subscriber';
 
 export const DatabaseConnectionConfiguration: DataSourceOptions = {
   type: 'postgres',
@@ -18,5 +19,6 @@ export const DatabaseConnectionConfiguration: DataSourceOptions = {
     LikeCountSubscriber,
     StoreProductCountSubscriber,
     StoreRevenueSubscriber,
+    AnalyticsSyncSubscriber,
   ],
 };
