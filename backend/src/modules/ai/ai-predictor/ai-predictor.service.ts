@@ -1,7 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { lastValueFrom } from 'rxjs';
-import { DataSource } from 'typeorm';
 import { subDays } from 'date-fns';
 import { BaseAiService } from 'src/common/abstracts/ai/base.ai.service';
 import { AiPredictorRepository } from './ai-predictor.repository';
@@ -9,8 +8,6 @@ import { StoreDailyStatsRepository } from 'src/modules/analytics/repositories/st
 import { ProductDailyStatsRepository } from 'src/modules/analytics/repositories/product-daily-stats.repository';
 import { AiLogsService } from '../ai-logs/ai-logs.service';
 import { AiAuditService } from '../ai-audit/ai-audit.service';
-import { ProductVariant } from 'src/entities/store/product/variant.entity';
-import { Inventory } from 'src/entities/store/product/inventory.entity';
 import { AiPredictorStat } from 'src/entities/ai/ai-predictor-stat.entity';
 import { AiPredictRow, AiPredictBatchRequest } from './dto/ai-predict.dto';
 import { CaseTransformer } from 'src/common/utils/case-transformer.util';
@@ -22,16 +19,17 @@ import {
   PredictorRequestData,
   PredictorResponseData,
 } from 'src/common/interfaces/ai/predictor.interface';
-import {
-  IReviewsRepository,
-  REVIEWS_REPOSITORY,
-} from 'src/common/contracts/reviews.contract';
+import { IReviewsRepository } from 'src/common/contracts/reviews.contract';
 import { ConfigService } from '@nestjs/config';
 import {
   ChunkResult,
   ErrorResult,
   FeatureVector,
 } from 'src/modules/ai/ai-predictor/types';
+import {
+  IInventoryService,
+  IVariantService,
+} from 'src/common/contracts/ai-predictor.contract';
 
 /**
  * AiPredictorService with CamelCase Conventions
@@ -66,12 +64,15 @@ export class AiPredictorService extends BaseAiService<
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
     private readonly predictorRepo: AiPredictorRepository,
-    private readonly dataSource: DataSource,
+    private readonly aiLogsService: AiLogsService,
     private readonly storeStatsRepo: StoreDailyStatsRepository,
     private readonly productStatsRepo: ProductDailyStatsRepository,
-    private readonly aiLogsService: AiLogsService,
     private readonly aiAuditService: AiAuditService,
-    @Inject(REVIEWS_REPOSITORY) private readonly reviewsRepo: IReviewsRepository
+    @Inject(IReviewsRepository)
+    private readonly reviewsRepo: IReviewsRepository,
+    @Inject(IVariantService) private readonly variantService: IVariantService,
+    @Inject(IInventoryService)
+    private readonly inventoryService: IInventoryService
   ) {
     super();
 
@@ -623,49 +624,11 @@ export class AiPredictorService extends BaseAiService<
   }
 
   private async getPriceStats(productId: string) {
-    const variantRepo = this.dataSource.getRepository(ProductVariant);
-
-    const priceRaw = await variantRepo
-      .createQueryBuilder('v')
-      .select('AVG(v.price)::numeric', 'avgPrice')
-      .addSelect('MIN(v.price)::numeric', 'minPrice')
-      .addSelect('MAX(v.price)::numeric', 'maxPrice')
-      .where('v.product = :productId', { productId })
-      .getRawOne();
-
-    const avg = priceRaw?.avgPrice ? Number(priceRaw.avgPrice) : 0;
-    const min = priceRaw?.minPrice ? Number(priceRaw.minPrice) : avg;
-    const max = priceRaw?.maxPrice ? Number(priceRaw.maxPrice) : avg;
-
-    return { avg, min, max };
+    return this.variantService.getPriceStats(productId);
   }
 
   private async getInventoryStats(productId: string) {
-    const invRepo = this.dataSource.getRepository(Inventory);
-
-    const invRaw = await invRepo
-      .createQueryBuilder('inv')
-      .select('COALESCE(SUM(inv.quantity),0)', 'inventoryQty')
-      .addSelect('MAX(inv.updatedAt)::text', 'lastUpdatedAt')
-      .innerJoin('inv.variant', 'v')
-      .where('v.product = :productId', { productId })
-      .getRawOne();
-
-    const quantity = invRaw ? Number(invRaw.inventoryQty || 0) : 0;
-    const lastRestockAt = invRaw?.lastUpdatedAt
-      ? new Date(invRaw.lastUpdatedAt)
-      : null;
-
-    const daysSinceRestock = lastRestockAt
-      ? Math.max(
-          0,
-          Math.floor(
-            (Date.now() - lastRestockAt.getTime()) / (1000 * 60 * 60 * 24)
-          )
-        )
-      : 365;
-
-    return { quantity, daysSinceRestock };
+    return this.inventoryService.getInventoryStats(productId);
   }
 
   private cleanupFeatureCache(): void {
@@ -696,7 +659,7 @@ export class AiPredictorService extends BaseAiService<
   ) {
     if (!items || !items.length) return [];
     const request: AiServiceRequest<PredictorRequestData> = {
-      feature: 'batch_prediction',
+      feature: 'batchPrediction',
       provider: 'predictor',
       data: { items },
     };

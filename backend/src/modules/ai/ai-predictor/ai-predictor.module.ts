@@ -7,6 +7,16 @@ import { AiPredictorRepository } from 'src/modules/ai/ai-predictor/ai-predictor.
 import { HttpModule } from '@nestjs/axios';
 import { AnalyticsModule } from 'src/modules/analytics/analytics.module';
 import { ConfigModule } from '@nestjs/config';
+import {
+  IInventoryRepository,
+  IInventoryService,
+  IVariantRepository,
+  IVariantService,
+} from 'src/common/contracts/ai-predictor.contract';
+import { AiInventoryService } from 'src/modules/ai/ai-predictor/implementations/services/ai-inventory.service';
+import { AiVariantRepository } from 'src/modules/ai/ai-predictor/implementations/repositories/ai-variant.repository';
+import { AiInventoryRepository } from 'src/modules/ai/ai-predictor/implementations/repositories/ai-inventory.repository';
+import { AiVariantService } from 'src/modules/ai/ai-predictor/implementations/services/ai-variant.service';
 
 @Module({
   imports: [
@@ -17,7 +27,14 @@ import { ConfigModule } from '@nestjs/config';
     ConfigModule,
   ],
   controllers: [AiPredictorController],
-  providers: [AiPredictorService, AiPredictorRepository],
+  providers: [
+    AiPredictorService,
+    AiPredictorRepository,
+    { provide: IInventoryService, useClass: AiInventoryService },
+    { provide: IVariantService, useClass: AiVariantService },
+    { provide: IVariantRepository, useClass: AiVariantRepository },
+    { provide: IInventoryRepository, useClass: AiInventoryRepository },
+  ],
   exports: [AiPredictorService, AiPredictorRepository],
 })
 export class AiPredictorModule {}
