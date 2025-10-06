@@ -20,42 +20,11 @@ import { AdminRoles } from 'src/common/enums/admin.enum';
 import { ConfirmationType } from './confirmation/enums/confirmation.enum';
 import { createHash, randomBytes } from 'crypto';
 import { EmailQueueService } from 'src/modules/infrastructure/queues/email-queue/email-queue.service';
-
-export interface JwtPayload {
-  id: string;
-  email: string;
-  sub?: string;
-  isVerified?: boolean;
-}
-
-export interface ConfirmationStatus {
-  user: {
-    id: string;
-    email: string;
-    firstName?: string;
-    lastName?: string;
-    isEmailVerified: boolean;
-    emailVerifiedAt?: Date;
-  };
-  pendingConfirmations: {
-    accountVerification: boolean;
-    roleAssignments: Array<{
-      type: ConfirmationType;
-      metadata?: Record<string, any>;
-      expiresAt: Date;
-      timeRemaining: string;
-    }>;
-  };
-  activeRoles: {
-    siteAdmin: boolean;
-    storeRoles: Array<{
-      storeId: string;
-      storeName?: string;
-      role: string;
-      assignedAt: Date;
-    }>;
-  };
-}
+import {
+  ConfirmationResult,
+  ConfirmationStatus,
+  JwtPayload,
+} from 'src/modules/auth/types';
 
 @Injectable()
 export class AuthService {
@@ -519,14 +488,7 @@ export class AuthService {
   async processConfirmation(
     typeParam: string,
     token: string
-  ): Promise<{
-    success: boolean;
-    message: string;
-    type: ConfirmationType;
-    user?: any;
-    activeRoles?: any;
-  }> {
-    // Convert kebab-case type parameter back to ConfirmationType enum
+  ): Promise<ConfirmationResult> {
     const confirmationType = this.parseConfirmationType(typeParam);
 
     if (!confirmationType) {
