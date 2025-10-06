@@ -1,4 +1,8 @@
 import { DataSourceOptions } from 'typeorm';
+import { ProductStatsSubscriber } from 'src/entities/subscribers/product-stats.subscriber';
+import { LikeCountSubscriber } from 'src/entities/subscribers/like-count.subscriber';
+import { StoreProductCountSubscriber } from 'src/entities/subscribers/store-product-count.subscriber';
+import { StoreRevenueSubscriber } from 'src/entities/subscribers/store-revenue.subscriber';
 
 export const DatabaseConnectionConfiguration: DataSourceOptions = {
   type: 'postgres',
@@ -9,4 +13,10 @@ export const DatabaseConnectionConfiguration: DataSourceOptions = {
   database: process.env.DB_NAME || 'ecommerce_db',
   entities: ['dist/**/*.entity{.ts,.js}'],
   synchronize: true,
+  subscribers: [
+    ProductStatsSubscriber,
+    LikeCountSubscriber,
+    StoreProductCountSubscriber,
+    StoreRevenueSubscriber,
+  ],
 };
