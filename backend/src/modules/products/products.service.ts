@@ -1,13 +1,13 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateProductDto } from 'src/modules/products/dto/create-product.dto';
 import { UpdateProductDto } from 'src/modules/products/dto/update-product.dto';
 import { BaseService } from 'src/common/abstracts/base.service';
 import { Product } from 'src/entities/store/product/product.entity';
-import { StoreService } from 'src/modules/store/store.service';
 import { ProductRepository } from 'src/modules/products/products.repository';
 import { ProductPhotoService } from 'src/modules/products/product-photo/product-photo.service';
 import { CategoriesService } from 'src/modules/store/categories/categories.service';
 import { ProductPhoto } from 'src/entities/store/product/product-photo.entity';
+import { IStoreService } from 'src/common/contracts/products.contract';
 
 /**
  * ProductsService
@@ -35,9 +35,9 @@ export class ProductsService extends BaseService<
 > {
   constructor(
     private readonly productRepo: ProductRepository,
-    private readonly storeService: StoreService,
     private readonly categoriesService: CategoriesService,
-    private readonly photoService: ProductPhotoService
+    private readonly photoService: ProductPhotoService,
+    @Inject(IStoreService) private readonly storeService: IStoreService
   ) {
     super(productRepo);
   }
