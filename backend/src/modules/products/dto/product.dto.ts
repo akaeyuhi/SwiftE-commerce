@@ -143,4 +143,3 @@ export class HotProductDto extends ProductListDto {
   recentActivity: number;
   historicalActivity: number;
 }
-
