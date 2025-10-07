@@ -12,6 +12,7 @@ import {
 } from 'src/modules/store/dto/store.dto';
 import { StoreMapper } from 'src/modules/store/store.mapper';
 import { StoreRole } from 'src/entities/user/authentication/store-role.entity';
+import { StoreSearchOptions } from 'src/modules/store/types';
 
 @Injectable()
 export class StoreService extends BaseService<
@@ -53,19 +54,7 @@ export class StoreService extends BaseService<
    * Useful for listing pages
    */
   async findAllWithStats(): Promise<StoreListDto[]> {
-    const stores = await this.storeRepo.find({
-      select: [
-        'id',
-        'name',
-        'description',
-        'productCount',
-        'followerCount',
-        'totalRevenue',
-        'orderCount',
-        'createdAt',
-        'updatedAt',
-      ],
-    });
+    const stores = await this.storeRepo.findAllWithStats();
 
     return stores.map((store) => this.mapper.toListDto(store));
   }
@@ -74,17 +63,7 @@ export class StoreService extends BaseService<
    * Get store statistics
    */
   async getStoreStats(storeId: string): Promise<StoreStatsDto> {
-    const store = await this.storeRepo.findOne({
-      where: { id: storeId },
-      select: [
-        'id',
-        'name',
-        'productCount',
-        'followerCount',
-        'totalRevenue',
-        'orderCount',
-      ],
-    });
+    const store = await this.storeRepo.findStoreStats(storeId);
 
     if (!store) throw new BadRequestException('Store not found');
 
@@ -116,18 +95,7 @@ export class StoreService extends BaseService<
   }
 
   async getTopStoresByFollowers(limit: number = 10): Promise<StoreStatsDto[]> {
-    const stores = await this.storeRepo.find({
-      select: [
-        'id',
-        'name',
-        'productCount',
-        'followerCount',
-        'totalRevenue',
-        'orderCount',
-      ],
-      order: { followerCount: 'DESC' },
-      take: limit,
-    });
+    const stores = await this.storeRepo.findTopStoresByFollowers(limit);
 
     return stores.map((store) => this.mapper.toStatsDto(store));
   }
@@ -168,12 +136,12 @@ export class StoreService extends BaseService<
   private determineMatchType(
     storeName: string,
     query: string
-  ): 'exact' | 'starts_with' | 'contains' | 'none' {
+  ): 'exact' | 'startsWith' | 'contains' | 'none' {
     const lowerName = storeName.toLowerCase();
     const lowerQuery = query.toLowerCase();
 
     if (lowerName === lowerQuery) return 'exact';
-    if (lowerName.startsWith(lowerQuery)) return 'starts_with';
+    if (lowerName.startsWith(lowerQuery)) return 'startsWith';
     if (lowerName.includes(lowerQuery)) return 'contains';
     return 'none';
   }
@@ -185,7 +153,7 @@ export class StoreService extends BaseService<
     query: string,
     limit: number = 20,
     options?: {
-      sortBy?: 'relevance' | 'followers' | 'revenue' | 'products' | 'recent';
+      sortBy?: 'followers' | 'revenue' | 'products' | 'recent';
       minFollowers?: number;
       minProducts?: number;
     }
@@ -197,221 +165,34 @@ export class StoreService extends BaseService<
     const normalizedQuery = query.trim().toLowerCase();
     const searchTerms = normalizedQuery.split(/\s+/);
 
-    // Build base query
-    const qb = this.storeRepo
-      .createQueryBuilder('store')
-      .select([
-        'store.id',
-        'store.name',
-        'store.description',
-        'store.productCount',
-        'store.followerCount',
-        'store.totalRevenue',
-        'store.orderCount',
-        'store.createdAt',
-        'store.updatedAt',
-      ]);
-
-    // Apply filters
-    if (options?.minFollowers) {
-      qb.andWhere('store.followerCount >= :minFollowers', {
-        minFollowers: options.minFollowers,
-      });
-    }
-
-    if (options?.minProducts) {
-      qb.andWhere('store.productCount >= :minProducts', {
-        minProducts: options.minProducts,
-      });
-    }
-
-    // Multi-term search with relevance scoring
-    if (searchTerms.length === 1) {
-      // Single term - simple ILIKE
-      qb.andWhere(
-        '(LOWER(store.name) LIKE :query OR LOWER(store.description) LIKE :query)',
-        { query: `%${normalizedQuery}%` }
-      );
-    } else {
-      // Multiple terms - match all terms
-      searchTerms.forEach((term, index) => {
-        qb.andWhere(
-          `(LOWER(store.name) LIKE :term${index} OR LOWER(store.description) LIKE :term${index})`,
-          { [`term${index}`]: `%${term}%` }
-        );
-      });
-    }
-
-    // Calculate relevance score
-    let relevanceScore = `
-      CASE
-        WHEN LOWER(store.name) = :exactQuery THEN 1000
-        WHEN LOWER(store.name) LIKE :startsWithQuery THEN 500
-        WHEN LOWER(store.name) LIKE :query THEN 100
-        WHEN LOWER(store.description) LIKE :query THEN 50
-        ELSE 10
-      END
-    `;
-
-    // Add popularity boost to relevance
-    relevanceScore += ` + (store.followerCount * 0.1) + (store.productCount * 0.05)`;
-
-    qb.addSelect(`(${relevanceScore})`, 'relevanceScore')
-      .setParameter('exactQuery', normalizedQuery)
-      .setParameter('startsWithQuery', `${normalizedQuery}%`)
-      .setParameter('query', `%${normalizedQuery}%`);
-
-    // Apply sorting
-    const sortBy = options?.sortBy || 'relevance';
-    switch (sortBy) {
-      case 'followers':
-        qb.orderBy('store.followerCount', 'DESC');
-        break;
-      case 'revenue':
-        qb.orderBy('store.totalRevenue', 'DESC');
-        break;
-      case 'products':
-        qb.orderBy('store.productCount', 'DESC');
-        break;
-      case 'recent':
-        qb.orderBy('store.createdAt', 'DESC');
-        break;
-      case 'relevance':
-      default:
-        qb.orderBy('relevanceScore', 'DESC').addOrderBy(
-          'store.followerCount',
-          'DESC'
-        );
-        break;
-    }
-
-    qb.limit(limit);
-
-    const results = await qb.getRawMany();
+    const results = await this.storeRepo.searchStoreByName(
+      normalizedQuery,
+      limit,
+      searchTerms,
+      options
+    );
 
     return results.map((result) => ({
-      id: result.store_id,
-      name: result.store_name,
-      description: result.store_description,
-      productCount: result.store_productCount || 0,
-      followerCount: result.store_followerCount || 0,
-      totalRevenue: parseFloat(result.store_totalRevenue) || 0,
-      orderCount: result.store_orderCount || 0,
-      createdAt: result.store_createdAt,
-      updatedAt: result.store_updatedAt,
-      relevanceScore: parseFloat(result.relevanceScore) || 0,
-      matchType: this.determineMatchType(result.store_name, normalizedQuery),
+      id: result.id,
+      name: result.name,
+      description: result.description,
+      productCount: result.productCount || 0,
+      followerCount: result.followerCount || 0,
+      totalRevenue: result.totalRevenue || 0,
+      orderCount: result.orderCount || 0,
+      createdAt: result.createdAt,
+      updatedAt: result.updatedAt,
+      matchType: this.determineMatchType(result.name, normalizedQuery),
     }));
   }
 
   /**
    * Advanced store search with filters
    */
-  async advancedStoreSearch(filters: {
-    query?: string;
-    minRevenue?: number;
-    maxRevenue?: number;
-    minProducts?: number;
-    maxProducts?: number;
-    minFollowers?: number;
-    maxFollowers?: number;
-    sortBy?: 'name' | 'revenue' | 'followers' | 'products' | 'recent';
-    sortOrder?: 'ASC' | 'DESC';
-    limit?: number;
-    offset?: number;
-  }): Promise<{ stores: StoreSearchResultDto[]; total: number }> {
-    const qb = this.storeRepo
-      .createQueryBuilder('store')
-      .select([
-        'store.id',
-        'store.name',
-        'store.description',
-        'store.productCount',
-        'store.followerCount',
-        'store.totalRevenue',
-        'store.orderCount',
-        'store.createdAt',
-        'store.updatedAt',
-      ]);
-
-    // Text search
-    if (filters.query) {
-      const normalizedQuery = filters.query.trim().toLowerCase();
-      qb.andWhere(
-        '(LOWER(store.name) LIKE :query OR LOWER(store.description) LIKE :query)',
-        { query: `%${normalizedQuery}%` }
-      );
-    }
-
-    // Revenue filters
-    if (filters.minRevenue !== undefined) {
-      qb.andWhere('store.totalRevenue >= :minRevenue', {
-        minRevenue: filters.minRevenue,
-      });
-    }
-    if (filters.maxRevenue !== undefined) {
-      qb.andWhere('store.totalRevenue <= :maxRevenue', {
-        maxRevenue: filters.maxRevenue,
-      });
-    }
-
-    // Product count filters
-    if (filters.minProducts !== undefined) {
-      qb.andWhere('store.productCount >= :minProducts', {
-        minProducts: filters.minProducts,
-      });
-    }
-    if (filters.maxProducts !== undefined) {
-      qb.andWhere('store.productCount <= :maxProducts', {
-        maxProducts: filters.maxProducts,
-      });
-    }
-
-    // Follower filters
-    if (filters.minFollowers !== undefined) {
-      qb.andWhere('store.followerCount >= :minFollowers', {
-        minFollowers: filters.minFollowers,
-      });
-    }
-    if (filters.maxFollowers !== undefined) {
-      qb.andWhere('store.followerCount <= :maxFollowers', {
-        maxFollowers: filters.maxFollowers,
-      });
-    }
-
-    // Sorting
-    const sortBy = filters.sortBy || 'recent';
-    const sortOrder = filters.sortOrder || 'DESC';
-
-    switch (sortBy) {
-      case 'name':
-        qb.orderBy('store.name', sortOrder);
-        break;
-      case 'revenue':
-        qb.orderBy('store.totalRevenue', sortOrder);
-        break;
-      case 'followers':
-        qb.orderBy('store.followerCount', sortOrder);
-        break;
-      case 'products':
-        qb.orderBy('store.productCount', sortOrder);
-        break;
-      case 'recent':
-      default:
-        qb.orderBy('store.createdAt', sortOrder);
-        break;
-    }
-
-    // Count total before pagination
-    const total = await qb.getCount();
-
-    // Apply pagination
-    const limit = filters.limit || 20;
-    const offset = filters.offset || 0;
-    qb.skip(offset).take(limit);
-
-    const stores = await qb.getMany();
-
+  async advancedStoreSearch(
+    filters: StoreSearchOptions
+  ): Promise<{ stores: StoreSearchResultDto[]; total: number }> {
+    const { total, stores } = await this.storeRepo.advancedStoreSearch(filters);
     return {
       stores: stores.map((store) => ({
         id: store.id,

@@ -1,6 +1,7 @@
 // src/modules/store/store.controller.ts
 import {
   BadRequestException,
+  Body,
   Controller,
   Get,
   HttpCode,
@@ -19,11 +20,17 @@ import { AdminRoles } from 'src/common/enums/admin.enum';
 import { StoreService } from './store.service';
 import { CreateStoreDto } from './dto/create-store.dto';
 import { UpdateStoreDto } from './dto/update-store.dto';
-import { StoreDto, StoreListDto, StoreStatsDto } from './dto/store.dto';
+import {
+  StoreDto,
+  StoreListDto,
+  StoreStatsDto,
+  StoreSearchResultDto,
+} from './dto/store.dto';
 import { BaseController } from 'src/common/abstracts/base.controller';
 import { Store } from 'src/entities/store/store.entity';
 import { StoreRole } from 'src/common/decorators/store-role.decorator';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
+import { AdvancedStoreSearchDto } from 'src/modules/store/dto/advanced-store-search.dto';
 
 /**
  * StoreController
@@ -32,6 +39,7 @@ import { StoreRoles } from 'src/common/enums/store-roles.enum';
  * - CRUD operations
  * - Quick statistics (cached values)
  * - Store rankings and leaderboards
+ * - Advanced search and autocomplete
  * - Data integrity operations
  */
 @Controller('stores')
@@ -53,8 +61,6 @@ export class StoreController extends BaseController<
   /**
    * GET /stores
    * List all stores with cached statistics (lightweight)
-   *
-   * @returns Array of stores with productCount, followerCount, revenue, etc.
    */
   @Get()
   async findAllStores(): Promise<StoreListDto[]> {
@@ -67,19 +73,28 @@ export class StoreController extends BaseController<
 
   /**
    * GET /stores/search
-   * Search stores by name (with stats)
+   * Basic search stores by name with stats
    *
-   * @param query - search term
-   * @param limit - max results
+   * @param query - search term (required)
+   * @param limit - max results (default: 20, max: 50)
+   * @param sortBy - sort option
    */
   @Get('search')
   async searchStores(
     @Query('q') query: string,
-    @Query('limit') limit?: string
-  ): Promise<StoreListDto[]> {
+    @Query('limit') limit?: string,
+    @Query('sortBy')
+    sortBy?: 'followers' | 'revenue' | 'products' | 'recent'
+  ): Promise<StoreSearchResultDto[]> {
     try {
+      if (!query || query.trim().length === 0) {
+        throw new BadRequestException('Search query is required');
+      }
+
       const maxLimit = limit ? Math.min(parseInt(limit), 50) : 20;
-      return await this.storeService.searchStoresByName(query, maxLimit);
+      return await this.storeService.searchStoresByName(query, maxLimit, {
+        sortBy,
+      });
     } catch (error) {
       throw new BadRequestException(
         `Failed to search stores: ${error.message}`
@@ -87,6 +102,93 @@ export class StoreController extends BaseController<
     }
   }
 
+  /**
+   * POST /stores/advanced-search
+   * Advanced store search with comprehensive filters
+   *
+   * @example
+   * POST /stores/advanced-search
+   * Body: {
+   *   "query": "tech",
+   *   "minRevenue": 10000,
+   *   "maxRevenue": 100000,
+   *   "minProducts": 10,
+   *   "minFollowers": 100,
+   *   "sortBy": "revenue",
+   *   "sortOrder": "DESC",
+   *   "limit": 20,
+   *   "offset": 0
+   * }
+   */
+  @Post('advanced-search')
+  @HttpCode(HttpStatus.OK)
+  async advancedSearch(@Body() searchDto: AdvancedStoreSearchDto): Promise<{
+    stores: StoreSearchResultDto[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
+    try {
+      const result = await this.storeService.advancedStoreSearch(searchDto);
+
+      const page = searchDto.offset
+        ? Math.floor(searchDto.offset / (searchDto.limit || 20)) + 1
+        : 1;
+
+      return {
+        stores: result.stores,
+        total: result.total,
+        page,
+        limit: searchDto.limit || 20,
+      };
+    } catch (error) {
+      throw new BadRequestException(
+        `Failed to perform advanced search: ${error.message}`
+      );
+    }
+  }
+
+  /**
+   * GET /stores/autocomplete
+   * Get autocomplete suggestions for store search
+   *
+   * @example
+   * GET /stores/autocomplete?q=tech&limit=10
+   *
+   * Response:
+   * [
+   *   {
+   *     "id": "store-1",
+   *     "name": "Tech Store",
+   *     "followerCount": 1523
+   *   },
+   *   ...
+   * ]
+   */
+  @Get('autocomplete')
+  async autocomplete(
+    @Query('q') query: string,
+    @Query('limit') limit?: string
+  ): Promise<
+    Array<{
+      id: string;
+      name: string;
+      followerCount: number;
+    }>
+  > {
+    try {
+      if (!query || query.trim().length < 2) {
+        return [];
+      }
+
+      const maxLimit = limit ? Math.min(parseInt(limit), 20) : 10;
+      return await this.storeService.autocompleteStores(query.trim(), maxLimit);
+    } catch (error) {
+      throw new BadRequestException(
+        `Failed to get autocomplete suggestions: ${error.message}`
+      );
+    }
+  }
   // ===============================
   // Store Statistics & Analytics
   // ===============================
@@ -94,8 +196,6 @@ export class StoreController extends BaseController<
   /**
    * GET /stores/:id/stats
    * Get detailed statistics for a specific store
-   *
-   * Includes: productCount, followerCount, orderCount, totalRevenue, averageOrderValue
    */
   @Get(':id/stats')
   async getStoreStats(
@@ -128,8 +228,6 @@ export class StoreController extends BaseController<
   /**
    * GET /stores/top/revenue
    * Get top stores by total revenue
-   *
-   * @param limit - number of stores to return (default: 10, max: 50)
    */
   @Get('top/revenue')
   async getTopStoresByRevenue(
@@ -148,8 +246,6 @@ export class StoreController extends BaseController<
   /**
    * GET /stores/top/products
    * Get top stores by product count
-   *
-   * @param limit - number of stores to return
    */
   @Get('top/products')
   async getTopStoresByProducts(
@@ -190,8 +286,6 @@ export class StoreController extends BaseController<
   /**
    * POST /stores/:id/recalculate-stats
    * Manually recalculate all cached statistics for a store
-   *
-   * Admin only - use this for data integrity checks or after migrations
    */
   @Post(':id/recalculate-stats')
   @AdminRole(AdminRoles.ADMIN)
@@ -214,9 +308,7 @@ export class StoreController extends BaseController<
 
   /**
    * POST /stores/recalculate-all-stats
-   * Recalculate statistics for all stores
-   *
-   * Admin only - heavy operation, use with caution
+   * Recalculate statistics for all stores (heavy operation)
    */
   @Post('recalculate-all-stats')
   @AdminRole(AdminRoles.ADMIN)
