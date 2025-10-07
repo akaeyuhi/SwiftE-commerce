@@ -2,11 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from 'src/modules/auth/auth.controller';
 import { AuthService } from 'src/modules/auth/auth.service';
 import { Request, Response } from 'express';
-import {
-  createMock,
-  createPolicyMock,
-  MockedMethods,
-} from 'test/unit/helpers';
+import { createMock, createPolicyMock, MockedMethods } from 'test/unit/helpers';
 import { BadRequestException } from '@nestjs/common';
 import { ConfirmationType } from 'src/modules/auth/confirmation/enums/confirmation.enum';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
