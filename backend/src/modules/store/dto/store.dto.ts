@@ -56,6 +56,5 @@ export class StoreStatsDto {
 }
 
 export class StoreSearchResultDto extends StoreListDto {
-  relevanceScore: number;
-  matchType: 'exact' | 'starts_with' | 'contains' | 'none';
+  matchType: 'exact' | 'startsWith' | 'contains' | 'none';
 }
