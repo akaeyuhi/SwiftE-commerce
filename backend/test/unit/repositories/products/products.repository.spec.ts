@@ -255,10 +255,10 @@ describe('ProductRepository', () => {
     it('should handle special characters in category ID', async () => {
       queryBuilder.getMany!.mockResolvedValue([]);
 
-      await repo.findProductsByCategory("c'1");
+      await repo.findProductsByCategory('c\'1');
 
       expect(queryBuilder.where).toHaveBeenCalledWith('c.id = :categoryId', {
-        categoryId: "c'1",
+        categoryId: 'c\'1',
       });
     });
 
