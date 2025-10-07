@@ -20,8 +20,6 @@ import {
   MockedMethods,
 } from 'test/unit/helpers';
 import { PolicyService } from 'src/modules/authorization/policy/policy.service';
-import { AdminRoles } from 'src/common/enums/admin.enum';
-import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { STORE_ROLES_META } from 'src/common/decorators/store-role.decorator';
 import { ADMIN_ROLE_META } from 'src/common/decorators/admin-role.decorator';
 

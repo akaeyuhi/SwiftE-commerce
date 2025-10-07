@@ -9,7 +9,6 @@ import {
   createServiceMock,
   createPolicyMock,
   MockedMethods,
-  createDeepMock,
   createMockInterceptor,
   createMockAnalyticsQueue,
 } from 'test/unit/helpers';
