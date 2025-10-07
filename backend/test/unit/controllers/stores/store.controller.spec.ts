@@ -1,112 +1,229 @@
+// test/unit/store/store.controller.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
 import { StoreController } from 'src/modules/store/store.controller';
 import { StoreService } from 'src/modules/store/store.service';
-import { CreateStoreDto } from 'src/modules/store/dto/create-store.dto';
-import { UpdateStoreDto } from 'src/modules/store/dto/update-store.dto';
-import {
-  createDeepMock,
-  createGuardMock,
-  createMockAnalyticsQueue,
-  createMockInterceptor,
-  createPolicyMock,
-  createServiceMock,
-  MockedMethods,
-} from 'test/utils/helpers';
-import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';
-import { StoreRolesGuard } from 'src/modules/authorization/guards/store-roles.guard';
-import { AdminGuard } from 'src/modules/authorization/guards/admin.guard';
-import { PolicyService } from 'src/modules/authorization/policy/policy.service';
-import { jest } from '@jest/globals';
-import { BaseQueueService } from 'src/common/abstracts/infrastucture/base.queue.service';
-import { AnalyticsQueueService } from 'src/modules/infrastructure/queues/analytics-queue/analytics-queue.service';
-import { RecordEventInterceptor } from 'src/modules/infrastructure/interceptors/record-event/record-event.interceptor';
+import { BadRequestException } from '@nestjs/common';
+import { createServiceMock, MockedMethods } from 'test/utils/helpers';
 
 describe('StoreController', () => {
   let controller: StoreController;
   let service: Partial<MockedMethods<StoreService>>;
-  let policyMock: Partial<MockedMethods<PolicyService>>;
-  let queue: Partial<MockedMethods<BaseQueueService>>;
 
   beforeEach(async () => {
     service = createServiceMock<StoreService>([
-      'create',
-      'findOne',
-      'findAll',
-      'update',
-      'remove',
+      'findAllWithStats',
+      'searchStoresByName',
+      'advancedStoreSearch',
+      'autocompleteStores',
+      'getStoreStats',
+      'getTopStoresByRevenue',
+      'getTopStoresByProducts',
+      'getTopStoresByFollowers',
+      'recalculateStoreStats',
+      'recalculateAllStoreStats',
+      'checkStoreDataHealth',
     ]);
-    policyMock = createPolicyMock();
-    queue = createMockAnalyticsQueue();
-    const guardMock = createGuardMock();
-    const interceptorMock = createMockInterceptor();
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [StoreController],
-      providers: [
-        { provide: AnalyticsQueueService, useValue: queue },
-        { provide: StoreService, useValue: service },
-        { provide: PolicyService, useValue: policyMock },
-        { provide: RecordEventInterceptor, useValue: interceptorMock },
-        {
-          provide: JwtAuthGuard,
-          useValue: guardMock,
-        },
-        {
-          provide: StoreRolesGuard,
-          useValue: guardMock,
-        },
-        {
-          provide: AdminGuard,
-          useValue: guardMock,
-        },
-      ],
+      providers: [{ provide: StoreService, useValue: service }],
     }).compile();
 
     controller = module.get<StoreController>(StoreController);
+    jest.clearAllMocks();
   });
 
-  afterEach(() => jest.clearAllMocks());
+  describe('findAllStores', () => {
+    it('should return all stores with stats', async () => {
+      const stores = [{ id: 's1', name: 'Store 1' }];
+      service.findAllWithStats!.mockResolvedValue(stores as any);
 
-  it('create should delegate to service.create', async () => {
-    const dto: CreateStoreDto = { name: 'S' } as any;
-    const out = { id: 's1', name: 'S' } as any;
-    service.create!.mockResolvedValue(out);
+      const result = await controller.findAllStores();
 
-    const res = await controller.create(dto);
-    expect(service.create).toHaveBeenCalledWith(dto);
-    expect(res).toEqual(out);
+      expect(result).toEqual(stores);
+      expect(service.findAllWithStats).toHaveBeenCalled();
+    });
+
+    it('should throw BadRequestException on error', async () => {
+      service.findAllWithStats!.mockRejectedValue(new Error('DB error'));
+
+      await expect(controller.findAllStores()).rejects.toThrow(
+        BadRequestException
+      );
+    });
   });
 
-  it('findAll delegates to service.findAll', async () => {
-    const items = [{ id: 's1' }] as any;
-    service.findAll!.mockResolvedValue(items as never);
-    const res = await controller.findAll();
-    expect(service.findAll).toHaveBeenCalled();
-    expect(res).toEqual(items);
+  describe('searchStores', () => {
+    it('should search stores by query', async () => {
+      const results = [{ id: 's1', name: 'Gaming Store' }];
+      service.searchStoresByName!.mockResolvedValue(results as any);
+
+      const result = await controller.searchStores('gaming', '20');
+
+      expect(result).toEqual(results);
+      expect(service.searchStoresByName).toHaveBeenCalledWith('gaming', 20, {
+        sortBy: undefined,
+      });
+    });
+
+    it('should throw when query is empty', async () => {
+      await expect(controller.searchStores('')).rejects.toThrow(
+        BadRequestException
+      );
+      await expect(controller.searchStores('   ')).rejects.toThrow(
+        'Search query is required'
+      );
+    });
+
+    it('should apply limit cap at 50', async () => {
+      service.searchStoresByName!.mockResolvedValue([]);
+
+      await controller.searchStores('test', '100');
+
+      expect(service.searchStoresByName).toHaveBeenCalledWith('test', 50, {
+        sortBy: undefined,
+      });
+    });
+
+    it('should use default limit of 20', async () => {
+      service.searchStoresByName!.mockResolvedValue([]);
+
+      await controller.searchStores('test');
+
+      expect(service.searchStoresByName).toHaveBeenCalledWith('test', 20, {
+        sortBy: undefined,
+      });
+    });
+
+    it('should pass sortBy option', async () => {
+      service.searchStoresByName!.mockResolvedValue([]);
+
+      await controller.searchStores('test', undefined, 'revenue');
+
+      expect(service.searchStoresByName).toHaveBeenCalledWith('test', 20, {
+        sortBy: 'revenue',
+      });
+    });
   });
 
-  it('findOne delegates to service.findOne', async () => {
-    const out = { id: 's1', name: 'X' } as any;
-    service.findOne!.mockResolvedValue(out);
-    const res = await controller.findOne('s1');
-    expect(service.findOne).toHaveBeenCalledWith('s1');
-    expect(res).toEqual(out);
+  describe('advancedSearch', () => {
+    it('should perform advanced search', async () => {
+      const searchDto = {
+        query: 'tech',
+        minRevenue: 1000,
+        limit: 20,
+        offset: 0,
+      };
+      const result = { stores: [{ id: 's1' }], total: 5 };
+
+      service.advancedStoreSearch!.mockResolvedValue(result as any);
+
+      const response = await controller.advancedSearch(searchDto as any);
+
+      expect(response).toEqual({
+        stores: result.stores,
+        total: 5,
+        page: 1,
+        limit: 20,
+      });
+    });
+
+    it('should calculate page number', async () => {
+      const searchDto = { limit: 20, offset: 40 };
+      service.advancedStoreSearch!.mockResolvedValue({
+        stores: [],
+        total: 100,
+      } as any);
+
+      const response = await controller.advancedSearch(searchDto as any);
+
+      expect(response.page).toBe(3); // (40 / 20) + 1
+    });
   });
 
-  it('update delegates to service.update', async () => {
-    const dto: UpdateStoreDto = { name: 'Updated' } as any;
-    const updated = { id: 's1', name: 'Updated' } as any;
-    service.update!.mockResolvedValue(updated);
+  describe('autocomplete', () => {
+    it('should return autocomplete suggestions', async () => {
+      const suggestions = [
+        { id: 's1', name: 'Tech Store', followerCount: 100 },
+      ];
+      service.autocompleteStores!.mockResolvedValue(suggestions as any);
 
-    const res = await controller.update('s1', dto);
-    expect(service.update).toHaveBeenCalledWith('s1', dto);
-    expect(res).toEqual(updated);
+      const result = await controller.autocomplete('tech', '10');
+
+      expect(result).toEqual(suggestions);
+      expect(service.autocompleteStores).toHaveBeenCalledWith('tech', 10);
+    });
+
+    it('should return empty array for short queries', async () => {
+      const result = await controller.autocomplete('t');
+
+      expect(result).toEqual([]);
+      expect(service.autocompleteStores).not.toHaveBeenCalled();
+    });
+
+    it('should apply limit cap at 20', async () => {
+      service.autocompleteStores!.mockResolvedValue([]);
+
+      await controller.autocomplete('tech', '50');
+
+      expect(service.autocompleteStores).toHaveBeenCalledWith('tech', 20);
+    });
   });
 
-  it('remove delegates to service.remove', async () => {
-    service.remove!.mockResolvedValue(undefined);
-    const res = await controller.remove('s1');
-    expect(service.remove).toHaveBeenCalledWith('s1');
-    expect(res).toBeUndefined();
+  describe('getStoreStats', () => {
+    it('should return store stats', async () => {
+      const stats = { id: 's1', productCount: 10 };
+      service.getStoreStats!.mockResolvedValue(stats as any);
+
+      const result = await controller.getStoreStats('s1');
+
+      expect(result).toEqual(stats);
+      expect(service.getStoreStats).toHaveBeenCalledWith('s1');
+    });
+  });
+
+  describe('getTopStoresByRevenue', () => {
+    it('should return top stores by revenue', async () => {
+      const stores = [{ id: 's1', totalRevenue: 10000 }];
+      service.getTopStoresByRevenue!.mockResolvedValue(stores as any);
+
+      const result = await controller.getTopStoresByRevenue('15');
+
+      expect(result).toEqual(stores);
+      expect(service.getTopStoresByRevenue).toHaveBeenCalledWith(15);
+    });
+
+    it('should apply limit cap', async () => {
+      service.getTopStoresByRevenue!.mockResolvedValue([]);
+
+      await controller.getTopStoresByRevenue('100');
+
+      expect(service.getTopStoresByRevenue).toHaveBeenCalledWith(50);
+    });
+  });
+
+  describe('recalculateStats', () => {
+    it('should recalculate store stats', async () => {
+      service.recalculateStoreStats!.mockResolvedValue(undefined);
+
+      const result = await controller.recalculateStats('s1');
+
+      expect(result).toEqual({
+        success: true,
+        message: 'Store statistics recalculated successfully',
+        storeId: 's1',
+      });
+    });
+  });
+
+  describe('checkStoreHealth', () => {
+    it('should check store health', async () => {
+      const health = { storeId: 's1', health: {}, needsRecalculation: false };
+      service.checkStoreDataHealth!.mockResolvedValue(health as any);
+
+      const result = await controller.checkStoreHealth('s1');
+
+      expect(result).toEqual(health);
+    });
   });
 });
