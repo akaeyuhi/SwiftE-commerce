@@ -1,6 +1,6 @@
 import { Test } from '@nestjs/testing';
-import { ProductsService } from 'src/modules/products/products.service';
-import { ProductRepository } from 'src/modules/products/products.repository';
+import { ProductsService } from 'src/modules/products/services/products.service';
+import { ProductRepository } from 'src/modules/products/repositories/products.repository';
 import { StoreService } from 'src/modules/store/store.service';
 import { CategoriesService } from 'src/modules/store/categories/categories.service';
 import { ProductPhotoService } from 'src/modules/products/product-photo/product-photo.service';
@@ -36,7 +36,7 @@ describe('ProductsService', () => {
     variants: [],
     photos: [],
     reviews: [],
-  } as Product;
+  } as unknown as Product;
 
   beforeEach(async () => {
     prodRepo = createRepositoryMock<ProductRepository>([

@@ -1,4 +1,5 @@
 import { AggregationResult } from 'src/common/interfaces/infrastructure/analytics.interface';
+import { AnalyticsEventType } from 'src/entities/infrastructure/analytics/analytics-event.entity';
 
 export interface ProductMetrics extends AggregationResult {
   views: number;
@@ -82,4 +83,26 @@ export interface StoreQuickStats {
   totalRevenue: number;
   averageOrderValue: number;
   source: 'cached' | 'hybrid-cached' | 'aggregated';
+}
+
+export interface EventUserJourney {
+  userId: string;
+  eventType: AnalyticsEventType;
+  productId: string;
+  createdAt: Date;
+}
+
+export interface TopPerformingStores {
+  dateRange: { from?: string; to?: string };
+  stores: Array<{
+    rank: number;
+    storeId: string;
+    storeName: string;
+    views: number;
+    purchases: number;
+    revenue: number;
+    addToCarts: number;
+    conversionRate: number;
+    averageOrderValue: number;
+  }>;
 }

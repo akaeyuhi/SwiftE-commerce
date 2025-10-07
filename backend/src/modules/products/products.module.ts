@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Product } from 'src/entities/store/product/product.entity';
-import { ProductRepository } from 'src/modules/products/products.repository';
-import { ProductsService } from 'src/modules/products/products.service';
-import { ProductsController } from 'src/modules/products/products.controller';
+import { ProductRepository } from 'src/modules/products/repositories/products.repository';
+import { ProductsService } from 'src/modules/products/services/products.service';
+import { ProductsController } from 'src/modules/products/controllers/products.controller';
 import { ProductsMapper } from 'src/modules/products/products.mapper';
 import { ProductPhotoModule } from 'src/modules/products/product-photo/product-photo.module';
 import { CategoriesModule } from 'src/modules/store/categories/categories.module';
@@ -14,6 +14,11 @@ import {
 } from 'src/common/contracts/products.contract';
 import { ProductStoreService } from 'src/modules/products/implementations/product-store.service';
 import { ProductStoreRepository } from 'src/modules/products/implementations/product-store.repository';
+import { ProductQueryRepository } from 'src/modules/products/repositories/product-query.repository';
+import { ProductSearchRepository } from 'src/modules/products/repositories/product-search.repository';
+import { ProductRankingRepository } from 'src/modules/products/repositories/product-ranking.repository';
+import { ProductsRankingController } from 'src/modules/products/controllers/products-ranking.controller';
+import { ProductsRankingService } from 'src/modules/products/services/product-ranking.service';
 
 @Module({
   imports: [
@@ -24,7 +29,11 @@ import { ProductStoreRepository } from 'src/modules/products/implementations/pro
   ],
   providers: [
     ProductRepository,
+    ProductQueryRepository,
+    ProductSearchRepository,
+    ProductRankingRepository,
     ProductsService,
+    ProductsRankingService,
     ProductsMapper,
     {
       provide: IStoreService,
@@ -35,7 +44,7 @@ import { ProductStoreRepository } from 'src/modules/products/implementations/pro
       useClass: ProductStoreRepository,
     },
   ],
-  controllers: [ProductsController],
+  controllers: [ProductsController, ProductsRankingController],
   exports: [ProductsService],
 })
 export class ProductsModule {}

@@ -15,7 +15,7 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ProductsService } from 'src/modules/products/products.service';
+import { ProductsService } from 'src/modules/products/services/products.service';
 import { CreateProductDto } from 'src/modules/products/dto/create-product.dto';
 import { UpdateProductDto } from 'src/modules/products/dto/update-product.dto';
 import { BaseController } from 'src/common/abstracts/base.controller';
@@ -32,6 +32,7 @@ import {
   ProductStatsDto,
 } from 'src/modules/products/dto/product.dto';
 import { AnalyticsEventType } from 'src/entities/infrastructure/analytics/analytics-event.entity';
+import { AdvancedSearchDto } from 'src/modules/products/dto/advanced-search.dto';
 
 /**
  * ProductsController
@@ -40,6 +41,7 @@ import { AnalyticsEventType } from 'src/entities/infrastructure/analytics/analyt
  * - CRUD operations with photo uploads
  * - Quick statistics (cached values)
  * - Product rankings and leaderboards
+ * - Advanced search and autocomplete
  * - Category management
  * - Analytics event tracking
  */
@@ -74,7 +76,7 @@ export class ProductsController extends BaseController<
    * GET /stores/:storeId/products
    * List all products in a store with cached statistics
    */
-  @Get()
+  @Get('/byStore')
   async findAllProducts(
     @Param('storeId', ParseUUIDPipe) storeId: string
   ): Promise<ProductListDto[]> {
@@ -89,24 +91,129 @@ export class ProductsController extends BaseController<
 
   /**
    * GET /stores/:storeId/products/search
-   * Search products in a store
+   * Search products in a store with basic query
    */
   @Get('search')
   async searchProducts(
     @Param('storeId', ParseUUIDPipe) storeId: string,
     @Query('q') query: string,
-    @Query('limit') limit?: string
+    @Query('limit') limit?: string,
+    @Query('sortBy')
+    sortBy?: 'relevance' | 'views' | 'sales' | 'rating' | 'price' | 'recent'
   ): Promise<ProductListDto[]> {
     try {
       const maxLimit = limit ? Math.min(parseInt(limit), 50) : 20;
       return await this.productsService.searchProducts(
         storeId,
         query,
-        maxLimit
+        maxLimit,
+        { sortBy }
       );
     } catch (error) {
       throw new BadRequestException(
         `Failed to search products: ${error.message}`
+      );
+    }
+  }
+
+  /**
+   * POST /stores/:storeId/products/advanced-search
+   * Advanced product search with comprehensive filters
+   *
+   * @example
+   * POST /stores/123/products/advanced-search
+   * Body: {
+   *   "query": "laptop",
+   *   "minPrice": 500,
+   *   "maxPrice": 2000,
+   *   "categoryIds": ["cat-1", "cat-2"],
+   *   "minRating": 4,
+   *   "inStock": true,
+   *   "sortBy": "price",
+   *   "sortOrder": "ASC",
+   *   "limit": 20,
+   *   "offset": 0
+   * }
+   */
+  @Post('advanced-search')
+  @HttpCode(HttpStatus.OK)
+  async advancedSearch(
+    @Param('storeId', ParseUUIDPipe) storeId: string,
+    @Body() searchDto: AdvancedSearchDto
+  ): Promise<{
+    products: ProductListDto[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
+    try {
+      const result = await this.productsService.advancedProductSearch({
+        storeId,
+        ...searchDto,
+      });
+
+      const page = searchDto.offset
+        ? Math.floor(searchDto.offset / (searchDto.limit || 20)) + 1
+        : 1;
+
+      return {
+        products: result.products,
+        total: result.total,
+        page,
+        limit: searchDto.limit || 20,
+      };
+    } catch (error) {
+      throw new BadRequestException(
+        `Failed to perform advanced search: ${error.message}`
+      );
+    }
+  }
+
+  /**
+   * GET /stores/:storeId/products/autocomplete
+   * Get autocomplete suggestions for product search
+   *
+   * @example
+   * GET /stores/123/products/autocomplete?q=lap&limit=10
+   *
+   * Response:
+   * [
+   *   {
+   *     "id": "prod-1",
+   *     "name": "Laptop Pro 15",
+   *     "mainPhotoUrl": "https://...",
+   *     "minPrice": 1299.99
+   *   },
+   *   ...
+   * ]
+   */
+  @Get('autocomplete')
+  async autocomplete(
+    @Param('storeId', ParseUUIDPipe) storeId: string,
+    @Query('q') query: string,
+    @Query('limit') limit?: string
+  ): Promise<
+    Array<{
+      id: string;
+      name: string;
+      mainPhotoUrl?: string;
+      minPrice?: number;
+    }>
+  > {
+    try {
+      if (!query || query.trim().length < 2) {
+        return [];
+      }
+
+      const maxLimit = limit ? Math.min(parseInt(limit), 20) : 10;
+      return await this.productsService.autocompleteProducts(
+        storeId,
+        query.trim(),
+        maxLimit
+      );
+    } catch (error) {
+      throw new BadRequestException(
+        `Failed to get autocomplete suggestions: ${error.message}`
       );
     }
   }
@@ -119,7 +226,7 @@ export class ProductsController extends BaseController<
    * GET /stores/:storeId/products/:id
    * Get full product details with all relations
    */
-  @Get(':id')
+  @Get(':id/detailed')
   async findOneProduct(
     @Param('storeId', ParseUUIDPipe) storeId: string,
     @Param('id', ParseUUIDPipe) id: string
@@ -162,120 +269,6 @@ export class ProductsController extends BaseController<
   }
 
   // ===============================
-  // Leaderboards & Rankings
-  // ===============================
-
-  /**
-   * GET /stores/:storeId/products/top/views
-   * Get top products by view count
-   */
-  @Get('top/views')
-  async getTopProductsByViews(
-    @Param('storeId', ParseUUIDPipe) storeId: string,
-    @Query('limit') limit?: string
-  ): Promise<ProductListDto[]> {
-    try {
-      const maxLimit = limit ? Math.min(parseInt(limit), 50) : 10;
-      return await this.productsService.getTopProductsByViews(
-        storeId,
-        maxLimit
-      );
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get top products: ${error.message}`
-      );
-    }
-  }
-
-  /**
-   * GET /stores/:storeId/products/top/sales
-   * Get top products by sales count
-   */
-  @Get('top/sales')
-  async getTopProductsBySales(
-    @Param('storeId', ParseUUIDPipe) storeId: string,
-    @Query('limit') limit?: string
-  ): Promise<ProductListDto[]> {
-    try {
-      const maxLimit = limit ? Math.min(parseInt(limit), 50) : 10;
-      return await this.productsService.getTopProductsBySales(
-        storeId,
-        maxLimit
-      );
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get top products: ${error.message}`
-      );
-    }
-  }
-
-  /**
-   * GET /stores/:storeId/products/top/rated
-   * Get top rated products
-   */
-  @Get('top/rated')
-  async getTopRatedProducts(
-    @Param('storeId', ParseUUIDPipe) storeId: string,
-    @Query('limit') limit?: string
-  ): Promise<ProductListDto[]> {
-    try {
-      const maxLimit = limit ? Math.min(parseInt(limit), 50) : 10;
-      return await this.productsService.getTopRatedProducts(storeId, maxLimit);
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get top products: ${error.message}`
-      );
-    }
-  }
-
-  /**
-   * GET /stores/:storeId/products/top/conversion
-   * Get top products by conversion rate
-   */
-  @Get('top/conversion')
-  async getTopProductsByConversion(
-    @Param('storeId', ParseUUIDPipe) storeId: string,
-    @Query('limit') limit?: string
-  ): Promise<ProductListDto[]> {
-    try {
-      const maxLimit = limit ? Math.min(parseInt(limit), 50) : 10;
-      return await this.productsService.getTopProductsByConversionRate(
-        storeId,
-        maxLimit
-      );
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get top products: ${error.message}`
-      );
-    }
-  }
-
-  /**
-   * GET /stores/:storeId/products/trending
-   * Get trending products (high recent activity)
-   */
-  @Get('trending')
-  async getTrendingProducts(
-    @Param('storeId', ParseUUIDPipe) storeId: string,
-    @Query('limit') limit?: string,
-    @Query('days') days?: string
-  ): Promise<ProductListDto[]> {
-    try {
-      const maxLimit = limit ? Math.min(parseInt(limit), 50) : 10;
-      const daysPeriod = days ? parseInt(days) : 7;
-      return await this.productsService.getTrendingProducts(
-        storeId,
-        maxLimit,
-        daysPeriod
-      );
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get trending products: ${error.message}`
-      );
-    }
-  }
-
-  // ===============================
   // Product Management
   // ===============================
 
@@ -304,23 +297,10 @@ export class ProductsController extends BaseController<
   }
 
   /**
-   * PATCH /stores/:storeId/products/:id
-   * Update product details
-   */
-  @Post(':id')
-  async updateProduct(
-    @Param('storeId', ParseUUIDPipe) storeId: string,
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() updateDto: UpdateProductDto
-  ): Promise<ProductDto> {
-    return super.update(id, updateDto);
-  }
-
-  /**
    * DELETE /stores/:storeId/products/:id
    * Soft delete a product
    */
-  @Delete(':id')
+  @Delete(':id/soft')
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteProduct(
     @Param('storeId', ParseUUIDPipe) storeId: string,

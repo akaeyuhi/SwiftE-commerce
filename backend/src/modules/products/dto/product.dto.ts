@@ -121,25 +121,9 @@ export class ProductStatsDto {
   conversionRate?: number; // (sales / views) * 100
 }
 
-/**
- * Minimal DTO for search results or dropdowns
- */
-export class ProductMinimalDto {
-  id: string;
-  name: string;
-  mainPhotoUrl?: string;
-  minPrice?: number;
-}
-
 export class TrendingProductDto extends ProductListDto {
   trendingScore?: number;
   recentViews?: number;
   recentLikes?: number;
   recentSales?: number;
-}
-
-export class HotProductDto extends ProductListDto {
-  growthRate: number;
-  recentActivity: number;
-  historicalActivity: number;
 }
