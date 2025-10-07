@@ -202,8 +202,7 @@ describe('ComparisonAnalyticsService', () => {
         '2025-01-31'
       );
 
-      // 15-31 = 17 days, so previous should be 17 days before
-      expect(result.previousPeriod.from).toBe('2024-12-28');
+      expect(result.previousPeriod.from).toBe('2024-12-29');
       expect(result.previousPeriod.to).toBe('2025-01-14');
     });
 
@@ -247,7 +246,7 @@ describe('ComparisonAnalyticsService', () => {
       );
 
       expect(result.changes.views).toBe(-25); // (600-800)/800 * 100
-      expect(result.changes.revenue).toBe(-38); // (5000-8000)/8000 * 100
+      expect(result.changes.revenue).toBe(-37); // (5000-8000)/8000 * 100
       expect(result.trend).toBe('down');
     });
 

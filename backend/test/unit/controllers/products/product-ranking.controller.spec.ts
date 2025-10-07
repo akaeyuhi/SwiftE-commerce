@@ -2,7 +2,17 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ProductsRankingController } from 'src/modules/products/controllers/products-ranking.controller';
 import { ProductsRankingService } from 'src/modules/products/services/product-ranking.service';
 import { BadRequestException } from '@nestjs/common';
-import { createMock, MockedMethods } from 'test/utils/helpers';
+import {
+  createGuardMock,
+  createMock,
+  createPolicyMock,
+  MockedMethods,
+} from 'test/utils/helpers';
+import { PolicyService } from 'src/modules/authorization/policy/policy.service';
+import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';
+import { AdminGuard } from 'src/modules/authorization/guards/admin.guard';
+import { StoreRolesGuard } from 'src/modules/authorization/guards/store-roles.guard';
+import { EntityOwnerGuard } from 'src/modules/authorization/guards/entity-owner.guard';
 
 describe('ProductsRankingController', () => {
   let controller: ProductsRankingController;
@@ -16,10 +26,19 @@ describe('ProductsRankingController', () => {
       'getTopProductsByConversionRate',
       'getTrendingProducts',
     ]);
+    const policyMock = createPolicyMock();
+    const guardMock = createGuardMock();
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ProductsRankingController],
-      providers: [{ provide: ProductsRankingService, useValue: service }],
+      providers: [
+        { provide: ProductsRankingService, useValue: service },
+        { provide: PolicyService, useValue: policyMock },
+        { provide: JwtAuthGuard, useValue: guardMock },
+        { provide: AdminGuard, useValue: guardMock },
+        { provide: StoreRolesGuard, useValue: guardMock },
+        { provide: EntityOwnerGuard, useValue: guardMock },
+      ],
     }).compile();
 
     controller = module.get<ProductsRankingController>(

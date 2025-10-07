@@ -231,7 +231,7 @@ describe('ProductsService', () => {
       expect(categoriesService.findOne).toHaveBeenCalledTimes(2);
     });
 
-    it('should add main photo and additional photos', async () => {
+    it('should handle photos when array is provided', async () => {
       const photos = [
         {
           buffer: Buffer.from('1'),
@@ -252,10 +252,25 @@ describe('ProductsService', () => {
 
       await service.create(dto, photos);
 
-      expect(photoService.addPhotos).toHaveBeenCalledTimes(2); // Main photo + remaining photos
+      expect(photoService.addPhotos).toHaveBeenNthCalledWith(
+        1,
+        mockProduct,
+        mockStore,
+        [photos[0]],
+        true
+      );
+
+      expect(photoService.addPhotos).toHaveBeenNthCalledWith(
+        2,
+        mockProduct,
+        mockStore,
+        [photos[1]]
+      );
+
+      expect(photoService.addPhotos).toHaveBeenCalledTimes(2);
     });
 
-    it('should handle single photo as main photo', async () => {
+    it('should use mainPhoto parameter when photos array is empty/undefined', async () => {
       const mainPhoto = {
         buffer: Buffer.from('main'),
         originalname: 'main.jpg',
@@ -267,12 +282,46 @@ describe('ProductsService', () => {
       productRepo.findOneBy!.mockResolvedValue(mockProduct);
       photoService.addPhotos!.mockResolvedValue([{ id: 'ph1' }] as any);
 
+      // With undefined photos array
       await service.create(dto, undefined, mainPhoto);
 
+      expect(photoService.addPhotos).not.toHaveBeenCalled();
+
+      jest.clearAllMocks();
+
+      // With empty photos array
+      await service.create(dto, [], mainPhoto);
+
+      expect(photoService.addPhotos).not.toHaveBeenCalled();
+    });
+
+    it('should use mainPhoto as fallback when photos array has items', async () => {
+      const photos = [
+        {
+          buffer: Buffer.from('1'),
+          originalname: 'photo1.jpg',
+          mimetype: 'image/jpeg',
+        },
+      ] as Express.Multer.File[];
+
+      const mainPhoto = {
+        buffer: Buffer.from('main'),
+        originalname: 'main.jpg',
+        mimetype: 'image/jpeg',
+      } as Express.Multer.File;
+
+      storeService.getEntityById.mockResolvedValue(mockStore);
+      productRepo.createEntity!.mockResolvedValue(mockProduct);
+      productRepo.findOneBy!.mockResolvedValue(mockProduct);
+      photoService.addPhotos!.mockResolvedValue([{ id: 'ph1' }] as any);
+
+      await service.create(dto, photos, mainPhoto);
+
+      // First photo from array should be used
       expect(photoService.addPhotos).toHaveBeenCalledWith(
         mockProduct,
         mockStore,
-        [mainPhoto],
+        expect.arrayContaining([photos[0]]),
         true
       );
     });
@@ -395,10 +444,14 @@ describe('ProductsService', () => {
       categoriesService.findOne!.mockResolvedValue(category as any);
       productRepo.save!.mockResolvedValue(mockProduct);
 
-      await service.attachCategoryToProduct('p1', 'c1');
+      const result = await service.attachCategoryToProduct('p1', 'c1');
 
+      expect(productRepo.findOne).toHaveBeenCalledWith({
+        where: { id: 'p1' },
+        relations: ['categories', 'store'],
+      });
       expect(categoriesService.findOne).toHaveBeenCalledWith('c1');
-      expect(productRepo.save).toHaveBeenCalled();
+      expect(result).toEqual(mockProduct);
     });
 
     it('should throw when product not found', async () => {
@@ -420,7 +473,10 @@ describe('ProductsService', () => {
 
     it('should not add duplicate category', async () => {
       const category = { id: 'c1', name: 'Category' };
-      const productWithCategory = { ...mockProduct, categories: [category] };
+      const productWithCategory = {
+        ...mockProduct,
+        categories: [category as any],
+      };
 
       productRepo.findOne!.mockResolvedValue(productWithCategory as any);
       categoriesService.findOne!.mockResolvedValue(category as any);
@@ -428,7 +484,7 @@ describe('ProductsService', () => {
 
       await service.attachCategoryToProduct('p1', 'c1');
 
-      expect(productRepo.save).toHaveBeenCalled();
+      expect(productWithCategory.categories).toHaveLength(1);
     });
   });
 

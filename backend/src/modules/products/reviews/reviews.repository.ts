@@ -3,9 +3,14 @@ import { DataSource } from 'typeorm';
 import { BaseRepository } from 'src/common/abstracts/base.repository';
 import { Review } from 'src/entities/store/review.entity';
 
+export type RatingDistribution = {
+  [key: number]: number;
+};
+
 export type AggregateRating = {
-  count: number;
-  avg: number | null;
+  totalReviews: number;
+  averageRating: number;
+  distribution: RatingDistribution;
 };
 
 @Injectable()
@@ -15,14 +20,37 @@ export class ReviewsRepository extends BaseRepository<Review> {
   }
 
   async getRatingAggregate(productId: string): Promise<AggregateRating> {
-    const qb = this.createQueryBuilder('r')
+    const aggregateQb = this.createQueryBuilder('r')
       .select(['COUNT(r.id) as count', 'AVG(r.rating) as avg'])
-      .where('r.product = :productId', { productId });
+      .where('r.productId = :productId', { productId });
 
-    const raw = await qb.getRawOne();
+    const raw = await aggregateQb.getRawOne();
+
+    const distributionQb = this.createQueryBuilder('r')
+      .select(['r.rating', 'COUNT(r.id) as count'])
+      .where('r.productId = :productId', { productId })
+      .groupBy('r.rating')
+      .orderBy('r.rating', 'ASC');
+
+    const distributionRaw = await distributionQb.getRawMany();
+
+    const distribution: RatingDistribution = {};
+    for (let i = 1; i <= 5; i++) {
+      distribution[i] = 0;
+    }
+
+    distributionRaw.forEach((row) => {
+      const rating = Number(row.r_rating);
+      const count = Number(row.count);
+      if (rating >= 1 && rating <= 5) {
+        distribution[rating] = count;
+      }
+    });
+
     return {
-      count: Number(raw?.count ?? 0),
-      avg: raw?.avg !== null ? Number(raw.avg) : null,
+      totalReviews: Number(raw?.count ?? 0),
+      averageRating: raw?.avg ? Number(raw.avg) : 0,
+      distribution,
     };
   }
 }

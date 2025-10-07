@@ -92,10 +92,10 @@ export class StoreDailyStatsRepository extends BaseAnalyticsRepository<StoreDail
 
     return raw.map((r) => ({
       storeId: r.storeId,
-      views: Number(r.views || 0),
-      purchases: Number(r.purchases || 0),
-      revenue: Number(r.revenue || 0),
-      conversionRate: Number(r.conversionRate || 0),
+      views: Number(r.views) || 0,
+      purchases: Number(r.purchases) || 0,
+      revenue: Number(r.revenue) || 0,
+      conversionRate: Number(r.conversionRate) || 0,
     }));
   }
 

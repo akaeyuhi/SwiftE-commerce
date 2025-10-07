@@ -51,7 +51,12 @@ describe('StoreService', () => {
       'createQueryBuilder',
     ]);
 
-    mapper = createMapperMock<StoreMapper>(['toListDto', 'toStatsDto']);
+    mapper = createMapperMock<StoreMapper>([
+      'toDto',
+      'toEntity',
+      'toListDto',
+      'toStatsDto',
+    ]);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [

@@ -22,7 +22,7 @@ describe('OrdersRepository', () => {
     items: [],
     createdAt: new Date(),
     updatedAt: new Date(),
-  } as Order;
+  } as unknown as Order;
 
   beforeEach(async () => {
     manager = createMock<EntityManager>([]);

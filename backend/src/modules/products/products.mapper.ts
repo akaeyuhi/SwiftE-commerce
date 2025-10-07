@@ -134,8 +134,9 @@ export class ProductsMapper extends BaseMapper<Product, ProductDto> {
           id: r.id,
           rating: r.rating,
           comment: r.comment,
-          userName:
-            `${r.user?.firstName} ${r.user?.lastName}`.trim() || 'Anonymous',
+          userName: r.user
+            ? `${r.user?.firstName} ${r.user?.lastName}`.trim()
+            : 'Anonymous',
           createdAt: r.createdAt,
         })) || [],
 

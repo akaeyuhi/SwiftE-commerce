@@ -107,10 +107,14 @@ describe('AnalyticsEventRepository', () => {
 
       await repo.aggregateProductMetrics('p1', { from: '2025-01-01' });
 
-      expect(queryBuilder.andWhere).toHaveBeenCalledWith(
-        expect.stringContaining('createdAt'),
-        expect.objectContaining({ from: '2025-01-01' })
+      const calls = (queryBuilder.andWhere as jest.Mock).mock.calls;
+      const fromCall = calls.find(
+        (call) =>
+          call[0].includes('createdAt') && call[1].hasOwnProperty('from')
       );
+
+      expect(fromCall).toBeDefined();
+      expect(fromCall[1].from).toMatch(/2025-01-01/);
     });
 
     it('should apply only "to" date filter', async () => {
@@ -118,10 +122,13 @@ describe('AnalyticsEventRepository', () => {
 
       await repo.aggregateProductMetrics('p1', { to: '2025-01-31' });
 
-      expect(queryBuilder.andWhere).toHaveBeenCalledWith(
-        expect.stringContaining('createdAt'),
-        expect.objectContaining({ to: '2025-01-31' })
+      const calls = (queryBuilder.andWhere as jest.Mock).mock.calls;
+      const toCall = calls.find(
+        (call) => call[0].includes('createdAt') && call[1].hasOwnProperty('to')
       );
+
+      expect(toCall).toBeDefined();
+      expect(toCall[1].to).toMatch(/2025-01-31/);
     });
   });
 

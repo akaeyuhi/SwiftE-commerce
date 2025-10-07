@@ -60,7 +60,7 @@ export class AnalyticsEventRepository extends BaseAnalyticsRepository<AnalyticsE
       views: parsed.views || 0,
       purchases: parsed.purchases || 0,
       addToCarts: parsed.addToCarts || 0,
-      revenue: parsed.purchases_value || 0,
+      revenue: parsed.purchasesValue || 0,
     };
   }
 
@@ -99,7 +99,7 @@ export class AnalyticsEventRepository extends BaseAnalyticsRepository<AnalyticsE
       purchases: parsed.purchases || 0,
       addToCarts: parsed.addToCarts || 0,
       checkouts: parsed.checkouts || 0,
-      revenue: parsed.purchases_value || 0,
+      revenue: parsed.purchasesValue || 0,
     };
   }
 

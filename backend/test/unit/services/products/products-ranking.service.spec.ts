@@ -130,12 +130,16 @@ describe('ProductsRankingService', () => {
       expect(repo.findTrendingProducts).toHaveBeenCalled();
     });
 
-    it('should filter out products with zero trending score', async () => {
+    it('should filter out products with zero trending score (old product)', async () => {
+      // Create an old product that has no recency boost
+      const oldDate = new Date();
+      oldDate.setDate(oldDate.getDate() - 100); // 100 days old, so recencyBoost = 0
+
       const rawProducts = [
         {
           p_id: 'p1',
-          p_name: 'Product',
-          p_createdAt: new Date(),
+          p_name: 'Old Product',
+          p_createdAt: oldDate, // Old product
           recentViews: '0',
           recentLikes: '0',
           recentSales: '0',
@@ -147,6 +151,29 @@ describe('ProductsRankingService', () => {
       const result = await service.getTrendingProducts('s1');
 
       expect(result).toEqual([]);
+    });
+
+    it('should include new products with zero activity due to recency boost', async () => {
+      const newDate = new Date(); // Today
+
+      const rawProducts = [
+        {
+          p_id: 'p1',
+          p_name: 'New Product',
+          p_createdAt: newDate, // New product
+          recentViews: '0',
+          recentLikes: '0',
+          recentSales: '0',
+        },
+      ];
+
+      repo.findTrendingProducts!.mockResolvedValue(rawProducts as any);
+
+      const result = await service.getTrendingProducts('s1');
+
+      // Should NOT be empty because of recency boost
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('p1');
     });
   });
 });

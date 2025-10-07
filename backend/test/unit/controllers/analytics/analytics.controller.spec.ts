@@ -17,7 +17,7 @@ import {
   createMock,
   createPolicyMock,
   MockedMethods,
-} from '../../../utils/helpers';
+} from 'test/utils/helpers';
 import { PolicyService } from 'src/modules/authorization/policy/policy.service';
 
 describe('AnalyticsController', () => {
@@ -234,7 +234,7 @@ describe('AnalyticsController', () => {
       const query: AnalyticsQueryDto = {
         from: '2025-01-01',
         to: '2025-01-31',
-      };
+      } as AnalyticsQueryDto;
 
       const analytics = { views: 1000, purchases: 100 };
       analyticsService.aggregate!.mockResolvedValue(analytics);
@@ -254,7 +254,7 @@ describe('AnalyticsController', () => {
       const storeId = 's1';
       const query: AnalyticsQueryDto = {
         includeTimeseries: true,
-      };
+      } as AnalyticsQueryDto;
 
       analyticsService.aggregate!.mockResolvedValue({});
 
@@ -270,7 +270,7 @@ describe('AnalyticsController', () => {
   describe('getStoreConversion', () => {
     it('should return store conversion metrics', async () => {
       const storeId = 's1';
-      const query: AnalyticsQueryDto = {};
+      const query: AnalyticsQueryDto = {} as AnalyticsQueryDto;
 
       const conversion = { conversionRate: 0.1 };
       analyticsService.aggregate!.mockResolvedValue(conversion);
@@ -296,7 +296,7 @@ describe('AnalyticsController', () => {
       const query: AnalyticsQueryDto = {
         from: '2025-01-01',
         to: '2025-01-31',
-      };
+      } as AnalyticsQueryDto;
 
       const analytics = { views: 200, purchases: 20 };
       analyticsService.aggregate!.mockResolvedValue(analytics);
@@ -322,7 +322,7 @@ describe('AnalyticsController', () => {
     it('should return product conversion metrics', async () => {
       const storeId = 's1';
       const productId = 'p1';
-      const query: AnalyticsQueryDto = {};
+      const query: AnalyticsQueryDto = {} as AnalyticsQueryDto;
 
       const conversion = { conversionRate: 0.15 };
       analyticsService.aggregate!.mockResolvedValue(conversion);
@@ -349,7 +349,7 @@ describe('AnalyticsController', () => {
   describe('getTopProducts', () => {
     it('should return top products with default limit', async () => {
       const storeId = 's1';
-      const query: AnalyticsQueryDto = {};
+      const query: AnalyticsQueryDto = {} as AnalyticsQueryDto;
 
       const topProducts = [{ productId: 'p1', conversionRate: 0.2 }];
       analyticsService.aggregate!.mockResolvedValue(topProducts);
@@ -365,7 +365,7 @@ describe('AnalyticsController', () => {
 
     it('should use custom limit when provided', async () => {
       const storeId = 's1';
-      const query: AnalyticsQueryDto = { limit: 5 };
+      const query: AnalyticsQueryDto = { limit: 5 } as AnalyticsQueryDto;
 
       analyticsService.aggregate!.mockResolvedValue([]);
 
@@ -381,7 +381,7 @@ describe('AnalyticsController', () => {
   describe('getFunnelAnalysis', () => {
     it('should return funnel analysis', async () => {
       const storeId = 's1';
-      const query: AnalyticsQueryDto = {};
+      const query: AnalyticsQueryDto = {} as AnalyticsQueryDto;
 
       const funnel = { stages: [] };
       analyticsService.aggregate!.mockResolvedValue(funnel);
@@ -403,7 +403,7 @@ describe('AnalyticsController', () => {
   describe('getRevenueTrends', () => {
     it('should return revenue trends', async () => {
       const storeId = 's1';
-      const query: AnalyticsQueryDto = {};
+      const query: AnalyticsQueryDto = {} as AnalyticsQueryDto;
 
       const trends = { daily: [] };
       analyticsService.aggregate!.mockResolvedValue(trends);
@@ -445,7 +445,7 @@ describe('AnalyticsController', () => {
   describe('getHealth', () => {
     it('should return health status', async () => {
       const health = { healthy: true, uptime: 1000 };
-      analyticsService.healthCheck!.mockResolvedValue(health);
+      analyticsService.healthCheck!.mockResolvedValue(health as any);
 
       const result = await controller.getHealth();
 
@@ -457,7 +457,7 @@ describe('AnalyticsController', () => {
   describe('getStats', () => {
     it('should return service statistics', async () => {
       const stats = { eventsProcessed: 10000 };
-      analyticsService.getStats!.mockResolvedValue(stats);
+      analyticsService.getStats!.mockResolvedValue(stats as any);
 
       const result = await controller.getStats();
 

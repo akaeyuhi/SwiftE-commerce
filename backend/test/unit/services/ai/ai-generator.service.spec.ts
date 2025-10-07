@@ -12,6 +12,7 @@ import {
   MockedMethods,
 } from 'test/utils/helpers';
 import { BaseAiProvider } from 'src/modules/ai/ai-generator/providers/base.provider';
+import { ConfigModule } from '@nestjs/config';
 
 describe('AiGeneratorService', () => {
   let service: AiGeneratorService;
@@ -29,6 +30,7 @@ describe('AiGeneratorService', () => {
     aiAuditService = createMock<AiAuditService>(['storeEncryptedResponse']);
 
     const module: TestingModule = await Test.createTestingModule({
+      imports: [ConfigModule],
       providers: [
         AiGeneratorService,
         { provide: AI_PROVIDER, useValue: provider },

@@ -1,9 +1,18 @@
-// test/unit/store/store.controller.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
 import { StoreController } from 'src/modules/store/store.controller';
 import { StoreService } from 'src/modules/store/store.service';
 import { BadRequestException } from '@nestjs/common';
-import { createServiceMock, MockedMethods } from 'test/utils/helpers';
+import {
+  createGuardMock,
+  createPolicyMock,
+  createServiceMock,
+  MockedMethods,
+} from 'test/utils/helpers';
+import { PolicyService } from 'src/modules/authorization/policy/policy.service';
+import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';
+import { AdminGuard } from 'src/modules/authorization/guards/admin.guard';
+import { StoreRolesGuard } from 'src/modules/authorization/guards/store-roles.guard';
+import { EntityOwnerGuard } from 'src/modules/authorization/guards/entity-owner.guard';
 
 describe('StoreController', () => {
   let controller: StoreController;
@@ -24,9 +33,19 @@ describe('StoreController', () => {
       'checkStoreDataHealth',
     ]);
 
+    const policyMock = createPolicyMock();
+    const guardMock = createGuardMock();
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [StoreController],
-      providers: [{ provide: StoreService, useValue: service }],
+      providers: [
+        { provide: StoreService, useValue: service },
+        { provide: PolicyService, useValue: policyMock },
+        { provide: JwtAuthGuard, useValue: guardMock },
+        { provide: AdminGuard, useValue: guardMock },
+        { provide: StoreRolesGuard, useValue: guardMock },
+        { provide: EntityOwnerGuard, useValue: guardMock },
+      ],
     }).compile();
 
     controller = module.get<StoreController>(StoreController);

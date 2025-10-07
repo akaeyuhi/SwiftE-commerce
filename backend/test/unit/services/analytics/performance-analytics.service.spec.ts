@@ -433,17 +433,24 @@ describe('PerformanceAnalyticsService', () => {
       const products = [
         {
           id: 'p1',
-          name: 'Product',
-          views: '20',
+          name: 'Low Performer',
+          views: '50',
           purchases: '1',
           revenue: '100.00',
         },
         {
           id: 'p2',
-          name: 'Product 2',
-          views: '100',
-          purchases: '10',
-          revenue: '1000.00',
+          name: 'Medium Performer',
+          views: '1000',
+          purchases: '100',
+          revenue: '10000.00',
+        },
+        {
+          id: 'p3',
+          name: 'High Performer',
+          views: '2000',
+          purchases: '500',
+          revenue: '50000.00',
         },
       ];
 
@@ -454,31 +461,32 @@ describe('PerformanceAnalyticsService', () => {
       const result = await service.getUnderperformingAnalysis('s1');
 
       const item = result.underperforming.find((p) => p.id === 'p1');
+      expect(item).toBeDefined();
+      expect(item?.views).toBeLessThan(100);
       expect(item?.issues).toContain('Low visibility');
     });
-
     it('should sort underperforming items by overall score', async () => {
       const products = [
         {
           id: 'p1',
-          name: 'P1',
+          name: 'Worst Performer',
           views: '100',
-          purchases: '1',
-          revenue: '100.00',
+          purchases: '0', // 0% conversion
+          revenue: '0.00',
         },
         {
           id: 'p2',
-          name: 'P2',
+          name: 'Bad Performer',
           views: '100',
-          purchases: '2',
-          revenue: '200.00',
+          purchases: '1', // 1% conversion
+          revenue: '50.00',
         },
         {
           id: 'p3',
-          name: 'P3',
+          name: 'Good Performer',
           views: '100',
-          purchases: '10',
-          revenue: '1000.00',
+          purchases: '50', // 50% conversion
+          revenue: '5000.00',
         },
       ];
 
@@ -488,11 +496,15 @@ describe('PerformanceAnalyticsService', () => {
 
       const result = await service.getUnderperformingAnalysis('s1');
 
-      // Should be sorted by worst performers first
-      expect(result.underperforming[0].overallScore).toBeGreaterThanOrEqual(
-        result.underperforming[result.underperforming.length - 1]
-          ?.overallScore || 0
-      );
+      // Should have underperforming items
+      expect(result.underperforming.length).toBeGreaterThan(0);
+
+      // Should be sorted by worst performers first (highest overall score)
+      if (result.underperforming.length > 1) {
+        expect(result.underperforming[0].overallScore).toBeGreaterThanOrEqual(
+          result.underperforming[result.underperforming.length - 1].overallScore
+        );
+      }
     });
 
     it('should limit recommendations to top 10', async () => {

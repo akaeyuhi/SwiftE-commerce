@@ -49,8 +49,8 @@ describe('RatingAnalyticsService', () => {
 
       const result = await service.recomputeProductRating('p1');
 
-      expect(result.count).toBe(0);
-      expect(result.avg).toBe(0);
+      expect(result.averageRating).toBe(0);
+      expect(result.totalReviews).toBe(0);
     });
   });
 

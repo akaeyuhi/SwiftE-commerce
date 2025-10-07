@@ -11,6 +11,7 @@ import { InventoryNotificationLog } from 'src/entities/infrastructure/notificati
 import { NewsNotificationLog } from 'src/entities/infrastructure/notifications/news-notification-log.entity';
 import { OrderNotificationLog } from 'src/entities/infrastructure/notifications/order-notification-log.entity';
 import { CleanupSchedulerService } from 'src/modules/infrastructure/cleanup/cleanup.service';
+import { CronJob } from 'cron';
 
 describe('CleanupSchedulerService', () => {
   let service: CleanupSchedulerService;
@@ -41,7 +42,12 @@ describe('CleanupSchedulerService', () => {
     } as any;
 
     configService = {
-      get: jest.fn().mockReturnValue(true),
+      get: jest.fn((key: string, defaultValue?: any) => {
+        if (key === 'ENABLE_COMPREHENSIVE_CLEANUP') {
+          return true;
+        }
+        return defaultValue;
+      }),
     } as any;
 
     cartRepo = {
@@ -77,6 +83,10 @@ describe('CleanupSchedulerService', () => {
       createQueryBuilder: jest.fn(),
       manager: { query: jest.fn() } as any,
     };
+
+    jest.spyOn(console, 'log').mockImplementation();
+    jest.spyOn(console, 'error').mockImplementation();
+    jest.spyOn(console, 'warn').mockImplementation();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -116,6 +126,8 @@ describe('CleanupSchedulerService', () => {
     // Spy on console methods
     jest.spyOn(console, 'log').mockImplementation();
     jest.spyOn(console, 'error').mockImplementation();
+
+    await module.init();
   });
 
   afterEach(() => {
@@ -125,24 +137,46 @@ describe('CleanupSchedulerService', () => {
 
   describe('initialization', () => {
     it('should register all cleanup tasks', () => {
-      expect(schedulerRegistry.addCronJob).toHaveBeenCalledWith(
-        expect.objectContaining({ name: 'cleanup-expired-carts' }),
-        expect.any(Object)
-      );
-      expect(schedulerRegistry.addCronJob).toHaveBeenCalledWith(
-        expect.objectContaining({ name: 'archive-old-analytics' }),
-        expect.any(Object)
-      );
-      expect(schedulerRegistry.addCronJob).toHaveBeenCalledWith(
-        expect.objectContaining({ name: 'cleanup-expired-confirmations' }),
-        expect.any(Object)
-      );
+      // Verify addCronJob was called for each task
+      expect(schedulerRegistry.addCronJob).toHaveBeenCalled();
+
+      const calls = (schedulerRegistry.addCronJob as jest.Mock).mock.calls;
+      const registeredTasks = calls.map((call) => call[0]);
+
+      // Verify all expected tasks were registered
+      expect(registeredTasks).toContain('cleanup-expired-carts');
+      expect(registeredTasks).toContain('archive-old-analytics');
+      expect(registeredTasks).toContain('archive-old-notifications');
+      expect(registeredTasks).toContain('cleanup-expired-confirmations');
+      expect(registeredTasks).toContain('cleanup-old-refresh-tokens');
+      expect(registeredTasks).toContain('cleanup-banned-tokens');
+      expect(registeredTasks).toContain('comprehensive-cleanup');
     });
 
     it('should respect config for comprehensive cleanup', () => {
+      // ConfigService.get is called during registerTasks()
       expect(configService.get).toHaveBeenCalledWith(
         'ENABLE_COMPREHENSIVE_CLEANUP',
         true
+      );
+    });
+
+    it('should register tasks with CronJob instances', () => {
+      const calls = (schedulerRegistry.addCronJob as jest.Mock).mock.calls;
+
+      // Each call should have a task name and a CronJob instance
+      for (const call of calls) {
+        const [taskName, cronJob] = call;
+        expect(typeof taskName).toBe('string');
+        expect(cronJob).toBeInstanceOf(CronJob);
+      }
+    });
+
+    it('should log initialization message', () => {
+      expect(console.log).toHaveBeenCalledWith(
+        expect.stringContaining(
+          'Scheduler service [CleanupSchedulerService] initialized with 7 tasks'
+        )
       );
     });
   });

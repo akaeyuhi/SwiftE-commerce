@@ -1,6 +1,9 @@
 import { IReviewsRepository } from 'src/common/contracts/reviews.contract';
 import { Injectable } from '@nestjs/common';
-import { AggregateRating } from 'src/modules/products/reviews/reviews.repository';
+import {
+  AggregateRating,
+  RatingDistribution,
+} from 'src/modules/products/reviews/reviews.repository';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Review } from 'src/entities/store/review.entity';
 import { Repository } from 'typeorm';
@@ -79,15 +82,39 @@ export class AnalyticsReviewsRepository implements IReviewsRepository {
       .getRawMany();
   }
   async getRatingAggregate(productId: string): Promise<AggregateRating> {
-    const qb = this.reviewsRepository
+    const aggregateQb = this.reviewsRepository
       .createQueryBuilder('r')
       .select(['COUNT(r.id) as count', 'AVG(r.rating) as avg'])
-      .where('r.product = :productId', { productId });
+      .where('r.productId = :productId', { productId });
 
-    const raw = await qb.getRawOne();
+    const raw = await aggregateQb.getRawOne();
+
+    const distributionQb = this.reviewsRepository
+      .createQueryBuilder('r')
+      .select(['r.rating', 'COUNT(r.id) as count'])
+      .where('r.productId = :productId', { productId })
+      .groupBy('r.rating')
+      .orderBy('r.rating', 'ASC');
+
+    const distributionRaw = await distributionQb.getRawMany();
+
+    const distribution: RatingDistribution = {};
+    for (let i = 1; i <= 5; i++) {
+      distribution[i] = 0;
+    }
+
+    distributionRaw.forEach((row) => {
+      const rating = Number(row.r_rating);
+      const count = Number(row.count);
+      if (rating >= 1 && rating <= 5) {
+        distribution[rating] = count;
+      }
+    });
+
     return {
-      count: Number(raw?.count ?? 0),
-      avg: raw?.avg !== null ? Number(raw.avg) : null,
+      totalReviews: Number(raw?.count ?? 0),
+      averageRating: raw?.avg ? Number(raw.avg) : 0,
+      distribution,
     };
   }
 }

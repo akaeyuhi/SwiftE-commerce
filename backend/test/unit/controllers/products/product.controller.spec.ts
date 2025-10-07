@@ -1,8 +1,23 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ProductsService } from 'src/modules/products/services/products.service';
 import { BadRequestException } from '@nestjs/common';
-import { createServiceMock, MockedMethods } from 'test/utils/helpers';
+import {
+  createGuardMock,
+  createMockAnalyticsQueue,
+  createMockInterceptor,
+  createPolicyMock,
+  createServiceMock,
+  MockedMethods,
+} from 'test/utils/helpers';
 import { ProductsController } from 'src/modules/products/controllers/products.controller';
+import { PolicyService } from 'src/modules/authorization/policy/policy.service';
+import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';
+import { StoreRolesGuard } from 'src/modules/authorization/guards/store-roles.guard';
+import {AnalyticsQueueService} from "src/modules/infrastructure/queues/analytics-queue/analytics-queue.service";
+import {RecordEventInterceptor} from "src/modules/infrastructure/interceptors/record-event/record-event.interceptor";
+import {
+  ProductPhotosInterceptor
+} from "src/modules/infrastructure/interceptors/product-photo/product-photo.interceptor";
 
 describe('ProductsController', () => {
   let controller: ProductsController;
@@ -27,10 +42,22 @@ describe('ProductsController', () => {
       'recalculateProductStats',
       'incrementViewCount',
     ]);
+    const policyMock = createPolicyMock();
+    const guardMock = createGuardMock();
+    const queueMock = createMockAnalyticsQueue();
+    const interceptorMock = createMockInterceptor();
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ProductsController],
-      providers: [{ provide: ProductsService, useValue: service }],
+      providers: [
+        { provide: AnalyticsQueueService, useValue: queueMock },
+        { provide: ProductsService, useValue: service },
+        { provide: PolicyService, useValue: policyMock },
+        { provide: JwtAuthGuard, useValue: guardMock },
+        { provide: StoreRolesGuard, useValue: guardMock },
+        { provide: RecordEventInterceptor, useValue: interceptorMock },
+        { provide: ProductPhotosInterceptor, useValue: interceptorMock },
+      ],
     }).compile();
 
     controller = module.get<ProductsController>(ProductsController);

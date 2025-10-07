@@ -1,14 +1,13 @@
 import {
   IUserRepository,
   IUserService,
-  USER_REPOSITORY,
 } from 'src/common/contracts/admin.contract';
 import { User } from 'src/entities/user/user.entity';
 import { Inject } from '@nestjs/common';
 
 export class AdminUserService implements IUserService {
   constructor(
-    @Inject(USER_REPOSITORY) private userRepository: IUserRepository
+    @Inject(IUserRepository) private userRepository: IUserRepository
   ) {}
   getEntityById(id: string): Promise<User | null> {
     return this.userRepository.findById(id);

@@ -161,7 +161,7 @@ export class ProductsService extends BaseService<
       const savePhotos = [...photos];
       const firstPhoto = savePhotos.shift()! ?? mainPhoto;
       await this.addMainPhoto(product.id, store.id, firstPhoto);
-      await this.addPhotos(product.id, store.id, photos);
+      await this.addPhotos(product.id, store.id, savePhotos);
     }
 
     return product;
