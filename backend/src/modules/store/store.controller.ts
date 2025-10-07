@@ -1,4 +1,3 @@
-// src/modules/store/store.controller.ts
 import {
   BadRequestException,
   Body,
