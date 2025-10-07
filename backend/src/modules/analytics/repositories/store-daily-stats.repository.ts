@@ -99,6 +99,44 @@ export class StoreDailyStatsRepository extends BaseAnalyticsRepository<StoreDail
     }));
   }
 
+  async getTopStoreDaily(from: string, to: string, limit = 10) {
+    const qb = this.createQueryBuilder('stats')
+      .select('stats.storeId', 'storeId')
+      .addSelect('SUM(stats.views)', 'totalViews')
+      .addSelect('SUM(stats.purchases)', 'totalPurchases')
+      .addSelect('SUM(stats.revenue)', 'totalRevenue')
+      .addSelect('SUM(stats.addToCarts)', 'totalAddToCarts')
+      .groupBy('stats.storeId');
+
+    if (from && to) {
+      qb.where('stats.date BETWEEN :from AND :to', { from, to });
+    } else if (from) {
+      qb.where('stats.date >= :from', { from });
+    } else if (to) {
+      qb.where('stats.date <= :to', { to });
+    }
+
+    return await qb.orderBy('totalRevenue', 'DESC').limit(limit).getRawMany();
+  }
+
+  async getUnderperformingStores(from?: string, to?: string) {
+    const qb = this.createQueryBuilder('stats')
+      .leftJoin('stores', 's', 's.id = stats.storeId')
+      .select('stats.storeId', 'id')
+      .addSelect('s.name', 'name')
+      .addSelect('SUM(stats.views)', 'views')
+      .addSelect('SUM(stats.purchases)', 'purchases')
+      .addSelect('SUM(stats.revenue)', 'revenue')
+      .groupBy('stats.storeId')
+      .addGroupBy('s.name');
+
+    if (from && to) {
+      qb.andWhere('stats.date BETWEEN :from AND :to', { from, to });
+    }
+
+    return await qb.getRawMany();
+  }
+
   /**
    * Legacy method for backward compatibility
    * @deprecated Use getAggregatedMetrics instead

@@ -78,6 +78,30 @@ export class ProductDailyStatsRepository extends BaseAnalyticsRepository<Product
     }));
   }
 
+  async getUnderperformingProducts(
+    storeId: string,
+    from?: string,
+    to?: string
+  ) {
+    const qb = this.createQueryBuilder('stats')
+      .leftJoin('products', 'p', 'p.id = stats.productId')
+      .select('stats.productId', 'id')
+      .addSelect('p.name', 'name')
+      .addSelect('SUM(stats.views)', 'views')
+      .addSelect('SUM(stats.purchases)', 'purchases')
+      .addSelect('SUM(stats.revenue)', 'revenue')
+      .where('p.storeId = :storeId', { storeId })
+      .andWhere('p.deletedAt IS NULL')
+      .groupBy('stats.productId')
+      .addGroupBy('p.name');
+
+    if (from && to) {
+      qb.andWhere('stats.date BETWEEN :from AND :to', { from, to });
+    }
+
+    return await qb.getRawMany();
+  }
+
   /**
    * Legacy method for backward compatibility
    * @deprecated Use getAggregatedMetrics instead

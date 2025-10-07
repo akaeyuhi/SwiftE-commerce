@@ -8,8 +8,7 @@ import {
   createMock,
   createMockEntityManager,
   MockedMethods,
-} from '../../../utils/helpers';
-/* eslint-disable camelcase */
+} from 'test/utils/helpers';
 
 describe('AnalyticsEventRepository', () => {
   let repo: AnalyticsEventRepository;
@@ -25,12 +24,15 @@ describe('AnalyticsEventRepository', () => {
       andWhere: jest.fn().mockReturnThis(),
       setParameters: jest.fn().mockReturnThis(),
       groupBy: jest.fn().mockReturnThis(),
+      addGroupBy: jest.fn().mockReturnThis(),
       having: jest.fn().mockReturnThis(),
       orderBy: jest.fn().mockReturnThis(),
       addOrderBy: jest.fn().mockReturnThis(),
       limit: jest.fn().mockReturnThis(),
+      clone: jest.fn().mockReturnThis(),
       getRawOne: jest.fn(),
       getRawMany: jest.fn(),
+      getCount: jest.fn(),
       insert: jest.fn().mockReturnThis(),
       into: jest.fn().mockReturnThis(),
       values: jest.fn().mockReturnThis(),
@@ -55,7 +57,7 @@ describe('AnalyticsEventRepository', () => {
         views: '100',
         purchases: '10',
         addToCarts: '25',
-        purchases_value: '999.99',
+        purchasesValue: '999.99',
       };
 
       queryBuilder.getRawOne!.mockResolvedValue(rawResult);
@@ -70,7 +72,9 @@ describe('AnalyticsEventRepository', () => {
       });
       expect(queryBuilder.where).toHaveBeenCalledWith(
         'e.productId = :productId',
-        { productId: 'p1' }
+        {
+          productId: 'p1',
+        }
       );
     });
 
@@ -97,6 +101,28 @@ describe('AnalyticsEventRepository', () => {
         revenue: 0,
       });
     });
+
+    it('should apply only "from" date filter', async () => {
+      queryBuilder.getRawOne!.mockResolvedValue({});
+
+      await repo.aggregateProductMetrics('p1', { from: '2025-01-01' });
+
+      expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+        expect.stringContaining('createdAt'),
+        expect.objectContaining({ from: '2025-01-01' })
+      );
+    });
+
+    it('should apply only "to" date filter', async () => {
+      queryBuilder.getRawOne!.mockResolvedValue({});
+
+      await repo.aggregateProductMetrics('p1', { to: '2025-01-31' });
+
+      expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+        expect.stringContaining('createdAt'),
+        expect.objectContaining({ to: '2025-01-31' })
+      );
+    });
   });
 
   describe('aggregateStoreMetrics', () => {
@@ -106,7 +132,7 @@ describe('AnalyticsEventRepository', () => {
         purchases: '50',
         addToCarts: '150',
         checkouts: '60',
-        purchases_value: '5000.00',
+        purchasesValue: '5000.00',
       };
 
       queryBuilder.getRawOne!.mockResolvedValue(rawResult);
@@ -134,6 +160,20 @@ describe('AnalyticsEventRepository', () => {
       });
 
       expect(queryBuilder.andWhere).toHaveBeenCalled();
+    });
+
+    it('should handle empty result', async () => {
+      queryBuilder.getRawOne!.mockResolvedValue(null);
+
+      const result = await repo.aggregateStoreMetrics('s1');
+
+      expect(result).toEqual({
+        views: 0,
+        purchases: 0,
+        addToCarts: 0,
+        checkouts: 0,
+        revenue: 0,
+      });
     });
   });
 
@@ -209,6 +249,28 @@ describe('AnalyticsEventRepository', () => {
 
       expect(queryBuilder.limit).toHaveBeenCalledWith(10);
     });
+
+    it('should filter by date range', async () => {
+      queryBuilder.getRawMany!.mockResolvedValue([]);
+
+      await repo.getTopProductsByConversion('s1', {
+        from: '2025-01-01',
+        to: '2025-01-31',
+        limit: 10,
+      });
+
+      expect(queryBuilder.andWhere).toHaveBeenCalled();
+    });
+
+    it('should filter out products with no views', async () => {
+      queryBuilder.getRawMany!.mockResolvedValue([]);
+
+      await repo.getTopProductsByConversion('s1');
+
+      expect(queryBuilder.having).toHaveBeenCalledWith(
+        expect.stringContaining('> 0')
+      );
+    });
   });
 
   describe('getDailyEventCounts', () => {
@@ -264,7 +326,9 @@ describe('AnalyticsEventRepository', () => {
 
       expect(queryBuilder.andWhere).toHaveBeenCalledWith(
         'e.productId = :productId',
-        { productId: 'p1' }
+        {
+          productId: 'p1',
+        }
       );
     });
 
@@ -277,7 +341,9 @@ describe('AnalyticsEventRepository', () => {
 
       expect(queryBuilder.andWhere).toHaveBeenCalledWith(
         'e.eventType IN (:...eventTypes)',
-        { eventTypes: [AnalyticsEventType.VIEW, AnalyticsEventType.PURCHASE] }
+        {
+          eventTypes: [AnalyticsEventType.VIEW, AnalyticsEventType.PURCHASE],
+        }
       );
     });
 
@@ -290,7 +356,134 @@ describe('AnalyticsEventRepository', () => {
         eventTypes: [AnalyticsEventType.VIEW],
       });
 
-      expect(queryBuilder.andWhere).toHaveBeenCalledTimes(3); // storeId and productId
+      expect(queryBuilder.andWhere).toHaveBeenCalledTimes(3);
+    });
+
+    it('should apply date range', async () => {
+      queryBuilder.getRawMany!.mockResolvedValue([]);
+
+      await repo.getDailyEventCounts(
+        { storeId: 's1' },
+        { from: '2025-01-01', to: '2025-01-31' }
+      );
+
+      expect(queryBuilder.andWhere).toHaveBeenCalled();
+    });
+  });
+
+  describe('getRevenueTrends', () => {
+    it('should return revenue trends', async () => {
+      const rawResults = [
+        { date: '2025-01-01', revenue: '1000.00', transactions: '10' },
+        { date: '2025-01-02', revenue: '1500.00', transactions: '15' },
+      ];
+
+      queryBuilder.getRawMany!.mockResolvedValue(rawResults);
+
+      const result = await repo.getRevenueTrends(
+        's1',
+        '2025-01-01',
+        '2025-01-02'
+      );
+
+      expect(result).toEqual([
+        { date: '2025-01-01', revenue: 1000, transactions: 10 },
+        { date: '2025-01-02', revenue: 1500, transactions: 15 },
+      ]);
+    });
+
+    it('should filter by storeId', async () => {
+      queryBuilder.getRawMany!.mockResolvedValue([]);
+
+      await repo.getRevenueTrends('s1');
+
+      expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+        'event.storeId = :storeId',
+        {
+          storeId: 's1',
+        }
+      );
+    });
+
+    it('should work without filters', async () => {
+      queryBuilder.getRawMany!.mockResolvedValue([]);
+
+      await repo.getRevenueTrends();
+
+      expect(queryBuilder.where).toHaveBeenCalledWith(
+        'event.eventType = :type',
+        {
+          type: 'purchase',
+        }
+      );
+    });
+  });
+
+  describe('getFunnelData', () => {
+    it('should return funnel data', async () => {
+      queryBuilder.getCount!.mockResolvedValueOnce(1000);
+      queryBuilder.getCount!.mockResolvedValueOnce(500);
+      queryBuilder.getCount!.mockResolvedValueOnce(100);
+      queryBuilder.clone!.mockReturnValue(queryBuilder as any);
+
+      const result = await repo.getFunnelData(
+        's1',
+        'p1',
+        '2025-01-01',
+        '2025-01-31'
+      );
+
+      expect(result).toEqual([1000, 500, 100]);
+      expect(queryBuilder.getCount).toHaveBeenCalledTimes(3);
+    });
+
+    it('should handle optional filters', async () => {
+      queryBuilder.getCount!.mockResolvedValue(0);
+      queryBuilder.clone!.mockReturnValue(queryBuilder as any);
+
+      await repo.getFunnelData();
+
+      expect(queryBuilder.getCount).toHaveBeenCalledTimes(3);
+    });
+  });
+
+  describe('getEventsForUserJourney', () => {
+    it('should return user journey events', async () => {
+      const events = [
+        {
+          userId: 'u1',
+          eventType: AnalyticsEventType.VIEW,
+          productId: 'p1',
+          timestamp: new Date('2025-01-01'),
+        },
+        {
+          userId: 'u1',
+          eventType: AnalyticsEventType.PURCHASE,
+          productId: 'p1',
+          timestamp: new Date('2025-01-02'),
+        },
+      ];
+
+      queryBuilder.getRawMany!.mockResolvedValue(events);
+
+      const result = await repo.getEventsForUserJourney(
+        's1',
+        '2025-01-01',
+        '2025-01-31'
+      );
+
+      expect(result).toEqual(events);
+      expect(queryBuilder.limit).toHaveBeenCalledWith(10000);
+    });
+
+    it('should filter null userIds', async () => {
+      queryBuilder.getRawMany!.mockResolvedValue([]);
+
+      await repo.getEventsForUserJourney();
+
+      expect(queryBuilder.where).toHaveBeenCalledWith(
+        'event.userId IS NOT NULL'
+      );
     });
   });
 
@@ -333,6 +526,16 @@ describe('AnalyticsEventRepository', () => {
       await repo.bulkInsert(events);
 
       expect(queryBuilder.execute).toHaveBeenCalledTimes(1);
+    });
+
+    it('should use orIgnore for duplicate handling', async () => {
+      const events = [{ storeId: 's1', eventType: AnalyticsEventType.VIEW }];
+
+      queryBuilder.execute!.mockResolvedValue({ affected: 1 } as any);
+
+      await repo.bulkInsert(events);
+
+      expect((queryBuilder as any).orIgnore).toHaveBeenCalled();
     });
   });
 
@@ -382,6 +585,28 @@ describe('AnalyticsEventRepository', () => {
       await repo.insertMany(events);
 
       expect(repo.bulkInsert).toHaveBeenCalledWith(events);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('should handle database errors gracefully', async () => {
+      queryBuilder.getRawOne!.mockRejectedValue(new Error('Database error'));
+
+      await expect(repo.aggregateProductMetrics('p1')).rejects.toThrow(
+        'Database error'
+      );
+    });
+
+    it('should handle malformed data', async () => {
+      queryBuilder.getRawOne!.mockResolvedValue({
+        views: 'invalid',
+        purchases: null,
+      });
+
+      const result = await repo.aggregateProductMetrics('p1');
+
+      expect(result.views).toBe(0); // NaN should be handled as 0
+      expect(result.purchases).toBe(0);
     });
   });
 });

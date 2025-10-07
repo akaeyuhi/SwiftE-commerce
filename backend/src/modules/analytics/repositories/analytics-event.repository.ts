@@ -7,10 +7,12 @@ import {
 } from 'src/entities/infrastructure/analytics/analytics-event.entity';
 import { DateRangeOptions } from 'src/common/interfaces/infrastructure/analytics.interface';
 import {
+  EventUserJourney,
   ProductMetrics,
   StoreMetrics,
   TopProductResult,
 } from 'src/modules/analytics/types';
+
 /**
  * AnalyticsEventRepository
  *
@@ -254,6 +256,36 @@ export class AnalyticsEventRepository extends BaseAnalyticsRepository<AnalyticsE
         .andWhere('event.eventType = :type', { type: 'purchase' })
         .getCount(),
     ]);
+  }
+
+  async getEventsForUserJourney(
+    storeId?: string,
+    from?: string,
+    to?: string
+  ): Promise<EventUserJourney[]> {
+    // Build base query
+    const qb = this.createQueryBuilder('event')
+      .select('event.userId', 'userId')
+      .addSelect('event.eventType', 'eventType')
+      .addSelect('event.productId', 'productId')
+      .addSelect('event.createdAt', 'timestamp')
+      .where('event.userId IS NOT NULL');
+
+    if (storeId) {
+      qb.andWhere('event.storeId = :storeId', { storeId });
+    }
+    if (from) {
+      qb.andWhere('event.createdAt >= :from', { from });
+    }
+    if (to) {
+      qb.andWhere('event.createdAt <= :to', { to });
+    }
+
+    qb.orderBy('event.userId', 'ASC')
+      .addOrderBy('event.createdAt', 'ASC')
+      .limit(10000); // Limit for performance
+
+    return await qb.getRawMany();
   }
 
   /**
