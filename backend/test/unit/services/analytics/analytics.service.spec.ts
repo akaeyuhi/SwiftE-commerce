@@ -1,77 +1,98 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AnalyticsService } from 'src/modules/analytics/analytics.service';
-import { AnalyticsQueueService } from 'src/modules/infrastructure/queues/analytics-queue/analytics-queue.service';
-import { AnalyticsEventRepository } from 'src/modules/analytics/repositories/analytics-event.repository';
-import { StoreDailyStatsRepository } from 'src/modules/analytics/repositories/store-daily-stats.repository';
-import { ProductDailyStatsRepository } from 'src/modules/analytics/repositories/product-daily-stats.repository';
-import { REVIEWS_REPOSITORY } from 'src/common/contracts/reviews.contract';
 import { RecordEventDto } from 'src/modules/infrastructure/queues/analytics-queue/dto/record-event.dto';
 import { AnalyticsEventType } from 'src/entities/infrastructure/analytics/analytics-event.entity';
-import {
-  createMock,
-  createRepositoryMock,
-  MockedMethods,
-} from 'test/utils/helpers';
-import { SelectQueryBuilder } from 'typeorm';
+import { createMock, MockedMethods } from 'test/utils/helpers';
 
-describe('AnalyticsService', () => {
+import { EventTrackingService } from 'src/modules/analytics/services/event-tracking.service';
+import { QuickStatsService } from 'src/modules/analytics/services/quick-stats.service';
+import { ConversionAnalyticsService } from 'src/modules/analytics/services/conversion-analytics.service';
+import { RatingAnalyticsService } from 'src/modules/analytics/services/rating-analytics.service';
+import { FunnelAnalyticsService } from 'src/modules/analytics/services/funnel-analytics.service';
+import { ComparisonAnalyticsService } from 'src/modules/analytics/services/comparison-analytics.service';
+import { PerformanceAnalyticsService } from 'src/modules/analytics/services/performance-analytics.service';
+import { DataSyncService } from 'src/modules/analytics/services/data-sync.service';
+import { HealthCheckService } from 'src/modules/analytics/services/health-check.service';
+
+describe('AnalyticsService (Orchestrator)', () => {
   let service: AnalyticsService;
-  let queueService: Partial<MockedMethods<AnalyticsQueueService>>;
-  let eventsRepo: Partial<MockedMethods<AnalyticsEventRepository>>;
-  let storeStatsRepo: Partial<MockedMethods<StoreDailyStatsRepository>>;
-  let productStatsRepo: Partial<MockedMethods<ProductDailyStatsRepository>>;
-  let reviewsRepo: any;
-  let queryBuilder: Partial<SelectQueryBuilder<any>>;
+  let eventTracking: Partial<MockedMethods<EventTrackingService>>;
+  let quickStats: Partial<MockedMethods<QuickStatsService>>;
+  let conversionAnalytics: Partial<MockedMethods<ConversionAnalyticsService>>;
+  let ratingAnalytics: Partial<MockedMethods<RatingAnalyticsService>>;
+  let funnelAnalytics: Partial<MockedMethods<FunnelAnalyticsService>>;
+  let comparisonAnalytics: Partial<MockedMethods<ComparisonAnalyticsService>>;
+  let performanceAnalytics: Partial<MockedMethods<PerformanceAnalyticsService>>;
+  let dataSync: Partial<MockedMethods<DataSyncService>>;
+  let healthCheck: Partial<MockedMethods<HealthCheckService>>;
 
   beforeEach(async () => {
-    queryBuilder = {
-      where: jest.fn().mockReturnThis(),
-      andWhere: jest.fn().mockReturnThis(),
-      select: jest.fn().mockReturnThis(),
-      addSelect: jest.fn().mockReturnThis(),
-      groupBy: jest.fn().mockReturnThis(),
-      orderBy: jest.fn().mockReturnThis(),
-      getCount: jest.fn(),
-      getRawMany: jest.fn(),
-      clone: jest.fn().mockReturnThis(),
-    } as any;
+    eventTracking = createMock<EventTrackingService>([
+      'trackEvent',
+      'recordEvent',
+      'batchTrack',
+    ]);
 
-    queueService = createMock<AnalyticsQueueService>(['addEvent']);
+    quickStats = createMock<QuickStatsService>([
+      'getProductQuickStats',
+      'getStoreQuickStats',
+      'getBatchProductStats',
+    ]);
 
-    eventsRepo = createRepositoryMock<AnalyticsEventRepository>([
-      'create',
-      'save',
-      'aggregateProductRange',
-      'aggregateStoreMetrics',
+    conversionAnalytics = createMock<ConversionAnalyticsService>([
+      'computeProductConversion',
+      'computeStoreConversion',
       'getTopProductsByConversion',
-      'createQueryBuilder',
-    ]);
-    eventsRepo.createQueryBuilder!.mockReturnValue(queryBuilder as any);
-
-    storeStatsRepo = createRepositoryMock<StoreDailyStatsRepository>([
-      'getAggregateRange',
-      'getAggregatedMetrics',
-      'find',
+      'getTopProductsByConversionCached',
+      'getTopProductsByViews',
+      'getTopStoresByRevenue',
+      'getStoreStats',
+      'getProductStats',
     ]);
 
-    productStatsRepo = createRepositoryMock<ProductDailyStatsRepository>([
-      'getAggregateRange',
-      'getAggregatedMetrics',
-      'find',
+    ratingAnalytics = createMock<RatingAnalyticsService>([
+      'recomputeProductRating',
+      'getStoreRatingsSummary',
     ]);
 
-    reviewsRepo = {
-      getRatingAggregate: jest.fn(),
-    };
+    funnelAnalytics = createMock<FunnelAnalyticsService>([
+      'getFunnelAnalysis',
+      'getUserJourneyAnalysis',
+      'getCohortAnalysis',
+      'getRevenueTrends',
+    ]);
+
+    comparisonAnalytics = createMock<ComparisonAnalyticsService>([
+      'getStoreComparison',
+      'getProductComparison',
+      'getPeriodComparison',
+    ]);
+
+    performanceAnalytics = createMock<PerformanceAnalyticsService>([
+      'getTopPerformingStores',
+      'getTopPerformingProducts',
+      'getUnderperformingAnalysis',
+    ]);
+
+    dataSync = createMock<DataSyncService>(['syncCachedStatsWithAnalytics']);
+
+    healthCheck = createMock<HealthCheckService>(['healthCheck', 'getStats']);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AnalyticsService,
-        { provide: AnalyticsQueueService, useValue: queueService },
-        { provide: AnalyticsEventRepository, useValue: eventsRepo },
-        { provide: StoreDailyStatsRepository, useValue: storeStatsRepo },
-        { provide: ProductDailyStatsRepository, useValue: productStatsRepo },
-        { provide: REVIEWS_REPOSITORY, useValue: reviewsRepo },
+        { provide: EventTrackingService, useValue: eventTracking },
+        { provide: QuickStatsService, useValue: quickStats },
+        { provide: ConversionAnalyticsService, useValue: conversionAnalytics },
+        { provide: RatingAnalyticsService, useValue: ratingAnalytics },
+        { provide: FunnelAnalyticsService, useValue: funnelAnalytics },
+        { provide: ComparisonAnalyticsService, useValue: comparisonAnalytics },
+        {
+          provide: PerformanceAnalyticsService,
+          useValue: performanceAnalytics,
+        },
+        { provide: DataSyncService, useValue: dataSync },
+        { provide: HealthCheckService, useValue: healthCheck },
       ],
     }).compile();
 
@@ -80,376 +101,169 @@ describe('AnalyticsService', () => {
     jest.clearAllMocks();
   });
 
-  describe('trackEvent', () => {
-    it('should queue event for async processing', async () => {
+  describe('Event Tracking Delegation', () => {
+    it('should delegate trackEvent to EventTrackingService', async () => {
       const dto: RecordEventDto = {
         storeId: 's1',
         eventType: AnalyticsEventType.VIEW,
         invokedOn: 'product',
       };
 
-      queueService.addEvent!.mockResolvedValue('job-1');
+      eventTracking.trackEvent!.mockResolvedValue(undefined);
 
       await service.trackEvent(dto);
 
-      expect(queueService.addEvent).toHaveBeenCalledWith(dto);
+      expect(eventTracking.trackEvent).toHaveBeenCalledWith(dto);
+      expect(eventTracking.trackEvent).toHaveBeenCalledTimes(1);
+    });
+
+    it('should delegate recordEvent to EventTrackingService', async () => {
+      const dto: RecordEventDto = {
+        storeId: 's1',
+        eventType: AnalyticsEventType.PURCHASE,
+        invokedOn: 'product',
+        productId: 'p1',
+        value: 100,
+      };
+
+      const savedEvent = { id: 'e1', ...dto };
+      eventTracking.recordEvent!.mockResolvedValue(savedEvent as any);
+
+      const result = await service.recordEvent(dto);
+
+      expect(result).toEqual(savedEvent);
+      expect(eventTracking.recordEvent).toHaveBeenCalledWith(dto);
+    });
+
+    it('should delegate batchTrack to EventTrackingService', async () => {
+      const events: RecordEventDto[] = [
+        {
+          storeId: 's1',
+          eventType: AnalyticsEventType.VIEW,
+          invokedOn: 'product',
+        },
+        {
+          storeId: 's1',
+          eventType: AnalyticsEventType.PURCHASE,
+          invokedOn: 'product',
+        },
+      ];
+
+      eventTracking.batchTrack!.mockResolvedValue(undefined as any);
+
+      await service.batchTrack(events);
+
+      expect(eventTracking.batchTrack).toHaveBeenCalledWith(events);
     });
   });
 
-  describe('validateAggregator', () => {
-    it('should validate known aggregators', () => {
-      expect(() =>
-        (service as any).validateAggregator('productConversion', {
-          productId: 'p1',
-        })
-      ).not.toThrow();
+  describe('Quick Stats Delegation', () => {
+    it('should delegate getProductQuickStats', async () => {
+      const stats = { views: 100, purchases: 10 };
+      quickStats.getProductQuickStats!.mockResolvedValue(stats as any);
+
+      const result = await service.getProductQuickStats('p1');
+
+      expect(result).toEqual(stats);
+      expect(quickStats.getProductQuickStats).toHaveBeenCalledWith('p1');
     });
 
-    it('should throw for unknown aggregator', () => {
-      expect(() =>
-        (service as any).validateAggregator('unknownAggregator')
-      ).toThrow('Unknown aggregator: unknownAggregator');
+    it('should delegate getStoreQuickStats', async () => {
+      const stats = { views: 1000, purchases: 100 };
+      quickStats.getStoreQuickStats!.mockResolvedValue(stats as any);
+
+      const result = await service.getStoreQuickStats('s1');
+
+      expect(result).toEqual(stats);
+      expect(quickStats.getStoreQuickStats).toHaveBeenCalledWith('s1');
     });
 
-    it('should validate date format', () => {
-      expect(() =>
-        (service as any).validateAggregator('storeConversion', {
-          storeId: 's1',
-          from: 'invalid-date',
-          to: '2025-01-31',
-        })
-      ).toThrow('Invalid date format');
-    });
+    it('should delegate getBatchProductStats', async () => {
+      const stats = { p1: { views: 100 }, p2: { views: 200 } };
+      quickStats.getBatchProductStats!.mockResolvedValue(stats as any);
 
-    it('should validate date order', () => {
-      expect(() =>
-        (service as any).validateAggregator('storeConversion', {
-          storeId: 's1',
-          from: '2025-12-31',
-          to: '2025-01-01',
-        })
-      ).toThrow('from date must be before or equal to to date');
-    });
+      const result = await service.getBatchProductStats(['p1', 'p2']);
 
-    it('should prevent date ranges exceeding 365 days', () => {
-      expect(() =>
-        (service as any).validateAggregator('storeConversion', {
-          storeId: 's1',
-          from: '2023-01-01',
-          to: '2025-01-01',
-        })
-      ).toThrow('Date range cannot exceed 365 days');
-    });
-
-    it('should require productId for product aggregators', () => {
-      expect(() =>
-        (service as any).validateAggregator('productConversion', {})
-      ).toThrow('productConversion requires productId parameter');
-    });
-
-    it('should require storeId for store aggregators', () => {
-      expect(() =>
-        (service as any).validateAggregator('storeConversion', {})
-      ).toThrow('storeConversion requires storeId parameter');
-    });
-
-    it('should validate limit range', () => {
-      expect(() =>
-        (service as any).validateAggregator('topProductsByConversion', {
-          storeId: 's1',
-          limit: 0,
-        })
-      ).toThrow('limit must be between 1 and 1000');
-
-      expect(() =>
-        (service as any).validateAggregator('topProductsByConversion', {
-          storeId: 's1',
-          limit: 1001,
-        })
-      ).toThrow('limit must be between 1 and 1000');
-    });
-
-    it('should allow valid limit values', () => {
-      expect(() =>
-        (service as any).validateAggregator('topProductsByConversion', {
-          storeId: 's1',
-          limit: 10,
-        })
-      ).not.toThrow();
+      expect(result).toEqual(stats);
+      expect(quickStats.getBatchProductStats).toHaveBeenCalledWith([
+        'p1',
+        'p2',
+      ]);
     });
   });
 
-  describe('aggregate', () => {
-    it('should run aggregation successfully', async () => {
-      productStatsRepo.getAggregateRange!.mockResolvedValue({
+  describe('Conversion Analytics Delegation', () => {
+    it('should delegate computeProductConversion', async () => {
+      const conversion = {
+        productId: 'p1',
         views: 100,
         purchases: 10,
-        addToCarts: 25,
-        revenue: 1000,
-      });
-
-      const result = await service.aggregate('productConversion', {
-        productId: 'p1',
-      });
-
-      expect(result).toHaveProperty('conversionRate');
-    });
-
-    it('should throw for invalid aggregator', async () => {
-      await expect(service.aggregate('invalidAggregator', {})).rejects.toThrow(
-        'Unknown aggregator: invalidAggregator'
+        conversionRate: 0.1,
+      };
+      conversionAnalytics.computeProductConversion!.mockResolvedValue(
+        conversion as any
       );
-    });
-  });
 
-  describe('computeProductConversion', () => {
-    it('should compute from aggregated stats when available', async () => {
-      productStatsRepo.getAggregateRange!.mockResolvedValue({
-        views: 100,
-        purchases: 10,
-        addToCarts: 25,
-        revenue: 1000,
-      });
+      const result = await service.computeProductConversion(
+        'p1',
+        '2025-01-01',
+        '2025-01-31'
+      );
 
-      const result = await service.computeProductConversion('p1');
-
-      expect(result).toEqual({
-        productId: 'p1',
-        views: 100,
-        purchases: 10,
-        addToCarts: 25,
-        revenue: 1000,
-        conversionRate: 0.1,
-        addToCartRate: 0.25,
-        source: 'aggregated_stats',
-      });
-    });
-
-    it('should fallback to raw events when no aggregated data', async () => {
-      productStatsRepo.getAggregateRange!.mockResolvedValue({
-        views: 0,
-        purchases: 0,
-        addToCarts: 0,
-        revenue: 0,
-      });
-
-      eventsRepo.aggregateProductRange!.mockResolvedValue({
-        views: 50,
-        purchases: 5,
-        addToCarts: 12,
-        revenue: 500,
-      });
-
-      const result = await service.computeProductConversion('p1');
-
-      expect(result).toEqual({
-        productId: 'p1',
-        views: 50,
-        purchases: 5,
-        addToCarts: 12,
-        revenue: 500,
-        conversionRate: 0.1,
-        addToCartRate: 0.24,
-        source: 'raw_events',
-      });
-    });
-
-    it('should handle zero division safely', async () => {
-      productStatsRepo.getAggregateRange!.mockResolvedValue({
-        views: 0,
-        purchases: 0,
-        addToCarts: 0,
-        revenue: 0,
-      });
-
-      eventsRepo.aggregateProductRange!.mockResolvedValue({
-        views: 0,
-        purchases: 0,
-        addToCarts: 0,
-        revenue: 0,
-      });
-
-      const result = await service.computeProductConversion('p1');
-
-      expect(result.conversionRate).toBe(0);
-      expect(result.addToCartRate).toBe(0);
-    });
-
-    it('should apply date range filters', async () => {
-      productStatsRepo.getAggregateRange!.mockResolvedValue({
-        views: 100,
-        purchases: 10,
-        addToCarts: 25,
-        revenue: 1000,
-      });
-
-      await service.computeProductConversion('p1', '2025-01-01', '2025-01-31');
-
-      expect(productStatsRepo.getAggregateRange).toHaveBeenCalledWith(
+      expect(result).toEqual(conversion);
+      expect(conversionAnalytics.computeProductConversion).toHaveBeenCalledWith(
         'p1',
         '2025-01-01',
         '2025-01-31'
       );
     });
-  });
 
-  describe('computeStoreConversion', () => {
-    it('should compute from aggregated stats when available', async () => {
-      storeStatsRepo.getAggregateRange!.mockResolvedValue({
-        views: 500,
-        purchases: 50,
-        addToCarts: 125,
-        revenue: 5000,
-        checkouts: 60,
-      });
-
-      const result = await service.computeStoreConversion('s1');
-
-      expect(result).toEqual({
+    it('should delegate computeStoreConversion', async () => {
+      const conversion = {
         storeId: 's1',
-        views: 500,
-        purchases: 50,
-        addToCarts: 125,
-        revenue: 5000,
-        checkouts: 60,
-        conversionRate: 0.1,
-        addToCartRate: 0.25,
-        checkoutRate: 0.48,
-        source: 'aggregated_stats',
-      });
-    });
-
-    it('should fallback to raw events when no aggregated data', async () => {
-      storeStatsRepo.getAggregateRange!.mockResolvedValue({
-        views: 0,
-        purchases: 0,
-        addToCarts: 0,
-        revenue: 0,
-        checkouts: 0,
-      });
-
-      eventsRepo.aggregateStoreMetrics!.mockResolvedValue({
-        views: 250,
-        purchases: 25,
-        addToCarts: 62,
-        revenue: 2500,
-        checkouts: 30,
-      });
-
-      const result = await service.computeStoreConversion('s1');
-
-      expect(result.source).toBe('raw_events');
-      expect(result.conversionRate).toBe(0.1);
-    });
-
-    it('should calculate checkout rate correctly', async () => {
-      storeStatsRepo.getAggregateRange!.mockResolvedValue({
         views: 1000,
-        purchases: 50,
-        addToCarts: 200,
-        revenue: 5000,
-        checkouts: 80,
-      });
+        purchases: 100,
+        conversionRate: 0.1,
+      };
+      conversionAnalytics.computeStoreConversion!.mockResolvedValue(
+        conversion as any
+      );
 
       const result = await service.computeStoreConversion('s1');
 
-      expect(result.checkoutRate).toBe(0.4); // 80/200
+      expect(result).toEqual(conversion);
+      expect(conversionAnalytics.computeStoreConversion).toHaveBeenCalledWith(
+        's1',
+        undefined,
+        undefined
+      );
     });
-  });
 
-  describe('getTopProductsByConversion', () => {
-    it('should return top products by conversion rate', async () => {
+    it('should delegate getTopProductsByConversion', async () => {
       const topProducts = [
-        { productId: 'p1', conversionRate: 0.2, views: 100, purchases: 20 },
-        { productId: 'p2', conversionRate: 0.15, views: 200, purchases: 30 },
+        { productId: 'p1', conversionRate: 0.2 },
+        { productId: 'p2', conversionRate: 0.15 },
       ];
-
-      eventsRepo.getTopProductsByConversion!.mockResolvedValue(
+      conversionAnalytics.getTopProductsByConversion!.mockResolvedValue(
         topProducts as any
       );
 
-      const result = await service.getTopProductsByConversion('s1');
+      const result = await service.getTopProductsByConversion(
+        's1',
+        undefined,
+        undefined,
+        5
+      );
 
       expect(result).toEqual(topProducts);
-      expect(eventsRepo.getTopProductsByConversion).toHaveBeenCalledWith('s1', {
-        from: undefined,
-        to: undefined,
-        limit: 10,
-      });
+      expect(
+        conversionAnalytics.getTopProductsByConversion
+      ).toHaveBeenCalledWith('s1', undefined, undefined, 5);
     });
 
-    it('should use custom limit', async () => {
-      eventsRepo.getTopProductsByConversion!.mockResolvedValue([]);
-
-      await service.getTopProductsByConversion('s1', undefined, undefined, 5);
-
-      expect(eventsRepo.getTopProductsByConversion).toHaveBeenCalledWith('s1', {
-        from: undefined,
-        to: undefined,
-        limit: 5,
-      });
-    });
-  });
-
-  describe('recomputeProductRating', () => {
-    it('should get rating aggregate from reviews repository', async () => {
-      const rating = {
-        averageRating: 4.5,
-        totalReviews: 100,
-        distribution: { 5: 60, 4: 30, 3: 5, 2: 3, 1: 2 },
-      };
-
-      reviewsRepo.getRatingAggregate.mockResolvedValue(rating);
-
-      const result = await service.recomputeProductRating('p1');
-
-      expect(reviewsRepo.getRatingAggregate).toHaveBeenCalledWith('p1');
-      expect(result).toEqual(rating);
-    });
-  });
-
-  describe('getStoreStats', () => {
-    it('should return store stats with summary', async () => {
-      storeStatsRepo.getAggregatedMetrics!.mockResolvedValue({
-        views: 1000,
-        purchases: 100,
-        addToCarts: 250,
-        revenue: 10000,
-        checkouts: 120,
-      });
-
-      storeStatsRepo.find!.mockResolvedValue([]);
-
-      const result = await service.getStoreStats('s1');
-
-      expect(result.storeId).toBe('s1');
-      expect(result.summary).toEqual({
-        views: 1000,
-        purchases: 100,
-        addToCarts: 250,
-        revenue: 10000,
-        checkouts: 120,
-        conversionRate: 0.1,
-        addToCartRate: 0.25,
-        checkoutRate: 0.48,
-      });
-    });
-
-    it('should include timeseries when date range provided', async () => {
-      storeStatsRepo.getAggregatedMetrics!.mockResolvedValue({
-        views: 1000,
-        purchases: 100,
-        addToCarts: 250,
-        revenue: 10000,
-        checkouts: 120,
-      });
-
-      const series = [
-        { date: '2025-01-01', views: 100, purchases: 10 },
-        { date: '2025-01-02', views: 150, purchases: 15 },
-      ];
-
-      storeStatsRepo.find!.mockResolvedValue(series as any);
+    it('should delegate getStoreStats', async () => {
+      const stats = { storeId: 's1', summary: { views: 1000 } };
+      conversionAnalytics.getStoreStats!.mockResolvedValue(stats as any);
 
       const result = await service.getStoreStats(
         's1',
@@ -457,238 +271,400 @@ describe('AnalyticsService', () => {
         '2025-01-31'
       );
 
-      expect(result.series).toEqual(series);
+      expect(result).toEqual(stats);
+      expect(conversionAnalytics.getStoreStats).toHaveBeenCalledWith(
+        's1',
+        '2025-01-01',
+        '2025-01-31'
+      );
     });
-  });
 
-  describe('getProductStats', () => {
-    it('should return product stats with rating', async () => {
-      productStatsRepo.getAggregatedMetrics!.mockResolvedValue({
-        views: 200,
-        purchases: 20,
-        addToCarts: 50,
-        revenue: 2000,
-      });
-
-      productStatsRepo.find!.mockResolvedValue([]);
-
-      const rating = { averageRating: 4.5, totalReviews: 50 };
-      reviewsRepo.getRatingAggregate.mockResolvedValue(rating);
+    it('should delegate getProductStats', async () => {
+      const stats = { productId: 'p1', summary: { views: 100 } };
+      conversionAnalytics.getProductStats!.mockResolvedValue(stats as any);
 
       const result = await service.getProductStats('p1');
 
-      expect(result.productId).toBe('p1');
-      expect(result.summary.views).toBe(200);
-      expect(result.rating).toEqual(rating);
+      expect(result).toEqual(stats);
+      expect(conversionAnalytics.getProductStats).toHaveBeenCalledWith(
+        'p1',
+        undefined,
+        undefined
+      );
+    });
+  });
+
+  describe('Rating Analytics Delegation', () => {
+    it('should delegate recomputeProductRating', async () => {
+      const rating = { averageRating: 4.5, totalReviews: 100 };
+      ratingAnalytics.recomputeProductRating!.mockResolvedValue(rating as any);
+
+      const result = await service.recomputeProductRating('p1');
+
+      expect(result).toEqual(rating);
+      expect(ratingAnalytics.recomputeProductRating).toHaveBeenCalledWith('p1');
     });
 
-    it('should include timeseries when date range provided', async () => {
-      productStatsRepo.getAggregatedMetrics!.mockResolvedValue({
-        views: 200,
-        purchases: 20,
-        addToCarts: 50,
-        revenue: 2000,
-      });
+    it('should delegate getStoreRatingsSummary', async () => {
+      const summary = { storeId: 's1', averageRating: 4.3 };
+      ratingAnalytics.getStoreRatingsSummary!.mockResolvedValue(summary as any);
 
-      const series = [
-        { date: '2025-01-01', views: 20, purchases: 2 },
-        { date: '2025-01-02', views: 25, purchases: 3 },
-      ];
+      const result = await service.getStoreRatingsSummary(
+        's1',
+        '2025-01-01',
+        '2025-01-31'
+      );
 
-      productStatsRepo.find!.mockResolvedValue(series as any);
-      reviewsRepo.getRatingAggregate.mockResolvedValue({});
+      expect(result).toEqual(summary);
+      expect(ratingAnalytics.getStoreRatingsSummary).toHaveBeenCalledWith(
+        's1',
+        '2025-01-01',
+        '2025-01-31'
+      );
+    });
+  });
 
-      const result = await service.getProductStats(
+  describe('Funnel Analytics Delegation', () => {
+    it('should delegate getFunnelAnalysis', async () => {
+      const funnel = {
+        funnel: { views: 1000, addToCarts: 250, purchases: 100 },
+        rates: { viewToCart: '25.00', cartToPurchase: '40.00' },
+      };
+      funnelAnalytics.getFunnelAnalysis!.mockResolvedValue(funnel as any);
+
+      const result = await service.getFunnelAnalysis(
+        's1',
         'p1',
         '2025-01-01',
         '2025-01-31'
       );
 
-      expect(result.series).toEqual(series);
-    });
-  });
-
-  describe('getFunnelAnalysis', () => {
-    it('should analyze conversion funnel', async () => {
-      (queryBuilder.getCount as jest.Mock)!
-        .mockResolvedValueOnce(1000) // views
-        .mockResolvedValueOnce(250) // addToCarts
-        .mockResolvedValueOnce(100); // purchases
-
-      const result = await (service as any).getFunnelAnalysis('s1');
-
-      expect(result.funnel).toEqual({
-        views: 1000,
-        addToCarts: 250,
-        purchases: 100,
-      });
-      expect(result.rates.viewToCart).toBe('25.00');
-      expect(result.rates.cartToPurchase).toBe('40.00');
-      expect(result.rates.overallConversion).toBe('10.00');
+      expect(result).toEqual(funnel);
+      expect(funnelAnalytics.getFunnelAnalysis).toHaveBeenCalledWith(
+        's1',
+        'p1',
+        '2025-01-01',
+        '2025-01-31'
+      );
     });
 
-    it('should handle zero values safely', async () => {
-      (queryBuilder.getCount as jest.Mock)!
-        .mockResolvedValueOnce(0)
-        .mockResolvedValueOnce(0)
-        .mockResolvedValueOnce(0);
+    it('should delegate getUserJourneyAnalysis', async () => {
+      const journey = { commonPaths: [], dropOffPoints: [] };
+      funnelAnalytics.getUserJourneyAnalysis!.mockResolvedValue(journey as any);
 
-      const result = await (service as any).getFunnelAnalysis('s1');
+      const result = await service.getUserJourneyAnalysis('s1');
 
-      expect(result.rates.viewToCart).toBe('0.00');
-      expect(result.rates.cartToPurchase).toBe('0.00');
-      expect(result.rates.overallConversion).toBe('0.00');
+      expect(result).toEqual(journey);
+      expect(funnelAnalytics.getUserJourneyAnalysis).toHaveBeenCalledWith(
+        's1',
+        undefined,
+        undefined
+      );
     });
-  });
 
-  describe('getRevenueTrends', () => {
-    it('should return revenue trends over time', async () => {
+    it('should delegate getRevenueTrends', async () => {
       const trends = [
-        { date: '2025-01-01', revenue: 1000, transactions: 10 },
-        { date: '2025-01-02', revenue: 1500, transactions: 15 },
+        { date: '2025-01-01', revenue: 1000 },
+        { date: '2025-01-02', revenue: 1500 },
       ];
+      funnelAnalytics.getRevenueTrends!.mockResolvedValue(trends as any);
 
-      (queryBuilder.getRawMany as jest.Mock)!.mockResolvedValue(trends);
-
-      const result = await (service as any).getRevenueTrends('s1');
+      const result = await service.getRevenueTrends('s1');
 
       expect(result).toEqual(trends);
-    });
-
-    it('should filter by storeId when provided', async () => {
-      (queryBuilder.getRawMany as jest.Mock)!.mockResolvedValue([]);
-
-      await (service as any).getRevenueTrends('s1', '2025-01-01', '2025-01-31');
-
-      expect(queryBuilder.andWhere).toHaveBeenCalledWith(
-        'event.storeId = :storeId',
-        { storeId: 's1' }
+      expect(funnelAnalytics.getRevenueTrends).toHaveBeenCalledWith(
+        's1',
+        undefined,
+        undefined
       );
     });
   });
 
-  describe('getStoreComparison', () => {
-    it('should compare multiple stores', async () => {
-      storeStatsRepo
-        .getAggregateRange!.mockResolvedValueOnce({
-          views: 1000,
-          purchases: 100,
-          addToCarts: 250,
-          revenue: 10000,
-          checkouts: 120,
-        })
-        .mockResolvedValueOnce({
-          views: 800,
-          purchases: 80,
-          addToCarts: 200,
-          revenue: 8000,
-          checkouts: 100,
-        });
+  describe('Comparison Analytics Delegation', () => {
+    it('should delegate getStoreComparison', async () => {
+      const comparison = { stores: [{ storeId: 's1' }, { storeId: 's2' }] };
+      comparisonAnalytics.getStoreComparison!.mockResolvedValue(
+        comparison as any
+      );
 
-      const result = await (service as any).getStoreComparison(['s1', 's2']);
+      const result = await service.getStoreComparison(['s1', 's2']);
 
-      expect(result.stores).toHaveLength(2);
-      expect(result.stores[0].storeId).toBe('s1');
-      expect(result.stores[1].storeId).toBe('s2');
+      expect(result).toEqual(comparison);
+      expect(comparisonAnalytics.getStoreComparison).toHaveBeenCalledWith(
+        ['s1', 's2'],
+        undefined,
+        undefined
+      );
     });
-  });
 
-  describe('getProductComparison', () => {
-    it('should compare multiple products', async () => {
-      productStatsRepo
-        .getAggregateRange!.mockResolvedValueOnce({
-          views: 200,
-          purchases: 20,
-          addToCarts: 50,
-          revenue: 2000,
-        })
-        .mockResolvedValueOnce({
-          views: 150,
-          purchases: 15,
-          addToCarts: 40,
-          revenue: 1500,
-        });
-
-      const result = await (service as any).getProductComparison(['p1', 'p2']);
-
-      expect(result.products).toHaveLength(2);
-      expect(result.products[0].productId).toBe('p1');
-      expect(result.products[1].productId).toBe('p2');
-    });
-  });
-
-  describe('recordEvent (deprecated)', () => {
-    it('should record event directly', async () => {
-      const dto: RecordEventDto = {
-        storeId: 's1',
-        eventType: AnalyticsEventType.VIEW,
-        invokedOn: 'product',
-        productId: 'p1',
+    it('should delegate getProductComparison', async () => {
+      const comparison = {
+        products: [{ productId: 'p1' }, { productId: 'p2' }],
       };
+      comparisonAnalytics.getProductComparison!.mockResolvedValue(
+        comparison as any
+      );
 
-      const createdEvent = { id: 'e1', ...dto };
-      eventsRepo.create!.mockReturnValue(createdEvent as any);
-      eventsRepo.save!.mockResolvedValue(createdEvent as any);
+      const result = await service.getProductComparison(
+        ['p1', 'p2'],
+        '2025-01-01',
+        '2025-01-31'
+      );
 
-      const result = await service.recordEvent(dto);
-
-      expect(eventsRepo.create).toHaveBeenCalled();
-      expect(eventsRepo.save).toHaveBeenCalledWith(createdEvent);
-      expect(result).toEqual(createdEvent);
+      expect(result).toEqual(comparison);
+      expect(comparisonAnalytics.getProductComparison).toHaveBeenCalledWith(
+        ['p1', 'p2'],
+        '2025-01-01',
+        '2025-01-31'
+      );
     });
 
-    it('should set defaults for missing fields', async () => {
-      const dto: RecordEventDto = {
-        eventType: AnalyticsEventType.VIEW,
-        invokedOn: 'product',
-      } as any;
+    it('should delegate getPeriodComparison', async () => {
+      const comparison = { currentPeriod: {}, previousPeriod: {}, changes: {} };
+      comparisonAnalytics.getPeriodComparison!.mockResolvedValue(
+        comparison as any
+      );
 
-      eventsRepo.create!.mockReturnValue({} as any);
-      eventsRepo.save!.mockResolvedValue({} as any);
+      const result = await service.getPeriodComparison(
+        's1',
+        undefined,
+        '2025-01-01',
+        '2025-01-31'
+      );
 
-      await service.recordEvent(dto);
-
-      expect(eventsRepo.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          storeId: null,
-          productId: null,
-          userId: null,
-          value: null,
-          meta: null,
-        })
+      expect(result).toEqual(comparison);
+      expect(comparisonAnalytics.getPeriodComparison).toHaveBeenCalledWith(
+        's1',
+        undefined,
+        '2025-01-01',
+        '2025-01-31'
       );
     });
   });
 
-  describe('getSupportedAggregators', () => {
-    it('should return list of supported aggregators', () => {
-      const aggregators = service.getSupportedAggregators();
+  describe('Performance Analytics Delegation', () => {
+    it('should delegate getTopPerformingStores', async () => {
+      const stores = [{ storeId: 's1', revenue: 10000 }];
+      performanceAnalytics.getTopPerformingStores!.mockResolvedValue(
+        stores as any
+      );
 
-      expect(Array.isArray(aggregators)).toBe(true);
-      expect(aggregators).toContain('productConversion');
-      expect(aggregators).toContain('storeConversion');
-      expect(aggregators).toContain('topProductsByConversion');
+      const result = await service.getTopPerformingStores(
+        10,
+        '2025-01-01',
+        '2025-01-31'
+      );
+
+      expect(result).toEqual(stores);
+      expect(performanceAnalytics.getTopPerformingStores).toHaveBeenCalledWith(
+        10,
+        '2025-01-01',
+        '2025-01-31'
+      );
+    });
+
+    it('should delegate getTopPerformingProducts', async () => {
+      const products = [{ productId: 'p1', revenue: 1000 }];
+      performanceAnalytics.getTopPerformingProducts!.mockResolvedValue(
+        products as any
+      );
+
+      const result = await service.getTopPerformingProducts('s1', 15);
+
+      expect(result).toEqual(products);
+      expect(
+        performanceAnalytics.getTopPerformingProducts
+      ).toHaveBeenCalledWith('s1', 15, undefined, undefined);
+    });
+
+    it('should delegate getUnderperformingAnalysis', async () => {
+      const analysis = { underperforming: [], benchmarks: {} };
+      performanceAnalytics.getUnderperformingAnalysis!.mockResolvedValue(
+        analysis as any
+      );
+
+      const result = await service.getUnderperformingAnalysis('s1');
+
+      expect(result).toEqual(analysis);
+      expect(
+        performanceAnalytics.getUnderperformingAnalysis
+      ).toHaveBeenCalledWith('s1', undefined, undefined);
     });
   });
 
-  describe('getAggregationSchema', () => {
-    it('should return schema for known aggregator', () => {
-      const schema = service.getAggregationSchema('productConversion');
+  describe('Data Sync Delegation', () => {
+    it('should delegate syncCachedStatsWithAnalytics', async () => {
+      const syncResult = { productId: 'p1', synced: true };
+      dataSync.syncCachedStatsWithAnalytics!.mockResolvedValue(
+        syncResult as any
+      );
 
-      expect(schema).toBeDefined();
-      expect(schema!.name).toBe('productConversion');
-    });
+      const result = await service.syncCachedStatsWithAnalytics('p1');
 
-    it('should return null for unknown aggregator', () => {
-      const schema = service.getAggregationSchema('unknown');
-
-      expect(schema).toBeNull();
+      expect(result).toEqual(syncResult);
+      expect(dataSync.syncCachedStatsWithAnalytics).toHaveBeenCalledWith(
+        'p1',
+        undefined
+      );
     });
   });
 
-  describe('error handling', () => {
-    it('should handle repository errors gracefully', async () => {
-      productStatsRepo.getAggregateRange!.mockRejectedValue(
+  describe('Health Check Delegation', () => {
+    it('should delegate healthCheck', async () => {
+      const health = { healthy: true, message: 'OK' };
+      healthCheck.healthCheck!.mockResolvedValue(health as any);
+
+      const result = await service.healthCheck();
+
+      expect(result).toEqual(health);
+      expect(healthCheck.healthCheck).toHaveBeenCalled();
+    });
+
+    it('should delegate getStats', async () => {
+      const stats = { totalEvents: 10000, recentEvents: 100 };
+      healthCheck.getStats!.mockResolvedValue(stats as any);
+
+      const result = await service.getStats();
+
+      expect(result).toEqual(stats);
+      expect(healthCheck.getStats).toHaveBeenCalled();
+    });
+  });
+
+  describe('Aggregation Router', () => {
+    describe('validateAggregator', () => {
+      it('should validate known aggregators', () => {
+        expect(() =>
+          service['validateAggregator']('productConversion', {
+            productId: 'p1',
+          })
+        ).not.toThrow();
+      });
+
+      it('should throw for unknown aggregator', () => {
+        expect(() =>
+          service['validateAggregator']('unknownAggregator')
+        ).toThrow('Unknown aggregator: unknownAggregator');
+      });
+
+      it('should validate date format', () => {
+        expect(() =>
+          service['validateAggregator']('storeConversion', {
+            storeId: 's1',
+            from: 'invalid-date',
+            to: '2025-01-31',
+          })
+        ).toThrow('Invalid date format');
+      });
+
+      it('should validate date order', () => {
+        expect(() =>
+          service['validateAggregator']('storeConversion', {
+            storeId: 's1',
+            from: '2025-12-31',
+            to: '2025-01-01',
+          })
+        ).toThrow('from date must be before or equal to to date');
+      });
+
+      it('should prevent date ranges exceeding 365 days', () => {
+        expect(() =>
+          service['validateAggregator']('storeConversion', {
+            storeId: 's1',
+            from: '2023-01-01',
+            to: '2025-01-01',
+          })
+        ).toThrow('Date range cannot exceed 365 days');
+      });
+
+      it('should require productId for product aggregators', () => {
+        expect(() =>
+          service['validateAggregator']('productConversion', {})
+        ).toThrow('productConversion requires productId parameter');
+      });
+
+      it('should require storeId for store aggregators', () => {
+        expect(() =>
+          service['validateAggregator']('storeConversion', {})
+        ).toThrow('storeConversion requires storeId parameter');
+      });
+
+      it('should validate limit range', () => {
+        expect(() =>
+          service['validateAggregator']('topProductsByConversion', {
+            storeId: 's1',
+            limit: 0,
+          })
+        ).toThrow('limit must be between 1 and 1000');
+
+        expect(() =>
+          service['validateAggregator']('topProductsByConversion', {
+            storeId: 's1',
+            limit: 1001,
+          })
+        ).toThrow('limit must be between 1 and 1000');
+      });
+
+      it('should allow valid limit values', () => {
+        expect(() =>
+          service['validateAggregator']('topProductsByConversion', {
+            storeId: 's1',
+            limit: 10,
+          })
+        ).not.toThrow();
+      });
+    });
+
+    describe('runAggregation', () => {
+      it('should route productConversion', async () => {
+        const conversion = { productId: 'p1', conversionRate: 0.1 };
+        conversionAnalytics.computeProductConversion!.mockResolvedValue(
+          conversion as any
+        );
+
+        const result = await service['runAggregation']('productConversion', {
+          productId: 'p1',
+        });
+
+        expect(result).toEqual(conversion);
+        expect(
+          conversionAnalytics.computeProductConversion
+        ).toHaveBeenCalledWith('p1', undefined, undefined);
+      });
+
+      it('should route storeStats', async () => {
+        const stats = { storeId: 's1', summary: {} };
+        conversionAnalytics.getStoreStats!.mockResolvedValue(stats as any);
+
+        const result = await service['runAggregation']('storeStats', {
+          storeId: 's1',
+        });
+
+        expect(result).toEqual(stats);
+      });
+
+      it('should route funnelAnalysis', async () => {
+        const funnel = { funnel: {}, rates: {} };
+        funnelAnalytics.getFunnelAnalysis!.mockResolvedValue(funnel as any);
+
+        const result = await service['runAggregation']('funnelAnalysis', {
+          storeId: 's1',
+        });
+
+        expect(result).toEqual(funnel);
+      });
+
+      it('should throw for unimplemented aggregator', async () => {
+        await expect(
+          service['runAggregation']('unknownAggregator', {})
+        ).rejects.toThrow('Aggregator unknownAggregator not implemented');
+      });
+    });
+  });
+
+  describe('Integration', () => {
+    it('should handle service errors gracefully', async () => {
+      conversionAnalytics.computeProductConversion!.mockRejectedValue(
         new Error('Database error')
       );
 
@@ -697,10 +673,21 @@ describe('AnalyticsService', () => {
       );
     });
 
-    it('should handle invalid aggregation requests', async () => {
-      await expect(
-        service.aggregate('invalidAggregator', {})
-      ).rejects.toThrow();
+    it('should properly pass parameters to delegated services', async () => {
+      conversionAnalytics.getTopProductsByConversion!.mockResolvedValue(
+        [] as any
+      );
+
+      await service.getTopProductsByConversion(
+        's1',
+        '2025-01-01',
+        '2025-01-31',
+        25
+      );
+
+      expect(
+        conversionAnalytics.getTopProductsByConversion
+      ).toHaveBeenCalledWith('s1', '2025-01-01', '2025-01-31', 25);
     });
   });
 });
