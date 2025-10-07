@@ -7,7 +7,7 @@ import {
   createPolicyMock,
   createGuardMock,
   MockedMethods,
-} from '../../../utils/helpers';
+} from 'test/unit/helpers';
 import { ProductVariant } from 'src/entities/store/product/variant.entity';
 import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';
 import { StoreRolesGuard } from 'src/modules/authorization/guards/store-roles.guard';

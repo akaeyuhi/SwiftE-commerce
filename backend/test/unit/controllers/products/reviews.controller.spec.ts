@@ -7,7 +7,7 @@ import {
   createPolicyMock,
   createGuardMock,
   MockedMethods,
-} from 'test/utils/helpers';
+} from 'test/unit/helpers';
 import { Review } from 'src/entities/store/review.entity';
 import { CreateReviewDto } from 'src/modules/products/reviews/dto/create-review.dto';
 import { Request } from 'express';

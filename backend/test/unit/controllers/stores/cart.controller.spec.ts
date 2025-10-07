@@ -12,7 +12,7 @@ import {
   createDeepMock,
   createMockInterceptor,
   createMockAnalyticsQueue,
-} from 'test/utils/helpers';
+} from 'test/unit/helpers';
 import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';
 import { StoreRolesGuard } from 'src/modules/authorization/guards/store-roles.guard';
 import { AdminGuard } from 'src/modules/authorization/guards/admin.guard';

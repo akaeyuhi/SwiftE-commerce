@@ -4,7 +4,7 @@ import { Job } from 'bull';
 import { Logger } from '@nestjs/common';
 import { AnalyticsQueueProcessor } from 'src/modules/infrastructure/queues/analytics-queue/analytics-queue.processor';
 import { AnalyticsEventType } from 'src/entities/infrastructure/analytics/analytics-event.entity';
-import { createMock, MockedMethods } from '../../utils/helpers';
+import { createMock, MockedMethods } from 'test/unit/helpers';
 
 describe('AnalyticsQueueProcessor', () => {
   let processor: AnalyticsQueueProcessor;

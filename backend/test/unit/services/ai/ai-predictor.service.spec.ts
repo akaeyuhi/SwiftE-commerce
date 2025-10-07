@@ -17,7 +17,7 @@ import {
   createRepositoryMock,
   createServiceMock,
   MockedMethods,
-} from 'test/utils/helpers';
+} from 'test/unit/helpers';
 import { ConfigModule } from '@nestjs/config';
 
 describe('AiPredictorService', () => {

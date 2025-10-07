@@ -11,7 +11,7 @@ import {
   createMapperMock,
   createRepositoryMock,
   MockedMethods,
-} from 'test/utils/helpers';
+} from 'test/unit/helpers';
 
 describe('StoreService', () => {
   let service: StoreService;

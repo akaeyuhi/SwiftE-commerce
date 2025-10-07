@@ -6,7 +6,7 @@ import {
   createRepositoryMock,
   createMock,
   MockedMethods,
-} from '../../../utils/helpers';
+} from 'test/unit/helpers';
 import { NotFoundException, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { InventoryThresholdsConfig } from 'src/modules/store/inventory/config/inventory-thresholds.config';

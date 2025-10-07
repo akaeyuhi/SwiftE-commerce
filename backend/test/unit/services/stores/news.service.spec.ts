@@ -7,7 +7,7 @@ import {
   createRepositoryMock,
   MockedMethods,
   createMock,
-} from '../../../utils/helpers';
+} from 'test/unit/helpers';
 import { NotFoundException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Store } from 'src/entities/store/store.entity';

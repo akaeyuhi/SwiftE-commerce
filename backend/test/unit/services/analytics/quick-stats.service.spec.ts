@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { Product } from 'src/entities/store/product/product.entity';
 import { Store } from 'src/entities/store/store.entity';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { createMock, MockedMethods } from 'test/utils/helpers';
+import { createMock, MockedMethods } from 'test/unit/helpers';
 
 describe('QuickStatsService', () => {
   let service: QuickStatsService;

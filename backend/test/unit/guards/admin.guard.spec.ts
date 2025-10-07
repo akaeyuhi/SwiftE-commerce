@@ -7,7 +7,7 @@ import {
   createMockExecutionContext,
   createPolicyMock,
   MockedMethods,
-} from '../../utils/helpers';
+} from 'test/unit/helpers';
 import { jest } from '@jest/globals';
 
 describe('AdminGuard', () => {

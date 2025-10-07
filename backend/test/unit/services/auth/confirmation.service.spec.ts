@@ -14,7 +14,7 @@ import {
   createRepositoryMock,
   createServiceMock,
   MockedMethods,
-} from 'test/utils/helpers';
+} from 'test/unit/helpers';
 
 describe('ConfirmationService', () => {
   let service: ConfirmationService;

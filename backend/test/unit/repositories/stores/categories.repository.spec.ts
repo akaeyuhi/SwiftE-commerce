@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { CategoriesRepository } from 'src/modules/store/categories/categories.repository';
 import { Category } from 'src/entities/store/product/category.entity';
 import { DataSource, EntityManager } from 'typeorm';
-import { createMock, MockedMethods } from 'test/utils/helpers';
+import { createMock, MockedMethods } from 'test/unit/helpers';
 
 describe('CategoriesRepository', () => {
   let repository: CategoriesRepository;

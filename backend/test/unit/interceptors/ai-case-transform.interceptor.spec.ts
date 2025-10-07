@@ -5,7 +5,7 @@ import {
   createMock,
   createMockExecutionContext,
   MockedMethods,
-} from 'test/utils/helpers';
+} from 'test/unit/helpers';
 /* eslint-disable camelcase */
 
 describe('AiCaseTransformInterceptor', () => {

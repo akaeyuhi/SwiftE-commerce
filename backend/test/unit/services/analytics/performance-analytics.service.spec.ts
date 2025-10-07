@@ -6,7 +6,7 @@ import { ConversionAnalyticsService } from 'src/modules/analytics/services/conve
 import { Repository } from 'typeorm';
 import { Store } from 'src/entities/store/store.entity';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { createMock, MockedMethods } from 'test/utils/helpers';
+import { createMock, MockedMethods } from 'test/unit/helpers';
 import { TopPerformingStores } from 'src/modules/analytics/types';
 
 describe('PerformanceAnalyticsService', () => {

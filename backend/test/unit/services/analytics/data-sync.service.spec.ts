@@ -5,7 +5,7 @@ import { StoreDailyStatsRepository } from 'src/modules/analytics/repositories/st
 import { Repository } from 'typeorm';
 import { Product } from 'src/entities/store/product/product.entity';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { createMock, MockedMethods } from 'test/utils/helpers';
+import { createMock, MockedMethods } from 'test/unit/helpers';
 
 describe('DataSyncService', () => {
   let service: DataSyncService;

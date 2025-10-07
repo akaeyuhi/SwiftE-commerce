@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AnalyticsService } from 'src/modules/analytics/analytics.service';
 import { RecordEventDto } from 'src/modules/infrastructure/queues/analytics-queue/dto/record-event.dto';
 import { AnalyticsEventType } from 'src/entities/infrastructure/analytics/analytics-event.entity';
-import { createMock, MockedMethods } from 'test/utils/helpers';
+import { createMock, MockedMethods } from 'test/unit/helpers';
 
 import { EventTrackingService } from 'src/modules/analytics/services/event-tracking.service';
 import { QuickStatsService } from 'src/modules/analytics/services/quick-stats.service';

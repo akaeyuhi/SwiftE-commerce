@@ -6,7 +6,7 @@ import {
   createMock,
   createMockEntityManager,
   MockedMethods,
-} from 'test/utils/helpers';
+} from 'test/unit/helpers';
 import { User } from 'src/entities/user/user.entity';
 import { Test, TestingModule } from '@nestjs/testing';
 

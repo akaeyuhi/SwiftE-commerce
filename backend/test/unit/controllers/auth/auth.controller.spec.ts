@@ -6,7 +6,7 @@ import {
   createMock,
   createPolicyMock,
   MockedMethods,
-} from '../../../utils/helpers';
+} from 'test/unit/helpers';
 import { BadRequestException } from '@nestjs/common';
 import { ConfirmationType } from 'src/modules/auth/confirmation/enums/confirmation.enum';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';

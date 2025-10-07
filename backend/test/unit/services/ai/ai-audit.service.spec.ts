@@ -3,7 +3,7 @@ import { Logger } from '@nestjs/common';
 import { AiAuditService } from 'src/modules/ai/ai-audit/ai-audit.service';
 import { AiAuditRepository } from 'src/modules/ai/ai-audit/ai-audit.repository';
 import { AiAudit } from 'src/entities/ai/ai-audit.entity';
-import { createRepositoryMock, MockedMethods } from '../../../utils/helpers';
+import { createRepositoryMock, MockedMethods } from 'test/unit/helpers';
 function expectArrayToContainString(array: string[], substring: string) {
   expect(array.some((item) => item.includes(substring))).toBe(true);
 }

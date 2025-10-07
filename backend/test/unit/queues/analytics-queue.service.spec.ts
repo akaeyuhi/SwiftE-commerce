@@ -6,7 +6,7 @@ import { AnalyticsQueueService } from 'src/modules/infrastructure/queues/analyti
 import { AnalyticsJobType } from 'src/modules/infrastructure/queues/analytics-queue/types/analytics-queue.types';
 import { AnalyticsEventType } from 'src/entities/infrastructure/analytics/analytics-event.entity';
 import { RecordEventDto } from 'src/modules/infrastructure/queues/analytics-queue/dto/record-event.dto';
-import { createMock, MockedMethods } from '../../utils/helpers';
+import { createMock, MockedMethods } from 'test/unit/helpers';
 
 describe('AnalyticsQueueService', () => {
   let service: AnalyticsQueueService;

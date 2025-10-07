@@ -2,7 +2,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NewsRepository } from 'src/modules/store/news/news.repository';
 import { DataSource, EntityManager } from 'typeorm';
-import { createMock, MockedMethods } from 'test/utils/helpers';
+import { createMock, MockedMethods } from 'test/unit/helpers';
 
 describe('NewsRepository', () => {
   let repository: NewsRepository;

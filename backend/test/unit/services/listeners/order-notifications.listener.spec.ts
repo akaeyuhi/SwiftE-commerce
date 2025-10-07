@@ -10,7 +10,7 @@ import {
 } from 'src/common/events/orders/order-status-change.event';
 import { OrderStatus } from 'src/common/enums/order-status.enum';
 import { DomainEvent } from 'src/common/interfaces/infrastructure/event.interface';
-import { createMock, MockedMethods } from '../../../utils/helpers';
+import { createMock, MockedMethods } from 'test/unit/helpers';
 import { OrderNotificationsListener } from 'src/modules/store/orders/listeners/order-notifications.listener';
 
 describe('OrderNotificationsListener', () => {

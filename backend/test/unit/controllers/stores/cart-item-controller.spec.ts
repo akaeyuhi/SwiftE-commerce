@@ -8,7 +8,7 @@ import {
   createPolicyMock,
   createServiceMock,
   MockedMethods,
-} from 'test/utils/helpers';
+} from 'test/unit/helpers';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { PolicyService } from 'src/modules/authorization/policy/policy.service';
 import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';

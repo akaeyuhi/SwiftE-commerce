@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfirmationCleanupService } from 'src/modules/auth/confirmation/confirmation-cleanup.service';
 import { ConfirmationService } from 'src/modules/auth/confirmation/confirmation.service';
-import { createMock, MockedMethods } from '../../../utils/helpers';
+import { createMock, MockedMethods } from 'test/unit/helpers';
 
 describe('ConfirmationCleanupService', () => {
   let service: ConfirmationCleanupService;

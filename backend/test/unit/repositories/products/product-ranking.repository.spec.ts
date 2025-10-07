@@ -2,7 +2,7 @@ import { Test } from '@nestjs/testing';
 import { ProductRankingRepository } from 'src/modules/products/repositories/product-ranking.repository';
 import { Product } from 'src/entities/store/product/product.entity';
 import { DataSource, EntityManager, SelectQueryBuilder } from 'typeorm';
-import { createMock, MockedMethods } from 'test/utils/helpers';
+import { createMock, MockedMethods } from 'test/unit/helpers';
 
 describe('ProductRankingRepository', () => {
   let repo: ProductRankingRepository;

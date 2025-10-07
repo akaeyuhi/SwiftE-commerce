@@ -6,7 +6,7 @@ import {
   IStoreService,
 } from 'src/common/contracts/policy.contract';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
-import { createServiceMock, MockedMethods } from 'test/utils/helpers';
+import { createServiceMock, MockedMethods } from 'test/unit/helpers';
 import { UserService } from 'src/modules/user/user.service';
 import { AdminService } from 'src/modules/admin/admin.service';
 import { StoreService } from 'src/modules/store/store.service';

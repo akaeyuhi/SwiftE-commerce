@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ProductRankingRepository } from 'src/modules/products/repositories/product-ranking.repository';
-import { createRepositoryMock, MockedMethods } from 'test/utils/helpers';
+import { createRepositoryMock, MockedMethods } from 'test/unit/helpers';
 import { ProductsRankingService } from 'src/modules/products/services/product-ranking.service';
 /* eslint-disable camelcase*/
 

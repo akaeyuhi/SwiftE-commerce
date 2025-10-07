@@ -9,7 +9,7 @@ import {
   RecordEventOptions,
 } from 'src/common/decorators/record-event.decorator';
 import { AnalyticsEventType } from 'src/entities/infrastructure/analytics/analytics-event.entity';
-import { createMock, MockedMethods } from '../../utils/helpers';
+import { createMock, MockedMethods } from 'test/unit/helpers';
 import { RecordEventInterceptor } from 'src/modules/infrastructure/interceptors/record-event/record-event.interceptor';
 
 const waitForAsync = (ms: number = 50) =>

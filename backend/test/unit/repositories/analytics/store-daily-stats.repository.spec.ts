@@ -5,7 +5,7 @@ import {
   createMock,
   createMockEntityManager,
   MockedMethods,
-} from 'test/utils/helpers';
+} from 'test/unit/helpers';
 
 describe('StoreDailyStatsRepository', () => {
   let repo: StoreDailyStatsRepository;

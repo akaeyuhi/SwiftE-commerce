@@ -7,7 +7,7 @@ import {
   createPolicyMock,
   createGuardMock,
   MockedMethods,
-} from '../../../utils/helpers';
+} from 'test/unit/helpers';
 import { Order } from 'src/entities/store/product/order.entity';
 import { OrderItem } from 'src/entities/store/product/order-item.entity';
 import { CreateOrderDto } from 'src/modules/store/orders/dto/create-order.dto';

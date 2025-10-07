@@ -1,7 +1,7 @@
 import { AdminRepository } from 'src/modules/admin/admin.repository';
 import { Admin } from 'src/entities/user/authentication/admin.entity';
 import { DataSource, EntityManager } from 'typeorm';
-import { createMock, MockedMethods } from 'test/utils/helpers';
+import { createMock, MockedMethods } from 'test/unit/helpers';
 import { NotFoundException } from '@nestjs/common';
 import { UpdateAdminDto } from 'src/modules/admin/dto/update-admin.dto';
 import { Test, TestingModule } from '@nestjs/testing';

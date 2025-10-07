@@ -8,7 +8,7 @@ import {
   createRepositoryMock,
   createServiceMock,
   MockedMethods,
-} from 'test/utils/helpers';
+} from 'test/unit/helpers';
 import {
   NotFoundException,
   ConflictException,

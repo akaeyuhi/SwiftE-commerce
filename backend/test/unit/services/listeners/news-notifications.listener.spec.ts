@@ -12,7 +12,7 @@ import { User } from 'src/entities/user/user.entity';
 import { Store } from 'src/entities/store/store.entity';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { DomainEvent } from 'src/common/interfaces/infrastructure/event.interface';
-import { createMock, MockedMethods } from 'test/utils/helpers';
+import { createMock, MockedMethods } from 'test/unit/helpers';
 import { NewsNotificationsListener } from 'src/modules/store/news/listeners/news-notifications.listener';
 
 describe('NewsNotificationsListener', () => {

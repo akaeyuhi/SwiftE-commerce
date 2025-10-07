@@ -8,7 +8,7 @@ import {
   createMock,
   createServiceMock,
   MockedMethods,
-} from 'test/utils/helpers';
+} from 'test/unit/helpers';
 import { HuggingFaceProvider } from 'src/modules/ai/ai-generator/providers/hugging-face.provider';
 
 describe('HuggingFaceProvider', () => {

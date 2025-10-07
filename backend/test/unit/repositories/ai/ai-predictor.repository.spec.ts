@@ -4,7 +4,7 @@ import {
   createMock,
   createMockEntityManager,
   MockedMethods,
-} from 'test/utils/helpers';
+} from 'test/unit/helpers';
 import { AiPredictorRepository } from 'src/modules/ai/ai-predictor/ai-predictor.repository';
 
 describe('AiPredictorRepository', () => {

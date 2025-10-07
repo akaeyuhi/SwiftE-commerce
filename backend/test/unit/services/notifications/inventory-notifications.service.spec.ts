@@ -16,7 +16,7 @@ import {
   OutOfStockNotificationData,
 } from 'src/common/interfaces/notifications/inventory-notification.types';
 import { NotificationPayload } from 'src/common/interfaces/infrastructure/notification.interface';
-import { createMock, MockedMethods } from '../../../utils/helpers';
+import { createMock, MockedMethods } from 'test/unit/helpers';
 
 describe('InventoryNotificationService', () => {
   let service: InventoryNotificationService;

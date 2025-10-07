@@ -10,7 +10,7 @@ import {
   createMock,
   createServiceMock,
   MockedMethods,
-} from 'test/utils/helpers';
+} from 'test/unit/helpers';
 import { BaseAiProvider } from 'src/modules/ai/ai-generator/providers/base.provider';
 import { ConfigModule } from '@nestjs/config';
 

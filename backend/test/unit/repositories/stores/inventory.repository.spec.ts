@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { InventoryRepository } from 'src/modules/store/inventory/inventory.repository';
 import { DataSource, EntityManager } from 'typeorm';
-import { createMock, MockedMethods } from 'test/utils/helpers';
+import { createMock, MockedMethods } from 'test/unit/helpers';
 
 describe('InventoryRepository', () => {
   let repository: InventoryRepository;

@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { HealthCheckService } from 'src/modules/analytics/services/health-check.service';
 import { AnalyticsEventRepository } from 'src/modules/analytics/repositories/analytics-event.repository';
-import { createMock, MockedMethods } from 'test/utils/helpers';
+import { createMock, MockedMethods } from 'test/unit/helpers';
 
 describe('HealthCheckService', () => {
   let service: HealthCheckService;

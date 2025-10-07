@@ -2,7 +2,7 @@ import { LikesService } from 'src/modules/user/likes/likes/likes.service';
 import { LikesRepository } from 'src/modules/user/likes/likes/likes.repository';
 import { CreateLikeDto } from 'src/modules/user/likes/likes/dto/create-like.dto';
 import { Like } from 'src/entities/user/like.entity';
-import { createMock, MockedMethods } from '../../utils/helpers';
+import { createMock, MockedMethods } from 'test/unit/helpers';
 
 describe('LikesService', () => {
   let service: LikesService;

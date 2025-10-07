@@ -8,7 +8,7 @@ import {
   createMock,
   createMockEntityManager,
   MockedMethods,
-} from 'test/utils/helpers';
+} from 'test/unit/helpers';
 
 describe('AnalyticsEventRepository', () => {
   let repo: AnalyticsEventRepository;

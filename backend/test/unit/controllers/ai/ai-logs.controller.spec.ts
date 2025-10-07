@@ -15,7 +15,7 @@ import {
   createPolicyMock,
   createServiceMock,
   MockedMethods,
-} from '../../../utils/helpers';
+} from 'test/unit/helpers';
 import { PolicyService } from 'src/modules/authorization/policy/policy.service';
 
 describe('AiLogsController', () => {

@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ComparisonAnalyticsService } from 'src/modules/analytics/services/comparison-analytics.service';
 import { ConversionAnalyticsService } from 'src/modules/analytics/services/conversion-analytics.service';
-import { createMock, MockedMethods } from 'test/utils/helpers';
+import { createMock, MockedMethods } from 'test/unit/helpers';
 
 describe('ComparisonAnalyticsService', () => {
   let service: ComparisonAnalyticsService;

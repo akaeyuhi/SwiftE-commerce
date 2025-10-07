@@ -6,7 +6,7 @@ import { Like } from 'src/entities/user/like.entity';
 import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';
 import { RecordEventInterceptor } from 'src/modules/infrastructure/interceptors/record-event/record-event.interceptor';
 import { ExecutionContext, ForbiddenException } from '@nestjs/common';
-import { TestInterceptor } from 'test/utils/helpers';
+import { TestInterceptor } from 'test/unit/helpers';
 
 describe('LikesController', () => {
   let controller: LikesController;

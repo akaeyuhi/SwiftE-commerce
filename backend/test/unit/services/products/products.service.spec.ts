@@ -17,7 +17,7 @@ import {
   createServiceMock,
   createMapperMock,
   MockedMethods,
-} from 'test/utils/helpers';
+} from 'test/unit/helpers';
 
 describe('ProductsService', () => {
   let service: ProductsService;

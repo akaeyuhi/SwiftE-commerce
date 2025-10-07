@@ -4,7 +4,7 @@ import { CategoriesRepository } from 'src/modules/store/categories/categories.re
 import { Category } from 'src/entities/store/product/category.entity';
 import { CreateCategoryDto } from 'src/modules/store/categories/dto/create-category.dto';
 import { UpdateCategoryDto } from 'src/modules/store/categories/dto/update-category.dto';
-import { createRepositoryMock, MockedMethods } from 'test/utils/helpers';
+import { createRepositoryMock, MockedMethods } from 'test/unit/helpers';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 
 describe('CategoriesService', () => {

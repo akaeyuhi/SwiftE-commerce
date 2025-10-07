@@ -8,7 +8,7 @@ import {
   createMock,
   createServiceMock,
   MockedMethods,
-} from 'test/utils/helpers';
+} from 'test/unit/helpers';
 import { OpenAiProvider } from 'src/modules/ai/ai-generator/providers/open-ai.provider';
 
 describe('OpenAiProvider', () => {

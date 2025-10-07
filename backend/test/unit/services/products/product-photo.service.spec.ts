@@ -1,7 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { ProductPhotoService } from 'src/modules/products/product-photo/product-photo.service';
 import { ProductPhotoRepository } from 'src/modules/products/product-photo/product-photo.repository';
-import { createRepositoryMock, MockedMethods } from 'test/utils/helpers';
+import { createRepositoryMock, MockedMethods } from 'test/unit/helpers';
 import { BadRequestException } from '@nestjs/common';
 import { promises as fs } from 'fs';
 import { Store } from 'src/entities/store/store.entity';

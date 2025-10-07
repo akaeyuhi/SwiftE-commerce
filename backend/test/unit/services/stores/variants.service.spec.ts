@@ -9,7 +9,7 @@ import {
   createRepositoryMock,
   createServiceMock,
   MockedMethods,
-} from '../../../utils/helpers';
+} from 'test/unit/helpers';
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { Product } from 'src/entities/store/product/product.entity';
 import { Store } from 'src/entities/store/store.entity';
