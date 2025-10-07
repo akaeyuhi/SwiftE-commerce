@@ -745,7 +745,7 @@ describe('EmailQueueService', () => {
 
         const recentJob = {
           ...mockJob,
-          finishedOn: Date.now() - 1 * 60 * 60 * 1000, // 1 hour ago
+          finishedOn: Date.now() - 60 * 60 * 1000, // 1 hour ago
           remove: jest.fn(),
         };
 

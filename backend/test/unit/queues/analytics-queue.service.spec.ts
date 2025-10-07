@@ -591,7 +591,7 @@ describe('AnalyticsQueueService', () => {
       const recentJob = {
         ...mockJob,
         id: 'recent-1',
-        finishedOn: Date.now() - 1 * 60 * 60 * 1000, // 1 hour ago
+        finishedOn: Date.now() - 60 * 60 * 1000, // 1 hour ago
         remove: jest.fn(),
       };
 
