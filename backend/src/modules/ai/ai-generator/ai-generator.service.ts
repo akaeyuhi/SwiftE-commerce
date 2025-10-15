@@ -24,6 +24,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { promptTemplates } from 'src/modules/ai/ai-generator/utils/prompt-templates';
 import { RateLimitConfig } from 'src/modules/ai/ai-generator/utils/types';
+import { ProductSpecDto } from 'src/modules/ai/ai-generator/dto/generator-request.dto';
 
 export const AI_PROVIDER = Symbol('AI_PROVIDER');
 
@@ -132,7 +133,11 @@ export class AiGeneratorService extends BaseAiService<
       const finalOptions = { ...templateConfig.defaultOptions, ...options };
 
       // Make AI provider call
-      const aiResult = await this.provider.generate(finalPrompt, finalOptions);
+      const aiResult = await this.provider.generate(
+        finalPrompt,
+        finalOptions,
+        request
+      );
 
       // Parse and validate the result
       const parsedResult = this.parseGenerationResult(type, aiResult);
@@ -160,6 +165,7 @@ export class AiGeneratorService extends BaseAiService<
         feature: request.feature,
         provider: 'ai_generator',
         model: options.model,
+        finishReason: aiResult.finishReason,
       };
     } catch (error) {
       this.logger.error(`Generation failed for type ${type}:`, error);
@@ -249,9 +255,6 @@ export class AiGeneratorService extends BaseAiService<
     return response.result.result;
   }
 
-  /**
-   * Generate product description
-   */
   async generateProductDescription(
     params: DescriptionGenerationParams
   ): Promise<{ title: string; description: string }> {
@@ -264,26 +267,174 @@ export class AiGeneratorService extends BaseAiService<
       storeId,
     } = params;
 
+    const prompt = this.buildStructuredPrompt(name, productSpec, tone);
+
     const request: AiServiceRequest<GenerationRequest> = {
       feature: 'generatorDescription',
       provider: 'ai_generator',
       data: {
         type: 'description',
-        prompt: `Generate description for ${name}`,
-        options,
-        context: { productSpec, tone },
+        prompt,
+        options: {
+          ...options,
+          maxTokens: options.maxTokens || 300,
+          temperature: options.temperature ?? 0.8,
+        },
+        context: {
+          productName: name,
+          productSpec,
+          tone,
+        },
       },
       userId,
       storeId,
     };
 
-    const response = await this.execute(request);
+    try {
+      const response = await this.execute(request);
 
-    if (!response.success || !response.result) {
-      throw new Error(response.error || 'Description generation failed');
+      if (!response.success || !response.result) {
+        throw new Error(response.error || 'Description generation failed');
+      }
+
+      // ✅ Debug log to see what's being returned
+      console.log('AI Response:', JSON.stringify(response.result, null, 2));
+
+      // ✅ Extract the text from the result
+      const generatedText = response.result?.result || response.result;
+
+      // ✅ Parse with the updated function
+      const parsed = this.parseDescriptionResponse(generatedText, name);
+
+      return {
+        title: parsed.title,
+        description: parsed.description,
+      };
+    } catch (error) {
+      // ✅ Better error handling
+      console.error('Description generation error:', error);
+      throw new Error(
+        `Description generation failed: ${error.message || 'Unknown error'}`
+      );
+    }
+  }
+
+  /**
+   * Build a structured prompt for better AI responses
+   */
+  private buildStructuredPrompt(
+    name: string,
+    productSpec?: ProductSpecDto,
+    tone?: string
+  ): string {
+    const sections: string[] = [
+      'You are an expert e-commerce copywriter.',
+      `Write a ${tone} product description with the following structure:`,
+      '',
+      '**Product Details:**',
+      `Name: ${name}`,
+    ];
+
+    if (productSpec) {
+      if (productSpec.category) {
+        sections.push(`Category: ${productSpec.category}`);
+      }
+
+      if (productSpec.price !== undefined) {
+        sections.push(`Price: $${productSpec.price.toFixed(2)}`);
+      }
+
+      if (productSpec.material) {
+        sections.push(`Material: ${productSpec.material}`);
+      }
+
+      if (productSpec.features && productSpec.features.length > 0) {
+        sections.push('');
+        sections.push('**Key Features:**');
+        productSpec.features.forEach((feature, index) => {
+          sections.push(`${index + 1}. ${feature}`);
+        });
+      }
     }
 
-    return response.result.result;
+    sections.push('');
+    sections.push('**Instructions:**');
+    sections.push('1. Write a compelling product title (max 80 characters)');
+    sections.push('2. Write a detailed description (150-250 words) that:');
+    sections.push('   - Highlights the key benefits');
+    sections.push('   - Uses persuasive language');
+    sections.push('   - Includes specific features');
+    sections.push('   - Appeals to customer emotions');
+    sections.push('');
+    sections.push('**Format:**');
+    sections.push('Title: [Your product title here]');
+    sections.push('Description: [Your description here]');
+
+    return sections.join('\n');
+  }
+
+  /**
+   * Parse AI response to extract title and description
+   */
+  private parseDescriptionResponse(
+    response: any, // ✅ Accept any type
+    fallbackTitle: string
+  ): { title: string; description: string } {
+    // ✅ Handle different response types
+    let text: string;
+
+    if (typeof response === 'string') {
+      text = response;
+    } else if (response && typeof response === 'object') {
+      // Handle various object formats
+      text =
+        response.text ||
+        response.description ||
+        response.content ||
+        response.result ||
+        JSON.stringify(response);
+    } else {
+      // Fallback
+      text = String(response || '');
+    }
+
+    // ✅ Ensure text is a string
+    if (!text || typeof text !== 'string') {
+      return {
+        title: fallbackTitle,
+        description: 'Description generation failed',
+      };
+    }
+
+    // Remove markdown formatting
+    const cleaned = text.replace(/\*\*/g, '').trim();
+
+    // Pattern: "Title: ...\nDescription: ..."
+    const titleMatch = cleaned.match(/Title:\s*(.+?)(?:\n|$)/i);
+    const descMatch = cleaned.match(/Description:\s*(.+)/is);
+
+    if (titleMatch && descMatch) {
+      return {
+        title: titleMatch[1].trim().substring(0, 100),
+        description: descMatch[1].trim(),
+      };
+    }
+
+    // Fallback: Split by lines
+    const lines = cleaned.split('\n').filter((line) => line.trim());
+
+    if (lines.length > 1) {
+      return {
+        title: lines[0].trim().substring(0, 100),
+        description: lines.slice(1).join('\n').trim(),
+      };
+    }
+
+    // Last resort
+    return {
+      title: fallbackTitle,
+      description: cleaned,
+    };
   }
 
   /**
@@ -357,10 +508,16 @@ export class AiGeneratorService extends BaseAiService<
   /**
    * Get service health status
    */
-  async healthCheck(): Promise<HealthCheckResult> {
+  async healthCheck(
+    userId: string,
+    storeId: string
+  ): Promise<HealthCheckResult> {
     try {
       // Test the provider
-      const providerHealth = (await (this.provider as any).healthCheck?.()) || {
+      const providerHealth = (await (this.provider as any).healthCheck?.(
+        userId,
+        storeId
+      )) || {
         healthy: true,
       };
 

@@ -71,8 +71,8 @@ describe('Integration - User Lifecycle (E2E)', () => {
     let newUser: any;
 
     it('Step 1: User registers account', async () => {
-      const response = await app
-        .getHttpServer()
+      const response = await appHelper
+        .request()
         .post('/auth/register')
         .send({
           email: 'newuser@example.com',
@@ -340,8 +340,8 @@ describe('Integration - User Lifecycle (E2E)', () => {
     });
 
     it('Step 13: User can login with new password', async () => {
-      const response = await app
-        .getHttpServer()
+      const response = await appHelper
+        .request()
         .post('/auth/login')
         .send({
           email: 'newuser@example.com',

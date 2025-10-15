@@ -15,6 +15,8 @@ module.exports = {
     '!src/**/*.e2e-spec.ts',
   ],
   coverageDirectory: './coverage-e2e',
-  testTimeout: 30000,
+  testTimeout: 6000,
+  maxWorkers: 1,
+  maxConcurrency: 1,
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
 };

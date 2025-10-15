@@ -7,7 +7,6 @@ import { StoreDailyStatsRepository } from 'src/modules/analytics/repositories/st
 import { ProductDailyStatsRepository } from 'src/modules/analytics/repositories/product-daily-stats.repository';
 import { AiLogsService } from 'src/modules/ai/ai-logs/ai-logs.service';
 import { AiAuditService } from 'src/modules/ai/ai-audit/ai-audit.service';
-import { REVIEWS_REPOSITORY } from 'src/common/contracts/reviews.contract';
 import { ProductVariant } from 'src/entities/store/product/variant.entity';
 import { Inventory } from 'src/entities/store/product/inventory.entity';
 import { of, throwError } from 'rxjs';
@@ -19,6 +18,7 @@ import {
   MockedMethods,
 } from 'test/unit/helpers';
 import { ConfigModule } from '@nestjs/config';
+import {IReviewsRepository} from "src/common/contracts/reviews.contract";
 
 describe('AiPredictorService', () => {
   let service: AiPredictorService;
@@ -101,7 +101,7 @@ describe('AiPredictorService', () => {
         { provide: ProductDailyStatsRepository, useValue: productStatsRepo },
         { provide: AiLogsService, useValue: aiLogsService },
         { provide: AiAuditService, useValue: aiAuditService },
-        { provide: REVIEWS_REPOSITORY, useValue: reviewsRepo },
+        { provide: IReviewsRepository, useValue: reviewsRepo },
       ],
     }).compile();
 

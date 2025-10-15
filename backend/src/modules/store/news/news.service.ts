@@ -35,7 +35,7 @@ export class NewsService extends BaseService<
     storeId: string,
     onlyPublished = false
   ): Promise<NewsPost[]> {
-    const where: any = { store: { id: storeId } };
+    const where: any = { storeId };
     if (onlyPublished) {
       where.isPublished = true;
     }
@@ -55,26 +55,30 @@ export class NewsService extends BaseService<
     authorId?: string
   ): Promise<NewsPost | NewsPostDto> {
     const partial: any = {
-      store: dto.storeId ? { id: dto.storeId } : undefined,
-      author: dto.authorId ? { id: dto.authorId } : undefined,
-      title: dto.title,
-      content: dto.content,
+      storeId: dto.storeId,
+      authorId: authorId ? authorId : dto.authorId,
+      title: dto.title ?? '',
+      content: dto.content ?? '',
       isPublished: dto.isPublished ?? false,
       publishedAt: dto.publishedAt ? new Date(dto.publishedAt) : undefined,
     };
 
-    if (authorId) {
-      partial.author = { id: authorId };
-    }
-
     const created = await this.newsRepo.createEntity(partial);
 
-    // If published immediately, emit event
-    if (created.isPublished && created.publishedAt) {
-      await this.emitNewsPublishedEvent(created);
+    const reloaded = await this.newsRepo.findOne({
+      where: { id: created.id },
+      relations: ['author', 'store'],
+    });
+
+    if (!reloaded) {
+      throw new NotFoundException('Created post not found');
     }
 
-    return (this as any).mapper?.toDto(created) ?? created;
+    if (reloaded.isPublished && reloaded.publishedAt) {
+      await this.emitNewsPublishedEvent(reloaded);
+    }
+
+    return reloaded;
   }
 
   /**
@@ -82,9 +86,12 @@ export class NewsService extends BaseService<
    *
    * ⚡ Emits event to trigger notifications to all followers.
    */
-  async publish(postId: string): Promise<NewsPost | NewsPostDto> {
+  async publish(
+    postId: string,
+    storeId: string
+  ): Promise<NewsPost | NewsPostDto> {
     const post = await this.newsRepo.findOne({
-      where: { id: postId },
+      where: { id: postId, storeId },
       relations: ['author', 'store'],
     });
 
@@ -97,13 +104,11 @@ export class NewsService extends BaseService<
 
     await this.newsRepo.save(post);
 
-    // Emit event only if newly published (not re-publishing)
-    if (!wasPublished) {
+    if (!wasPublished && post.store && post.author) {
       await this.emitNewsPublishedEvent(post);
     }
 
-    const after = await this.newsRepo.findById(postId);
-    return (this as any).mapper?.toDto(after as any) ?? (after as any);
+    return (await this.newsRepo.findById(postId))!;
   }
 
   /**
@@ -117,7 +122,7 @@ export class NewsService extends BaseService<
     await this.newsRepo.save(post);
 
     const after = await this.newsRepo.findById(postId);
-    return (this as any).mapper?.toDto(after as any) ?? (after as any);
+    return after!;
   }
 
   /**
@@ -125,6 +130,12 @@ export class NewsService extends BaseService<
    */
   private async emitNewsPublishedEvent(post: NewsPost): Promise<void> {
     try {
+      if (!post.store) {
+        console.warn(
+          `Cannot emit event: post ${post.id} has no store relation`
+        );
+        return;
+      }
       const event = new NewsPublishedEvent(
         post.id,
         post.store.id,

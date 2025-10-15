@@ -26,11 +26,17 @@ export class StoreRole implements UserOwnedEntity {
   @ManyToOne(() => User, (user) => user.roles, { onDelete: 'CASCADE' })
   user: User;
 
+  @Column({ name: 'user_id' })
+  userId: string;
+
   @ManyToOne(() => Store, (store) => store.storeRoles, {
     nullable: true,
     onDelete: 'SET NULL',
   })
   store: Store;
+
+  @Column({ name: 'store_id' })
+  storeId: string;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

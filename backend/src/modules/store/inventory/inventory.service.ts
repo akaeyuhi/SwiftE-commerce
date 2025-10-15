@@ -67,14 +67,14 @@ export class InventoryService extends BaseService<Inventory> {
 
   async getQuantity(variantId: string) {
     const inv = await this.inventoryRepo.findOne({
-      where: { variant: { id: variantId } },
+      where: { variantId },
     });
     return inv ? inv.quantity : 0;
   }
 
   async adjust(variantId: string, delta: number) {
     const inv = await this.inventoryRepo.findOne({
-      where: { variant: { id: variantId } },
+      where: { variantId },
       lock: { mode: 'pessimistic_write' },
     });
     if (!inv) throw new NotFoundException('Inventory not found');
@@ -85,7 +85,7 @@ export class InventoryService extends BaseService<Inventory> {
 
   async set(variantId: string, qty: number) {
     let inv = await this.inventoryRepo.findOne({
-      where: { variant: { id: variantId } },
+      where: { variantId },
     });
     if (!inv) {
       inv = this.inventoryRepo.create({
@@ -132,7 +132,7 @@ export class InventoryService extends BaseService<Inventory> {
    */
   async findInventoryByVariantId(variantId: string): Promise<Inventory | null> {
     return this.inventoryRepo.findOne({
-      where: { variant: { id: variantId } },
+      where: { variantId },
       relations: ['variant', 'variant.product', 'store'],
     });
   }

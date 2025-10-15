@@ -154,6 +154,7 @@ export class OpenAiProvider extends BaseAiProvider {
           totalTokens: usage.totalTokens || 0,
           cost,
         },
+        finishReason: data.finishReason,
       };
     } catch (error) {
       this.logger.error('Failed to parse OpenAI response:', error);

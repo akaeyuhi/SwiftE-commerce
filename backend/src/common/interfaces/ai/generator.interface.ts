@@ -1,8 +1,11 @@
+import { AiServiceRequest } from 'src/common/interfaces/ai/ai.interface';
+import { GenerationRequest } from 'src/modules/ai/ai-generator/types';
+
 export interface AiGenerateOptions {
   model?: string;
   maxTokens?: number;
   temperature?: number;
-  stop?: string[] | string;
+  stop?: string[];
   [key: string]: any;
 }
 
@@ -15,6 +18,7 @@ export interface AiGenerateResult {
     totalTokens?: number;
     cost?: number;
   };
+  finishReason: string;
 }
 
 /**
@@ -26,9 +30,11 @@ export interface AiProvider {
    * Generate text using the backend LLM.
    * @param prompt - plain text prompt (provider implementations may wrap/convert it)
    * @param options - generation options (temperature, model, maxTokens etc.)
+   * @param originalRequest
    */
   generate(
     prompt: string,
-    options?: AiGenerateOptions
+    options?: AiGenerateOptions,
+    originalRequest?: AiServiceRequest<GenerationRequest>
   ): Promise<AiGenerateResult>;
 }

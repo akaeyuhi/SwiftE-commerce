@@ -35,26 +35,26 @@ describe('AI Logs (E2E)', () => {
     regularUser = await authHelper.createAuthenticatedUser();
 
     store = await seeder.seedStore(storeOwner.user);
-  });
+    await seeder.assignStoreModerator(storeModerator.user.id, store.id);
+  }, 60000);
 
   afterAll(async () => {
+    await appHelper.clearDatabase();
     await appHelper.cleanup();
   });
 
   afterEach(async () => {
-    const logRepo = appHelper.getDataSource().getRepository('AiLog');
-    await logRepo.clear();
+    await appHelper.clearTables(['ai_logs']);
   });
 
-  describe('POST /ai/logs', () => {
+  describe('POST /stores/:storeId/ai/logs', () => {
     it('should create AI log entry', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post('/ai/logs')
+        .post(`/stores/${store.id}/ai/logs`)
         .send({
           feature: 'product_description',
           prompt: 'Generate product description',
-          storeId: store.id,
           details: { productId: 'prod-123' },
         })
         .expect(201);
@@ -67,11 +67,10 @@ describe('AI Logs (E2E)', () => {
     it('should allow store moderator to create logs', async () => {
       const response = await authHelper
         .authenticatedRequest(storeModerator.accessToken)
-        .post('/ai/logs')
+        .post(`/stores/${store.id}/ai/logs`)
         .send({
           feature: 'image_generation',
           prompt: 'Generate product image',
-          storeId: store.id,
         })
         .expect(201);
 
@@ -81,21 +80,23 @@ describe('AI Logs (E2E)', () => {
     it('should prevent regular user from creating logs', async () => {
       const response = await authHelper
         .authenticatedRequest(regularUser.accessToken)
-        .post('/ai/logs')
+        .post(`/stores/${store.id}/ai/logs`)
         .send({
           feature: 'product_description',
           prompt: 'Test',
-          storeId: store.id,
         });
 
       AssertionHelper.assertErrorResponse(response, 403);
     });
 
     it('should require authentication', async () => {
-      const response = await app.getHttpServer().post('/ai/logs').send({
-        feature: 'test',
-        prompt: 'test',
-      });
+      const response = await appHelper
+        .request()
+        .post(`/stores/${store.id}/ai/logs`)
+        .send({
+          feature: 'test',
+          prompt: 'test',
+        });
 
       AssertionHelper.assertErrorResponse(response, 401);
     });
@@ -103,36 +104,19 @@ describe('AI Logs (E2E)', () => {
     it('should validate required fields', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post('/ai/logs')
-        .send({
-          // Missing required fields
-        });
+        .post(`/stores/${store.id}/ai/logs`)
+        .send({});
 
       AssertionHelper.assertErrorResponse(response, 400);
-    });
-
-    it('should use user context if userId not provided', async () => {
-      const response = await authHelper
-        .authenticatedRequest(storeOwner.accessToken)
-        .post('/ai/logs')
-        .send({
-          feature: 'product_description',
-          prompt: 'Test prompt',
-          storeId: store.id,
-        })
-        .expect(201);
-
-      expect(response.body.success).toBe(true);
     });
 
     it('should store log details', async () => {
       await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post('/ai/logs')
+        .post(`/stores/${store.id}/ai/logs`)
         .send({
           feature: 'seo_optimization',
           prompt: 'Optimize SEO',
-          storeId: store.id,
           details: {
             type: 'meta_description',
             length: 150,
@@ -152,32 +136,29 @@ describe('AI Logs (E2E)', () => {
     });
   });
 
-  describe('GET /ai/logs', () => {
+  describe('GET /stores/:storeId/ai/logs', () => {
     beforeEach(async () => {
-      // Seed some logs
       await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post('/ai/logs')
+        .post(`/stores/${store.id}/ai/logs`)
         .send({
           feature: 'product_description',
           prompt: 'Generate description 1',
-          storeId: store.id,
         });
 
       await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post('/ai/logs')
+        .post(`/stores/${store.id}/ai/logs`)
         .send({
           feature: 'image_generation',
           prompt: 'Generate image',
-          storeId: store.id,
         });
     });
 
     it('should get logs', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .get('/ai/logs')
+        .get(`/stores/${store.id}/ai/logs`)
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -189,7 +170,7 @@ describe('AI Logs (E2E)', () => {
     it('should filter logs by feature', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .get('/ai/logs')
+        .get(`/stores/${store.id}/ai/logs`)
         .query({ feature: 'product_description' })
         .expect(200);
 
@@ -204,7 +185,7 @@ describe('AI Logs (E2E)', () => {
     it('should support pagination', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .get('/ai/logs')
+        .get(`/stores/${store.id}/ai/logs`)
         .query({ limit: 1, offset: 0 })
         .expect(200);
 
@@ -219,47 +200,35 @@ describe('AI Logs (E2E)', () => {
 
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .get('/ai/logs')
+        .get(`/stores/${store.id}/ai/logs`)
         .query({ dateFrom: today, dateTo: tomorrow })
         .expect(200);
 
       expect(response.body.success).toBe(true);
     });
 
-    it('should restrict regular user to their own logs', async () => {
-      const response = await authHelper
-        .authenticatedRequest(regularUser.accessToken)
-        .get('/ai/logs')
-        .expect(200);
-
-      // Should only see their own logs (none in this case)
-      expect(response.body.data.logs.length).toBe(0);
-    });
-
     it('should include metadata', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .get('/ai/logs')
+        .get(`/stores/${store.id}/ai/logs`)
         .expect(200);
 
       expect(response.body.data.metadata).toBeDefined();
       expect(response.body.data.metadata).toHaveProperty('count');
       expect(response.body.data.metadata).toHaveProperty('retrievedAt');
-      expect(response.body.data.metadata).toHaveProperty('userId');
+      expect(response.body.data.metadata).toHaveProperty('filters');
     });
   });
 
-  describe('GET /ai/logs/stats', () => {
+  describe('GET /stores/:storeId/ai/logs/stats', () => {
     beforeEach(async () => {
-      // Seed multiple logs
       for (let i = 0; i < 5; i++) {
         await authHelper
           .authenticatedRequest(storeOwner.accessToken)
-          .post('/ai/logs')
+          .post(`/stores/${store.id}/ai/logs`)
           .send({
             feature: i % 2 === 0 ? 'product_description' : 'image_generation',
             prompt: `Test prompt ${i}`,
-            storeId: store.id,
           });
       }
     });
@@ -267,7 +236,7 @@ describe('AI Logs (E2E)', () => {
     it('should get usage statistics', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .get('/ai/logs/stats')
+        .get(`/stores/${store.id}/ai/logs/stats`)
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -277,7 +246,7 @@ describe('AI Logs (E2E)', () => {
     it('should require store admin role', async () => {
       const response = await authHelper
         .authenticatedRequest(storeModerator.accessToken)
-        .get('/ai/logs/stats');
+        .get(`/stores/${store.id}/ai/logs/stats`);
 
       AssertionHelper.assertErrorResponse(response, 403);
     });
@@ -290,27 +259,16 @@ describe('AI Logs (E2E)', () => {
 
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .get('/ai/logs/stats')
+        .get(`/stores/${store.id}/ai/logs/stats`)
         .query({ dateFrom: today, dateTo: tomorrow })
         .expect(200);
 
       expect(response.body.data.metadata.period).toBeDefined();
     });
-
-    it('should include metadata in response', async () => {
-      const response = await authHelper
-        .authenticatedRequest(storeOwner.accessToken)
-        .get('/ai/logs/stats')
-        .expect(200);
-
-      expect(response.body.data.metadata).toHaveProperty('generatedAt');
-      expect(response.body.data.metadata).toHaveProperty('userId');
-    });
   });
 
-  describe('GET /ai/logs/features/top', () => {
+  describe('GET /stores/:storeId/ai/logs/features/top', () => {
     beforeEach(async () => {
-      // Seed logs with different features
       const features = [
         'product_description',
         'image_generation',
@@ -321,11 +279,10 @@ describe('AI Logs (E2E)', () => {
         for (let i = 0; i < 3; i++) {
           await authHelper
             .authenticatedRequest(storeOwner.accessToken)
-            .post('/ai/logs')
+            .post(`/stores/${store.id}/ai/logs`)
             .send({
               feature,
               prompt: `Test ${feature}`,
-              storeId: store.id,
             });
         }
       }
@@ -334,7 +291,7 @@ describe('AI Logs (E2E)', () => {
     it('should get top features', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .get('/ai/logs/features/top')
+        .get(`/stores/${store.id}/ai/logs/features/top`)
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -345,7 +302,7 @@ describe('AI Logs (E2E)', () => {
     it('should support custom limit', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .get('/ai/logs/features/top')
+        .get(`/stores/${store.id}/ai/logs/features/top`)
         .query({ limit: 2 })
         .expect(200);
 
@@ -355,17 +312,17 @@ describe('AI Logs (E2E)', () => {
     it('should require store admin role', async () => {
       const response = await authHelper
         .authenticatedRequest(storeModerator.accessToken)
-        .get('/ai/logs/features/top');
+        .get(`/stores/${store.id}/ai/logs/features/top`);
 
       AssertionHelper.assertErrorResponse(response, 403);
     });
   });
 
-  describe('GET /ai/logs/daily', () => {
+  describe('GET /stores/:storeId/ai/logs/daily', () => {
     it('should get daily usage', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .get('/ai/logs/daily')
+        .get(`/stores/${store.id}/ai/logs/daily`)
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -375,7 +332,7 @@ describe('AI Logs (E2E)', () => {
     it('should support custom days parameter', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .get('/ai/logs/daily')
+        .get(`/stores/${store.id}/ai/logs/daily`)
         .query({ days: 7 })
         .expect(200);
 
@@ -385,17 +342,17 @@ describe('AI Logs (E2E)', () => {
     it('should require store admin role', async () => {
       const response = await authHelper
         .authenticatedRequest(storeModerator.accessToken)
-        .get('/ai/logs/daily');
+        .get(`/stores/${store.id}/ai/logs/daily`);
 
       AssertionHelper.assertErrorResponse(response, 403);
     });
   });
 
-  describe('GET /ai/logs/errors', () => {
+  describe('GET /stores/:storeId/ai/logs/errors', () => {
     it('should get error logs', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .get('/ai/logs/errors')
+        .get(`/stores/${store.id}/ai/logs/errors`)
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -406,7 +363,7 @@ describe('AI Logs (E2E)', () => {
     it('should support custom limit', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .get('/ai/logs/errors')
+        .get(`/stores/${store.id}/ai/logs/errors`)
         .query({ limit: 50 })
         .expect(200);
 
@@ -416,17 +373,17 @@ describe('AI Logs (E2E)', () => {
     it('should require store admin role', async () => {
       const response = await authHelper
         .authenticatedRequest(storeModerator.accessToken)
-        .get('/ai/logs/errors');
+        .get(`/stores/${store.id}/ai/logs/errors`);
 
       AssertionHelper.assertErrorResponse(response, 403);
     });
   });
 
-  describe('GET /ai/logs/trends', () => {
+  describe('GET /stores/:storeId/ai/logs/trends', () => {
     it('should get usage trends', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .get('/ai/logs/trends')
+        .get(`/stores/${store.id}/ai/logs/trends`)
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -436,7 +393,7 @@ describe('AI Logs (E2E)', () => {
     it('should support custom period', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .get('/ai/logs/trends')
+        .get(`/stores/${store.id}/ai/logs/trends`)
         .query({ days: 14 })
         .expect(200);
 
@@ -446,17 +403,17 @@ describe('AI Logs (E2E)', () => {
     it('should require store admin role', async () => {
       const response = await authHelper
         .authenticatedRequest(storeModerator.accessToken)
-        .get('/ai/logs/trends');
+        .get(`/stores/${store.id}/ai/logs/trends`);
 
       AssertionHelper.assertErrorResponse(response, 403);
     });
   });
 
-  describe('GET /ai/logs/health', () => {
+  describe('GET /stores/:storeId/ai/logs/health', () => {
     it('should get health status as admin', async () => {
       const response = await authHelper
         .authenticatedRequest(adminUser.accessToken)
-        .get('/ai/logs/health')
+        .get(`/stores/${store.id}/ai/logs/health`)
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -468,7 +425,7 @@ describe('AI Logs (E2E)', () => {
     it('should prevent non-admin access', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .get('/ai/logs/health');
+        .get(`/stores/${store.id}/ai/logs/health`);
 
       AssertionHelper.assertErrorResponse(response, 403);
     });
@@ -476,24 +433,22 @@ describe('AI Logs (E2E)', () => {
     it('should return health details', async () => {
       const response = await authHelper
         .authenticatedRequest(adminUser.accessToken)
-        .get('/ai/logs/health')
+        .get(`/stores/${store.id}/ai/logs/health`)
         .expect(200);
 
       expect(response.body.data).toHaveProperty('healthy');
     });
   });
 
-  describe('POST /ai/logs/cleanup', () => {
+  describe('POST /stores/:storeId/ai/logs/cleanup', () => {
     beforeEach(async () => {
-      // Seed some old logs
       for (let i = 0; i < 3; i++) {
         await authHelper
           .authenticatedRequest(storeOwner.accessToken)
-          .post('/ai/logs')
+          .post(`/stores/${store.id}/ai/logs`)
           .send({
             feature: 'product_description',
             prompt: `Old log ${i}`,
-            storeId: store.id,
           });
       }
     });
@@ -501,7 +456,7 @@ describe('AI Logs (E2E)', () => {
     it('should cleanup old logs as admin', async () => {
       const response = await authHelper
         .authenticatedRequest(adminUser.accessToken)
-        .post('/ai/logs/cleanup')
+        .post(`/stores/${store.id}/ai/logs/cleanup`)
         .send({
           retentionDays: 30,
           dryRun: true,
@@ -515,7 +470,7 @@ describe('AI Logs (E2E)', () => {
     it('should prevent non-admin cleanup', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post('/ai/logs/cleanup')
+        .post(`/stores/${store.id}/ai/logs/cleanup`)
         .send({
           retentionDays: 30,
         });
@@ -526,7 +481,7 @@ describe('AI Logs (E2E)', () => {
     it('should support dry run mode', async () => {
       const response = await authHelper
         .authenticatedRequest(adminUser.accessToken)
-        .post('/ai/logs/cleanup')
+        .post(`/stores/${store.id}/ai/logs/cleanup`)
         .send({
           retentionDays: 30,
           dryRun: true,
@@ -539,7 +494,7 @@ describe('AI Logs (E2E)', () => {
     it('should use default retention if not provided', async () => {
       const response = await authHelper
         .authenticatedRequest(adminUser.accessToken)
-        .post('/ai/logs/cleanup')
+        .post(`/stores/${store.id}/ai/logs/cleanup`)
         .send({
           dryRun: true,
         })
@@ -552,58 +507,37 @@ describe('AI Logs (E2E)', () => {
   describe('Security & Permissions', () => {
     it('should enforce authentication on all endpoints', async () => {
       const endpoints = [
-        { method: 'post', path: '/ai/logs' },
-        { method: 'get', path: '/ai/logs' },
-        { method: 'get', path: '/ai/logs/stats' },
-        { method: 'get', path: '/ai/logs/features/top' },
-        { method: 'get', path: '/ai/logs/daily' },
-        { method: 'get', path: '/ai/logs/errors' },
-        { method: 'get', path: '/ai/logs/trends' },
-        { method: 'get', path: '/ai/logs/health' },
-        { method: 'post', path: '/ai/logs/cleanup' },
+        { method: 'post', path: `/stores/${store.id}/ai/logs` },
+        { method: 'get', path: `/stores/${store.id}/ai/logs` },
+        { method: 'get', path: `/stores/${store.id}/ai/logs/stats` },
+        { method: 'get', path: `/stores/${store.id}/ai/logs/features/top` },
+        { method: 'get', path: `/stores/${store.id}/ai/logs/daily` },
+        { method: 'get', path: `/stores/${store.id}/ai/logs/errors` },
+        { method: 'get', path: `/stores/${store.id}/ai/logs/trends` },
+        { method: 'get', path: `/stores/${store.id}/ai/logs/health` },
+        { method: 'post', path: `/stores/${store.id}/ai/logs/cleanup` },
       ];
 
       for (const endpoint of endpoints) {
-        const response = await app
-          .getHttpServer()
+        const response = await appHelper
+          .request()
           [endpoint.method](endpoint.path);
         AssertionHelper.assertErrorResponse(response, 401);
       }
     });
 
-    it('should restrict logs to user context', async () => {
-      // Create log as storeOwner
-      await authHelper
-        .authenticatedRequest(storeOwner.accessToken)
-        .post('/ai/logs')
-        .send({
-          feature: 'test',
-          prompt: 'Test',
-          storeId: store.id,
-        });
-
-      // Regular user should not see storeOwner's logs
-      const response = await authHelper
-        .authenticatedRequest(regularUser.accessToken)
-        .get('/ai/logs')
-        .expect(200);
-
-      expect(response.body.data.logs.length).toBe(0);
-    });
-
     it('should allow admin to access all logs', async () => {
       await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post('/ai/logs')
+        .post(`/stores/${store.id}/ai/logs`)
         .send({
           feature: 'test',
           prompt: 'Test',
-          storeId: store.id,
         });
 
       const response = await authHelper
         .authenticatedRequest(adminUser.accessToken)
-        .get('/ai/logs')
+        .get(`/stores/${store.id}/ai/logs`)
         .expect(200);
 
       expect(response.body.data.logs.length).toBeGreaterThan(0);

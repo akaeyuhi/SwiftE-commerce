@@ -41,14 +41,12 @@ describe('Notifications - News (E2E)', () => {
   });
 
   afterAll(async () => {
+    await appHelper.clearDatabase();
     await appHelper.cleanup();
   });
 
   afterEach(async () => {
-    const logRepo = appHelper
-      .getDataSource()
-      .getRepository('NewsNotificationLog');
-    await logRepo.clear();
+    await appHelper.clearTables(['stores', 'news_notification_logs']);
   });
 
   describe('News Published Notifications', () => {

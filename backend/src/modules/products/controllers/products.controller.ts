@@ -377,7 +377,7 @@ export class ProductsController extends BaseController<
   async findProductsByCategory(
     @Param('storeId', ParseUUIDPipe) storeId: string,
     @Param('categoryId', ParseUUIDPipe) categoryId: string
-  ): Promise<Product[]> {
+  ): Promise<ProductListDto[]> {
     return this.productsService.findProductsByCategory(categoryId, storeId);
   }
 
@@ -391,7 +391,7 @@ export class ProductsController extends BaseController<
     @Param('storeId', ParseUUIDPipe) storeId: string,
     @Param('id', ParseUUIDPipe) productId: string,
     @Param('categoryId', ParseUUIDPipe) categoryId: string
-  ): Promise<Product> {
+  ): Promise<ProductDetailDto> {
     return this.productsService.attachCategoryToProduct(productId, categoryId);
   }
 

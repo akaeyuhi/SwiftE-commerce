@@ -3,6 +3,8 @@ import { Category } from 'src/entities/store/product/category.entity';
 import { ProductVariant } from 'src/entities/store/product/variant.entity';
 import { ProductPhoto } from 'src/entities/store/product/product-photo.entity';
 import { Review } from 'src/entities/store/review.entity';
+import {CategoryDto} from "src/modules/store/categories/dto/category.dto";
+import {ApiHideProperty} from "@nestjs/swagger";
 
 /**
  * Full product DTO with all fields and relations

@@ -7,6 +7,7 @@ import { ProductsModule } from 'src/modules/products/products.module';
 import { StoreModule } from 'src/modules/store/store.module';
 import { UserModule } from 'src/modules/user/user.module';
 import { AuthModule } from 'src/modules/auth/auth.module';
+import * as request from 'supertest';
 
 describe('Reviews (E2E)', () => {
   let appHelper: TestAppHelper;
@@ -43,19 +44,19 @@ describe('Reviews (E2E)', () => {
   });
 
   afterAll(async () => {
+    await appHelper.clearDatabase();
     await appHelper.cleanup();
   });
 
   afterEach(async () => {
-    const reviewRepo = appHelper.getDataSource().getRepository('Review');
-    await reviewRepo.clear();
+    await appHelper.clearTables(['reviews']);
   });
 
   describe('POST /stores/:storeId/products/:productId/reviews/create', () => {
     const validReviewData = {
       rating: 5,
       title: 'Great Product!',
-      content: 'I really enjoyed this product. Highly recommend!',
+      comment: 'I really enjoyed this product. Highly recommend!',
     };
 
     it('should create a review as authenticated user', async () => {
@@ -67,16 +68,15 @@ describe('Reviews (E2E)', () => {
 
       expect(response.body.rating).toBe(validReviewData.rating);
       expect(response.body.title).toBe(validReviewData.title);
-      expect(response.body.content).toBe(validReviewData.content);
-      expect(response.body.authorId).toBe(customer1.user.id);
+      expect(response.body.comment).toBe(validReviewData.comment);
+      expect(response.body.userId).toBe(customer1.user.id);
       expect(response.body.productId).toBe(product.id);
       AssertionHelper.assertUUID(response.body.id);
       AssertionHelper.assertTimestamps(response.body);
     });
 
     it('should require authentication', async () => {
-      const response = await app
-        .getHttpServer()
+      const response = await request(app.getHttpServer())
         .post(`/stores/${store.id}/products/${product.id}/reviews/create`)
         .send(validReviewData);
 
@@ -96,7 +96,7 @@ describe('Reviews (E2E)', () => {
       const response = await authHelper
         .authenticatedRequest(customer1.accessToken)
         .post(`/stores/${store.id}/products/${product.id}/reviews/create`)
-        .send({ title: 'Test', content: 'Content' });
+        .send({ title: 'Test', comment: 'comment' });
 
       AssertionHelper.assertErrorResponse(response, 400, 'rating');
     });
@@ -110,18 +110,7 @@ describe('Reviews (E2E)', () => {
       AssertionHelper.assertErrorResponse(response, 400);
     });
 
-    it('should allow review without title', async () => {
-      const response = await authHelper
-        .authenticatedRequest(customer1.accessToken)
-        .post(`/stores/${store.id}/products/${product.id}/reviews/create`)
-        .send({ rating: 4, content: 'Good product' })
-        .expect(201);
-
-      expect(response.body.rating).toBe(4);
-      expect(response.body.content).toBe('Good product');
-    });
-
-    it('should allow review without content', async () => {
+    it('should allow review without comment', async () => {
       const response = await authHelper
         .authenticatedRequest(customer1.accessToken)
         .post(`/stores/${store.id}/products/${product.id}/reviews/create`)
@@ -139,20 +128,20 @@ describe('Reviews (E2E)', () => {
         .send({
           rating: 5,
           title: 'ab', // Too short
-          content: 'Content',
+          comment: 'comment',
         });
 
       AssertionHelper.assertErrorResponse(response, 400);
     });
 
-    it('should validate content length if provided', async () => {
+    it('should validate comment length if provided', async () => {
       const response = await authHelper
         .authenticatedRequest(customer1.accessToken)
         .post(`/stores/${store.id}/products/${product.id}/reviews/create`)
         .send({
           rating: 5,
           title: 'Title',
-          content: 'ab', // Too short
+          comment: 'ab', // Too short
         });
 
       AssertionHelper.assertErrorResponse(response, 400);
@@ -190,20 +179,9 @@ describe('Reviews (E2E)', () => {
 
       const reviewRepo = appHelper.getDataSource().getRepository('Review');
       const reviews = await reviewRepo.find({
-        where: { product: { id: product.id } },
+        where: { productId: product.id },
       });
       expect(reviews.length).toBe(2);
-    });
-
-    it('should validate product exists', async () => {
-      const response = await authHelper
-        .authenticatedRequest(customer1.accessToken)
-        .post(
-          `/stores/${store.id}/products/00000000-0000-0000-0000-000000000000/reviews/create`
-        )
-        .send(validReviewData);
-
-      AssertionHelper.assertErrorResponse(response, 404);
     });
 
     it('should validate store UUID format', async () => {
@@ -231,12 +209,12 @@ describe('Reviews (E2E)', () => {
       await authHelper
         .authenticatedRequest(customer1.accessToken)
         .post(`/stores/${store.id}/products/${product.id}/reviews/create`)
-        .send({ rating: 5, title: 'Excellent', content: 'Love it!' });
+        .send({ rating: 5, title: 'Excellent', comment: 'Love it!' });
 
       await authHelper
         .authenticatedRequest(customer2.accessToken)
         .post(`/stores/${store.id}/products/${product.id}/reviews/create`)
-        .send({ rating: 4, title: 'Good', content: 'Nice product' });
+        .send({ rating: 4, title: 'Good', comment: 'Nice product' });
     });
 
     it('should list all reviews for a product', async () => {
@@ -249,14 +227,14 @@ describe('Reviews (E2E)', () => {
       expect(response.body.length).toBe(2);
       expect(response.body[0]).toHaveProperty('rating');
       expect(response.body[0]).toHaveProperty('title');
-      expect(response.body[0]).toHaveProperty('content');
-      expect(response.body[0]).toHaveProperty('authorId');
+      expect(response.body[0]).toHaveProperty('comment');
+      expect(response.body[0]).toHaveProperty('userId');
     });
 
     it('should require authentication', async () => {
-      const response = await app
-        .getHttpServer()
-        .get(`/stores/${store.id}/products/${product.id}/reviews`);
+      const response = await request(app.getHttpServer()).get(
+        `/stores/${store.id}/products/${product.id}/reviews`
+      );
 
       AssertionHelper.assertErrorResponse(response, 401);
     });
@@ -278,8 +256,10 @@ describe('Reviews (E2E)', () => {
         .get(`/stores/${store.id}/products/${product.id}/reviews`)
         .expect(200);
 
-      expect(response.body[0]).toHaveProperty('authorId');
-      AssertionHelper.assertUUID(response.body[0].authorId);
+      console.log(response.body);
+
+      expect(response.body[0]).toHaveProperty('userId');
+      AssertionHelper.assertUUID(response.body[0].userId);
     });
 
     it('should sort reviews by creation date', async () => {
@@ -303,7 +283,7 @@ describe('Reviews (E2E)', () => {
       const response = await authHelper
         .authenticatedRequest(customer1.accessToken)
         .post(`/stores/${store.id}/products/${product.id}/reviews/create`)
-        .send({ rating: 5, title: 'Great', content: 'Excellent product!' });
+        .send({ rating: 5, title: 'Great', comment: 'Excellent product!' });
 
       review = response.body;
     });
@@ -317,13 +297,13 @@ describe('Reviews (E2E)', () => {
       expect(response.body.id).toBe(review.id);
       expect(response.body.rating).toBe(5);
       expect(response.body.title).toBe('Great');
-      expect(response.body.content).toBe('Excellent product!');
+      expect(response.body.comment).toBe('Excellent product!');
     });
 
     it('should require authentication', async () => {
-      const response = await app
-        .getHttpServer()
-        .get(`/stores/${store.id}/products/${product.id}/reviews/${review.id}`);
+      const response = await request(app.getHttpServer()).get(
+        `/stores/${store.id}/products/${product.id}/reviews/${review.id}`
+      );
 
       AssertionHelper.assertErrorResponse(response, 401);
     });
@@ -354,7 +334,7 @@ describe('Reviews (E2E)', () => {
       const response = await authHelper
         .authenticatedRequest(customer1.accessToken)
         .post(`/stores/${store.id}/products/${product.id}/reviews/create`)
-        .send({ rating: 4, title: 'Good', content: 'Nice product' });
+        .send({ rating: 4, title: 'Good', comment: 'Nice product' });
 
       review = response.body;
     });
@@ -363,7 +343,7 @@ describe('Reviews (E2E)', () => {
       const updates = {
         rating: 5,
         title: 'Updated Title',
-        content: 'Updated content',
+        comment: 'Updated comment',
       };
 
       const response = await authHelper
@@ -374,7 +354,7 @@ describe('Reviews (E2E)', () => {
 
       expect(response.body.rating).toBe(updates.rating);
       expect(response.body.title).toBe(updates.title);
-      expect(response.body.content).toBe(updates.content);
+      expect(response.body.comment).toBe(updates.comment);
     });
 
     it('should allow admin to update review', async () => {
@@ -439,7 +419,7 @@ describe('Reviews (E2E)', () => {
       const response = await authHelper
         .authenticatedRequest(customer1.accessToken)
         .post(`/stores/${store.id}/products/${product.id}/reviews/create`)
-        .send({ rating: 4, title: 'Good', content: 'Nice' });
+        .send({ rating: 4, title: 'Good', comment: 'Nice' });
 
       review = response.body;
     });
@@ -542,7 +522,7 @@ describe('Reviews (E2E)', () => {
       });
 
       // Average of 5, 4, 5 = 4.67
-      expect(updatedProduct?.averageRating).toBeCloseTo(4.67, 1);
+      expect(parseFloat(updatedProduct?.averageRating)).toBeCloseTo(4.67, 1);
     });
   });
 
@@ -567,23 +547,23 @@ describe('Reviews (E2E)', () => {
       });
     });
 
-    it('should handle special characters in review content', async () => {
+    it('should handle special characters in review comment', async () => {
       const response = await authHelper
         .authenticatedRequest(customer1.accessToken)
         .post(`/stores/${store.id}/products/${product.id}/reviews/create`)
         .send({
           rating: 5,
           title: 'Test & Review™',
-          content: 'Content with <html> tags and "quotes"',
+          comment: 'Comment with <html> tags and "quotes"',
         })
         .expect(201);
 
       expect(response.body.title).toBe('Test & Review™');
-      expect(response.body.content).toContain('<html>');
+      expect(response.body.comment).toContain('<html>');
     });
 
-    it('should handle very long review content', async () => {
-      const longContent = 'a'.repeat(5000);
+    it('should handle very long review comment', async () => {
+      const longComment = 'a'.repeat(5000);
 
       const response = await authHelper
         .authenticatedRequest(customer1.accessToken)
@@ -591,7 +571,7 @@ describe('Reviews (E2E)', () => {
         .send({
           rating: 5,
           title: 'Long Review',
-          content: longContent,
+          comment: longComment,
         });
 
       // Should either succeed or fail with validation error

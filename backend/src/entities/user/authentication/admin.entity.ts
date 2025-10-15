@@ -14,9 +14,13 @@ export class Admin {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+
   @OneToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn()
   user: User;
+
+  @Column({ name: 'user_id' })
+  userId: string;
 
   @Column({ default: true })
   isActive: boolean;

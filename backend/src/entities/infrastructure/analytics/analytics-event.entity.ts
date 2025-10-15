@@ -18,16 +18,11 @@ export enum AnalyticsEventType {
 }
 
 @Entity({ name: 'analytics_events' })
-@Index(['storeId', 'eventType', 'createdAt'], {
-  where: 'store_id IS NOT NULL',
-})
-@Index(['productId', 'eventType', 'createdAt'], {
-  where: 'product_id IS NOT NULL',
-})
-@Index(['userId', 'eventType', 'createdAt'], {
-  where: 'user_id IS NOT NULL',
-})
-@Index(['createdAt']) // For partitioning and cleanup
+@Index(['userId', 'eventType', 'createdAt'])
+@Index(['storeId', 'eventType', 'createdAt'])
+@Index(['productId', 'eventType', 'createdAt'])
+@Index(['eventType', 'createdAt'])
+@Index(['createdAt'])
 export class AnalyticsEvent {
   @PrimaryGeneratedColumn('increment', { type: 'bigint' })
   id: string;

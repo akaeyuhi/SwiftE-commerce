@@ -130,8 +130,8 @@ describe('Email - Admin (E2E)', () => {
       ];
 
       for (const endpoint of endpoints) {
-        const response = await app
-          .getHttpServer()
+        const response = await appHelper
+          .request()
           [endpoint.method](endpoint.path);
         AssertionHelper.assertErrorResponse(response, 401);
       }

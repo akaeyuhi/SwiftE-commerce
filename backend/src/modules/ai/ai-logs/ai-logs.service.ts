@@ -5,10 +5,6 @@ import { CreateAiLogDto } from './dto/create-ai-log.dto';
 import { UpdateAiLogDto } from './dto/update-ai-log.dto';
 import { AiLogsRepository } from 'src/modules/ai/ai-logs/ai-logs.repository';
 import {
-  LogQueryOptions,
-  UsageStats,
-} from 'src/common/interfaces/ai/ai-log.interface';
-import {
   ErrorLogsFilterOptions,
   HealthCheckReport,
   LogDailyUsageFilterOptions,
@@ -16,6 +12,7 @@ import {
   LogTopFeaturesFilterOptions,
   LogUsageStatsFilterOptions,
   RecordAiLogParams,
+  UsageStats,
   UsageTrend,
 } from 'src/modules/ai/ai-logs/types';
 
@@ -81,11 +78,11 @@ export class AiLogsService extends BaseService<
       };
 
       if (sanitizedParams.userId) {
-        payload.user = { id: sanitizedParams.userId };
+        payload.userId = sanitizedParams.userId;
       }
 
       if (sanitizedParams.storeId) {
-        payload.store = { id: sanitizedParams.storeId };
+        payload.storeId = sanitizedParams.storeId;
       }
 
       const saved = await this.logRepo.createEntity(payload);
@@ -139,11 +136,8 @@ export class AiLogsService extends BaseService<
   /**
    * Enhanced query with comprehensive filtering
    */
-  async findByFilter(
-    filter: LogFilterOptions,
-    options: LogQueryOptions = {}
-  ): Promise<AiLog[]> {
-    return this.logRepo.findByFilter(filter, options);
+  async findByFilter(filters: LogFilterOptions = {}): Promise<AiLog[]> {
+    return this.logRepo.findByFilter(filters);
   }
 
   /**
@@ -282,12 +276,10 @@ export class AiLogsService extends BaseService<
     try {
       const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-      const recentLogs = await this.findByFilter(
-        {
-          dateFrom: oneDayAgo,
-        },
-        { limit: 1000 }
-      );
+      const recentLogs = await this.findByFilter({
+        dateFrom: oneDayAgo,
+        limit: 1000,
+      });
 
       const errorLogs = await this.getErrorLogs(100, {
         dateFrom: oneDayAgo,

@@ -29,7 +29,7 @@ services:
         max-file: "3"
 
   postgres_db:
-    image: postgres:15-alpine
+    image: postgres:latest
     container_name: postgres_db
     restart: unless-stopped
     environment:

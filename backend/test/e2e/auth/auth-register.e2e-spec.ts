@@ -17,11 +17,12 @@ describe('Auth - Registration (E2E)', () => {
   });
 
   afterAll(async () => {
+    await appHelper.clearDatabase();
     await appHelper.cleanup();
   });
 
   afterEach(async () => {
-    await appHelper.clearDatabase();
+    await appHelper.clearTables(['users', 'confirmations', 'refresh_tokens']);
   });
 
   describe('POST /auth/register', () => {

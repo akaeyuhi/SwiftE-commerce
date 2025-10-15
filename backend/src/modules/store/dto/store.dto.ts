@@ -1,4 +1,3 @@
-// src/modules/store/dto/store.dto.ts
 import { User } from 'src/entities/user/user.entity';
 import { Product } from 'src/entities/store/product/product.entity';
 import { Order } from 'src/entities/store/product/order.entity';

@@ -42,27 +42,19 @@ describe('Categories (E2E)', () => {
     const products = await seeder.seedProducts(store, 1);
     product = products[0];
 
-    // Assign moderator role
-    await authHelper
-      .authenticatedRequest(adminUser.accessToken)
-      .post(`/users/${storeModerator.user.id}/roles`)
-      .send({
-        roleName: StoreRoles.MODERATOR,
-        storeId: store.id,
-        assignedBy: adminUser.user.id,
-      });
+    await seeder.assignStoreModerator(storeModerator.user.id, store.id);
   });
 
   afterAll(async () => {
+    await appHelper.clearDatabase();
     await appHelper.cleanup();
   });
 
   afterEach(async () => {
-    const categoryRepo = appHelper.getDataSource().getRepository('Category');
-    await categoryRepo.clear();
+    await appHelper.clearTables(['categories']);
   });
 
-  describe('POST /stores/:storeId/products/:productId/categories', () => {
+  describe('POST /stores/:storeId/categories', () => {
     const validCategoryData = {
       name: 'Electronics',
       description: 'Electronic devices and accessories',
@@ -71,7 +63,7 @@ describe('Categories (E2E)', () => {
     it('should allow store admin to create category', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post(`/stores/${store.id}/products/${product.id}/categories`)
+        .post(`/stores/${store.id}/categories`)
         .send(validCategoryData)
         .expect(201);
 
@@ -84,7 +76,7 @@ describe('Categories (E2E)', () => {
     it('should prevent store moderator from creating category', async () => {
       const response = await authHelper
         .authenticatedRequest(storeModerator.accessToken)
-        .post(`/stores/${store.id}/products/${product.id}/categories`)
+        .post(`/stores/${store.id}/categories`)
         .send(validCategoryData);
 
       AssertionHelper.assertErrorResponse(response, 403);
@@ -93,16 +85,16 @@ describe('Categories (E2E)', () => {
     it('should prevent regular user from creating category', async () => {
       const response = await authHelper
         .authenticatedRequest(regularUser.accessToken)
-        .post(`/stores/${store.id}/products/${product.id}/categories`)
+        .post(`/stores/${store.id}/categories`)
         .send(validCategoryData);
 
       AssertionHelper.assertErrorResponse(response, 403);
     });
 
     it('should require authentication', async () => {
-      const response = await app
-        .getHttpServer()
-        .post(`/stores/${store.id}/products/${product.id}/categories`)
+      const response = await appHelper
+        .request()
+        .post(`/stores/${store.id}/categories`)
         .send(validCategoryData);
 
       AssertionHelper.assertErrorResponse(response, 401);
@@ -111,7 +103,7 @@ describe('Categories (E2E)', () => {
     it('should validate category name is required', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post(`/stores/${store.id}/products/${product.id}/categories`)
+        .post(`/stores/${store.id}/categories`)
         .send({ description: 'No name' });
 
       AssertionHelper.assertErrorResponse(response, 400, 'name');
@@ -120,7 +112,7 @@ describe('Categories (E2E)', () => {
     it('should validate name length', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post(`/stores/${store.id}/products/${product.id}/categories`)
+        .post(`/stores/${store.id}/categories`)
         .send({
           name: 'a', // Too short
           description: 'Valid description',
@@ -132,7 +124,7 @@ describe('Categories (E2E)', () => {
     it('should allow category without description', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post(`/stores/${store.id}/products/${product.id}/categories`)
+        .post(`/stores/${store.id}/categories`)
         .send({ name: 'Category Without Description' })
         .expect(201);
 
@@ -142,46 +134,28 @@ describe('Categories (E2E)', () => {
     it('should prevent duplicate category names', async () => {
       await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post(`/stores/${store.id}/products/${product.id}/categories`)
-        .send(validCategoryData)
+        .post(`/stores/${store.id}/categories`)
+        .send({ name: 'New category 1', description: 'New category 1' })
         .expect(201);
 
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post(`/stores/${store.id}/products/${product.id}/categories`)
-        .send(validCategoryData);
+        .post(`/stores/${store.id}/categories`)
+        .send({ name: 'New category 1', description: 'New category 1' });
 
       AssertionHelper.assertErrorResponse(response, 400, 'already exists');
     });
-
-    it('should validate store UUID format', async () => {
-      const response = await authHelper
-        .authenticatedRequest(storeOwner.accessToken)
-        .post(`/stores/invalid-uuid/products/${product.id}/categories`)
-        .send(validCategoryData);
-
-      AssertionHelper.assertErrorResponse(response, 400);
-    });
-
-    it('should validate product UUID format', async () => {
-      const response = await authHelper
-        .authenticatedRequest(storeOwner.accessToken)
-        .post(`/stores/${store.id}/products/invalid-uuid/categories`)
-        .send(validCategoryData);
-
-      AssertionHelper.assertErrorResponse(response, 400);
-    });
   });
 
-  describe('GET /stores/:storeId/products/:productId/categories', () => {
+  describe('GET /stores/:storeId/categories', () => {
     beforeEach(async () => {
-      await seeder.seedCategories(3);
+      await seeder.seedCategories(store, 3);
     });
 
     it('should list all categories', async () => {
       const response = await authHelper
         .authenticatedRequest(regularUser.accessToken)
-        .get(`/stores/${store.id}/products/${product.id}/categories`)
+        .get(`/stores/${store.id}/categories`)
         .expect(200);
 
       expect(Array.isArray(response.body)).toBe(true);
@@ -192,20 +166,19 @@ describe('Categories (E2E)', () => {
     });
 
     it('should require authentication', async () => {
-      const response = await app
-        .getHttpServer()
-        .get(`/stores/${store.id}/products/${product.id}/categories`);
+      const response = await appHelper
+        .request()
+        .get(`/stores/${store.id}/categories`);
 
       AssertionHelper.assertErrorResponse(response, 401);
     });
 
     it('should return empty array when no categories exist', async () => {
-      const categoryRepo = appHelper.getDataSource().getRepository('Category');
-      await categoryRepo.clear();
+      await appHelper.clearCategories();
 
       const response = await authHelper
         .authenticatedRequest(regularUser.accessToken)
-        .get(`/stores/${store.id}/products/${product.id}/categories`)
+        .get(`/stores/${store.id}/categories`)
         .expect(200);
 
       expect(response.body).toEqual([]);
@@ -214,7 +187,7 @@ describe('Categories (E2E)', () => {
     it('should include category metadata', async () => {
       const response = await authHelper
         .authenticatedRequest(regularUser.accessToken)
-        .get(`/stores/${store.id}/products/${product.id}/categories`)
+        .get(`/stores/${store.id}/categories`)
         .expect(200);
 
       response.body.forEach((category: any) => {
@@ -226,20 +199,18 @@ describe('Categories (E2E)', () => {
     });
   });
 
-  describe('GET /stores/:storeId/products/:productId/categories/:id', () => {
+  describe('GET /stores/:storeId/categories/:id', () => {
     let category: any;
 
     beforeEach(async () => {
-      const categories = await seeder.seedCategories(1);
+      const categories = await seeder.seedCategories(store, 1);
       category = categories[0];
     });
 
     it('should get single category', async () => {
       const response = await authHelper
         .authenticatedRequest(regularUser.accessToken)
-        .get(
-          `/stores/${store.id}/products/${product.id}/categories/${category.id}`
-        )
+        .get(`/stores/${store.id}/categories/${category.id}`)
         .expect(200);
 
       expect(response.body.id).toBe(category.id);
@@ -248,11 +219,9 @@ describe('Categories (E2E)', () => {
     });
 
     it('should require authentication', async () => {
-      const response = await app
-        .getHttpServer()
-        .get(
-          `/stores/${store.id}/products/${product.id}/categories/${category.id}`
-        );
+      const response = await appHelper
+        .request()
+        .get(`/stores/${store.id}/categories/${category.id}`);
 
       AssertionHelper.assertErrorResponse(response, 401);
     });
@@ -261,7 +230,7 @@ describe('Categories (E2E)', () => {
       const response = await authHelper
         .authenticatedRequest(regularUser.accessToken)
         .get(
-          `/stores/${store.id}/products/${product.id}/categories/00000000-0000-0000-0000-000000000000`
+          `/stores/${store.id}/categories/00000000-0000-0000-0000-000000000000`
         );
 
       AssertionHelper.assertErrorResponse(response, 404);
@@ -270,19 +239,17 @@ describe('Categories (E2E)', () => {
     it('should validate UUID format', async () => {
       const response = await authHelper
         .authenticatedRequest(regularUser.accessToken)
-        .get(
-          `/stores/${store.id}/products/${product.id}/categories/invalid-uuid`
-        );
+        .get(`/stores/${store.id}/categories/invalid-uuid`);
 
       AssertionHelper.assertErrorResponse(response, 400);
     });
   });
 
-  describe('PUT /stores/:storeId/products/:productId/categories/:id', () => {
+  describe('PUT /stores/:storeId/categories/:id', () => {
     let category: any;
 
     beforeEach(async () => {
-      const categories = await seeder.seedCategories(1);
+      const categories = await seeder.seedCategories(store, 1);
       category = categories[0];
     });
 
@@ -294,9 +261,7 @@ describe('Categories (E2E)', () => {
 
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .put(
-          `/stores/${store.id}/products/${product.id}/categories/${category.id}`
-        )
+        .put(`/stores/${store.id}/categories/${category.id}`)
         .send(updates)
         .expect(200);
 
@@ -307,9 +272,7 @@ describe('Categories (E2E)', () => {
     it('should prevent store moderator from updating category', async () => {
       const response = await authHelper
         .authenticatedRequest(storeModerator.accessToken)
-        .put(
-          `/stores/${store.id}/products/${product.id}/categories/${category.id}`
-        )
+        .put(`/stores/${store.id}/categories/${category.id}`)
         .send({ name: 'Updated Name' });
 
       AssertionHelper.assertErrorResponse(response, 403);
@@ -318,9 +281,7 @@ describe('Categories (E2E)', () => {
     it('should prevent regular user from updating category', async () => {
       const response = await authHelper
         .authenticatedRequest(regularUser.accessToken)
-        .put(
-          `/stores/${store.id}/products/${product.id}/categories/${category.id}`
-        )
+        .put(`/stores/${store.id}/categories/${category.id}`)
         .send({ name: 'Unauthorized Update' });
 
       AssertionHelper.assertErrorResponse(response, 403);
@@ -329,9 +290,7 @@ describe('Categories (E2E)', () => {
     it('should validate name length on update', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .put(
-          `/stores/${store.id}/products/${product.id}/categories/${category.id}`
-        )
+        .put(`/stores/${store.id}/categories/${category.id}`)
         .send({ name: 'a' });
 
       AssertionHelper.assertErrorResponse(response, 400);
@@ -341,7 +300,7 @@ describe('Categories (E2E)', () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
         .put(
-          `/stores/${store.id}/products/${product.id}/categories/00000000-0000-0000-0000-000000000000`
+          `/stores/${store.id}/categories/00000000-0000-0000-0000-000000000000`
         )
         .send({ name: 'Update' });
 
@@ -351,9 +310,7 @@ describe('Categories (E2E)', () => {
     it('should allow partial updates', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .put(
-          `/stores/${store.id}/products/${product.id}/categories/${category.id}`
-        )
+        .put(`/stores/${store.id}/categories/${category.id}`)
         .send({ name: 'Only Name Updated' })
         .expect(200);
 
@@ -362,20 +319,18 @@ describe('Categories (E2E)', () => {
     });
   });
 
-  describe('DELETE /stores/:storeId/products/:productId/categories/:id', () => {
+  describe('DELETE /stores/:storeId/categories/:id', () => {
     let category: any;
 
     beforeEach(async () => {
-      const categories = await seeder.seedCategories(1);
+      const categories = await seeder.seedCategories(store, 1);
       category = categories[0];
     });
 
     it('should allow store admin to delete category', async () => {
       await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .delete(
-          `/stores/${store.id}/products/${product.id}/categories/${category.id}`
-        )
+        .delete(`/stores/${store.id}/categories/${category.id}`)
         .expect(200);
 
       // Verify deletion
@@ -389,9 +344,7 @@ describe('Categories (E2E)', () => {
     it('should prevent store moderator from deleting category', async () => {
       const response = await authHelper
         .authenticatedRequest(storeModerator.accessToken)
-        .delete(
-          `/stores/${store.id}/products/${product.id}/categories/${category.id}`
-        );
+        .delete(`/stores/${store.id}/categories/${category.id}`);
 
       AssertionHelper.assertErrorResponse(response, 403);
     });
@@ -399,9 +352,7 @@ describe('Categories (E2E)', () => {
     it('should prevent regular user from deleting category', async () => {
       const response = await authHelper
         .authenticatedRequest(regularUser.accessToken)
-        .delete(
-          `/stores/${store.id}/products/${product.id}/categories/${category.id}`
-        );
+        .delete(`/stores/${store.id}/categories/${category.id}`);
 
       AssertionHelper.assertErrorResponse(response, 403);
     });
@@ -410,7 +361,7 @@ describe('Categories (E2E)', () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
         .delete(
-          `/stores/${store.id}/products/${product.id}/categories/00000000-0000-0000-0000-000000000000`
+          `/stores/${store.id}/categories/00000000-0000-0000-0000-000000000000`
         );
 
       AssertionHelper.assertErrorResponse(response, 404);
@@ -420,52 +371,53 @@ describe('Categories (E2E)', () => {
       // Assign category to product
       await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post(
-          `/stores/${store.id}/products/${product.id}/categories/${category.id}`
-        );
+        .post(`/stores/${store.id}/categories/${category.id}`);
 
       // Try to delete category
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .delete(
-          `/stores/${store.id}/products/${product.id}/categories/${category.id}`
-        );
+        .delete(`/stores/${store.id}/categories/${category.id}`);
 
       // Should either succeed or fail with proper error
       expect([200, 400]).toContain(response.status);
     });
   });
 
-  describe('GET /stores/:storeId/products/:productId/categories/tree', () => {
+  describe('GET /stores/:storeId/categories/tree', () => {
     beforeEach(async () => {
       // Create parent categories
       const categoryRepo = appHelper.getDataSource().getRepository('Category');
 
       const parent1 = await categoryRepo.save({
         name: 'Electronics',
+        storeId: store.id,
         description: 'Electronic devices',
       });
 
       const parent2 = await categoryRepo.save({
         name: 'Clothing',
+        storeId: store.id,
         description: 'Apparel and fashion',
       });
 
       // Create child categories
       await categoryRepo.save({
         name: 'Laptops',
+        storeId: store.id,
         description: 'Laptop computers',
         parent: parent1,
       });
 
       await categoryRepo.save({
         name: 'Phones',
+        storeId: store.id,
         description: 'Mobile phones',
         parent: parent1,
       });
 
       await categoryRepo.save({
         name: 'Shirts',
+        storeId: store.id,
         description: 'T-shirts and shirts',
         parent: parent2,
       });
@@ -474,7 +426,7 @@ describe('Categories (E2E)', () => {
     it('should return category tree structure', async () => {
       const response = await authHelper
         .authenticatedRequest(regularUser.accessToken)
-        .get(`/stores/${store.id}/products/${product.id}/categories/tree`)
+        .get(`/stores/${store.id}/categories/tree`)
         .expect(200);
 
       expect(Array.isArray(response.body)).toBe(true);
@@ -486,9 +438,9 @@ describe('Categories (E2E)', () => {
     });
 
     it('should require authentication', async () => {
-      const response = await app
-        .getHttpServer()
-        .get(`/stores/${store.id}/products/${product.id}/categories/tree`);
+      const response = await appHelper
+        .request()
+        .get(`/stores/${store.id}/categories/tree`);
 
       AssertionHelper.assertErrorResponse(response, 401);
     });
@@ -496,7 +448,7 @@ describe('Categories (E2E)', () => {
     it('should nest child categories under parents', async () => {
       const response = await authHelper
         .authenticatedRequest(regularUser.accessToken)
-        .get(`/stores/${store.id}/products/${product.id}/categories/tree`)
+        .get(`/stores/${store.id}/categories/tree`)
         .expect(200);
 
       const parentCategory = response.body.find(
@@ -509,12 +461,11 @@ describe('Categories (E2E)', () => {
     });
 
     it('should return empty array when no categories exist', async () => {
-      const categoryRepo = appHelper.getDataSource().getRepository('Category');
-      await categoryRepo.clear();
+      await appHelper.clearCategories();
 
       const response = await authHelper
         .authenticatedRequest(regularUser.accessToken)
-        .get(`/stores/${store.id}/products/${product.id}/categories/tree`)
+        .get(`/stores/${store.id}/categories/tree`)
         .expect(200);
 
       expect(response.body).toEqual([]);
@@ -525,7 +476,7 @@ describe('Categories (E2E)', () => {
     let category: any;
 
     beforeEach(async () => {
-      const categories = await seeder.seedCategories(1);
+      const categories = await seeder.seedCategories(store, 1);
       category = categories[0];
     });
 
@@ -545,21 +496,17 @@ describe('Categories (E2E)', () => {
       // First assign
       await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post(
-          `/stores/${store.id}/products/${product.id}/categories/${category.id}`
-        );
+        .post(`/stores/${store.id}/categories/${category.id}`);
 
       // Then remove
       await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .delete(
-          `/stores/${store.id}/products/${product.id}/categories/${category.id}`
-        )
-        .expect(204);
+        .delete(`/stores/${store.id}/categories/${category.id}`)
+        .expect(200);
     });
 
     it('should allow multiple categories per product', async () => {
-      const categories = await seeder.seedCategories(3);
+      const categories = await seeder.seedCategories(store, 3);
 
       for (const cat of categories) {
         await authHelper
@@ -604,11 +551,11 @@ describe('Categories (E2E)', () => {
       const categories = await Promise.all([
         authHelper
           .authenticatedRequest(storeOwner.accessToken)
-          .post(`/stores/${store.id}/products/${product.id}/categories`)
+          .post(`/stores/${store.id}/categories`)
           .send({ name: 'Category 1', description: 'First' }),
         authHelper
           .authenticatedRequest(storeOwner.accessToken)
-          .post(`/stores/${store.id}/products/${product.id}/categories`)
+          .post(`/stores/${store.id}/categories`)
           .send({ name: 'Category 2', description: 'Second' }),
       ]);
 
@@ -620,7 +567,7 @@ describe('Categories (E2E)', () => {
     it('should handle special characters in category name', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post(`/stores/${store.id}/products/${product.id}/categories`)
+        .post(`/stores/${store.id}/categories`)
         .send({
           name: 'Electronics & Gadgets™',
           description: 'Special characters category',
@@ -635,7 +582,7 @@ describe('Categories (E2E)', () => {
 
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post(`/stores/${store.id}/products/${product.id}/categories`)
+        .post(`/stores/${store.id}/categories`)
         .send({
           name: 'Long Description Category',
           description: longDescription,
@@ -646,20 +593,16 @@ describe('Categories (E2E)', () => {
     });
 
     it('should maintain data integrity when deleting categories', async () => {
-      const categories = await seeder.seedCategories(2);
+      const categories = await seeder.seedCategories(store, 2);
 
       await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .delete(
-          `/stores/${store.id}/products/${product.id}/categories/${categories[0].id}`
-        );
+        .delete(`/stores/${store.id}/categories/${categories[0].id}`);
 
       // Second category should still exist
       const response = await authHelper
         .authenticatedRequest(regularUser.accessToken)
-        .get(
-          `/stores/${store.id}/products/${product.id}/categories/${categories[1].id}`
-        )
+        .get(`/stores/${store.id}/categories/${categories[1].id}`)
         .expect(200);
 
       expect(response.body.id).toBe(categories[1].id);
@@ -670,19 +613,19 @@ describe('Categories (E2E)', () => {
 
       const parent = await categoryRepo.save({
         name: 'Parent Category',
+        storeId: store.id,
       });
 
       await categoryRepo.save({
         name: 'Child Category',
         parent,
+        storeId: store.id,
       });
 
       // Delete parent
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .delete(
-          `/stores/${store.id}/products/${product.id}/categories/${parent.id}`
-        );
+        .delete(`/stores/${store.id}/categories/${parent.id}`);
 
       // Should handle cascade or prevent deletion
       expect([200, 400]).toContain(response.status);

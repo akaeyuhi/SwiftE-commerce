@@ -45,9 +45,13 @@ export class UserService extends BaseService<
     return this.mapper.toDto(saved);
   }
 
+  async findUser(id: string): Promise<User | null> {
+    return this.userRepo.findById(id);
+  }
+
   async update(id: string, dto: UpdateUserDto): Promise<UserDto> {
     const user = await this.userRepo.findOneBy({ id });
-    if (!user) throw new NotFoundException('User not found');
+    if (!user) throw new NotFoundException(`User with ${id} not found`);
     if (dto.password) {
       user.passwordHash = await bcrypt.hash(dto.password, 10);
     }
@@ -58,7 +62,7 @@ export class UserService extends BaseService<
 
   async findByEmail(email: string): Promise<UserDto> {
     const user = await this.userRepo.findOneBy({ email });
-    if (!user) throw new NotFoundException('User not found');
+    if (!user) throw new NotFoundException(`User with ${email} not found`);
     return this.mapper.toDto(user);
   }
 
@@ -69,7 +73,15 @@ export class UserService extends BaseService<
   async findOneWithRelations(id: string): Promise<User> {
     const user = await this.userRepo.findOneWithRelations(id);
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException(`User with id ${id} not found`);
+    }
+    return user;
+  }
+
+  async findOneWithRoles(id: string): Promise<User> {
+    const user = await this.userRepo.findOneWithRelations(id);
+    if (!user) {
+      throw new NotFoundException(`User with id ${id} not found`);
     }
     return user;
   }
@@ -80,7 +92,7 @@ export class UserService extends BaseService<
     storeId: string,
     assignedBy?: string
   ): Promise<StoreRole> {
-    const user = await this.getEntityById(userId);
+    const user = await this.findOneWithRoles(userId);
     if (!user) throw new NotFoundException('User not found');
 
     const store = await this.storeService.getEntityById(storeId);
@@ -121,7 +133,7 @@ export class UserService extends BaseService<
   }
 
   async getUserStoreRoles(userId: string) {
-    const user = await this.findOneWithRelations(userId);
+    const user = await this.findOneWithRoles(userId);
     return user.roles;
   }
 

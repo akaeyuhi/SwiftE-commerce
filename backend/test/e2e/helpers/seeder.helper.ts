@@ -8,6 +8,8 @@ import { Order } from 'src/entities/store/product/order.entity';
 import { OrderItem } from 'src/entities/store/product/order-item.entity';
 import { Inventory } from 'src/entities/store/product/inventory.entity';
 import { OrderStatus } from 'src/common/enums/order-status.enum';
+import { StoreRoles } from 'src/common/enums/store-roles.enum';
+import { StoreRole } from 'src/entities/user/authentication/store-role.entity';
 
 export class SeederHelper {
   constructor(private dataSource: DataSource) {}
@@ -18,10 +20,11 @@ export class SeederHelper {
   async seedStore(owner: User, storeData?: Partial<Store>): Promise<Store> {
     const storeRepo = this.dataSource.getRepository(Store);
 
+    // Create store
     const store = storeRepo.create({
       name: `Test Store ${Date.now()}`,
       description: 'A test store',
-      owner,
+      ownerId: owner.id,
       productCount: 0,
       followerCount: 0,
       totalRevenue: 0,
@@ -29,8 +32,197 @@ export class SeederHelper {
       ...storeData,
     });
 
-    return storeRepo.save(store);
+    const savedStore = await storeRepo.save(store);
+
+    await this.assignStoreAdmin(owner.id, store.id);
+
+    return savedStore;
   }
+
+  /**
+   * Assign a store role to a user
+   * @param userId - User ID to assign role to
+   * @param storeId - Store ID
+   * @param role - Role to assign (ADMIN, MODERATOR, MEMBER, etc.)
+   * @param assignedBy - Optional: ID of user who assigned the role
+   */
+  async assignStoreRole(
+    userId: string,
+    storeId: string,
+    role: StoreRoles,
+    assignedBy?: string
+  ): Promise<StoreRole> {
+    const storeRoleRepo = this.dataSource.getRepository(StoreRole);
+    const userRepo = this.dataSource.getRepository(User);
+    const storeRepo = this.dataSource.getRepository(Store);
+
+    // Get user and store entities
+    const user = await userRepo.findOne({
+      where: { id: userId },
+      relations: ['roles'],
+    });
+    const store = await storeRepo.findOne({
+      where: { id: storeId },
+      relations: ['storeRoles'],
+    });
+
+    if (!user) throw new Error(`User ${userId} not found`);
+    if (!store) throw new Error(`Store ${storeId} not found`);
+
+    // Check if role already exists
+    const existingRole = await storeRoleRepo.findOne({
+      where: {
+        user: { id: userId },
+        store: { id: storeId },
+      },
+    });
+
+    if (existingRole) {
+      // Update existing role
+      existingRole.roleName = role;
+      existingRole.isActive = true;
+      existingRole.assignedBy = assignedBy;
+      existingRole.assignedAt = new Date();
+      await storeRoleRepo.save(existingRole);
+      console.log(
+        `✅ Updated role for user ${userId} in store ${storeId} to ${role}`
+      );
+      return existingRole;
+    }
+
+    // Create new role
+    const storeRole = storeRoleRepo.create({
+      roleName: role,
+      userId: user.id,
+      storeId: store.id,
+      isActive: true,
+      assignedBy,
+      assignedAt: new Date(),
+    });
+
+    const savedRole = await storeRoleRepo.save(storeRole);
+    console.log(
+      `✅ Assigned ${role} role to user ${userId} in store ${storeId}`
+    );
+
+    user.roles.push(savedRole);
+    store.storeRoles.push(storeRole);
+
+    await userRepo.save(user);
+    await storeRepo.save(store);
+
+    return savedRole;
+  }
+
+  /**
+   * Assign ADMIN role to a user in a store
+   */
+  async assignStoreAdmin(
+    userId: string,
+    storeId: string,
+    assignedBy?: string
+  ): Promise<StoreRole> {
+    return this.assignStoreRole(userId, storeId, StoreRoles.ADMIN, assignedBy);
+  }
+
+  /**
+   * Assign MODERATOR role to a user in a store
+   */
+  async assignStoreModerator(
+    userId: string,
+    storeId: string,
+    assignedBy?: string
+  ): Promise<StoreRole> {
+    return this.assignStoreRole(
+      userId,
+      storeId,
+      StoreRoles.MODERATOR,
+      assignedBy
+    );
+  }
+
+  /**
+   * Assign MEMBER role to a user in a store
+   */
+  async assignStoreMember(
+    userId: string,
+    storeId: string,
+    assignedBy?: string
+  ): Promise<StoreRole> {
+    return this.assignStoreRole(userId, storeId, StoreRoles.GUEST, assignedBy);
+  }
+
+  /**
+   * Revoke a store role from a user
+   */
+  async revokeStoreRole(
+    userId: string,
+    storeId: string,
+    revokedBy?: string
+  ): Promise<void> {
+    const storeRoleRepo = this.dataSource.getRepository(StoreRole);
+
+    const role = await storeRoleRepo.findOne({
+      where: {
+        user: { id: userId },
+        store: { id: storeId },
+      },
+    });
+
+    if (!role) {
+      console.warn(`No role found for user ${userId} in store ${storeId}`);
+      return;
+    }
+
+    role.isActive = false;
+    role.revokedBy = revokedBy;
+    role.revokedAt = new Date();
+
+    await storeRoleRepo.save(role);
+    console.log(`✅ Revoked role for user ${userId} in store ${storeId}`);
+  }
+
+  /**
+   * Get all roles for a user in a specific store
+   */
+  async getUserStoreRoles(
+    userId: string,
+    storeId: string
+  ): Promise<StoreRole[]> {
+    const storeRoleRepo = this.dataSource.getRepository(StoreRole);
+
+    return storeRoleRepo.find({
+      where: {
+        user: { id: userId },
+        store: { id: storeId },
+        isActive: true,
+      },
+      relations: ['user', 'store'],
+    });
+  }
+
+  /**
+   * Check if user has a specific role in a store
+   */
+  async userHasStoreRole(
+    userId: string,
+    storeId: string,
+    role: StoreRoles
+  ): Promise<boolean> {
+    const storeRoleRepo = this.dataSource.getRepository(StoreRole);
+
+    const storeRole = await storeRoleRepo.findOne({
+      where: {
+        user: { id: userId },
+        store: { id: storeId },
+        roleName: role,
+        isActive: true,
+      },
+    });
+
+    return !!storeRole;
+  }
+
   /**
    * Seed a single product with custom data
    */
@@ -63,7 +255,7 @@ export class SeederHelper {
       const product = productRepo.create({
         name: `Product ${i + 1}`,
         description: `Description for product ${i + 1}`,
-        store,
+        storeId: store.id,
         viewCount: Math.floor(Math.random() * 1000),
         totalSales: Math.floor(Math.random() * 100),
         likeCount: Math.floor(Math.random() * 50),
@@ -80,14 +272,15 @@ export class SeederHelper {
   /**
    * Seed categories
    */
-  async seedCategories(count: number = 3): Promise<Category[]> {
+  async seedCategories(store: Store, count: number = 3): Promise<Category[]> {
     const categoryRepo = this.dataSource.getRepository(Category);
 
     const categories: Category[] = [];
 
     for (let i = 0; i < count; i++) {
       const category = categoryRepo.create({
-        name: `Category ${i + 1}`,
+        name: `Category ${i + 1} ${Date.now()}_${Math.random().toString(36).substring(7)}`,
+        storeId: store.id,
         description: `Description for category ${i + 1}`,
       });
 
@@ -111,7 +304,7 @@ export class SeederHelper {
 
     for (let i = 0; i < count; i++) {
       const variant = variantRepo.create({
-        product,
+        productId: product.id,
         sku: `SKU-${Date.now()}-${i}`,
         price: parseFloat((Math.random() * 100 + 10).toFixed(2)),
         attributes: {
@@ -124,8 +317,8 @@ export class SeederHelper {
 
       // Create inventory for this variant
       const inventory = inventoryRepo.create({
-        variant: savedVariant,
-        store: product.store,
+        variantId: savedVariant.id,
+        storeId: product.store.id,
         quantity: Math.floor(Math.random() * 100 + 50), // Random stock between 50-150
         lastRestockedAt: new Date(),
       });
@@ -189,8 +382,8 @@ export class SeederHelper {
 
     for (let i = 0; i < count; i++) {
       const order = orderRepo.create({
-        user,
-        store,
+        userId: user.id,
+        storeId: store.id,
         status,
         totalAmount: 0,
         shipping: {
@@ -288,8 +481,8 @@ export class SeederHelper {
     const { status = OrderStatus.PENDING, shipping, billing } = options || {};
 
     const order = orderRepo.create({
-      user,
-      store,
+      userId: user.id,
+      storeId: store.id,
       status,
       totalAmount: 0,
       shipping: shipping || {
@@ -432,7 +625,7 @@ export class SeederHelper {
   }> {
     const store = await this.seedStore(owner);
     const products = await this.seedProducts(store, 5);
-    const categories = await this.seedCategories(3);
+    const categories = await this.seedCategories(store, 3);
 
     // Add variants to products (this also creates inventory)
     for (const product of products) {

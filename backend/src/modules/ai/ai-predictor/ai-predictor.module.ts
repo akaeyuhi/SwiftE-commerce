@@ -17,9 +17,13 @@ import { AiInventoryService } from 'src/modules/ai/ai-predictor/implementations/
 import { AiVariantRepository } from 'src/modules/ai/ai-predictor/implementations/repositories/ai-variant.repository';
 import { AiInventoryRepository } from 'src/modules/ai/ai-predictor/implementations/repositories/ai-inventory.repository';
 import { AiVariantService } from 'src/modules/ai/ai-predictor/implementations/services/ai-variant.service';
+import { Inventory } from 'src/entities/store/product/inventory.entity';
+import { ProductVariant } from 'src/entities/store/product/variant.entity';
+import { TypeOrmModule } from '@nestjs/typeorm';
 
 @Module({
   imports: [
+    TypeOrmModule.forFeature([Inventory, ProductVariant]),
     AnalyticsModule,
     AiAuditsModule,
     AiLogsModule,

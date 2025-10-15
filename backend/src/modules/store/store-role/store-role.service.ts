@@ -22,12 +22,8 @@ export class StoreRoleService extends BaseService<
   ): Promise<StoreRole | null> {
     return this.storeRoleRepo.findOne({
       where: {
-        user: {
-          id: userId,
-        },
-        store: {
-          id: storeId,
-        },
+        userId,
+        storeId,
       },
       relations: ['user', 'store'],
     });
@@ -101,7 +97,7 @@ export class StoreRoleService extends BaseService<
   async getStoreRoles(storeId: string): Promise<StoreRole[]> {
     return this.storeRoleRepo.find({
       where: {
-        store: { id: storeId },
+        storeId,
         isActive: true,
       },
       relations: ['user', 'store'],
@@ -115,7 +111,7 @@ export class StoreRoleService extends BaseService<
   async getUserStoreRoles(userId: string): Promise<StoreRole[]> {
     return this.storeRoleRepo.find({
       where: {
-        user: { id: userId },
+        userId,
         isActive: true,
       },
       relations: ['user', 'store'],

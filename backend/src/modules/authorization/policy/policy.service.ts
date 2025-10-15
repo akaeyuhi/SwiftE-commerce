@@ -1,6 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
-import { PolicyEntry } from 'src/modules/authorization/policy/policy.types';
+import {
+  AccessPolicies,
+  PolicyEntry,
+} from 'src/modules/authorization/policy/policy.types';
 import { StoreRole } from 'src/entities/user/authentication/store-role.entity';
 import { DeepPartial } from 'typeorm';
 import { User } from 'src/entities/user/user.entity';
@@ -42,7 +45,7 @@ export class PolicyService {
     try {
       const adminCheck = await this.adminService.isUserValidAdmin(user.id);
       const userCheck = await this.userService.isUserSiteAdmin(user.id);
-      return adminCheck === userCheck;
+      return adminCheck && userCheck;
     } catch {
       return false;
     }
@@ -60,7 +63,7 @@ export class PolicyService {
     storeId: string | number,
     requiredRoles: StoreRoles[]
   ): Promise<boolean> {
-    if (!user) return false;
+    if (!user || !user.id) return false;
     const userRoles: StoreRole[] | undefined = user.roles as StoreRole[];
 
     let roles: StoreRole[] = [];
@@ -81,8 +84,8 @@ export class PolicyService {
       const hasRoleName = requiredRoles.includes(ur.roleName as StoreRoles);
       const sameStore =
         ur.store === null ||
-        String(ur.store.id) === storeId ||
-        ur.store.id === storeId;
+        String(ur.storeId) === storeId ||
+        ur.storeId === storeId;
 
       const storeCheck = await this.storeService.hasUserStoreRole(ur);
       if (hasRoleName && sameStore && storeCheck) return true;
@@ -237,5 +240,38 @@ export class PolicyService {
 
   async isUserActive(userId: string): Promise<boolean> {
     return this.userService.isActive(userId);
+  }
+
+  /**
+   * Get merged policy for a method.
+   * Child controller policies override base controller policies.
+   */
+  getMergedPolicy(
+    controller: any,
+    methodName: string
+  ): PolicyEntry | undefined {
+    // Get child controller's accessPolicies
+    const childPolicies = controller.accessPolicies as AccessPolicies;
+
+    // Get base controller's accessPolicies (from prototype chain)
+    const baseController = Object.getPrototypeOf(controller);
+    const basePolicies = baseController?.accessPolicies as AccessPolicies;
+
+    // Start with base policy
+    let mergedPolicy: PolicyEntry | undefined;
+
+    if (basePolicies && basePolicies[methodName]) {
+      mergedPolicy = { ...basePolicies[methodName] };
+    }
+
+    // Override with child policy
+    if (childPolicies && childPolicies[methodName]) {
+      mergedPolicy = {
+        ...mergedPolicy,
+        ...childPolicies[methodName],
+      };
+    }
+
+    return mergedPolicy;
   }
 }

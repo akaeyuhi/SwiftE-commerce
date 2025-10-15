@@ -18,9 +18,17 @@ import { ComparisonAnalyticsService } from 'src/modules/analytics/services/compa
 import { PerformanceAnalyticsService } from 'src/modules/analytics/services/performance-analytics.service';
 import { DataSyncService } from 'src/modules/analytics/services/data-sync.service';
 import { HealthCheckService } from 'src/modules/analytics/services/health-check.service';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { Store } from 'src/entities/store/store.entity';
+import { Product } from 'src/entities/store/product/product.entity';
 
 @Module({
-  imports: [ScheduleModule.forRoot(), ConfigModule, HttpModule],
+  imports: [
+    TypeOrmModule.forFeature([Store, Product]),
+    ScheduleModule.forRoot(),
+    ConfigModule,
+    HttpModule,
+  ],
   providers: [
     AnalyticsService,
 

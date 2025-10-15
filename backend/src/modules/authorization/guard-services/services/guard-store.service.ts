@@ -13,12 +13,11 @@ export class GuardStoreService implements IStoreService {
   constructor(private readonly repo: GuardStoreRepository) {}
 
   async hasUserStoreRole(storeRole: StoreRole) {
-    const store = await this.repo.findById(storeRole.store.id);
+    const store = await this.repo.findById(storeRole.storeId);
     if (!store) throw new BadRequestException('Store not found');
     return store.storeRoles.some(
       (role) =>
-        role.user.id === storeRole.user.id &&
-        role.roleName === storeRole.roleName
+        role.userId === storeRole.userId && role.roleName === storeRole.roleName
     );
   }
   async findOne(id: string): Promise<Store> {

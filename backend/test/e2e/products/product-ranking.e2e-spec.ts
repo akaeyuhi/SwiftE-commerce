@@ -31,7 +31,7 @@ describe('Products - Ranking (E2E)', () => {
     await productRepo.save([
       {
         name: 'High Views Product',
-        store,
+        storeId: store.id,
         viewCount: 1000,
         totalSales: 10,
         averageRating: 3.5,
@@ -39,7 +39,7 @@ describe('Products - Ranking (E2E)', () => {
       },
       {
         name: 'High Sales Product',
-        store,
+        storeId: store.id,
         viewCount: 500,
         totalSales: 100,
         averageRating: 4.0,
@@ -47,7 +47,7 @@ describe('Products - Ranking (E2E)', () => {
       },
       {
         name: 'High Rating Product',
-        store,
+        storeId: store.id,
         viewCount: 200,
         totalSales: 5,
         averageRating: 4.8,
@@ -206,8 +206,8 @@ describe('Products - Ranking (E2E)', () => {
     });
 
     it('should require authentication', async () => {
-      const response = await app
-        .getHttpServer()
+      const response = await appHelper
+        .request()
         .get(`/stores/${store.id}/products/top/views`);
 
       AssertionHelper.assertErrorResponse(response, 401);

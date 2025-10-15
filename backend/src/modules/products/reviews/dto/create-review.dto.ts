@@ -1,4 +1,13 @@
-import { IsString, IsInt, Min, Max, IsOptional, IsUUID } from 'class-validator';
+import {
+  IsString,
+  IsInt,
+  Min,
+  Max,
+  IsOptional,
+  IsUUID,
+  MinLength,
+  MaxLength,
+} from 'class-validator';
 
 /**
  * DTO for creating a Review.
@@ -9,11 +18,17 @@ import { IsString, IsInt, Min, Max, IsOptional, IsUUID } from 'class-validator';
  */
 export class CreateReviewDto {
   @IsUUID()
-  productId: string;
+  @IsOptional()
+  productId?: string;
 
   @IsOptional()
   @IsUUID()
   userId?: string;
+
+  @IsString()
+  @MinLength(3)
+  @MaxLength(20)
+  title: string;
 
   @IsInt()
   @Min(1)
@@ -22,5 +37,7 @@ export class CreateReviewDto {
 
   @IsOptional()
   @IsString()
+  @MinLength(3)
+  @MaxLength(50)
   comment?: string;
 }

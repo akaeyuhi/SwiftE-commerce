@@ -13,7 +13,7 @@ export class GuardAdminRepository implements IAdminRepository {
 
   async findOne(userId: string): Promise<Admin | null> {
     return this.adminRepo.findOne({
-      where: { user: { id: userId } },
+      where: { userId },
       relations: ['user'],
     });
   }

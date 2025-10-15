@@ -1,9 +1,9 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
-  BadRequestException,
 } from '@nestjs/common';
 import { UserService } from '../user/user.service';
 import { JwtService } from '@nestjs/jwt';
@@ -49,8 +49,13 @@ export class AuthService {
   }
 
   async doesUserExists(checkDto: CreateUserDto | LoginDto): Promise<boolean> {
-    const user = await this.userService.findByEmail(checkDto.email);
-    return !!user;
+    try {
+      await this.userService.findByEmail(checkDto.email);
+      return true;
+    } catch (err) {
+      if (err instanceof NotFoundException) return false;
+      throw err;
+    }
   }
 
   async login(dto: LoginDto, req?: Request) {
@@ -116,13 +121,25 @@ export class AuthService {
       { delay: 5 * 60 * 1000 }
     );
 
-    const loginResult = await this.login(
-      { email: createUserDto.email, password: createUserDto.password },
-      req
-    );
+    // Build payload for tokens (same shape as login payload)
+    const payload: JwtPayload = {
+      id: user.id,
+      email: user.email,
+      sub: user.id,
+      isVerified: false,
+    };
+
+    const tokens = await this.getTokens(payload, req);
 
     return {
-      ...loginResult,
+      ...tokens, // { accessToken, refreshToken, csrfToken }
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        isEmailVerified: user || false,
+      },
       message:
         'Registration successful! Please check your email to verify your account.',
       requiresVerification: true,

@@ -159,7 +159,7 @@ export class OrdersController extends BaseController<
   @ApiResponse({
     status: 200,
     description: 'Orders retrieved successfully',
-    type: [Order],
+    type: () => [Order],
   })
   async findAllByStore(
     @Param('storeId', new ParseUUIDPipe()) storeId: string
@@ -225,7 +225,7 @@ export class OrdersController extends BaseController<
   @ApiResponse({
     status: 201,
     description: 'Order created successfully, inventory deducted',
-    type: Order,
+    type: () => Order,
   })
   @ApiBadRequestResponse({
     description: 'Insufficient stock or validation failed',
@@ -314,7 +314,7 @@ export class OrdersController extends BaseController<
   @ApiResponse({
     status: 200,
     description: 'Order retrieved successfully',
-    type: Order,
+    type: () => Order,
   })
   @ApiNotFoundResponse({ description: 'Order not found' })
   async findOne(@Param('id', new ParseUUIDPipe()) id: string): Promise<Order> {
@@ -339,7 +339,7 @@ export class OrdersController extends BaseController<
   @ApiResponse({
     status: 200,
     description: 'User orders retrieved',
-    type: [Order],
+    type: () => [Order],
   })
   async findByUser(
     @Param('storeId', new ParseUUIDPipe()) _storeId: string,
@@ -427,7 +427,7 @@ export class OrdersController extends BaseController<
   @ApiResponse({
     status: 200,
     description: 'Order status updated',
-    type: Order,
+    type: () => Order,
   })
   @ApiNotFoundResponse({ description: 'Order not found' })
   @ApiBadRequestResponse({
@@ -496,7 +496,7 @@ export class OrdersController extends BaseController<
   @ApiResponse({
     status: 200,
     description: 'Order cancelled, inventory restored',
-    type: Order,
+    type: () => Order,
   })
   @ApiNotFoundResponse({ description: 'Order not found' })
   @ApiBadRequestResponse({
@@ -564,7 +564,7 @@ export class OrdersController extends BaseController<
   @ApiResponse({
     status: 200,
     description: 'Return processed, inventory restored',
-    type: Order,
+    type: () => Order,
   })
   @ApiNotFoundResponse({ description: 'Order not found' })
   @ApiBadRequestResponse({
@@ -691,7 +691,7 @@ export class OrdersController extends BaseController<
     status: 200,
     description:
       'Shipping information updated, notification sent if status changed to SHIPPED',
-    type: Order,
+    type: () => Order,
   })
   async updateShippingInfo(
     @Param('storeId', new ParseUUIDPipe()) _storeId: string,
@@ -718,7 +718,7 @@ export class OrdersController extends BaseController<
   @ApiResponse({
     status: 200,
     description: 'Order marked as delivered, notification sent',
-    type: Order,
+    type: () => Order,
   })
   async markAsDelivered(
     @Param('storeId', new ParseUUIDPipe()) _storeId: string,

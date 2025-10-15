@@ -181,7 +181,7 @@ export class VariantsService extends BaseService<
    */
   async listByProduct(productId: string): Promise<ProductVariant[]> {
     return this.variantRepo.find({
-      where: { product: { id: productId } },
+      where: { productId },
     });
   }
 

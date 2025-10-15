@@ -19,13 +19,16 @@ import { ProductSearchRepository } from 'src/modules/products/repositories/produ
 import { ProductRankingRepository } from 'src/modules/products/repositories/product-ranking.repository';
 import { ProductsRankingController } from 'src/modules/products/controllers/products-ranking.controller';
 import { ProductsRankingService } from 'src/modules/products/services/product-ranking.service';
+import { Store } from 'src/entities/store/store.entity';
+import { ReviewsModule } from 'src/modules/products/reviews/reviews.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Product]),
+    TypeOrmModule.forFeature([Product, Store]),
     ProductPhotoModule,
     InventoryModule,
     CategoriesModule,
+    ReviewsModule,
   ],
   providers: [
     ProductRepository,

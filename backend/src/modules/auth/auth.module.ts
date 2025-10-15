@@ -6,7 +6,7 @@ import { RefreshTokenStrategy } from 'src/modules/auth/strategies/auth-refresh.s
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RefreshToken } from 'src/entities/user/authentication/refresh-token.entity';
 import { RefreshTokenModule } from 'src/modules/auth/refresh-token/refresh-token.module';
-import { ConfigModule } from '@nestjs/config';
+import {ConfigModule, ConfigService} from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { RefreshTokenService } from 'src/modules/auth/refresh-token/refresh-token.service';
@@ -22,12 +22,17 @@ import { UserModule } from 'src/modules/user/user.module';
     TypeOrmModule.forFeature([RefreshToken]),
     ConfigModule,
     PassportModule,
-    JwtModule.register({
+    JwtModule.registerAsync({
       global: true,
-      secret: process.env.JWT_SECRET,
-      signOptions: { expiresIn: '24h' },
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        secret: configService.get<string>('JWT_SECRET'),
+        signOptions: {
+          expiresIn: configService.get<string>('JWT_EXPIRES_IN', '15m'),
+        },
+      }),
     }),
-
     RefreshTokenModule,
     AdminModule,
     ConfirmationModule,

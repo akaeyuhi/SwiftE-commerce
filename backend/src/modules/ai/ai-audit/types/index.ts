@@ -55,6 +55,7 @@ export interface IntegrityCheckReport {
 }
 
 export interface ComplianceReport {
+  samples?: DecryptedAuditResponse[];
   reportId: string;
   period: { from: Date; to: Date };
   summary: {
@@ -87,5 +88,5 @@ export interface PreparedResponseData {
     encryptedAt: string;
     version: string;
     checksum: string;
-  },
+  };
 }

@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  postgres-test:
+    image: postgres:latest
+    container_name: nestjs-test-db
+    environment:
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_password
+      POSTGRES_DB: ecommerce_test_db
+    ports:
+      - '5433:5432'
+    networks:
+      - test-network
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U test_user -d ecommerce_test_db']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis-test:
+    image: redis:7-alpine
+    container_name: nestjs-test-redis
+    ports:
+      - '6380:6379'
+    networks:
+      - test-network
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    container_name: nestjs-test-app
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+      redis-test:
+        condition: service_healthy
+    environment:
+      NODE_ENV: test
+      DATABASE_HOST: nestjs-test-db
+      DATABASE_PORT: 5432
+      DATABASE_USER: test_user
+      DATABASE_PASSWORD: test_password
+      DATABASE_NAME: ecommerce_test_db
+      REDIS_HOST: redis-test
+      REDIS_PORT: 6379
+      COOKIE_SECURE: 'false'
+    networks:
+      - test-network
+    volumes:
+      - ./test:/app/test
+      - ./src:/app/src
+    command: npm run test:e2e
+
+networks:
+  test-network:
+    driver: bridge

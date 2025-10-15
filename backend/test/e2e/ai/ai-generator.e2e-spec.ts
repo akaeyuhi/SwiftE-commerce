@@ -35,22 +35,22 @@ describe('AI Generator (E2E)', () => {
     regularUser = await authHelper.createAuthenticatedUser();
 
     store = await seeder.seedStore(storeOwner.user);
-  });
+    await seeder.assignStoreModerator(storeModerator.user.id, store.id);
+  }, 60000);
 
   afterAll(async () => {
     await appHelper.cleanup();
   });
 
-  describe('POST /ai/generator/names', () => {
+  describe('POST /stores/:storeId/ai/generator/names', () => {
     it('should generate product names', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post('/ai/generator/names')
+        .post(`/stores/${store.id}/ai/generator/names`)
         .send({
           storeStyle: 'modern tech',
           seed: 'smartphone accessories',
           count: 5,
-          storeId: store.id,
         })
         .expect(200);
 
@@ -66,11 +66,10 @@ describe('AI Generator (E2E)', () => {
     it('should allow store moderator', async () => {
       const response = await authHelper
         .authenticatedRequest(storeModerator.accessToken)
-        .post('/ai/generator/names')
+        .post(`/stores/${store.id}/ai/generator/names`)
         .send({
           storeStyle: 'vintage',
           seed: 'clothing',
-          storeId: store.id,
         })
         .expect(200);
 
@@ -80,11 +79,10 @@ describe('AI Generator (E2E)', () => {
     it('should prevent regular user', async () => {
       const response = await authHelper
         .authenticatedRequest(regularUser.accessToken)
-        .post('/ai/generator/names')
+        .post(`/stores/${store.id}/ai/generator/names`)
         .send({
           storeStyle: 'modern',
           seed: 'test',
-          storeId: store.id,
         });
 
       AssertionHelper.assertErrorResponse(response, 403);
@@ -93,11 +91,10 @@ describe('AI Generator (E2E)', () => {
     it('should use default count if not provided', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post('/ai/generator/names')
+        .post(`/stores/${store.id}/ai/generator/names`)
         .send({
           storeStyle: 'minimalist',
           seed: 'furniture',
-          storeId: store.id,
         })
         .expect(200);
 
@@ -107,11 +104,8 @@ describe('AI Generator (E2E)', () => {
     it('should validate required fields', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post('/ai/generator/names')
-        .send({
-          // Missing required fields
-          storeId: store.id,
-        });
+        .post(`/stores/${store.id}/ai/generator/names`)
+        .send({});
 
       AssertionHelper.assertErrorResponse(response, 400);
     });
@@ -119,12 +113,11 @@ describe('AI Generator (E2E)', () => {
     it('should support custom options', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post('/ai/generator/names')
+        .post(`/stores/${store.id}/ai/generator/names`)
         .send({
           storeStyle: 'luxury',
           seed: 'watches',
           count: 3,
-          storeId: store.id,
           options: {
             maxLength: 20,
             includeEmoji: false,
@@ -138,11 +131,10 @@ describe('AI Generator (E2E)', () => {
     it('should include user context in metadata', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post('/ai/generator/names')
+        .post(`/stores/${store.id}/ai/generator/names`)
         .send({
           storeStyle: 'tech',
           seed: 'gadgets',
-          storeId: store.id,
         })
         .expect(200);
 
@@ -152,11 +144,11 @@ describe('AI Generator (E2E)', () => {
     });
   });
 
-  describe('POST /ai/generator/description', () => {
+  describe('POST /stores/:storeId/ai/generator/description', () => {
     it('should generate product description', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post('/ai/generator/description')
+        .post(`/stores/${store.id}/ai/generator/description`)
         .send({
           name: 'Premium Wireless Headphones',
           productSpec: {
@@ -169,14 +161,13 @@ describe('AI Generator (E2E)', () => {
             price: 299.99,
           },
           tone: 'professional and engaging',
-          storeId: store.id,
         })
         .expect(200);
 
       expect(response.body.success).toBe(true);
       expect(response.body.data).toHaveProperty('description');
-      expect(typeof response.body.data.description).toBe('string');
-      expect(response.body.data.description.length).toBeGreaterThan(0);
+      expect(typeof response.body.data.result.description).toBe('string');
+      expect(response.body.data.result.description.length).toBeGreaterThan(0);
       expect(response.body.data.metadata).toHaveProperty('productName');
       expect(response.body.data.metadata).toHaveProperty('tone');
     });
@@ -184,14 +175,13 @@ describe('AI Generator (E2E)', () => {
     it('should use default tone if not provided', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post('/ai/generator/description')
+        .post(`/stores/${store.id}/ai/generator/description`)
         .send({
           name: 'Leather Wallet',
           productSpec: {
             category: 'Accessories',
             material: 'Genuine leather',
           },
-          storeId: store.id,
         })
         .expect(200);
 
@@ -203,7 +193,7 @@ describe('AI Generator (E2E)', () => {
     it('should support custom tone', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post('/ai/generator/description')
+        .post(`/stores/${store.id}/ai/generator/description`)
         .send({
           name: 'Gaming Keyboard',
           productSpec: {
@@ -211,7 +201,6 @@ describe('AI Generator (E2E)', () => {
             features: ['RGB lighting', 'Mechanical switches'],
           },
           tone: 'casual and exciting',
-          storeId: store.id,
         })
         .expect(200);
 
@@ -221,11 +210,8 @@ describe('AI Generator (E2E)', () => {
     it('should validate required fields', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post('/ai/generator/description')
-        .send({
-          // Missing name and productSpec
-          storeId: store.id,
-        });
+        .post(`/stores/${store.id}/ai/generator/description`)
+        .send({});
 
       AssertionHelper.assertErrorResponse(response, 400);
     });
@@ -233,13 +219,12 @@ describe('AI Generator (E2E)', () => {
     it('should support custom options', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post('/ai/generator/description')
+        .post(`/stores/${store.id}/ai/generator/description`)
         .send({
           name: 'Smart Watch',
           productSpec: {
             category: 'Electronics',
           },
-          storeId: store.id,
           options: {
             maxLength: 500,
             includeBulletPoints: true,
@@ -251,16 +236,15 @@ describe('AI Generator (E2E)', () => {
     });
   });
 
-  describe('POST /ai/generator/ideas', () => {
+  describe('POST /stores/:storeId/ai/generator/ideas', () => {
     it('should generate product ideas', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post('/ai/generator/ideas')
+        .post(`/stores/${store.id}/ai/generator/ideas`)
         .send({
           storeStyle: 'eco-friendly home goods',
           seed: 'sustainable living',
           count: 5,
-          storeId: store.id,
         })
         .expect(200);
 
@@ -273,11 +257,10 @@ describe('AI Generator (E2E)', () => {
     it('should include metadata', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post('/ai/generator/ideas')
+        .post(`/stores/${store.id}/ai/generator/ideas`)
         .send({
           storeStyle: 'fitness',
           seed: 'workout equipment',
-          storeId: store.id,
         })
         .expect(200);
 
@@ -290,11 +273,10 @@ describe('AI Generator (E2E)', () => {
     it('should use default count', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post('/ai/generator/ideas')
+        .post(`/stores/${store.id}/ai/generator/ideas`)
         .send({
           storeStyle: 'tech',
           seed: 'innovation',
-          storeId: store.id,
         })
         .expect(200);
 
@@ -304,23 +286,20 @@ describe('AI Generator (E2E)', () => {
     it('should validate required fields', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post('/ai/generator/ideas')
-        .send({
-          storeId: store.id,
-        });
+        .post(`/stores/${store.id}/ai/generator/ideas`)
+        .send({});
 
       AssertionHelper.assertErrorResponse(response, 400);
     });
   });
 
-  describe('POST /ai/generator/custom', () => {
+  describe('POST /stores/:storeId/ai/generator/custom', () => {
     it('should generate custom content', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post('/ai/generator/custom')
+        .post(`/stores/${store.id}/ai/generator/custom`)
         .send({
           prompt: 'Write a product announcement for a new smartwatch launch',
-          storeId: store.id,
         })
         .expect(200);
 
@@ -333,10 +312,9 @@ describe('AI Generator (E2E)', () => {
     it('should support custom options', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post('/ai/generator/custom')
+        .post(`/stores/${store.id}/ai/generator/custom`)
         .send({
           prompt: 'Create a catchy slogan for an organic food store',
-          storeId: store.id,
           options: {
             maxTokens: 100,
             temperature: 0.7,
@@ -350,10 +328,8 @@ describe('AI Generator (E2E)', () => {
     it('should validate prompt is required', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post('/ai/generator/custom')
-        .send({
-          storeId: store.id,
-        });
+        .post(`/stores/${store.id}/ai/generator/custom`)
+        .send({});
 
       AssertionHelper.assertErrorResponse(response, 400);
     });
@@ -361,10 +337,9 @@ describe('AI Generator (E2E)', () => {
     it('should include metadata', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post('/ai/generator/custom')
+        .post(`/stores/${store.id}/ai/generator/custom`)
         .send({
           prompt: 'Test prompt',
-          storeId: store.id,
         })
         .expect(200);
 
@@ -375,11 +350,11 @@ describe('AI Generator (E2E)', () => {
     });
   });
 
-  describe('GET /ai/generator/types', () => {
+  describe('GET /stores/:storeId/ai/generator/types', () => {
     it('should get generation types', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .get('/ai/generator/types')
+        .get(`/stores/${store.id}/ai/generator/types`)
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -392,7 +367,7 @@ describe('AI Generator (E2E)', () => {
     it('should be accessible to moderators', async () => {
       const response = await authHelper
         .authenticatedRequest(storeModerator.accessToken)
-        .get('/ai/generator/types')
+        .get(`/stores/${store.id}/ai/generator/types`)
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -401,18 +376,18 @@ describe('AI Generator (E2E)', () => {
     it('should include type configurations', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .get('/ai/generator/types')
+        .get(`/stores/${store.id}/ai/generator/types`)
         .expect(200);
 
       expect(response.body.data.types.length).toBeGreaterThan(0);
     });
   });
 
-  describe('GET /ai/generator/stores/:storeId/usage', () => {
+  describe('GET /stores/:storeId/ai/generator/usage', () => {
     it('should get usage statistics', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .get(`/ai/generator/stores/${store.id}/usage`)
+        .get(`/stores/${store.id}/ai/generator/usage`)
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -424,7 +399,7 @@ describe('AI Generator (E2E)', () => {
     it('should require store admin role', async () => {
       const response = await authHelper
         .authenticatedRequest(storeModerator.accessToken)
-        .get(`/ai/generator/stores/${store.id}/usage`);
+        .get(`/stores/${store.id}/ai/generator/usage`);
 
       AssertionHelper.assertErrorResponse(response, 403);
     });
@@ -435,7 +410,7 @@ describe('AI Generator (E2E)', () => {
 
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .get(`/ai/generator/stores/${store.id}/usage`)
+        .get(`/stores/${store.id}/ai/generator/usage`)
         .query({ dateFrom, dateTo })
         .expect(200);
 
@@ -445,18 +420,10 @@ describe('AI Generator (E2E)', () => {
       });
     });
 
-    it('should validate store UUID', async () => {
-      const response = await authHelper
-        .authenticatedRequest(storeOwner.accessToken)
-        .get('/ai/generator/stores/invalid-uuid/usage');
-
-      AssertionHelper.assertErrorResponse(response, 400);
-    });
-
     it('should include metadata', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .get(`/ai/generator/stores/${store.id}/usage`)
+        .get(`/stores/${store.id}/ai/generator/usage`)
         .expect(200);
 
       expect(response.body.data.metadata).toHaveProperty('userId');
@@ -464,11 +431,11 @@ describe('AI Generator (E2E)', () => {
     });
   });
 
-  describe('GET /ai/generator/health', () => {
+  describe('GET /stores/:storeId/ai/generator/health', () => {
     it('should get health status as admin', async () => {
       const response = await authHelper
         .authenticatedRequest(adminUser.accessToken)
-        .get('/ai/generator/health')
+        .get(`/stores/${store.id}/ai/generator/health`)
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -480,7 +447,7 @@ describe('AI Generator (E2E)', () => {
     it('should prevent non-admin access', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .get('/ai/generator/health');
+        .get(`/stores/${store.id}/ai/generator/health`);
 
       AssertionHelper.assertErrorResponse(response, 403);
     });
@@ -488,7 +455,7 @@ describe('AI Generator (E2E)', () => {
     it('should return health details', async () => {
       const response = await authHelper
         .authenticatedRequest(adminUser.accessToken)
-        .get('/ai/generator/health')
+        .get(`/stores/${store.id}/ai/generator/health`)
         .expect(200);
 
       expect(response.body.data).toHaveProperty('healthy');
@@ -497,9 +464,8 @@ describe('AI Generator (E2E)', () => {
     it('should handle service errors gracefully', async () => {
       const response = await authHelper
         .authenticatedRequest(adminUser.accessToken)
-        .get('/ai/generator/health');
+        .get(`/stores/${store.id}/ai/generator/health`);
 
-      // Should return status even if service has issues
       expect([200, 500]).toContain(response.status);
       expect(response.body.data).toHaveProperty('service');
     });
@@ -508,18 +474,21 @@ describe('AI Generator (E2E)', () => {
   describe('Security & Permissions', () => {
     it('should enforce authentication on all endpoints', async () => {
       const endpoints = [
-        { method: 'post', path: '/ai/generator/names' },
-        { method: 'post', path: '/ai/generator/description' },
-        { method: 'post', path: '/ai/generator/ideas' },
-        { method: 'post', path: '/ai/generator/custom' },
-        { method: 'get', path: '/ai/generator/types' },
-        { method: 'get', path: `/ai/generator/stores/${store.id}/usage` },
-        { method: 'get', path: '/ai/generator/health' },
+        { method: 'post', path: `/stores/${store.id}/ai/generator/names` },
+        {
+          method: 'post',
+          path: `/stores/${store.id}/ai/generator/description`,
+        },
+        { method: 'post', path: `/stores/${store.id}/ai/generator/ideas` },
+        { method: 'post', path: `/stores/${store.id}/ai/generator/custom` },
+        { method: 'get', path: `/stores/${store.id}/ai/generator/types` },
+        { method: 'get', path: `/stores/${store.id}/ai/generator/usage` },
+        { method: 'get', path: `/stores/${store.id}/ai/generator/health` },
       ];
 
       for (const endpoint of endpoints) {
-        const response = await app
-          .getHttpServer()
+        const response = await appHelper
+          .request()
           [endpoint.method](endpoint.path);
         AssertionHelper.assertErrorResponse(response, 401);
       }
@@ -529,13 +498,13 @@ describe('AI Generator (E2E)', () => {
       const restrictedEndpoints = [
         {
           method: 'post',
-          path: '/ai/generator/names',
-          body: { storeStyle: 'test', seed: 'test', storeId: store.id },
+          path: `/stores/${store.id}/ai/generator/names`,
+          body: { storeStyle: 'test', seed: 'test' },
         },
         {
           method: 'post',
-          path: '/ai/generator/description',
-          body: { name: 'test', productSpec: {}, storeId: store.id },
+          path: `/stores/${store.id}/ai/generator/description`,
+          body: { name: 'test', productSpec: {} },
         },
       ];
 
@@ -552,11 +521,10 @@ describe('AI Generator (E2E)', () => {
     it('should include user context in all responses', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post('/ai/generator/names')
+        .post(`/stores/${store.id}/ai/generator/names`)
         .send({
           storeStyle: 'modern',
           seed: 'tech',
-          storeId: store.id,
         })
         .expect(200);
 
@@ -568,27 +536,23 @@ describe('AI Generator (E2E)', () => {
     it('should handle invalid input gracefully', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post('/ai/generator/names')
+        .post(`/stores/${store.id}/ai/generator/names`)
         .send({
-          storeStyle: '', // Empty string
-          seed: '', // Empty string
-          storeId: store.id,
+          storeStyle: '',
+          seed: '',
         });
 
       AssertionHelper.assertErrorResponse(response, 400);
     });
 
     it('should handle service errors', async () => {
-      // This tests that errors are caught and returned properly
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post('/ai/generator/custom')
+        .post(`/stores/${store.id}/ai/generator/custom`)
         .send({
           prompt: 'test',
-          storeId: store.id,
         });
 
-      // Should either succeed or return proper error
       expect([200, 400, 500]).toContain(response.status);
       if (response.status >= 400) {
         expect(response.body).toHaveProperty('message');

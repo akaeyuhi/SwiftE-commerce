@@ -2,8 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import { TestAppHelper } from '../helpers/test-app.helper';
 import { AuthHelper } from '../helpers/auth.helper';
 import { AssertionHelper } from '../helpers/assertion.helper';
-import { UserModule } from 'src/modules/user/user.module';
-import { AuthModule } from 'src/modules/auth/auth.module';
+import { StoreModule } from 'src/modules/store/store.module';
 
 describe('User - Settings (E2E)', () => {
   let appHelper: TestAppHelper;
@@ -14,12 +13,14 @@ describe('User - Settings (E2E)', () => {
 
   beforeAll(async () => {
     appHelper = new TestAppHelper();
+
     app = await appHelper.initialize({
-      imports: [UserModule, AuthModule],
+      imports: [StoreModule],
     });
     authHelper = new AuthHelper(app, appHelper.getDataSource());
 
     regularUser = await authHelper.createAuthenticatedUser();
+
     adminUser = await authHelper.createAdminUser();
   });
 
@@ -256,6 +257,7 @@ describe('User - Settings (E2E)', () => {
         {
           name: 'Store 1',
           owner: regularUser.user,
+          description: 'A test store',
           productCount: 0,
           followerCount: 0,
           totalRevenue: 0,
@@ -265,6 +267,7 @@ describe('User - Settings (E2E)', () => {
           name: 'Store 2',
           owner: regularUser.user,
           productCount: 0,
+          description: 'A test store',
           followerCount: 0,
           totalRevenue: 0,
           orderCount: 0,

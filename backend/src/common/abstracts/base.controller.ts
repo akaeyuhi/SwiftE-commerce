@@ -1,13 +1,21 @@
-import { Body, Delete, Get, Param, Post, Put, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Delete,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Put,
+  UseGuards,
+} from '@nestjs/common';
 import { BaseService } from './base.service';
 import { ObjectLiteral } from 'typeorm';
-import { AdminRole } from 'src/common/decorators/admin-role.decorator';
-import { AdminRoles } from 'src/common/enums/admin.enum';
 import { AccessPolicies } from 'src/modules/authorization/policy/policy.types';
 import { AdminGuard } from 'src/modules/authorization/guards/admin.guard';
 import { StoreRolesGuard } from 'src/modules/authorization/guards/store-roles.guard';
 import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';
 import { EntityOwnerGuard } from 'src/modules/authorization/guards/entity-owner.guard';
+import { AdminRoles } from 'src/common/enums/admin.enum';
 
 /**
  * Abstract base HTTP controller providing standard CRUD endpoints.
@@ -67,7 +75,27 @@ export abstract class BaseController<
    *
    * Set to `null` by default to indicate "no static overrides".
    */
-  static accessPolicies: AccessPolicies | null = null;
+  static accessPolicies: AccessPolicies = {
+    findAll: {
+      requireAuthenticated: true,
+      adminRole: AdminRoles.ADMIN,
+    },
+    findOne: {
+      requireAuthenticated: true,
+    },
+    create: {
+      requireAuthenticated: true,
+      adminRole: AdminRoles.ADMIN,
+    },
+    update: {
+      requireAuthenticated: true,
+      adminRole: AdminRoles.ADMIN,
+    },
+    remove: {
+      requireAuthenticated: true,
+      adminRole: AdminRoles.ADMIN,
+    },
+  };
 
   /**
    * BaseController constructor.
@@ -96,7 +124,6 @@ export abstract class BaseController<
    * @returns Promise resolving to the list of entities or transfer objects.
    */
   @Get()
-  @AdminRole(AdminRoles.ADMIN)
   findAll(): Promise<Entity[] | TransferDto[]> {
     return this.service.findAll();
   }
@@ -116,7 +143,9 @@ export abstract class BaseController<
    * @returns Promise resolving to the found entity or transfer object
    */
   @Get(':id')
-  findOne(@Param('id') id: string): Promise<Entity | TransferDto> {
+  findOne(
+    @Param('id', new ParseUUIDPipe()) id: string
+  ): Promise<Entity | TransferDto> {
     return this.service.findOne(id);
   }
 
@@ -131,11 +160,21 @@ export abstract class BaseController<
    *  - redeclare and decorate the method in the child controller and call `super.create(dto)`.
    *
    * @param dto - data transfer object used to create the entity
+   * @param _storeId - optional store id param
+   * @param _userId - optional userId param
+   * @param _productId - optional productId param
    * @returns Promise resolving to the created entity or transfer object
    */
   @Post()
-  @AdminRole(AdminRoles.ADMIN)
-  create(@Body() dto: CreateDto): Promise<Entity | TransferDto> {
+  create(
+    @Body() dto: CreateDto,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    @Param('storeId') _storeId?: string,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    @Param('userId') _userId?: string,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    @Param('productId') _productId?: string
+  ): Promise<Entity | TransferDto> {
     return this.service.create(dto);
   }
 
@@ -152,9 +191,8 @@ export abstract class BaseController<
    * @returns Promise resolving to the updated entity or transfer object
    */
   @Put(':id')
-  @AdminRole(AdminRoles.ADMIN)
   update(
-    @Param('id') id: string,
+    @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: UpdateDto
   ): Promise<Entity | TransferDto> {
     return this.service.update(id, dto);
@@ -174,8 +212,7 @@ export abstract class BaseController<
    * @returns Promise resolving when deletion finishes (void)
    */
   @Delete(':id')
-  @AdminRole(AdminRoles.ADMIN)
-  remove(@Param('id') id: string): Promise<void> {
+  remove(@Param('id', new ParseUUIDPipe()) id: string): Promise<void> {
     return this.service.remove(id);
   }
 }

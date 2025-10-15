@@ -48,7 +48,7 @@ import { AiTransform } from 'src/modules/ai/decorators/ai-transform.decorator';
  * - Site admins can predict for any products
  * - Entity owner guards for data access control
  */
-@Controller('ai/predictor')
+@Controller('stores/:storesId/ai/predictor')
 @UseGuards(JwtAuthGuard, AdminGuard, StoreRolesGuard, EntityOwnerGuard)
 @AiTransform()
 export class AiPredictorController {

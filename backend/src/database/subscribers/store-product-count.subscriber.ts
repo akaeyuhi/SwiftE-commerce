@@ -10,13 +10,14 @@ import {
 import { Product } from 'src/entities/store/product/product.entity';
 import { Store } from 'src/entities/store/store.entity';
 import { Injectable } from '@nestjs/common';
+import { InjectDataSource } from '@nestjs/typeorm';
 
 @EventSubscriber()
 @Injectable()
 export class StoreProductCountSubscriber
   implements EntitySubscriberInterface<Product> {
-  constructor(private dataSource: DataSource) {
-    this.dataSource.subscribers.push(this);
+  constructor(@InjectDataSource() dataSource: DataSource) {
+    dataSource.subscribers.push(this);
   }
 
   listenTo() {

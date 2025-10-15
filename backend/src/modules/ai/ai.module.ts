@@ -15,9 +15,23 @@ import { HuggingFaceProvider } from 'src/modules/ai/ai-generator/providers/huggi
 import { HttpModule } from '@nestjs/axios';
 import { AnalyticsModule } from 'src/modules/analytics/analytics.module';
 import { ConfigModule } from '@nestjs/config';
+import {
+  IInventoryRepository,
+  IInventoryService,
+  IVariantRepository,
+  IVariantService,
+} from 'src/common/contracts/ai-predictor.contract';
+import { AiInventoryService } from 'src/modules/ai/ai-predictor/implementations/services/ai-inventory.service';
+import { AiVariantService } from 'src/modules/ai/ai-predictor/implementations/services/ai-variant.service';
+import { AiVariantRepository } from 'src/modules/ai/ai-predictor/implementations/repositories/ai-variant.repository';
+import { AiInventoryRepository } from 'src/modules/ai/ai-predictor/implementations/repositories/ai-inventory.repository';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { Inventory } from 'src/entities/store/product/inventory.entity';
+import { ProductVariant } from 'src/entities/store/product/variant.entity';
 
 @Module({
   imports: [
+    TypeOrmModule.forFeature([Inventory, ProductVariant]),
     HttpModule,
     AnalyticsModule,
     AiAuditsModule,
@@ -31,6 +45,10 @@ import { ConfigModule } from '@nestjs/config';
     AiLogsService,
     OpenAiProvider,
     HuggingFaceProvider,
+    { provide: IInventoryService, useClass: AiInventoryService },
+    { provide: IVariantService, useClass: AiVariantService },
+    { provide: IVariantRepository, useClass: AiVariantRepository },
+    { provide: IInventoryRepository, useClass: AiInventoryRepository },
     {
       provide: AI_PROVIDER,
       useFactory: (hf: HuggingFaceProvider, openai: OpenAiProvider) => {

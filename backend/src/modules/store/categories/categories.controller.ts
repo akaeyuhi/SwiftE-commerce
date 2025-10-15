@@ -1,4 +1,13 @@
-import { Controller, UseGuards, Get } from '@nestjs/common';
+import {
+  Controller,
+  UseGuards,
+  Get,
+  Post,
+  Param,
+  Body,
+  Put,
+  ParseUUIDPipe,
+} from '@nestjs/common';
 import { CategoriesService } from 'src/modules/store/categories/categories.service';
 import { CreateCategoryDto } from 'src/modules/store/categories/dto/create-category.dto';
 import { UpdateCategoryDto } from 'src/modules/store/categories/dto/update-category.dto';
@@ -23,7 +32,7 @@ import { AccessPolicies } from 'src/modules/authorization/policy/policy.types';
  *  - read endpoints: authenticated users
  *  - mutating endpoints: store admins
  */
-@Controller('stores/:storeId/products/:productId/categories')
+@Controller('stores/:storeId/categories')
 @UseGuards(JwtAuthGuard, StoreRolesGuard)
 export class CategoriesController extends BaseController<
   Category,
@@ -32,11 +41,22 @@ export class CategoriesController extends BaseController<
   CategoryDto
 > {
   static accessPolicies: AccessPolicies = {
-    findAll: { requireAuthenticated: true },
-    findOne: { requireAuthenticated: true },
-    create: { requireAuthenticated: true, storeRoles: [StoreRoles.ADMIN] },
-    update: { requireAuthenticated: true, storeRoles: [StoreRoles.ADMIN] },
-    remove: { requireAuthenticated: true, storeRoles: [StoreRoles.ADMIN] },
+    findAll: { requireAuthenticated: true, adminRole: undefined },
+    create: {
+      requireAuthenticated: true,
+      storeRoles: [StoreRoles.ADMIN],
+      adminRole: undefined,
+    },
+    update: {
+      requireAuthenticated: true,
+      storeRoles: [StoreRoles.ADMIN],
+      adminRole: undefined,
+    },
+    remove: {
+      requireAuthenticated: true,
+      storeRoles: [StoreRoles.ADMIN],
+      adminRole: undefined,
+    },
 
     getTree: { requireAuthenticated: true },
     findProductsByCategory: { requireAuthenticated: true },
@@ -60,6 +80,22 @@ export class CategoriesController extends BaseController<
   @Get('tree')
   async getTree(): Promise<Category[]> {
     return this.categoriesService.getTree();
+  }
+
+  @Post()
+  async create(
+    @Body() createCategoryDto: CreateCategoryDto,
+    @Param('storeId', new ParseUUIDPipe()) storeId: string
+  ) {
+    return this.categoriesService.create(createCategoryDto, storeId);
+  }
+
+  @Put(':id')
+  async update(
+    @Param('id') id: string,
+    @Body() updateCategoryDto: UpdateCategoryDto
+  ) {
+    return this.categoriesService.update(id, updateCategoryDto);
   }
 
   /**

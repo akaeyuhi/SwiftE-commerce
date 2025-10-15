@@ -30,12 +30,12 @@ describe('Products - CRUD (E2E)', () => {
   });
 
   afterAll(async () => {
+    await appHelper.clearDatabase();
     await appHelper.cleanup();
   });
 
   afterEach(async () => {
-    const productRepo = appHelper.getDataSource().getRepository('Product');
-    await productRepo.clear();
+    await appHelper.clearTables(['products']);
   });
 
   describe('GET /stores/:storeId/products/byStore', () => {

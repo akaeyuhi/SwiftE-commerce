@@ -17,6 +17,7 @@ import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';
 import { RecordEventInterceptor } from 'src/modules/infrastructure/interceptors/record-event/record-event.interceptor';
 import { AnalyticsEventType } from 'src/entities/infrastructure/analytics/analytics-event.entity';
 import { RecordEvent } from 'src/common/decorators/record-event.decorator';
+import { AdminGuard } from 'src/modules/authorization/guards/admin.guard';
 
 /**
  * LikesController
@@ -28,7 +29,7 @@ import { RecordEvent } from 'src/common/decorators/record-event.decorator';
  * Requires authenticated user; ensures :userId === request.user.id
  */
 @Controller('users/:userId/likes')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, AdminGuard)
 @UseInterceptors(RecordEventInterceptor) // interceptor reads @RecordEvent metadata
 export class LikesController {
   constructor(private readonly likesService: LikesService) {}
@@ -40,7 +41,7 @@ export class LikesController {
     }
   }
 
-  @Post('/product:productId')
+  @Post('/product/:productId')
   @RecordEvent({
     eventType: AnalyticsEventType.LIKE,
     invokedOn: 'product',

@@ -47,12 +47,12 @@ describe('Analytics - Events (E2E)', () => {
   });
 
   afterAll(async () => {
+    await appHelper.clearDatabase();
     await appHelper.cleanup();
   });
 
   afterEach(async () => {
-    const eventRepo = appHelper.getDataSource().getRepository('AnalyticsEvent');
-    await eventRepo.clear();
+    await appHelper.clearTables(['analytics_events']);
   });
 
   describe('POST /analytics/stores/:storeId/events', () => {
@@ -142,8 +142,8 @@ describe('Analytics - Events (E2E)', () => {
     });
 
     it('should require authentication', async () => {
-      const response = await app
-        .getHttpServer()
+      const response = await appHelper
+        .request()
         .post(`/analytics/stores/${store.id}/events`)
         .send(validEventData);
 
@@ -302,8 +302,8 @@ describe('Analytics - Events (E2E)', () => {
 
   describe('POST /stores/:storeId/analytics/events (Public API)', () => {
     it('should record event via public API', async () => {
-      const response = await app
-        .getHttpServer()
+      const response = await appHelper
+        .request()
         .post(`/stores/${store.id}/analytics/events`)
         .send({
           eventType: AnalyticsEventType.VIEW,
@@ -316,8 +316,8 @@ describe('Analytics - Events (E2E)', () => {
     });
 
     it('should not require authentication for public API', async () => {
-      const response = await app
-        .getHttpServer()
+      const response = await appHelper
+        .request()
         .post(`/stores/${store.id}/analytics/events`)
         .send({
           eventType: AnalyticsEventType.VIEW,

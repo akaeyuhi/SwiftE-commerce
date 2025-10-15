@@ -5,6 +5,7 @@ import {
   Param,
   ParseUUIDPipe,
   Post,
+  Put,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -46,7 +47,6 @@ export class NewsController extends BaseController<
 > {
   static accessPolicies: AccessPolicies = {
     findAllByStore: { requireAuthenticated: true },
-    findOne: { requireAuthenticated: true },
     createWithRelations: {
       requireAuthenticated: true,
       storeRoles: [StoreRoles.ADMIN, StoreRoles.MODERATOR],
@@ -54,10 +54,12 @@ export class NewsController extends BaseController<
     update: {
       requireAuthenticated: true,
       storeRoles: [StoreRoles.ADMIN, StoreRoles.MODERATOR],
+      adminRole: undefined,
     },
     remove: {
       requireAuthenticated: true,
       storeRoles: [StoreRoles.ADMIN, StoreRoles.MODERATOR],
+      adminRole: undefined,
     },
 
     publish: {
@@ -109,10 +111,10 @@ export class NewsController extends BaseController<
    */
   @Post(':id/publish')
   async publish(
-    @Param('storeId', new ParseUUIDPipe()) _storeId: string,
+    @Param('storeId', new ParseUUIDPipe()) storeId: string,
     @Param('id', new ParseUUIDPipe()) id: string
   ): Promise<NewsPost | NewsPostDto> {
-    return this.newsService.publish(id);
+    return this.newsService.publish(id, storeId);
   }
 
   /**
@@ -124,5 +126,13 @@ export class NewsController extends BaseController<
     @Param('id', new ParseUUIDPipe()) id: string
   ): Promise<NewsPost | NewsPostDto> {
     return this.newsService.unpublish(id);
+  }
+
+  @Put(':id')
+  async update(
+    @Param('id', new ParseUUIDPipe()) newsId: string,
+    @Body() dto: UpdateNewsDto
+  ) {
+    return this.newsService.update(newsId, dto);
   }
 }

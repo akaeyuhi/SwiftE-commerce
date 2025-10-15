@@ -94,7 +94,7 @@ export abstract class BaseService<
    */
   async findOne(id: string): Promise<TransferDto | Entity> {
     const entity = await this.repository.findById(id);
-    if (!entity) throw new NotFoundException('User not found');
+    if (!entity) throw new NotFoundException(`Entity with id ${id} not found`);
     return this.mapper?.toDto(entity) ?? (entity as any);
   }
 
@@ -118,8 +118,12 @@ export abstract class BaseService<
    */
   async update(id: string, dto: UpdateDto): Promise<Entity | TransferDto> {
     const entity = await this.repository.findById(id);
-    if (!entity) throw new NotFoundException('Entity not found');
-    Object.assign(entity, dto);
+    if (!entity) throw new NotFoundException(`Entity with id ${id} not found`);
+    const updateData = Object.fromEntries(
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      Object.entries(dto as object).filter(([_, value]) => value !== undefined)
+    );
+    Object.assign(entity, updateData);
     const updated = await this.repository.save(entity);
     return this.mapper?.toDto(updated) ?? updated;
   }
@@ -140,7 +144,8 @@ export abstract class BaseService<
    */
   async remove(id: string): Promise<void> {
     const res = await this.repository.delete(id);
-    if (res.affected === 0) throw new NotFoundException('Entity not found');
+    if (res.affected === 0)
+      throw new NotFoundException(`Entity with id ${id} not found`);
   }
 
   /**

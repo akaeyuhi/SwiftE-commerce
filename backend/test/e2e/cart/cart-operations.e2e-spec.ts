@@ -38,12 +38,12 @@ describe('Cart - Operations (E2E)', () => {
   });
 
   afterAll(async () => {
+    await appHelper.clearDatabase();
     await appHelper.cleanup();
   });
 
   afterEach(async () => {
-    const cartRepo = appHelper.getDataSource().getRepository('ShoppingCart');
-    await cartRepo.clear();
+    await appHelper.clearTables(['shopping_carts', 'cart-items']);
   });
 
   describe('POST /stores/:storeId/:userId/cart/get-or-create', () => {
@@ -77,8 +77,8 @@ describe('Cart - Operations (E2E)', () => {
     });
 
     it('should require authentication', async () => {
-      const response = await app
-        .getHttpServer()
+      const response = await appHelper
+        .request()
         .post(`/stores/${store.id}/${customer.user.id}/cart/get-or-create`);
 
       AssertionHelper.assertErrorResponse(response, 401);
@@ -141,8 +141,8 @@ describe('Cart - Operations (E2E)', () => {
     });
 
     it('should require authentication', async () => {
-      const response = await app
-        .getHttpServer()
+      const response = await appHelper
+        .request()
         .get(`/stores/${store.id}/${customer.user.id}/cart/user-cart`);
 
       AssertionHelper.assertErrorResponse(response, 401);
@@ -199,8 +199,8 @@ describe('Cart - Operations (E2E)', () => {
     });
 
     it('should require authentication', async () => {
-      const response = await app
-        .getHttpServer()
+      const response = await appHelper
+        .request()
         .get(`/stores/${store.id}/${customer.user.id}/cart/merged`);
 
       AssertionHelper.assertErrorResponse(response, 401);

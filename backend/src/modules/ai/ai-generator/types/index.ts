@@ -1,4 +1,5 @@
 import { AiGenerateOptions } from 'src/common/interfaces/ai/generator.interface';
+import { ProductSpecDto } from 'src/modules/ai/ai-generator/dto/generator-request.dto';
 
 export interface GenerationRequest {
   type: 'name' | 'description' | 'ideas' | 'custom';
@@ -6,9 +7,10 @@ export interface GenerationRequest {
   options: AiGenerateOptions;
   context?: {
     storeStyle?: string;
-    productSpec?: string;
+    productSpec?: ProductSpecDto;
     tone?: string;
     seed?: string;
+    productName?: string;
     count?: number;
   };
 }
@@ -43,13 +45,28 @@ export interface NameGenerationParams extends GenerationParams {
 }
 export interface DescriptionGenerationParams extends GenerationParams {
   name: string;
-  productSpec?: string;
+  productSpec?: ProductSpecDto;
   tone?: string;
 }
 
 export type IdeasGenerationParams = NameGenerationParams;
 export interface CustomGenerationParams extends GenerationParams {
   prompt: string;
+}
+
+export interface GenerationResult<T> {
+  success: boolean;
+  data: {
+    result: T;
+    metadata: {
+      count?: number;
+      storeStyle?: string;
+      seed?: string;
+      generatedAt?: string;
+      userId?: string;
+      storeId?: string;
+    };
+  };
 }
 
 export interface HealthCheckResult {

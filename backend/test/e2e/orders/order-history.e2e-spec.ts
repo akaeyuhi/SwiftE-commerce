@@ -36,12 +36,12 @@ describe('Orders - History (E2E)', () => {
   });
 
   afterAll(async () => {
+    await appHelper.clearDatabase();
     await appHelper.cleanup();
   });
 
   afterEach(async () => {
-    const orderRepo = appHelper.getDataSource().getRepository('Order');
-    await orderRepo.clear();
+    await appHelper.clearTables(['orders']);
   });
 
   describe('GET /stores/:storeId/orders/all', () => {
@@ -102,8 +102,8 @@ describe('Orders - History (E2E)', () => {
     });
 
     it('should require authentication', async () => {
-      const response = await app
-        .getHttpServer()
+      const response = await appHelper
+        .request()
         .get(`/stores/${store.id}/orders/all`);
 
       AssertionHelper.assertErrorResponse(response, 401);

@@ -7,6 +7,7 @@ export class ReviewDto {
   productId: string;
   userId: string;
   rating: number;
+  title: string;
   comment?: string;
   createdAt: Date;
   updatedAt: Date;

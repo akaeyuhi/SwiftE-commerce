@@ -35,7 +35,7 @@ export class User implements BaseEntity {
   @Column({ type: 'varchar', length: 100, nullable: true })
   lastName: string;
 
-  @Column({ type: 'text' })
+  @Column({ type: 'text', select: false })
   @Exclude()
   passwordHash: string;
 
@@ -69,7 +69,7 @@ export class User implements BaseEntity {
   @OneToMany(() => Store, (store) => store.owner)
   ownedStores: Store[];
 
-  @OneToMany(() => StoreRole, (ur) => ur.user)
+  @OneToMany(() => StoreRole, (sr) => sr.user)
   roles: StoreRole[];
 
   @OneToMany(() => ShoppingCart, (cart) => cart.user)

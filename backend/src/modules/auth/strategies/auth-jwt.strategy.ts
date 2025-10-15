@@ -18,11 +18,11 @@ export class AuthJwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   }
 
   async validate(payload: any) {
-    // payload contains { id, email, sub }
-    const user = await this.userService.findOneWithRelations(payload.id);
-    if (!user) throw new UnauthorizedException();
-    // attach computed permissions & storeRole arrays if needed in user object
-    // e.g., user.permissions = computePermissionsFromRoles(user.roles)
+    const user = await this.userService.findUser(payload.id);
+    if (!user)
+      throw new UnauthorizedException(
+        `Jwt guard didn't find user with id ${payload.id}`
+      );
     return user;
   }
 }

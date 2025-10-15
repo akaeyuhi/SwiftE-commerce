@@ -29,14 +29,28 @@ export class CategoriesService extends BaseService<
     super(categoriesRepo);
   }
 
+  async findByCategoryName(name: string) {
+    return this.categoriesRepo.findOne({ where: { name } });
+  }
+
   /**
    * Create a category and optionally attach a parent.
    */
-  async create(dto: CreateCategoryDto): Promise<Category> {
+  async create(dto: CreateCategoryDto, storeId?: string): Promise<Category> {
     const partial: any = {
       name: dto.name,
-      description: dto.description,
+      description: dto.description ?? '',
+      storeId: storeId ?? dto.storeId,
+      products: [...(dto.productIds ?? [])],
     };
+
+    const exists = await this.findByCategoryName(dto.name);
+
+    if (exists) {
+      throw new BadRequestException(
+        `Such category ${dto.name}:${exists.id} already exists`
+      );
+    }
 
     if (dto.parentId) {
       const parent = await this.categoriesRepo.findById(dto.parentId);

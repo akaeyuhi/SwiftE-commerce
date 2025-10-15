@@ -5,18 +5,21 @@ import {
   IsObject,
   Min,
   Max,
+  IsArray,
+  ValidateNested,
+  MinLength,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { AiGenerateOptions } from 'src/common/interfaces/ai/generator.interface';
 
 export class GenerateNamesDto {
-  @IsOptional()
   @IsString()
-  storeStyle?: string;
+  @MinLength(3)
+  storeStyle: string;
 
-  @IsOptional()
   @IsString()
-  seed?: string;
+  @MinLength(3)
+  seed: string;
 
   @IsOptional()
   @Type(() => Number)
@@ -34,17 +37,37 @@ export class GenerateNamesDto {
   options?: AiGenerateOptions;
 }
 
+export class ProductSpecDto {
+  @IsOptional()
+  @IsString()
+  category?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  features?: string[];
+
+  @IsOptional()
+  @IsNumber()
+  price?: number;
+
+  @IsOptional()
+  @IsString()
+  material?: string;
+}
+
 export class GenerateDescriptionDto {
   @IsString()
   name: string;
 
   @IsOptional()
-  @IsString()
-  productSpec?: string;
+  @ValidateNested()
+  @Type(() => ProductSpecDto)
+  productSpec?: ProductSpecDto;
 
   @IsOptional()
   @IsString()
-  tone?: string;
+  tone?: string = 'professional and engaging';
 
   @IsOptional()
   @IsString()
@@ -56,13 +79,13 @@ export class GenerateDescriptionDto {
 }
 
 export class GenerateIdeasDto {
-  @IsOptional()
   @IsString()
-  storeStyle?: string;
+  @MinLength(3)
+  storeStyle: string;
 
-  @IsOptional()
   @IsString()
-  seed?: string;
+  @MinLength(3)
+  seed: string;
 
   @IsOptional()
   @Type(() => Number)

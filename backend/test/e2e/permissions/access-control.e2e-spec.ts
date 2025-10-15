@@ -74,8 +74,8 @@ describe('Permissions - Access Control (E2E)', () => {
       ];
 
       for (const endpoint of protectedEndpoints) {
-        const response = await app
-          .getHttpServer()
+        const response = await appHelper
+          .request()
           [endpoint.method](endpoint.path);
 
         AssertionHelper.assertErrorResponse(response, 401);
@@ -543,8 +543,8 @@ describe('Permissions - Access Control (E2E)', () => {
     });
 
     it('should require authentication for advanced search', async () => {
-      const response = await app
-        .getHttpServer()
+      const response = await appHelper
+        .request()
         .post(`/stores/${ownedStore.id}/products/advanced-search`)
         .send({ query: 'test' });
 

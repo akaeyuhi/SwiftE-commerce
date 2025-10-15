@@ -11,19 +11,19 @@ export class LikesRepository extends BaseRepository<Like> {
 
   async findByUserAndProduct(userId: string, productId: string) {
     return this.findOne({
-      where: { user: { id: userId }, product: { id: productId } } as any,
+      where: { userId, productId } as any,
     });
   }
 
   async findByUserAndStore(userId: string, storeId: string) {
     return this.findOne({
-      where: { user: { id: userId }, store: { id: storeId } } as any,
+      where: { userId, storeId } as any,
     });
   }
 
   async listByUser(userId: string) {
     return this.find({
-      where: { user: { id: userId } } as any,
+      where: { userId } as any,
       relations: ['product', 'store'],
       order: { createdAt: 'DESC' },
     });

@@ -10,13 +10,14 @@ import { Order } from 'src/entities/store/product/order.entity';
 import { Store } from 'src/entities/store/store.entity';
 import { OrderStatus } from 'src/common/enums/order-status.enum';
 import { Injectable } from '@nestjs/common';
+import { InjectDataSource } from '@nestjs/typeorm';
 
 @EventSubscriber()
 @Injectable()
 export class StoreRevenueSubscriber
   implements EntitySubscriberInterface<Order> {
-  constructor(private dataSource: DataSource) {
-    this.dataSource.subscribers.push(this);
+  constructor(@InjectDataSource() dataSource: DataSource) {
+    dataSource.subscribers.push(this);
   }
 
   listenTo() {

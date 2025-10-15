@@ -9,6 +9,8 @@ export interface RecordAiLogParams {
 export interface LogFilterOptions {
   storeId?: string;
   userId?: string;
+  limit?: number;
+  offset?: number;
   feature?: string;
   dateFrom?: Date;
   dateTo?: Date;
@@ -48,4 +50,14 @@ export interface DailyUsageStats {
   uniqueUsers: number;
   uniqueStores: number;
   topFeatures: string[];
+}
+
+export interface UsageStats {
+  totalLogs: number;
+  byFeature: Record<string, number>;
+  byUser: Record<string, number>;
+  byStore: Record<string, number>;
+  dailyUsage: Array<{ date: string; count: number }>;
+  topFeatures: Array<{ feature: string; count: number; percentage: number }>;
+  averageDetailsSize: number;
 }

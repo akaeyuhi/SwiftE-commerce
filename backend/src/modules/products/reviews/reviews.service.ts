@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { BaseService } from 'src/common/abstracts/base.service';
 import { Review } from 'src/entities/store/review.entity';
 import { CreateReviewDto } from 'src/modules/products/reviews/dto/create-review.dto';
@@ -33,7 +33,7 @@ export class ReviewsService extends BaseService<
    */
   async findAllByProduct(productId: string): Promise<Review[]> {
     return this.reviewRepo.find({
-      where: { product: { id: productId } as any },
+      where: { productId },
       relations: ['user'],
       order: { createdAt: 'DESC' },
     });
@@ -47,7 +47,7 @@ export class ReviewsService extends BaseService<
    */
   async findAllByUser(userId: string): Promise<Review[]> {
     return this.reviewRepo.find({
-      where: { user: { id: userId } as any },
+      where: { userId },
       relations: ['product'],
       order: { createdAt: 'DESC' },
     });
@@ -67,15 +67,27 @@ export class ReviewsService extends BaseService<
     dto: CreateReviewDto,
     authorId?: string
   ): Promise<Review | ReviewDto> {
+    const { productId, userId } = dto;
+    const existing = await this.reviewRepo.findOne({
+      where: { productId, userId: authorId ? authorId : userId },
+    });
+
+    if (existing) {
+      throw new BadRequestException(
+        `Review for product ${productId} from user ${userId} already exists`
+      );
+    }
+
     const entityPartial = {
-      product: { id: dto.productId },
-      user: dto.userId ? { id: dto.userId } : undefined,
+      productId: dto.productId,
+      userId: dto.userId,
+      title: dto.title ?? `User's review`,
       rating: dto.rating,
       comment: dto.comment,
     };
 
     if (authorId) {
-      entityPartial.user = { id: authorId };
+      entityPartial.userId = authorId;
     }
 
     return await this.repository.createEntity(entityPartial);

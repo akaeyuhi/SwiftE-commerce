@@ -16,7 +16,9 @@ import {
 @Entity('inventory_notification_logs')
 @Index(['storeId', 'createdAt'])
 @Index(['variantId', 'notificationType', 'status'])
-@Index(['status', 'retryCount'], { where: "status != 'DELIVERED'" })
+@Index(['status', 'retryCount'], {
+  where: `status != '${NotificationStatus.DELIVERED}'`,
+})
 @Index(['createdAt']) // For partitioning
 export class InventoryNotificationLog implements NotificationLog {
   @PrimaryGeneratedColumn('increment', { type: 'bigint' })

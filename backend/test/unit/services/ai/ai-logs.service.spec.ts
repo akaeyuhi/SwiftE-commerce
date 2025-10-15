@@ -1,12 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { Logger } from '@nestjs/common';
-import {
-  AiLogsService,
-  RecordAiLogParams,
-} from 'src/modules/ai/ai-logs/ai-logs.service';
+import { AiLogsService } from 'src/modules/ai/ai-logs/ai-logs.service';
 import { AiLogsRepository } from 'src/modules/ai/ai-logs/ai-logs.repository';
 import { AiLog } from 'src/entities/ai/ai-log.entity';
 import { createRepositoryMock, MockedMethods } from 'test/unit/helpers';
+import { RecordAiLogParams } from 'src/modules/ai/ai-logs/types';
 
 describe('AiLogsService', () => {
   let service: AiLogsService;
@@ -240,14 +238,13 @@ describe('AiLogsService', () => {
     });
 
     it('should pass options to repository', async () => {
-      const filter = { userId: 'u1' };
-      const options = { limit: 50, offset: 10 };
+      const filter = { userId: 'u1', limit: 50, offset: 10 };
 
       logRepo.findByFilter!.mockResolvedValue([]);
 
-      await service.findByFilter(filter, options);
+      await service.findByFilter(filter);
 
-      expect(logRepo.findByFilter).toHaveBeenCalledWith(filter, options);
+      expect(logRepo.findByFilter).toHaveBeenCalledWith(filter);
     });
   });
 

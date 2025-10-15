@@ -142,6 +142,7 @@ export class AiPredictorService extends BaseAiService<
         usage: {
           totalTokens: 0,
         },
+        finishReason: '',
       };
     } catch (error) {
       this.logger.error('Predictor request processing failed:', error);
@@ -602,8 +603,8 @@ export class AiPredictorService extends BaseAiService<
       avgPrice: priceStats.avg || 0,
       minPrice: priceStats.min || 0,
       maxPrice: priceStats.max || 0,
-      avgRating: ratingAgg?.avg || 0,
-      ratingCount: ratingAgg?.count || 0,
+      avgRating: ratingAgg?.averageRating || 0,
+      ratingCount: ratingAgg?.totalReviews || 0,
       inventoryQty: inventoryStats.quantity || 0,
       daysSinceRestock: inventoryStats.daysSinceRestock || 365,
       dayOfWeek: dow,

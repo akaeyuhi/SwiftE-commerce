@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { HttpService } from '@nestjs/axios';
-import { lastValueFrom } from 'rxjs';
+import { InferenceClient } from '@huggingface/inference';
+import { ConfigService } from '@nestjs/config';
 import { BaseAiProvider, ProviderConfig } from './base.provider';
 import { AiLogsService } from '../../ai-logs/ai-logs.service';
 import { AiAuditService } from '../../ai-audit/ai-audit.service';
@@ -9,33 +9,44 @@ import {
   AiGenerateResult,
 } from 'src/common/interfaces/ai/generator.interface';
 import { huggingFaceModelConfigs } from 'src/modules/ai/ai-generator/providers/configs';
+import { HttpService } from '@nestjs/axios';
 
 /**
- * HuggingFace Provider
+ * HuggingFace Provider using InferenceClient
  *
- * Supports multiple HuggingFace models with proper error handling,
- * retry logic, and comprehensive monitoring.
+ * Supports chat completions via Hugging Face Router with multiple providers
  */
 @Injectable()
 export class HuggingFaceProvider extends BaseAiProvider {
-  protected readonly config: ProviderConfig = {
-    name: 'huggingface',
-    apiKey: process.env.HF_API_KEY,
-    baseUrl: 'https://api-inference.huggingface.co/models',
-    defaultModel: process.env.HF_DEFAULT_MODEL || 'microsoft/DialoGPT-medium',
-    timeout: parseInt(process.env.HF_TIMEOUT || '120000'),
-    maxRetries: parseInt(process.env.HF_MAX_RETRIES || '3'),
-  };
+  private client: InferenceClient;
 
-  // Model-specific configurations
+  protected readonly config: ProviderConfig = {} as ProviderConfig;
+
   private readonly modelConfigs = huggingFaceModelConfigs;
 
   constructor(
+    private readonly configService: ConfigService,
     protected readonly httpService: HttpService,
     protected readonly aiLogsService: AiLogsService,
     protected readonly aiAuditService: AiAuditService
   ) {
     super(httpService, aiLogsService, aiAuditService);
+
+    this.config = {
+      name: 'huggingface',
+      apiKey: this.configService.get<string>('HF_API_KEY'),
+      baseUrl:
+        this.configService.get<string>('HF_BASE_URL') ||
+        'https://router.huggingface.co/v1/chat/completions',
+      defaultModel:
+        configService.get<string>('HF_DEFAULT_MODEL') || 'openai/gpt-oss-20b',
+      defaultProvider:
+        configService.get<string>('HF_DEFAULT_PROVIDER') || 'fireworks-ai',
+      timeout: parseInt(configService.get<string>('HF_TIMEOUT') || '120000'),
+      maxRetries: parseInt(configService.get<string>('HF_MAX_RETRIES') || '3'),
+    };
+
+    this.client = new InferenceClient(this.config.apiKey);
   }
 
   protected async makeApiCall(
@@ -43,166 +54,77 @@ export class HuggingFaceProvider extends BaseAiProvider {
     options: AiGenerateOptions
   ): Promise<AiGenerateResult> {
     const model = options.model || this.config.defaultModel;
-    const modelConfig = this.modelConfigs.get(model) || {
-      type: 'text-generation',
-      maxTokens: 512,
-    };
-
-    const url = `${this.config.baseUrl}/${model}`;
-
-    const payload = this.buildPayload(prompt, options, modelConfig);
-    const headers = this.buildHeaders();
+    const provider = options.provider || this.config.defaultProvider;
 
     try {
-      const response$ = this.httpService.post(url, payload, {
-        headers,
-        timeout: this.config.timeout,
+      const chatCompletion = await this.client.chatCompletion({
+        provider: provider as any, // e.g., 'fireworks-ai', 'together-ai', 'nebius'
+        model,
+        messages: [
+          {
+            role: 'system',
+            content:
+              options.systemPrompt ||
+              'You are a helpful AI assistant for e-commerce product generation.',
+          },
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+        temperature: options.temperature ?? 0.7,
+        stop: options.stop!,
       });
 
-      const response = await lastValueFrom(response$);
-      return this.parseResponse(response.data, payload);
+      return this.parseResponse(chatCompletion);
     } catch (error) {
-      this.handleApiError(error, model);
-      throw error; // Re-throw after logging
+      this.handleApiError(error, model, provider);
+      throw error;
     }
   }
 
-  private buildPayload(
-    prompt: string,
-    options: AiGenerateOptions,
-    modelConfig: { type: string; maxTokens: number }
-  ) {
-    const maxTokens = Math.min(options.maxTokens || 256, modelConfig.maxTokens);
+  private parseResponse(chatCompletion: any): AiGenerateResult {
+    const choice = chatCompletion.choices?.[0];
+    const message = choice?.message;
 
-    const payload: any = {
-      inputs: prompt,
-      parameters: {
-        maxNewTokens: maxTokens,
-        temperature: options.temperature ?? 0.7,
-        doSample: true,
-        padTokenId: 50256, // Standard padding token
-      },
-      options: {
-        waitForModel: true,
-        useCache: false,
-      },
-    };
-
-    // Add model-specific parameters
-    if (modelConfig.type === 'text-generation') {
-      payload.parameters.returnFullText = false;
-      if (options.stop) {
-        payload.parameters.stopSequences = Array.isArray(options.stop)
-          ? options.stop
-          : [options.stop];
-      }
-    }
-
-    return payload;
-  }
-
-  private buildHeaders(): Record<string, string> {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      'User-Agent': 'AI-Generator-Service/1.0',
-    };
-
-    if (this.config.apiKey) {
-      headers.Authorization = `Bearer ${this.config.apiKey}`;
-    }
-
-    return headers;
-  }
-
-  private parseResponse(data: any, originalPayload: any): AiGenerateResult {
-    let text: string;
-    let usage = {};
-
-    try {
-      // Handle different response formats from HuggingFace
-      if (Array.isArray(data) && data.length > 0) {
-        // Check for translation first
-        if (data[0].translationText !== undefined) {
-          text = data[0].translationText;
-        } else if (data[0].generatedText !== undefined) {
-          text = data[0].generatedText;
-        } else if (typeof data[0] === 'string') {
-          text = data[0];
-        } else {
-          text = JSON.stringify(data);
-        }
-      } else if (data.generatedText !== undefined) {
-        text = data.generatedText;
-      } else if (typeof data === 'string') {
-        text = data;
-      } else {
-        // Fallback
-        text = JSON.stringify(data).substring(0, 2048);
-      }
-
-      // Clean up the text
-      text = this.cleanGeneratedText(text, originalPayload.inputs);
-
-      // Estimate usage (HuggingFace doesn't provide token counts)
-      usage = this.estimateUsage(originalPayload.inputs, text);
-    } catch (error) {
-      this.logger.warn(
-        'Failed to parse HuggingFace response, using raw data' + error
-      );
-      text = JSON.stringify(data).substring(0, 1000);
+    if (!message?.content) {
+      throw new Error('No content in chat completion response');
     }
 
     return {
-      text: text.trim(),
-      raw: data,
-      usage,
+      text: message.content.trim(),
+      raw: chatCompletion,
+      usage: {
+        promptTokens: chatCompletion.usage?.prompt_tokens || 0,
+        completionTokens: chatCompletion.usage?.completion_tokens || 0,
+        totalTokens: chatCompletion.usage?.total_tokens || 0,
+      },
+      finishReason: choice.finish_reason,
     };
   }
 
-  private cleanGeneratedText(text: string, originalPrompt: string): string {
-    let cleaned = text;
+  private handleApiError(error: any, model: string, provider: string): void {
+    const status = error.response?.status || error.statusCode;
+    const message = error.message || 'Unknown error';
 
-    // Remove the original prompt if it's repeated
-    if (cleaned.startsWith(originalPrompt)) {
-      cleaned = cleaned.substring(originalPrompt.length).trim();
-    }
-
-    // Remove common artifacts
-    cleaned = cleaned.replace(/^[:\-\s]+/, ''); // Leading punctuation
-    cleaned = cleaned.replace(/\s+/g, ' '); // Multiple spaces
-    cleaned = cleaned.trim();
-
-    return cleaned;
-  }
-
-  private estimateUsage(prompt: string, generated: string) {
-    // Rough estimation: ~4 characters per token
-    const promptTokens = Math.ceil(prompt.length / 4);
-    const completionTokens = Math.ceil(generated.length / 4);
-
-    return {
-      promptTokens,
-      completionTokens,
-      totalTokens: promptTokens + completionTokens,
-    };
-  }
-
-  private handleApiError(error: any, model: string): void {
-    const status = error.response?.status;
-    const message = error.response?.data?.error || error.message;
+    this.logger.error(
+      `HuggingFace API error (${provider}/${model}): ${status} - ${message}`
+    );
 
     switch (status) {
       case 401:
-        this.logger.error(`HuggingFace API key invalid or missing`);
+        this.logger.error('HuggingFace API key invalid or missing');
         break;
       case 429:
-        this.logger.warn(`HuggingFace rate limit exceeded for model ${model}`);
+        this.logger.warn(
+          `Rate limit exceeded for ${provider}/${model}, consider switching provider`
+        );
         break;
       case 503:
-        this.logger.warn(`HuggingFace model ${model} is loading, retrying...`);
+        this.logger.warn(`Model ${model} unavailable on ${provider}`);
         break;
       default:
-        this.logger.error(`HuggingFace API error (${status}): ${message}`);
+        this.logger.error(`API call failed: ${message}`);
     }
   }
 
@@ -218,5 +140,12 @@ export class HuggingFaceProvider extends BaseAiProvider {
    */
   isModelSupported(model: string): boolean {
     return this.modelConfigs.has(model);
+  }
+
+  /**
+   * Get available providers
+   */
+  getAvailableProviders(): string[] {
+    return ['fireworks-ai', 'together-ai', 'nebius', 'deepinfra', 'hyperbolic'];
   }
 }

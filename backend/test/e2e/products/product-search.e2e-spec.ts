@@ -31,7 +31,7 @@ describe('Products - Search (E2E)', () => {
       {
         name: 'Gaming Laptop Pro',
         description: 'High-performance gaming laptop',
-        store,
+        storeId: store.id,
         viewCount: 1000,
         totalSales: 50,
         averageRating: 4.5,
@@ -39,7 +39,7 @@ describe('Products - Search (E2E)', () => {
       {
         name: 'Gaming Mouse',
         description: 'RGB gaming mouse',
-        store,
+        storeId: store.id,
         viewCount: 500,
         totalSales: 100,
         averageRating: 4.2,
@@ -47,7 +47,7 @@ describe('Products - Search (E2E)', () => {
       {
         name: 'Office Chair',
         description: 'Ergonomic office chair',
-        store,
+        storeId: store.id,
         viewCount: 200,
         totalSales: 25,
         averageRating: 4.0,

@@ -50,14 +50,17 @@ describe('Notifications - Inventory (E2E)', () => {
   });
 
   afterAll(async () => {
+    await appHelper.clearDatabase();
     await appHelper.cleanup();
   });
 
   afterEach(async () => {
-    const logRepo = appHelper
-      .getDataSource()
-      .getRepository('InventoryNotificationLog');
-    await logRepo.clear();
+    await appHelper.clearTables([
+      'stores',
+      'products',
+      'product_variants',
+      'inventory_notification_logs',
+    ]);
   });
 
   describe('Low Stock Notifications', () => {

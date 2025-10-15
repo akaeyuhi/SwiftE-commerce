@@ -105,7 +105,7 @@ export class VariantsController extends BaseController<
   @ApiResponse({
     status: 200,
     description: 'List of product variants',
-    type: [ProductVariant],
+    type: () => [ProductVariant],
   })
   async findAllProductVariants(
     @Param('productId', new ParseUUIDPipe()) productId: string
@@ -133,7 +133,7 @@ export class VariantsController extends BaseController<
   @ApiResponse({
     status: 200,
     description: 'Product variant found',
-    type: ProductVariant,
+    type: () => ProductVariant,
   })
   @ApiNotFoundResponse({ description: 'Variant with specified SKU not found' })
   async findBySku(
@@ -166,7 +166,7 @@ export class VariantsController extends BaseController<
   @ApiResponse({
     status: 200,
     description: 'Variant attributes updated successfully',
-    type: ProductVariant,
+    type: () => ProductVariant,
   })
   @ApiNotFoundResponse({ description: 'Variant not found' })
   async addAttributes(
@@ -199,7 +199,7 @@ export class VariantsController extends BaseController<
   @ApiResponse({
     status: 200,
     description: 'Attribute removed successfully',
-    type: ProductVariant,
+    type: () => ProductVariant,
   })
   @ApiNotFoundResponse({ description: 'Variant not found' })
   async removeAttribute(
@@ -328,7 +328,7 @@ export class VariantsController extends BaseController<
   @ApiResponse({
     status: 200,
     description: 'Price updated successfully',
-    type: ProductVariant,
+    type: () => ProductVariant,
   })
   @ApiBadRequestResponse({ description: 'Invalid price value' })
   @ApiNotFoundResponse({ description: 'Variant not found' })

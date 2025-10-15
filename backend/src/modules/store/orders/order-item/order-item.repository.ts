@@ -21,7 +21,7 @@ export class OrderItemRepository extends BaseRepository<OrderItem> {
    */
   async findByOrder(orderId: string): Promise<OrderItem[]> {
     return this.find({
-      where: { order: { id: orderId } },
+      where: { orderId },
       relations: ['product', 'variant'],
       order: { createdAt: 'ASC' },
     });
@@ -34,7 +34,7 @@ export class OrderItemRepository extends BaseRepository<OrderItem> {
    */
   async findByVariant(variantId: string): Promise<OrderItem[]> {
     return this.find({
-      where: { variant: { id: variantId } },
+      where: { variantId },
       relations: ['order'],
     });
   }

@@ -36,18 +36,18 @@ describe('Products - Photos (E2E)', () => {
     store = await seeder.seedStore(storeOwner.user);
   });
 
-  afterAll(async () => {
-    await appHelper.cleanup();
-  });
-
   beforeEach(async () => {
     const products = await seeder.seedProducts(store, 1);
     product = products[0];
   });
 
+  afterAll(async () => {
+    await appHelper.clearDatabase();
+    await appHelper.cleanup();
+  });
+
   afterEach(async () => {
-    const productRepo = appHelper.getDataSource().getRepository('Product');
-    await productRepo.clear();
+    await appHelper.clearTables(['product_photos']);
   });
 
   describe('POST /stores/:storeId/products (with photos)', () => {

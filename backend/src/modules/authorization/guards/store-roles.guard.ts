@@ -7,22 +7,20 @@ import {
 import { Reflector } from '@nestjs/core';
 import { STORE_ROLES_META } from 'src/common/decorators/store-role.decorator';
 import { PolicyService } from 'src/modules/authorization/policy/policy.service';
-import {
-  PolicyEntry,
-  AccessPolicies,
-} from 'src/modules/authorization/policy/policy.types';
+import { PolicyEntry } from 'src/modules/authorization/policy/policy.types';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 
 /**
  * StoreRolesGuard
  *
- * Responsible for enforcing store-level roles (STORE_ADMIN, STORE_USER, etc).
+ * Responsible for enforcing store-level roles (ADMIN, MODERATOR, MEMBER, etc).
  *
- * Optimization: if the authenticated user is a site admin, we short-circuit
- * and allow access immediately. We check `request.user.isSiteAdmin` first
- * (this should be set by AdminGuard). If that flag is missing we fall back to
- * calling PolicyService.isSiteAdmin(user), cache the result on request.user,
- * and short-circuit when true.
+ * Policy resolution order:
+ *  1. Method decorator metadata (@StoreRoles)
+ *  2. Merged accessPolicies (child overrides base)
+ *  3. No policy = allow
+ *
+ * Short-circuit: Site admins bypass all checks.
  */
 @Injectable()
 export class StoreRolesGuard implements CanActivate {
@@ -39,59 +37,71 @@ export class StoreRolesGuard implements CanActivate {
     const user = request.user;
 
     // --- SHORT-CIRCUIT FOR SITE ADMINS ---
-    // If AdminGuard ran earlier it should have set request.user.isSiteAdmin.
-    // If flag present and true -> bypass store role checks.
-    if (user && user?.isSiteAdmin === true) {
+    if (user?.isSiteAdmin === true) {
       return true;
     }
 
-    // Defensive fallback: if flag is missing, compute it once and cache on req.user.
+    // Defensive fallback: compute isSiteAdmin if not set
     if (user && (user.isSiteAdmin === undefined || user.isSiteAdmin === null)) {
       try {
         const isAdmin = await this.policyService.isSiteAdmin(user);
         request.user = { ...(request.user ?? {}), isSiteAdmin: isAdmin };
         if (isAdmin) return true;
       } catch {
-        // If check fails for any reason, set false to avoid repeated attempts
         request.user = { ...(request.user ?? {}), isSiteAdmin: false };
       }
     }
 
-    // 1) Read store-roles metadata (method -> class)
-    let requiredRoles = this.reflector.getAllAndOverride<
+    // 1) Check method decorator first (highest priority)
+    const metaStoreRoles = this.reflector.getAllAndOverride<
       StoreRoles[] | undefined
     >(STORE_ROLES_META, [handler, controller]);
 
-    // 2) Fallback to static accessPolicies map (no method re-definition required)
-    let staticEntry: PolicyEntry | undefined;
-    if (
-      (!requiredRoles || requiredRoles.length === 0) &&
-      (controller as any).accessPolicies
-    ) {
-      const handlerName = (handler && handler.name) || undefined;
-      const staticMap: AccessPolicies = (controller as any).accessPolicies;
-      staticEntry = handlerName ? staticMap?.[handlerName] : undefined;
-      if (staticEntry?.storeRoles) requiredRoles = staticEntry.storeRoles;
-    }
+    if (metaStoreRoles && metaStoreRoles.length > 0) {
+      // Method has explicit @StoreRoles decorator
+      const policy: PolicyEntry = {
+        storeRoles: metaStoreRoles,
+        requireAuthenticated: true,
+      };
 
-    // If nothing required -> allow (but honor requireAuthenticated if present)
-    if (!requiredRoles || requiredRoles.length === 0) {
-      if (staticEntry?.requireAuthenticated) {
-        const allowed = await this.policyService.checkPolicy(
-          request.user,
-          { requireAuthenticated: true },
-          params
-        );
-        if (!allowed) throw new ForbiddenException('Authentication required');
+      const allowed = await this.policyService.checkPolicy(
+        request.user,
+        policy,
+        params
+      );
+
+      if (!allowed) {
+        throw new ForbiddenException('Insufficient store role');
       }
+
       return true;
     }
 
-    // Build policy entry and evaluate using PolicyService.checkPolicy
+    // 2) Get merged policy (child overrides base)
+    const handlerName = handler.name;
+    const mergedPolicy = this.policyService.getMergedPolicy(
+      controller,
+      handlerName
+    );
+
+    if (!mergedPolicy) {
+      return true; // No policy = allow
+    }
+
+    // 3) Check requireAuthenticated (even if no store roles)
+    if (mergedPolicy.requireAuthenticated && !user) {
+      throw new ForbiddenException('Authentication required');
+    }
+
+    // 4) Check store roles
+    if (!mergedPolicy.storeRoles || mergedPolicy.storeRoles.length === 0) {
+      return true; // No store roles required
+    }
+
+    // 5) Build and evaluate policy
     const policy: PolicyEntry = {
-      storeRoles: requiredRoles,
-      // if static entry includes requireAuthenticated, include it
-      requireAuthenticated: staticEntry?.requireAuthenticated,
+      storeRoles: mergedPolicy.storeRoles,
+      requireAuthenticated: mergedPolicy.requireAuthenticated,
     };
 
     const allowed = await this.policyService.checkPolicy(
@@ -99,6 +109,7 @@ export class StoreRolesGuard implements CanActivate {
       policy,
       params
     );
+
     if (!allowed) {
       throw new ForbiddenException(
         'Insufficient store role or not authenticated'

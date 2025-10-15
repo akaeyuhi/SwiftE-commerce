@@ -23,12 +23,18 @@ export class OrderItem implements BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Column({ name: 'order_id' })
+  orderId: string;
+
   @ManyToOne(() => Order, (order) => order.items, { onDelete: 'CASCADE' })
   order: Order;
 
   /** Optional FK to Product for convenience (not required for record integrity) */
   @ManyToOne(() => Product, { nullable: true })
   product?: Product;
+
+  @Column({ name: 'variant_id', nullable: true })
+  variantId?: string;
 
   /** Optional FK to ProductVariant for convenience */
   @ManyToOne(() => ProductVariant, { nullable: true })

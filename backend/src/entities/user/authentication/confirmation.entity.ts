@@ -22,6 +22,9 @@ export class Confirmation {
   @Column()
   email: string;
 
+  @Column({ nullable: true, select: false })
+  plainToken?: string;
+
   @Column({ unique: true })
   token: string;
 

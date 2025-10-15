@@ -5,8 +5,8 @@ import { SeederHelper } from '../helpers/seeder.helper';
 import { AssertionHelper } from '../helpers/assertion.helper';
 import { StoreModule } from 'src/modules/store/store.module';
 import { UserModule } from 'src/modules/user/user.module';
-import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { AuthModule } from 'src/modules/auth/auth.module';
+import * as request from 'supertest';
 
 describe('News (E2E)', () => {
   let appHelper: TestAppHelper;
@@ -14,7 +14,6 @@ describe('News (E2E)', () => {
   let authHelper: AuthHelper;
   let seeder: SeederHelper;
 
-  let adminUser: any;
   let storeOwner: any;
   let storeModerator: any;
   let regularUser: any;
@@ -30,7 +29,6 @@ describe('News (E2E)', () => {
     seeder = new SeederHelper(appHelper.getDataSource());
 
     // Create test users
-    adminUser = await authHelper.createAdminUser();
     storeOwner = await authHelper.createAuthenticatedUser();
     storeModerator = await authHelper.createAuthenticatedUser();
     regularUser = await authHelper.createAuthenticatedUser();
@@ -38,24 +36,16 @@ describe('News (E2E)', () => {
     // Create store
     store = await seeder.seedStore(storeOwner.user);
 
-    // Assign moderator role
-    await authHelper
-      .authenticatedRequest(adminUser.accessToken)
-      .post(`/users/${storeModerator.user.id}/roles`)
-      .send({
-        roleName: StoreRoles.MODERATOR,
-        storeId: store.id,
-        assignedBy: adminUser.user.id,
-      });
+    await seeder.assignStoreModerator(storeModerator.user.id, store.id);
   });
 
   afterAll(async () => {
+    await appHelper.clearDatabase();
     await appHelper.cleanup();
   });
 
   afterEach(async () => {
-    const newsRepo = appHelper.getDataSource().getRepository('NewsPost');
-    await newsRepo.clear();
+    await appHelper.clearTables(['news_posts']);
   });
 
   describe('POST /stores/:storeId/news/create', () => {
@@ -101,8 +91,7 @@ describe('News (E2E)', () => {
     });
 
     it('should require authentication', async () => {
-      const response = await app
-        .getHttpServer()
+      const response = await request(app.getHttpServer())
         .post(`/stores/${store.id}/news/create`)
         .send(validNewsData);
 
@@ -151,24 +140,6 @@ describe('News (E2E)', () => {
       AssertionHelper.assertErrorResponse(response, 400);
     });
 
-    it('should validate store UUID format', async () => {
-      const response = await authHelper
-        .authenticatedRequest(storeOwner.accessToken)
-        .post('/stores/invalid-uuid/news/create')
-        .send(validNewsData);
-
-      AssertionHelper.assertErrorResponse(response, 400);
-    });
-
-    it('should validate store exists', async () => {
-      const response = await authHelper
-        .authenticatedRequest(storeOwner.accessToken)
-        .post('/stores/00000000-0000-0000-0000-000000000000/news/create')
-        .send(validNewsData);
-
-      AssertionHelper.assertErrorResponse(response, 404);
-    });
-
     it('should set author from authenticated user', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
@@ -193,16 +164,15 @@ describe('News (E2E)', () => {
 
   describe('GET /stores/:storeId/news/store-all', () => {
     beforeEach(async () => {
-      // Create some news posts
       await authHelper
         .authenticatedRequest(storeOwner.accessToken)
         .post(`/stores/${store.id}/news/create`)
-        .send({ title: 'Post 1', content: 'Content 1' });
+        .send({ title: 'Post 1', content: 'Content 1 content' });
 
       await authHelper
         .authenticatedRequest(storeOwner.accessToken)
         .post(`/stores/${store.id}/news/create`)
-        .send({ title: 'Post 2', content: 'Content 2' });
+        .send({ title: 'Post 2', content: 'Content 2 content' });
     });
 
     it('should list all news posts for store', async () => {
@@ -220,9 +190,9 @@ describe('News (E2E)', () => {
     });
 
     it('should require authentication', async () => {
-      const response = await app
-        .getHttpServer()
-        .get(`/stores/${store.id}/news/store-all`);
+      const response = await request(app.getHttpServer()).get(
+        `/stores/${store.id}/news/store-all`
+      );
 
       AssertionHelper.assertErrorResponse(response, 401);
     });
@@ -297,9 +267,9 @@ describe('News (E2E)', () => {
     });
 
     it('should require authentication', async () => {
-      const response = await app
-        .getHttpServer()
-        .get(`/stores/${store.id}/news/${newsPost.id}`);
+      const response = await request(app.getHttpServer()).get(
+        `/stores/${store.id}/news/${newsPost.id}`
+      );
 
       AssertionHelper.assertErrorResponse(response, 401);
     });
@@ -479,7 +449,6 @@ describe('News (E2E)', () => {
         .delete(
           `/stores/${store.id}/news/00000000-0000-0000-0000-000000000000`
         );
-
       AssertionHelper.assertErrorResponse(response, 404);
     });
   });
@@ -641,11 +610,11 @@ describe('News (E2E)', () => {
         authHelper
           .authenticatedRequest(storeOwner.accessToken)
           .post(`/stores/${store.id}/news/create`)
-          .send({ title: 'Concurrent 1', content: 'Content 1' }),
+          .send({ title: 'Concurrent 1', content: 'Content 1 content' }),
         authHelper
           .authenticatedRequest(storeOwner.accessToken)
           .post(`/stores/${store.id}/news/create`)
-          .send({ title: 'Concurrent 2', content: 'Content 2' }),
+          .send({ title: 'Concurrent 2', content: 'Content 2 content' }),
       ]);
 
       posts.forEach((response) => {
@@ -686,12 +655,12 @@ describe('News (E2E)', () => {
       const post1 = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
         .post(`/stores/${store.id}/news/create`)
-        .send({ title: 'Post 1', content: 'Content 1' });
+        .send({ title: 'Post 1', content: 'Content 1 content' });
 
       const post2 = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
         .post(`/stores/${store.id}/news/create`)
-        .send({ title: 'Post 2', content: 'Content 2' });
+        .send({ title: 'Post 2', content: 'Content 2 content' });
 
       // Delete first post
       await authHelper

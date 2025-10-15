@@ -41,14 +41,12 @@ describe('Notifications - Orders (E2E)', () => {
   });
 
   afterAll(async () => {
+    await appHelper.clearDatabase();
     await appHelper.cleanup();
   });
 
   afterEach(async () => {
-    const logRepo = appHelper
-      .getDataSource()
-      .getRepository('OrderNotificationLog');
-    await logRepo.clear();
+    await appHelper.clearTables(['orders', 'order_notification_logs']);
   });
 
   describe('Order Confirmation Notifications', () => {

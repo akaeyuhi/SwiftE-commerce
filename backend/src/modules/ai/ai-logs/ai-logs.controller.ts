@@ -6,19 +6,17 @@ import {
   Query,
   UseGuards,
   Req,
-  ValidationPipe,
-  ParseIntPipe,
   HttpCode,
   HttpStatus,
   BadRequestException,
+  ParseUUIDPipe,
+  Param,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { AiLogsService } from './ai-logs.service';
 import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';
 import { AdminGuard } from 'src/modules/authorization/guards/admin.guard';
 import { StoreRolesGuard } from 'src/modules/authorization/guards/store-roles.guard';
-import { StoreRole } from 'src/common/decorators/store-role.decorator';
-import { AdminRole } from 'src/common/decorators/admin-role.decorator';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { AdminRoles } from 'src/common/enums/admin.enum';
 import { AccessPolicies } from 'src/modules/authorization/policy/policy.types';
@@ -43,20 +41,41 @@ import {
  * - Store admins can access store-wide logs
  * - Site admins have full access
  */
-@Controller('ai/logs')
+@Controller('stores/:storeId/ai/logs/')
 @UseGuards(JwtAuthGuard, AdminGuard, StoreRolesGuard)
 export class AiLogsController {
   static accessPolicies: AccessPolicies = {
     // Log management
-    createLog: { storeRoles: [StoreRoles.ADMIN, StoreRoles.MODERATOR] },
-    getLogs: { storeRoles: [StoreRoles.ADMIN, StoreRoles.MODERATOR] },
+    createLog: {
+      storeRoles: [StoreRoles.ADMIN, StoreRoles.MODERATOR],
+      requireAuthenticated: true,
+    },
+    getLogs: {
+      storeRoles: [StoreRoles.ADMIN, StoreRoles.MODERATOR],
+      requireAuthenticated: true,
+    },
 
     // Analytics
-    getUsageStats: { storeRoles: [StoreRoles.ADMIN] },
-    getTopFeatures: { storeRoles: [StoreRoles.ADMIN] },
-    getDailyUsage: { storeRoles: [StoreRoles.ADMIN] },
-    getErrorLogs: { storeRoles: [StoreRoles.ADMIN] },
-    getUsageTrends: { storeRoles: [StoreRoles.ADMIN] },
+    getUsageStats: {
+      storeRoles: [StoreRoles.ADMIN],
+      requireAuthenticated: true,
+    },
+    getTopFeatures: {
+      storeRoles: [StoreRoles.ADMIN],
+      requireAuthenticated: true,
+    },
+    getDailyUsage: {
+      storeRoles: [StoreRoles.ADMIN],
+      requireAuthenticated: true,
+    },
+    getErrorLogs: {
+      storeRoles: [StoreRoles.ADMIN],
+      requireAuthenticated: true,
+    },
+    getUsageTrends: {
+      storeRoles: [StoreRoles.ADMIN],
+      requireAuthenticated: true,
+    },
 
     // System management - admin only
     healthCheck: { adminRole: AdminRoles.ADMIN },
@@ -72,15 +91,16 @@ export class AiLogsController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async createLog(
-    @Body(ValidationPipe) dto: CreateAiLogDto,
+    @Param('storeId', new ParseUUIDPipe()) storeId: string,
+    @Body() dto: CreateAiLogDto,
     @Req() req: Request
   ) {
     try {
-      const user = this.extractUser(req);
+      const user = req.user as any;
 
       const log = await this.logsService.record({
         userId: dto.userId || user.id,
-        storeId: dto.storeId || user.storeId,
+        storeId: storeId ?? dto.storeId,
         feature: dto.feature,
         prompt: dto.prompt,
         details: dto.details,
@@ -104,16 +124,18 @@ export class AiLogsController {
    */
   @Get()
   async getLogs(
-    @Query(ValidationPipe) query: LogQueryDto,
+    @Param('storeId') storeId: string,
+    @Query() query: LogQueryDto,
     @Req() req: Request
   ) {
     try {
-      const user = this.extractUser(req);
-
       // Apply security filters based on user permissions
-      const filters = this.buildSecurityFilters(query, user);
+      const filters = this.buildSecurityFilters(req, query, storeId);
 
-      const logs = await this.logsService.findByFilter(filters, {
+      console.log(filters, query);
+
+      const logs = await this.logsService.findByFilter({
+        ...filters,
         limit: query.limit || 100,
         offset: query.offset || 0,
         dateFrom: query.dateFrom ? new Date(query.dateFrom) : undefined,
@@ -130,7 +152,7 @@ export class AiLogsController {
             count: logs.length,
             filters,
             retrievedAt: new Date().toISOString(),
-            userId: user.id,
+            userId: filters.userId,
           },
         },
       };
@@ -146,15 +168,13 @@ export class AiLogsController {
    * Get comprehensive usage statistics
    */
   @Get('stats')
-  @StoreRole(StoreRoles.ADMIN)
   async getUsageStats(
-    @Query(ValidationPipe) query: UsageStatsQueryDto,
+    @Param('storeId') storeId: string,
+    @Query() query: UsageStatsQueryDto,
     @Req() req: Request
   ) {
     try {
-      const user = this.extractUser(req);
-
-      const filters = this.buildSecurityFilters(query, user);
+      const filters = this.buildSecurityFilters(req, query, storeId);
 
       const stats = await this.logsService.getUsageStats({
         ...filters,
@@ -173,7 +193,7 @@ export class AiLogsController {
             },
             filters,
             generatedAt: new Date().toISOString(),
-            userId: user.id,
+            userId: filters.userId,
           },
         },
       };
@@ -189,17 +209,15 @@ export class AiLogsController {
    * Get top AI features by usage
    */
   @Get('features/top')
-  @StoreRole(StoreRoles.ADMIN)
   async getTopFeatures(
-    @Query('limit', new ParseIntPipe({ optional: true })) limit: number = 10,
-    @Query(ValidationPipe) query: UsageStatsQueryDto,
+    @Param('storeId') storeId: string,
+    @Query() query: UsageStatsQueryDto,
     @Req() req: Request
   ) {
     try {
-      const user = this.extractUser(req);
-      const filters = this.buildSecurityFilters(query, user);
+      const filters = this.buildSecurityFilters(req, query, storeId);
 
-      const topFeatures = await this.logsService.getTopFeatures(limit, {
+      const topFeatures = await this.logsService.getTopFeatures(query.limit, {
         ...filters,
         dateFrom: query.dateFrom ? new Date(query.dateFrom) : undefined,
         dateTo: query.dateTo ? new Date(query.dateTo) : undefined,
@@ -210,9 +228,9 @@ export class AiLogsController {
         data: {
           features: topFeatures,
           metadata: {
-            limit,
+            limit: query.limit,
             generatedAt: new Date().toISOString(),
-            userId: user.id,
+            userId: filters.userId,
           },
         },
       };
@@ -228,26 +246,27 @@ export class AiLogsController {
    * Get daily usage metrics
    */
   @Get('daily')
-  @StoreRole(StoreRoles.ADMIN)
   async getDailyUsage(
-    @Query('days', new ParseIntPipe({ optional: true })) days: number = 30,
-    @Query(ValidationPipe) query: UsageStatsQueryDto,
+    @Param('storeId') storeId: string,
+    @Query() query: UsageStatsQueryDto,
     @Req() req: Request
   ) {
     try {
-      const user = this.extractUser(req);
-      const filters = this.buildSecurityFilters(query, user);
+      const filters = this.buildSecurityFilters(req, query, storeId);
 
-      const dailyUsage = await this.logsService.getDailyUsage(days, filters);
+      const dailyUsage = await this.logsService.getDailyUsage(
+        query.days,
+        filters
+      );
 
       return {
         success: true,
         data: {
           dailyUsage,
           metadata: {
-            days,
+            days: query.days,
             generatedAt: new Date().toISOString(),
-            userId: user.id,
+            userId: filters.userId,
           },
         },
       };
@@ -263,17 +282,15 @@ export class AiLogsController {
    * Get error logs for debugging
    */
   @Get('errors')
-  @StoreRole(StoreRoles.ADMIN)
   async getErrorLogs(
-    @Query('limit', new ParseIntPipe({ optional: true })) limit: number = 100,
-    @Query(ValidationPipe) query: UsageStatsQueryDto,
+    @Param('storeId') storeId: string,
+    @Query() query: UsageStatsQueryDto,
     @Req() req: Request
   ) {
     try {
-      const user = this.extractUser(req);
-      const filters = this.buildSecurityFilters(query, user);
+      const filters = this.buildSecurityFilters(req, query, storeId);
 
-      const errorLogs = await this.logsService.getErrorLogs(limit, {
+      const errorLogs = await this.logsService.getErrorLogs(query.limit, {
         ...filters,
         dateFrom: query.dateFrom ? new Date(query.dateFrom) : undefined,
         dateTo: query.dateTo ? new Date(query.dateTo) : undefined,
@@ -285,9 +302,9 @@ export class AiLogsController {
           errorLogs,
           metadata: {
             count: errorLogs.length,
-            limit,
+            limit: query.limit,
             generatedAt: new Date().toISOString(),
-            userId: user.id,
+            userId: filters.userId,
           },
         },
       };
@@ -303,26 +320,24 @@ export class AiLogsController {
    * Get usage trends and insights
    */
   @Get('trends')
-  @StoreRole(StoreRoles.ADMIN)
   async getUsageTrends(
-    @Query('days', new ParseIntPipe({ optional: true })) days: number = 30,
-    @Query(ValidationPipe) query: UsageStatsQueryDto,
+    @Param('storeId', new ParseUUIDPipe()) storeId: string,
+    @Query() query: UsageStatsQueryDto,
     @Req() req: Request
   ) {
     try {
-      const user = this.extractUser(req);
-      const filters = this.buildSecurityFilters(query, user);
+      const filters = this.buildSecurityFilters(req, query, storeId);
 
-      const trends = await this.logsService.getUsageTrends(days, filters);
+      const trends = await this.logsService.getUsageTrends(query.days, filters);
 
       return {
         success: true,
         data: {
           trends,
           metadata: {
-            period: days,
+            period: query.days,
             generatedAt: new Date().toISOString(),
-            userId: user.id,
+            userId: filters.userId,
           },
         },
       };
@@ -338,7 +353,6 @@ export class AiLogsController {
    * Health check for logs service
    */
   @Get('health')
-  @AdminRole(AdminRoles.ADMIN)
   async healthCheck() {
     try {
       const health = await this.logsService.healthCheck();
@@ -370,8 +384,7 @@ export class AiLogsController {
    */
   @Post('cleanup')
   @HttpCode(HttpStatus.OK)
-  @AdminRole(AdminRoles.ADMIN)
-  async cleanupLogs(@Body(ValidationPipe) dto: CleanupLogsDto) {
+  async cleanupLogs(@Body() dto: CleanupLogsDto) {
     try {
       const result = await this.logsService.cleanup(
         dto.retentionDays || 30,
@@ -390,38 +403,36 @@ export class AiLogsController {
     }
   }
 
-  private extractUser(req: Request): {
-    id: string;
-    storeId?: string;
-    isAdmin?: boolean;
-  } {
+  private extractUser(req: Request): { id: string; isSiteAdmin: boolean } {
     const user = (req as any).user;
     if (!user?.id) {
       throw new BadRequestException('User context not found');
     }
     return {
       id: user.id,
-      storeId: user.storeId,
-      isAdmin: user.isAdmin || user.roles?.includes('admin'),
+      isSiteAdmin: user.isSiteAdmin,
     };
   }
 
   private buildSecurityFilters(
-    query: any,
-    user: { id: string; storeId?: string; isAdmin?: boolean }
+    req: Request,
+    query: UsageStatsQueryDto,
+    storeId?: string
   ) {
     const filters: any = {};
 
+    const user = this.extractUser(req);
+
     // If user is not admin, restrict to their data
-    if (!user.isAdmin) {
-      if (user.storeId) {
-        filters.storeId = user.storeId;
+    if (!user.isSiteAdmin) {
+      if (query.storeId || storeId) {
+        filters.storeId = query.storeId ?? storeId;
       } else {
         filters.userId = user.id;
       }
     } else {
       // Admins can filter by specific store/user if provided
-      if (query.storeId) filters.storeId = query.storeId;
+      if (query.storeId || storeId) filters.storeId = query.storeId ?? storeId;
       if (query.userId) filters.userId = query.userId;
     }
 

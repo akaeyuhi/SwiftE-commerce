@@ -43,20 +43,20 @@ export class AiCaseTransformInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const request = context.switchToHttp().getRequest();
 
-    // Transform request body to snake_case
-    if (request.body && typeof request.body === 'object') {
-      request.body = CaseTransformer.transformKeysToSnakeWithExclusions(
-        request.body,
-        this.excludedKeys
-      );
-    }
-
-    // Transform query parameters to snake_case
     if (request.query && typeof request.query === 'object') {
-      request.query = CaseTransformer.transformKeysToSnakeWithExclusions(
-        request.query,
-        this.excludedKeys
-      );
+      const transformedQuery =
+        CaseTransformer.transformKeysToSnakeWithExclusions(
+          request.query,
+          this.excludedKeys
+        );
+
+      // Clear existing properties
+      Object.keys(request.query).forEach((key) => {
+        delete request.query[key];
+      });
+
+      // Add transformed properties
+      Object.assign(request.query, transformedQuery);
     }
 
     // Transform response back to camelCase

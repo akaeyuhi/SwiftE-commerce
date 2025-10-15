@@ -197,8 +197,8 @@ describe('User - Profile (E2E)', () => {
     });
 
     it('should require authentication', async () => {
-      const response = await app
-        .getHttpServer()
+      const response = await appHelper
+        .request()
         .put('/users/profile')
         .send({ firstName: 'Test' });
 
@@ -390,8 +390,8 @@ describe('User - Profile (E2E)', () => {
         .post(`/users/${user.user.id}/reactivate`);
 
       // Should be able to login
-      const response = await app
-        .getHttpServer()
+      const response = await appHelper
+        .request()
         .post('/auth/login')
         .send({
           email: userData.email,

@@ -5,8 +5,6 @@ import { SeederHelper } from '../helpers/seeder.helper';
 import { AssertionHelper } from '../helpers/assertion.helper';
 import { StoreModule } from 'src/modules/store/store.module';
 import { ProductsModule } from 'src/modules/products/products.module';
-import { UserModule } from 'src/modules/user/user.module';
-import { AuthModule } from 'src/modules/auth/auth.module';
 
 describe('Variants (E2E)', () => {
   let appHelper: TestAppHelper;
@@ -24,7 +22,7 @@ describe('Variants (E2E)', () => {
   beforeAll(async () => {
     appHelper = new TestAppHelper();
     app = await appHelper.initialize({
-      imports: [StoreModule, ProductsModule, AuthModule, UserModule],
+      imports: [StoreModule, ProductsModule],
     });
     authHelper = new AuthHelper(app, appHelper.getDataSource());
     seeder = new SeederHelper(appHelper.getDataSource());
@@ -65,8 +63,8 @@ describe('Variants (E2E)', () => {
     });
 
     it('should require authentication', async () => {
-      const response = await app
-        .getHttpServer()
+      const response = await appHelper
+        .request()
         .get(`/stores/${store.id}/products/${product.id}/variants`);
 
       AssertionHelper.assertErrorResponse(response, 401);

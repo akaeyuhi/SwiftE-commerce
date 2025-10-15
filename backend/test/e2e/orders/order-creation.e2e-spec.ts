@@ -42,12 +42,12 @@ describe('Orders - Creation (E2E)', () => {
   });
 
   afterAll(async () => {
+    await appHelper.clearDatabase();
     await appHelper.cleanup();
   });
 
   afterEach(async () => {
-    const orderRepo = appHelper.getDataSource().getRepository('Order');
-    await orderRepo.clear();
+    await appHelper.clearTables(['orders']);
   });
 
   describe('POST /stores/:storeId/orders/create', () => {

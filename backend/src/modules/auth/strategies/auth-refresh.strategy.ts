@@ -52,7 +52,7 @@ export class RefreshTokenStrategy extends PassportStrategy(
     super({
       jwtFromRequest: ExtractJwt.fromExtractors(extractors),
       secretOrKey:
-        config.get<string>('JWT_REFRESH_SECRET') ||
+        config.get<string>('JWT_REFRESH_SECRET') ??
         config.get<string>('JWT_SECRET')!,
       passReqToCallback: true,
       ignoreExpiration: false,

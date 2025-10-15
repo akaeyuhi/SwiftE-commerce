@@ -36,6 +36,7 @@ export class ConfirmationService {
       userId,
       email,
       token: this.hashToken(token),
+      plainToken: token,
       type: ConfirmationType.ACCOUNT_VERIFICATION,
       expiresAt,
       isUsed: false,
@@ -73,6 +74,7 @@ export class ConfirmationService {
       userId,
       email,
       token: this.hashToken(token),
+      plainToken: token,
       type: confirmationType,
       expiresAt,
       isUsed: false,
@@ -108,10 +110,15 @@ export class ConfirmationService {
     }
 
     if (confirmation.isUsed) {
+      console.error(`used, Confirmation token: ${confirmation}`, confirmation);
       throw new BadRequestException('Confirmation token has already been used');
     }
 
     if (confirmation.expiresAt < new Date()) {
+      console.error(
+        `exprired, Confirmation token: ${confirmation}`,
+        confirmation
+      );
       throw new BadRequestException('Confirmation token has expired');
     }
 

@@ -9,13 +9,14 @@ import { Injectable } from '@nestjs/common';
 import { Product } from 'src/entities/store/product/product.entity';
 import { Store } from 'src/entities/store/store.entity';
 import { AnalyticsEvent, AnalyticsEventType } from 'src/entities/infrastructure/analytics/analytics-event.entity';
+import { InjectDataSource } from '@nestjs/typeorm';
 
 @EventSubscriber()
 @Injectable()
 export class AnalyticsSyncSubscriber
   implements EntitySubscriberInterface<AnalyticsEvent> {
-  constructor(private dataSource: DataSource) {
-    this.dataSource.subscribers.push(this);
+  constructor(@InjectDataSource() dataSource: DataSource) {
+    dataSource.subscribers.push(this);
   }
 
   listenTo() {

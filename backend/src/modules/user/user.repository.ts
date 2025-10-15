@@ -16,12 +16,7 @@ export class UserRepository extends BaseRepository<User> {
 
   async getUserWithPassword(email: string): Promise<User | null> {
     return this.createQueryBuilder('user')
-      .select('user.id', 'id')
-      .addSelect('user.id')
-      .addSelect('user.password')
-      .addSelect('user.username')
-      .addSelect('user.email')
-      .addSelect('user.role')
+      .addSelect('user.passwordHash')
       .where('user.email = :email', { email })
       .getOne();
   }
@@ -34,16 +29,12 @@ export class UserRepository extends BaseRepository<User> {
     if (!id) return null;
     return this.findOne({
       where: { id },
-      relations: [
-        'roles', // user_roles join rows
-        'roles.roleName', // actual Role entity
-        'roles.store', // store scope for the user role (if any)
-        'carts',
-        'orders',
-        'aiLogs',
-        // add more relations as needed, e.g. 'reviews', 'newsPosts'
-      ],
+      relations: ['roles', 'carts', 'orders', 'aiLogs'],
     });
+  }
+
+  async findOneWithRoles(id: string): Promise<User | null> {
+    return this.findOne({ where: { id }, relations: ['roles'] });
   }
 
   /** @deprecated

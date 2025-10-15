@@ -37,10 +37,6 @@ describe('Cart - Items (E2E)', () => {
     variants = await seeder.seedVariants(product, 3);
   });
 
-  afterAll(async () => {
-    await appHelper.cleanup();
-  });
-
   beforeEach(async () => {
     const response = await authHelper
       .authenticatedRequest(customer.accessToken)
@@ -48,9 +44,13 @@ describe('Cart - Items (E2E)', () => {
     cart = response.body;
   });
 
+  afterAll(async () => {
+    await appHelper.clearDatabase();
+    await appHelper.cleanup();
+  });
+
   afterEach(async () => {
-    const cartItemRepo = appHelper.getDataSource().getRepository('CartItem');
-    await cartItemRepo.clear();
+    await appHelper.clearTables(['shopping_carts', 'cart-items']);
   });
 
   describe('POST /stores/:storeId/:userId/cart/:cartId/items/add', () => {
@@ -75,8 +75,8 @@ describe('Cart - Items (E2E)', () => {
     });
 
     it('should require authentication', async () => {
-      const response = await app
-        .getHttpServer()
+      const response = await appHelper
+        .request()
         .post(
           `/stores/${store.id}/${customer.user.id}/cart/${cart.id}/items/add`
         )
@@ -236,8 +236,8 @@ describe('Cart - Items (E2E)', () => {
     });
 
     it('should require authentication', async () => {
-      const response = await app
-        .getHttpServer()
+      const response = await appHelper
+        .request()
         .put(
           `/stores/${store.id}/${customer.user.id}/cart/${cart.id}/items/${cartItem.id}`
         )
@@ -329,8 +329,8 @@ describe('Cart - Items (E2E)', () => {
     });
 
     it('should require authentication', async () => {
-      const response = await app
-        .getHttpServer()
+      const response = await appHelper
+        .request()
         .delete(
           `/stores/${store.id}/${customer.user.id}/cart/${cart.id}/items/${cartItem.id}`
         );

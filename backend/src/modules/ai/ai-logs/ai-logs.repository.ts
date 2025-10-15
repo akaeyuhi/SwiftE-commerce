@@ -3,18 +3,14 @@ import { DataSource } from 'typeorm';
 import { BaseRepository } from 'src/common/abstracts/base.repository';
 import { AiLog } from 'src/entities/ai/ai-log.entity';
 import {
-  LogQueryOptions,
-  UsageStats,
-} from 'src/common/interfaces/ai/ai-log.interface';
-import {
   DailyUsageStats,
   ErrorLogsFilterOptions,
   LogDailyUsageFilterOptions,
   LogFilterOptions,
   LogTopFeaturesFilterOptions,
   LogUsageStatsFilterOptions,
+  UsageStats,
 } from 'src/modules/ai/ai-logs/types';
-
 /**
  * AiLogsRepository with advanced querying and statistics
  */
@@ -27,21 +23,18 @@ export class AiLogsRepository extends BaseRepository<AiLog> {
   /**
    * Find logs with comprehensive filtering options
    */
-  async findByFilter(
-    filter: LogFilterOptions,
-    options: LogQueryOptions = {}
-  ): Promise<AiLog[]> {
+  async findByFilter(filter: LogFilterOptions): Promise<AiLog[]> {
     const qb = this.createQueryBuilder('l')
       .leftJoinAndSelect('l.user', 'u')
       .leftJoinAndSelect('l.store', 's')
       .orderBy('l.createdAt', 'DESC');
 
     if (filter.storeId) {
-      qb.andWhere('s.id = :storeId', { storeId: filter.storeId });
+      qb.andWhere('l.storeId = :storeId', { storeId: filter.storeId });
     }
 
     if (filter.userId) {
-      qb.andWhere('u.id = :userId', { userId: filter.userId });
+      qb.andWhere('l.userId = :userId', { userId: filter.userId });
     }
 
     if (filter.feature) {
@@ -64,12 +57,12 @@ export class AiLogsRepository extends BaseRepository<AiLog> {
       }
     }
 
-    if (options.limit) {
-      qb.limit(options.limit);
+    if (filter.limit) {
+      qb.limit(filter.limit);
     }
 
-    if (options.offset) {
-      qb.offset(options.offset);
+    if (filter.offset) {
+      qb.offset(filter.offset);
     }
 
     return qb.getMany();

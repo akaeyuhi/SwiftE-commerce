@@ -87,11 +87,11 @@ export class AiAuditService {
       };
 
       if (params.userId) {
-        payload.user = { id: params.userId };
+        payload.userId = params.userId;
       }
 
       if (params.storeId) {
-        payload.store = { id: params.storeId };
+        payload.storeId = params.storeId;
       }
 
       const saved = await this.auditRepo.createEntity(payload);

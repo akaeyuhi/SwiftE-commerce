@@ -256,14 +256,18 @@ export class ProductsService extends BaseService<
   async findProductsByCategory(
     categoryId: string,
     storeId?: string
-  ): Promise<Product[]> {
-    return this.productRepo.findProductsByCategory(categoryId, storeId);
+  ): Promise<ProductListDto[]> {
+    const result = await this.productRepo.findProductsByCategory(
+      categoryId,
+      storeId
+    );
+    return this.productsMapper.toListDtos(result);
   }
 
   private async attachCategory(
     categoryId: string,
     product: Product
-  ): Promise<Product> {
+  ): Promise<ProductDetailDto> {
     const category = await this.categoriesService.findOne(categoryId);
     if (!category) throw new NotFoundException('Category not found');
 
@@ -273,7 +277,7 @@ export class ProductsService extends BaseService<
       product.categories.push(category);
       await this.productRepo.save(product);
     }
-    return product;
+    return this.productsMapper.toDetailDto(product);
   }
 
   /**
@@ -286,13 +290,21 @@ export class ProductsService extends BaseService<
   async attachCategoryToProduct(
     productId: string,
     categoryId: string
-  ): Promise<Product> {
+  ): Promise<ProductDetailDto> {
     const product = await this.productRepo.findOne({
       where: { id: productId },
       relations: ['categories', 'store'],
     });
 
     if (!product) throw new NotFoundException('Product not found');
+
+    for (const category of product.categories) {
+      if (category.id === categoryId)
+        throw new BadRequestException(
+          `Product ${productId} already has this category`
+        );
+    }
+
     return this.attachCategory(categoryId, product);
   }
 

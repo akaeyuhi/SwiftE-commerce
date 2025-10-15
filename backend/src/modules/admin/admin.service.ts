@@ -3,50 +3,15 @@ import {
   NotFoundException,
   ConflictException,
   BadRequestException,
+  Inject,
 } from '@nestjs/common';
 import { BaseService } from 'src/common/abstracts/base.service';
 import { Admin } from 'src/entities/user/authentication/admin.entity';
 import { AdminRepository } from 'src/modules/admin/admin.repository';
 import { CreateAdminDto } from 'src/modules/admin/dto/create-admin.dto';
 import { UpdateAdminDto } from 'src/modules/admin/dto/update-admin.dto';
-import { UserService } from 'src/modules/user/user.service';
-
-export interface FormattedAdmin {
-  id: string;
-  userId: string;
-  user: {
-    id: string;
-    email: string;
-    firstName?: string;
-    lastName?: string;
-    fullName?: string;
-    isEmailVerified: boolean;
-  };
-  assignedBy?: string;
-  assignedAt?: Date;
-  revokedBy?: string;
-  revokedAt?: Date;
-  isActive: boolean;
-  createdAt: Date;
-  updatedAt?: Date;
-  metadata?: Record<string, any>;
-}
-
-export interface AdminStats {
-  total: number;
-  active: number;
-  inactive: number;
-  recentAssignments: number;
-  trends: {
-    assignmentsByMonth: Record<string, number>;
-  };
-}
-
-export interface AdminSearchResult {
-  searchQuery: string;
-  results: FormattedAdmin[];
-  count: number;
-}
+import { AdminStats, FormattedAdmin } from 'src/modules/admin/types';
+import { IUserService } from 'src/common/contracts/admin.contract';
 
 @Injectable()
 export class AdminService extends BaseService<
@@ -56,14 +21,14 @@ export class AdminService extends BaseService<
 > {
   constructor(
     private readonly adminRepo: AdminRepository,
-    private readonly userService: UserService
+    @Inject(IUserService) private readonly userService: IUserService
   ) {
     super(adminRepo);
   }
 
   async findByUserId(userId: string): Promise<Admin | null> {
     return await this.repository.findOne({
-      where: { user: { id: userId } },
+      where: { userId },
       relations: ['user'],
     });
   }
@@ -136,7 +101,7 @@ export class AdminService extends BaseService<
    */
   async getAdminHistory(userId: string): Promise<Admin[]> {
     return this.adminRepo.find({
-      where: { user: { id: userId } },
+      where: { userId },
       relations: ['user'],
       order: { createdAt: 'DESC' },
     });

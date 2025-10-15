@@ -12,6 +12,6 @@ export class GuardStoreRepository implements IStoreRepository {
   ) {}
 
   async findById(id: string): Promise<Store | null> {
-    return this.storeRepo.findOneBy({ id } as any);
+    return this.storeRepo.findOne({ where: { id }, relations: ['storeRoles'] });
   }
 }

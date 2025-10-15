@@ -7,7 +7,6 @@ import {
   Param,
   UseGuards,
   Req,
-  ValidationPipe,
   HttpStatus,
   HttpCode,
   BadRequestException,
@@ -18,8 +17,6 @@ import { AiGeneratorService } from './ai-generator.service';
 import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';
 import { AdminGuard } from 'src/modules/authorization/guards/admin.guard';
 import { StoreRolesGuard } from 'src/modules/authorization/guards/store-roles.guard';
-import { StoreRole } from 'src/common/decorators/store-role.decorator';
-import { AdminRole } from 'src/common/decorators/admin-role.decorator';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { AdminRoles } from 'src/common/enums/admin.enum';
 import { AccessPolicies } from 'src/modules/authorization/policy/policy.types';
@@ -47,12 +44,11 @@ import { AiTransform } from 'src/modules/ai/decorators/ai-transform.decorator';
  * - Rate limiting per user/store
  * - Content moderation and filtering
  */
-@Controller('ai/generator')
+@Controller('stores/:storeId/ai/generator')
 @UseGuards(JwtAuthGuard, AdminGuard, StoreRolesGuard)
 @AiTransform()
 export class AiGeneratorController {
   static accessPolicies: AccessPolicies = {
-    // Generation endpoints - store level access
     generateNames: {
       storeRoles: [StoreRoles.ADMIN, StoreRoles.MODERATOR],
     },
@@ -80,9 +76,9 @@ export class AiGeneratorController {
    */
   @Post('names')
   @HttpCode(HttpStatus.OK)
-  @StoreRole(StoreRoles.ADMIN, StoreRoles.MODERATOR)
   async generateNames(
-    @Body(ValidationPipe) dto: GenerateNamesDto,
+    @Param('storeId', new ParseUUIDPipe()) storeId: string,
+    @Body() dto: GenerateNamesDto,
     @Req() req: Request
   ) {
     try {
@@ -94,7 +90,7 @@ export class AiGeneratorController {
         count: dto.count || 6,
         options: dto.options || {},
         userId: user.id,
-        storeId: dto.storeId || user.storeId,
+        storeId: dto.storeId || storeId,
       });
 
       return {
@@ -107,7 +103,7 @@ export class AiGeneratorController {
             seed: dto.seed,
             generatedAt: new Date().toISOString(),
             userId: user.id,
-            storeId: dto.storeId || user.storeId,
+            storeId: dto.storeId || storeId,
           },
         },
       };
@@ -122,9 +118,9 @@ export class AiGeneratorController {
    */
   @Post('description')
   @HttpCode(HttpStatus.OK)
-  @StoreRole(StoreRoles.ADMIN, StoreRoles.MODERATOR)
   async generateDescription(
-    @Body(ValidationPipe) dto: GenerateDescriptionDto,
+    @Param('storeId', new ParseUUIDPipe()) storeId: string,
+    @Body() dto: GenerateDescriptionDto,
     @Req() req: Request
   ) {
     try {
@@ -137,19 +133,19 @@ export class AiGeneratorController {
           tone: dto.tone || 'professional and engaging',
           options: dto.options || {},
           userId: user.id,
-          storeId: dto.storeId || user.storeId,
+          storeId: dto.storeId || storeId,
         });
 
       return {
         success: true,
         data: {
-          description,
+          result: description,
           metadata: {
             productName: dto.name,
             tone: dto.tone || 'professional and engaging',
             generatedAt: new Date().toISOString(),
             userId: user.id,
-            storeId: dto.storeId || user.storeId,
+            storeId: dto.storeId || storeId,
           },
         },
       };
@@ -166,9 +162,9 @@ export class AiGeneratorController {
    */
   @Post('ideas')
   @HttpCode(HttpStatus.OK)
-  @StoreRole(StoreRoles.ADMIN, StoreRoles.MODERATOR)
   async generateIdeas(
-    @Body(ValidationPipe) dto: GenerateIdeasDto,
+    @Param('storeId', new ParseUUIDPipe()) storeId: string,
+    @Body() dto: GenerateIdeasDto,
     @Req() req: Request
   ) {
     try {
@@ -180,7 +176,7 @@ export class AiGeneratorController {
         count: dto.count || 6,
         options: dto.options || {},
         userId: user.id,
-        storeId: dto.storeId || user.storeId,
+        storeId: dto.storeId || storeId,
       });
 
       return {
@@ -193,7 +189,7 @@ export class AiGeneratorController {
             seed: dto.seed,
             generatedAt: new Date().toISOString(),
             userId: user.id,
-            storeId: dto.storeId || user.storeId,
+            storeId: dto.storeId || storeId,
           },
         },
       };
@@ -210,9 +206,9 @@ export class AiGeneratorController {
    */
   @Post('custom')
   @HttpCode(HttpStatus.OK)
-  @StoreRole(StoreRoles.ADMIN, StoreRoles.MODERATOR)
   async generateCustom(
-    @Body(ValidationPipe) dto: GenerateCustomDto,
+    @Param('storeId', new ParseUUIDPipe()) storeId: string,
+    @Body() dto: GenerateCustomDto,
     @Req() req: Request
   ) {
     try {
@@ -222,7 +218,7 @@ export class AiGeneratorController {
         prompt: dto.prompt,
         options: dto.options || {},
         userId: user.id,
-        storeId: dto.storeId || user.storeId,
+        storeId: dto.storeId || storeId,
       });
 
       return {
@@ -233,7 +229,7 @@ export class AiGeneratorController {
             promptLength: dto.prompt.length,
             generatedAt: new Date().toISOString(),
             userId: user.id,
-            storeId: dto.storeId || user.storeId,
+            storeId: dto.storeId || storeId,
           },
         },
       };
@@ -271,14 +267,13 @@ export class AiGeneratorController {
   }
 
   /**
-   * GET /ai/generator/stores/:storeId/usage
+   * GET /stores/:storeId/ai/generator/usage
    * Get usage statistics for a store
    */
-  @Get('stores/:storeId/usage')
-  @StoreRole(StoreRoles.ADMIN)
+  @Get('usage')
   async getUsageStats(
     @Param('storeId', ParseUUIDPipe) storeId: string,
-    @Query(ValidationPipe) query: GenerationQueryDto,
+    @Query() query: GenerationQueryDto,
     @Req() req: Request
   ) {
     try {
@@ -317,10 +312,13 @@ export class AiGeneratorController {
    * Health check for generator service
    */
   @Get('health')
-  @AdminRole(AdminRoles.ADMIN)
-  async healthCheck() {
+  async healthCheck(
+    @Param('storeId', new ParseUUIDPipe()) storeId: string,
+    @Req() req: Request
+  ) {
     try {
-      const health = await this.generatorService.healthCheck();
+      const user = this.extractUser(req);
+      const health = await this.generatorService.healthCheck(user.id, storeId);
 
       return {
         success: true,
@@ -343,14 +341,13 @@ export class AiGeneratorController {
     }
   }
 
-  private extractUser(req: Request): { id: string; storeId?: string } {
+  private extractUser(req: Request): { id: string } {
     const user = (req as any).user;
     if (!user?.id) {
       throw new BadRequestException('User context not found');
     }
     return {
       id: user.id,
-      storeId: user.storeId,
     };
   }
 }

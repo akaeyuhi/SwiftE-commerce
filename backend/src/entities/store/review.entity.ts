@@ -36,6 +36,9 @@ export class Review implements UserOwnedEntity {
   @Column({ type: 'smallint' })
   rating: number;
 
+  @Column({ type: 'text' })
+  title: string;
+
   @Column({ type: 'text', nullable: true })
   comment?: string;
 

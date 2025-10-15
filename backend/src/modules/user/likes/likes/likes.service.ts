@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {BadRequestException, Injectable, NotFoundException} from '@nestjs/common';
 import { BaseService } from 'src/common/abstracts/base.service';
 import { CreateLikeDto } from './dto/create-like.dto';
 import { Like } from 'src/entities/user/like.entity';
@@ -31,26 +31,33 @@ export class LikesService extends BaseService<
 
     if (productId) {
       const exists = await this.likesRepo.findByUserAndProduct(
-        userId,
+        userId!,
         productId
       );
-      if (exists) return exists;
+      if (exists)
+        throw new BadRequestException(
+          `You've liked product ${productId} already`
+        );
       return this.likesRepo.createEntity({
-        user: { id: userId },
-        product: { id: productId },
+        userId,
+        productId,
       });
     } else {
-      const exists = await this.likesRepo.findByUserAndStore(userId, storeId!);
-      if (exists) return exists;
+      const exists = await this.likesRepo.findByUserAndStore(userId!, storeId!);
+      if (exists)
+        throw new BadRequestException(`You've liked store ${storeId} already`);
       return this.likesRepo.createEntity({
-        user: { id: userId },
-        store: { id: storeId },
+        userId,
+        storeId,
       });
     }
   }
 
   async removeById(id: string): Promise<void> {
-    await this.likesRepo.deleteById(id);
+    const exists = await this.likesRepo.findById(id);
+    if (!exists)
+      throw new NotFoundException(`Like with id ${id} does not exist`);
+    await this.likesRepo.remove(exists);
   }
 
   async listForUser(userId: string) {

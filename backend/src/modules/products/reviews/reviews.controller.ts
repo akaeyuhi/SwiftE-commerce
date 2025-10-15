@@ -1,9 +1,11 @@
 import {
   Body,
   Controller,
+  Get,
   Param,
   ParseUUIDPipe,
   Post,
+  Put,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -19,6 +21,7 @@ import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { AccessPolicies } from 'src/modules/authorization/policy/policy.types';
 import { Request } from 'express';
 import { AdminRoles } from 'src/common/enums/admin.enum';
+import { AdminGuard } from 'src/modules/authorization/guards/admin.guard';
 
 /**
  * ReviewsController
@@ -36,7 +39,7 @@ import { AdminRoles } from 'src/common/enums/admin.enum';
  *  - accessPolicies let StoreRolesGuard decide per-route permissions.
  */
 @Controller('stores/:storeId/products/:productId/reviews')
-@UseGuards(JwtAuthGuard, StoreRolesGuard)
+@UseGuards(JwtAuthGuard, AdminGuard, StoreRolesGuard)
 export class ReviewsController extends BaseController<
   Review,
   CreateReviewDto,
@@ -44,16 +47,22 @@ export class ReviewsController extends BaseController<
   ReviewDto
 > {
   static accessPolicies: AccessPolicies = {
-    findAll: { requireAuthenticated: true, adminRole: AdminRoles.ADMIN },
-    findOne: { requireAuthenticated: true },
     createWithRelations: { requireAuthenticated: true },
     create: {
       requireAuthenticated: true,
       storeRoles: [StoreRoles.ADMIN],
-      adminRole: AdminRoles.ADMIN,
+      adminRole: undefined,
     },
-    update: { requireAuthenticated: true, storeRoles: [StoreRoles.ADMIN] },
-    remove: { requireAuthenticated: true, storeRoles: [StoreRoles.ADMIN] },
+    update: {
+      requireAuthenticated: true,
+      storeRoles: [StoreRoles.ADMIN],
+      adminRole: undefined,
+    },
+    remove: {
+      requireAuthenticated: true,
+      storeRoles: [StoreRoles.ADMIN],
+      adminRole: undefined,
+    },
   };
 
   constructor(private readonly reviewsService: ReviewsService) {
@@ -73,5 +82,20 @@ export class ReviewsController extends BaseController<
     const authorId = (req as any).user?.id;
     const enriched = { ...dto, productId };
     return this.reviewsService.createWithRelations(enriched, authorId);
+  }
+
+  @Get()
+  async findAllByProduct(
+    @Param('productId', new ParseUUIDPipe()) productId: string
+  ): Promise<Review[]> {
+    return this.reviewsService.findAllByProduct(productId);
+  }
+
+  @Put(':id')
+  async update(
+    @Param('id', new ParseUUIDPipe()) reviewId: string,
+    @Body() dto: UpdateReviewDto
+  ): Promise<Review | ReviewDto> {
+    return this.reviewsService.update(reviewId, dto);
   }
 }
