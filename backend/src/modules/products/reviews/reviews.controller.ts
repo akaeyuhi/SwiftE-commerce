@@ -20,7 +20,6 @@ import { ReviewDto } from 'src/modules/products/reviews/dto/review.dto';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { AccessPolicies } from 'src/modules/authorization/policy/policy.types';
 import { Request } from 'express';
-import { AdminRoles } from 'src/common/enums/admin.enum';
 import { AdminGuard } from 'src/modules/authorization/guards/admin.guard';
 
 /**

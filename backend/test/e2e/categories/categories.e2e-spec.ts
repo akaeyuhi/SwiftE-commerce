@@ -6,7 +6,6 @@ import { AssertionHelper } from '../helpers/assertion.helper';
 import { ProductsModule } from 'src/modules/products/products.module';
 import { StoreModule } from 'src/modules/store/store.module';
 import { UserModule } from 'src/modules/user/user.module';
-import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { AuthModule } from 'src/modules/auth/auth.module';
 
 describe('Categories (E2E)', () => {
