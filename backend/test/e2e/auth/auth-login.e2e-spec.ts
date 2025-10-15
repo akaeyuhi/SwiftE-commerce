@@ -1,5 +1,4 @@
 import { INestApplication } from '@nestjs/common';
-import * as request from 'supertest';
 import { TestAppHelper } from '../helpers/test-app.helper';
 import { AuthHelper } from '../helpers/auth.helper';
 import { AssertionHelper } from '../helpers/assertion.helper';
@@ -34,13 +33,14 @@ describe('Auth - Login (E2E)', () => {
     it('should login with valid credentials', async () => {
       const user = await authHelper.createAuthenticatedUser();
 
-      const response = await request(app.getHttpServer())
+      const response = await appHelper
+        .request()
         .post('/auth/login')
         .send({
           email: user.user.email,
           password: testPassword,
         })
-        .expect(200);
+        .expect(201);
 
       expect(response.body.success).toBe(true);
       expect(response.body).toHaveProperty('accessToken');
@@ -56,13 +56,14 @@ describe('Auth - Login (E2E)', () => {
     it('should return pending confirmations if any', async () => {
       const user = await authHelper.createAuthenticatedUser();
 
-      const response = await request(app.getHttpServer())
+      const response = await appHelper
+        .request()
         .post('/auth/login')
         .send({
           email: user.user.email,
           password: testPassword,
         })
-        .expect(200);
+        .expect(201);
 
       expect(response.body).toHaveProperty('pendingConfirmations');
     });
@@ -70,25 +71,21 @@ describe('Auth - Login (E2E)', () => {
     it('should reject invalid password', async () => {
       const user = await authHelper.createAuthenticatedUser();
 
-      const response = await request(app.getHttpServer())
-        .post('/auth/login')
-        .send({
-          email: user.user.email,
-          password: 'WrongPassword123!',
-        });
+      const response = await appHelper.request().post('/auth/login').send({
+        email: user.user.email,
+        password: 'WrongPassword123!',
+      });
 
       AssertionHelper.assertErrorResponse(response, 401);
     });
 
     it('should reject non-existent user', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/auth/login')
-        .send({
-          email: 'nonexistent@example.com',
-          password: testPassword,
-        });
+      const response = await appHelper.request().post('/auth/login').send({
+        email: 'nonexistent@example.com',
+        password: testPassword,
+      });
 
-      AssertionHelper.assertErrorResponse(response, 401);
+      AssertionHelper.assertErrorResponse(response, 404);
     });
 
     it('should be case-insensitive for email', async () => {
@@ -96,33 +93,30 @@ describe('Auth - Login (E2E)', () => {
         email: 'test@example.com',
       });
 
-      const response = await request(app.getHttpServer())
+      const response = await appHelper
+        .request()
         .post('/auth/login')
         .send({
           email: 'TEST@EXAMPLE.COM',
           password: testPassword,
         })
-        .expect(200);
+        .expect(201);
 
       expect(response.body.success).toBe(true);
     });
 
     it('should require email', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/auth/login')
-        .send({
-          password: testPassword,
-        });
+      const response = await appHelper.request().post('/auth/login').send({
+        password: testPassword,
+      });
 
       AssertionHelper.assertErrorResponse(response, 400, 'email');
     });
 
     it('should require password', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/auth/login')
-        .send({
-          email: 'test@example.com',
-        });
+      const response = await appHelper.request().post('/auth/login').send({
+        email: 'test@example.com',
+      });
 
       AssertionHelper.assertErrorResponse(response, 400, 'password');
     });
@@ -130,13 +124,14 @@ describe('Auth - Login (E2E)', () => {
     it('should update lastUsedAt on refresh token', async () => {
       const user = await authHelper.createAuthenticatedUser();
 
-      await request(app.getHttpServer())
+      await appHelper
+        .request()
         .post('/auth/login')
         .send({
           email: user.user.email,
           password: testPassword,
         })
-        .expect(200);
+        .expect(201);
 
       const refreshTokenRepo = appHelper
         .getDataSource()

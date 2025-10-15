@@ -14,9 +14,8 @@ export class Admin {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-
   @OneToOne(() => User, { onDelete: 'CASCADE' })
-  @JoinColumn()
+  @JoinColumn({ name: 'user_id', referencedColumnName: 'id' })
   user: User;
 
   @Column({ name: 'user_id' })

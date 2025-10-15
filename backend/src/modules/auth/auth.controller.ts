@@ -125,7 +125,7 @@ export class AuthController {
   async logout(
     @Req() req: Request,
     @Res() res: Response,
-    @Body() dto: RefreshDto
+    @Body() dto?: RefreshDto
   ) {
     const token = extractRefreshTokenFromReq(req) || dto?.refreshToken;
     if (token) {

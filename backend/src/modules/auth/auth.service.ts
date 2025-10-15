@@ -25,10 +25,12 @@ import {
   ConfirmationStatus,
   JwtPayload,
 } from 'src/modules/auth/types';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthService {
   constructor(
+    private configService: ConfigService,
     private userService: UserService,
     private jwtService: JwtService,
     private refreshTokenService: RefreshTokenService,
@@ -471,12 +473,19 @@ export class AuthService {
     payload: JwtPayload,
     req?: Request
   ): Promise<{ accessToken: string; refreshToken: string; csrfToken: string }> {
-    const accessToken = await this.jwtService.signAsync(payload, {
-      expiresIn: '15m',
-    });
-    const refreshToken = await this.jwtService.signAsync(payload, {
-      expiresIn: '7d',
-    });
+    const [accessToken, refreshToken] = await Promise.all([
+      this.jwtService.signAsync(payload, {
+        secret: this.configService.get<string>('JWT_SECRET'),
+        expiresIn: this.configService.get<string>('JWT_EXPIRES_IN', '15m'),
+      }),
+      this.jwtService.signAsync(payload, {
+        secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
+        expiresIn: this.configService.get<string>(
+          'JWT_REFRESH_EXPIRES_IN',
+          '7d'
+        ),
+      }),
+    ]);
 
     const csrfToken = cryptoRandomHex(16);
 

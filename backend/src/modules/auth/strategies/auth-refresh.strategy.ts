@@ -67,6 +67,12 @@ export class RefreshTokenStrategy extends PassportStrategy(
   async validate(req: Request, payload: any) {
     // Extract token raw value again (safer to reuse same logic)
     const token = this.extractTokenFromRequest(req);
+    console.log(
+      '🔍 Strategy validate - Token extracted:',
+      token ? 'YES' : 'NO'
+    );
+    console.log('🔍 Cookies:', req.cookies);
+    console.log('🔍 Body:', req.body);
     if (!token) {
       throw new UnauthorizedException('Refresh token missing');
     }

@@ -19,7 +19,17 @@ export class RefreshTokenService {
     ip?: string;
     userAgent?: string;
   }) {
+    const existingToken = await this.findByToken(payload.token);
+
+    if (existingToken) {
+      existingToken.lastUsedAt = new Date();
+      existingToken.ip = payload.ip;
+      existingToken.userAgent = payload.userAgent;
+      return await this.tokenRepository.save(existingToken);
+    }
+
     const tokenHash = this.hashToken(payload.token);
+
     const rt = new RefreshToken();
     rt.tokenHash = tokenHash;
     rt.user = { id: payload.userId } as User;

@@ -18,7 +18,7 @@ import {
   MockedMethods,
 } from 'test/unit/helpers';
 import { ConfigModule } from '@nestjs/config';
-import {IReviewsRepository} from "src/common/contracts/reviews.contract";
+import { IReviewsRepository } from 'src/common/contracts/reviews.contract';
 
 describe('AiPredictorService', () => {
   let service: AiPredictorService;

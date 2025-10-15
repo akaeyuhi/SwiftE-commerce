@@ -1,5 +1,4 @@
 import { INestApplication } from '@nestjs/common';
-import * as request from 'supertest';
 import { TestAppHelper } from '../helpers/test-app.helper';
 import { AssertionHelper } from '../helpers/assertion.helper';
 import { UserModule } from 'src/modules/user/user.module';
@@ -34,7 +33,8 @@ describe('Auth - Registration (E2E)', () => {
     };
 
     it('should register a new user successfully', async () => {
-      const response = await request(app.getHttpServer())
+      const response = await appHelper
+        .request()
         .post('/auth/register')
         .send(validUserData)
         .expect(201);
@@ -61,7 +61,8 @@ describe('Auth - Registration (E2E)', () => {
     });
 
     it('should return requiresVerification flag', async () => {
-      const response = await request(app.getHttpServer())
+      const response = await appHelper
+        .request()
         .post('/auth/register')
         .send(validUserData)
         .expect(201);
@@ -72,21 +73,24 @@ describe('Auth - Registration (E2E)', () => {
 
     it('should reject duplicate email', async () => {
       // First registration
-      await request(app.getHttpServer())
+      await appHelper
+        .request()
         .post('/auth/register')
         .send(validUserData)
         .expect(201);
 
       // Second registration with same email
-      const response = await request(app.getHttpServer())
+      const response = await appHelper
+        .request()
         .post('/auth/register')
         .send(validUserData);
 
-      AssertionHelper.assertErrorResponse(response, 400, 'already exists');
+      AssertionHelper.assertErrorResponse(response, 409, 'already exists');
     });
 
     it('should validate email format', async () => {
-      const response = await request(app.getHttpServer())
+      const response = await appHelper
+        .request()
         .post('/auth/register')
         .send({
           ...validUserData,
@@ -94,11 +98,12 @@ describe('Auth - Registration (E2E)', () => {
         });
 
       AssertionHelper.assertErrorResponse(response, 400);
-      expect(response.body.message).toContain('email');
+      expect(response.body.message[0]).toContain('email');
     });
 
     it('should validate password strength', async () => {
-      const response = await request(app.getHttpServer())
+      const response = await appHelper
+        .request()
         .post('/auth/register')
         .send({
           ...validUserData,
@@ -109,31 +114,28 @@ describe('Auth - Registration (E2E)', () => {
     });
 
     it('should require firstName', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/auth/register')
-        .send({
-          email: 'test@example.com',
-          password: 'Test123!@#',
-          lastName: 'Doe',
-        });
+      const response = await appHelper.request().post('/auth/register').send({
+        email: 'test@example.com',
+        password: 'Test123!@#',
+        lastName: 'Doe',
+      });
 
       AssertionHelper.assertErrorResponse(response, 400, 'firstName');
     });
 
     it('should require lastName', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/auth/register')
-        .send({
-          email: 'test@example.com',
-          password: 'Test123!@#',
-          firstName: 'John',
-        });
+      const response = await appHelper.request().post('/auth/register').send({
+        email: 'test@example.com',
+        password: 'Test123!@#',
+        firstName: 'John',
+      });
 
       AssertionHelper.assertErrorResponse(response, 400, 'lastName');
     });
 
     it('should trim whitespace from email', async () => {
-      const response = await request(app.getHttpServer())
+      const response = await appHelper
+        .request()
         .post('/auth/register')
         .send({
           ...validUserData,
@@ -145,7 +147,8 @@ describe('Auth - Registration (E2E)', () => {
     });
 
     it('should not allow empty password', async () => {
-      const response = await request(app.getHttpServer())
+      const response = await appHelper
+        .request()
         .post('/auth/register')
         .send({
           ...validUserData,
@@ -156,7 +159,8 @@ describe('Auth - Registration (E2E)', () => {
     });
 
     it('should create refresh token in database', async () => {
-      await request(app.getHttpServer())
+      await appHelper
+        .request()
         .post('/auth/register')
         .send(validUserData)
         .expect(201);

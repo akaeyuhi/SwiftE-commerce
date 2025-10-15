@@ -14,55 +14,7 @@ import { AnalyticsReviewsModule } from 'src/modules/analytics-reviews/analytics-
 import { UserModule } from 'src/modules/user/user.module';
 import { getQueueToken } from '@nestjs/bull';
 import * as request from 'supertest';
-
-export function listRegisteredRoutes(app: INestApplication) {
-  const server = app.getHttpServer();
-  if (!server) return [];
-
-  // Express adapter common shapes: try common locations
-  const router =
-    server._events?.request?.router ?? // some envs
-    server._router ?? // direct attach
-    server?.stack ?? // Express sometimes exposes stack on server
-    server; // fallback
-
-  const stack = (router && router.stack) || [];
-
-  const routes: Array<{ method: string; path: string }> = [];
-
-  const inspectLayer = (layer: any, prefix = '') => {
-    if (!layer) return;
-    // direct route
-    if (layer.route && layer.route.path) {
-      const methods = Object.keys(layer.route.methods || {});
-      for (const m of methods) {
-        routes.push({
-          method: m.toUpperCase(),
-          path: prefix + layer.route.path,
-        });
-      }
-    } else if (layer.name === 'router' && layer.handle && layer.handle.stack) {
-      // nested router
-      (layer.handle.stack || []).forEach((l: any) => inspectLayer(l, prefix));
-    } else if (layer.name === 'bound dispatch' && layer.regexp) {
-      // express 4.x route object - best-effort
-      const path =
-        layer.regexp && layer.regexp.fast_star ? '*' : layer.regexp?.toString();
-      routes.push({ method: '(unknown)', path: path ?? '<unknown>' });
-    } else if (layer.handle && layer.handle.stack) {
-      (layer.handle.stack || []).forEach((l: any) => inspectLayer(l, prefix));
-    }
-  };
-
-  for (const layer of stack) {
-    inspectLayer(layer, '');
-  }
-
-  // dedupe & format
-  const uniq = new Map<string, { method: string; path: string }>();
-  for (const r of routes) uniq.set(`${r.method} ${r.path}`, r);
-  return Array.from(uniq.values());
-}
+import * as cookieParser from 'cookie-parser';
 
 export class TestAppHelper {
   private module: TestingModule;
@@ -153,6 +105,8 @@ export class TestAppHelper {
 
     this.dataSource = this.module.get<DataSource>(DataSource);
 
+    this.application.use(cookieParser());
+
     await this.application.init();
 
     return this.application;
@@ -181,23 +135,19 @@ export class TestAppHelper {
     const server = this.application.getHttpServer();
 
     return {
-      get: (url: string) => request(server).get(url),
-      post: (url: string) => request(server).post(url),
-      put: (url: string) => request(server).put(url),
-      delete: (url: string) => request(server).delete(url),
-      patch: (url: string) => request(server).patch(url),
+      get: (url: string) => this.autoLog(request(server).get(url), 'GET', url),
+      post: (url: string) =>
+        this.autoLog(request(server).post(url), 'POST', url),
+      put: (url: string) => this.autoLog(request(server).put(url), 'PUT', url),
+      delete: (url: string) =>
+        this.autoLog(request(server).delete(url), 'DELETE', url),
+      patch: (url: string) =>
+        this.autoLog(request(server).patch(url), 'PATCH', url),
     };
   }
 
   getDataSource(): DataSource {
     return this.dataSource;
-  }
-
-  logRoutes(): void {
-    const routes = listRegisteredRoutes(this.application);
-    console.log('--- Registered routes (express best-effort) ---');
-    routes.forEach((r) => console.log(r.method.padEnd(8), r.path));
-    console.log('-----------------------------------------------');
   }
 
   /**
@@ -358,5 +308,91 @@ export class TestAppHelper {
         await this.application.close();
       }
     }
+  }
+
+  /**
+   * Get caller location from stack trace
+   */
+  private getCallerLocation(): string {
+    const stack = new Error().stack;
+    if (!stack) return 'unknown';
+
+    const lines = stack.split('\n');
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      if (line.includes('.e2e-spec.ts') && !line.includes('auth.helper')) {
+        const match = line.match(/\((.+\.e2e-spec\.ts):(\d+):(\d+)\)/);
+        if (match) {
+          const file = match[1].split('/').pop() || match[1].split('\\').pop();
+          const lineNum = match[2];
+          return `${file}:${lineNum}`;
+        }
+      }
+    }
+    return 'unknown';
+  }
+
+  /**
+   * Log without Jest stack traces
+   */
+  private log(message: string, isError = false) {
+    const output = isError ? process.stderr : process.stdout;
+    output.write(message + '\n');
+  }
+
+  /**
+   * Automatically log response after request completes
+   */
+  private autoLog(
+    req: request.Test,
+    method: string,
+    url: string
+  ): request.Test {
+    let requestBody: any;
+    const callerLocation = this.getCallerLocation();
+
+    // Capture request body
+    const originalSend = req.send.bind(req);
+    req.send = (data: any) => {
+      requestBody = data;
+      return originalSend(data);
+    };
+
+    // Wrap end() which is called when request completes
+    const originalEnd = req.end.bind(req);
+    req.end = (callback?: any) =>
+      originalEnd((err: any, res: any) => {
+        // Log after response is received
+        if (err || res.status >= 400) {
+          // Error or 4xx/5xx response - use stderr
+          this.log(`\n❌ ${method} ${url}`, true);
+          this.log(`📍 ${callerLocation}`, true);
+          if (requestBody) {
+            this.log(`Request: ${JSON.stringify(requestBody, null, 2)}`, true);
+          }
+          this.log(`Status: ${res?.status || 'No response'}`, true);
+          if (res?.body) {
+            this.log(`Response: ${JSON.stringify(res.body, null, 2)}`, true);
+          } else if (res?.text) {
+            this.log(`Response: ${res.text}`, true);
+          }
+        } else {
+          // Success response - use stdout
+          this.log(`\n✅ ${method} ${url}`);
+          this.log(`📍 ${callerLocation}`);
+          if (requestBody) {
+            this.log(`Request: ${JSON.stringify(requestBody, null, 2)}`);
+          }
+          this.log(`Status: ${res.status}`);
+          this.log(`Response: ${JSON.stringify(res.body, null, 2)}`);
+        }
+
+        // Call original callback
+        if (callback) {
+          callback(err, res);
+        }
+      });
+
+    return req;
   }
 }

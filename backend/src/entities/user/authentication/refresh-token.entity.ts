@@ -19,7 +19,7 @@ export class RefreshToken implements UserOwnedEntity {
   @Column({ type: 'varchar', length: 255 })
   tokenHash: string;
 
-  @ManyToOne(() => User, (u) => u.aiLogs, { onDelete: 'CASCADE' })
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
   user: User;
 
   @Column({ type: 'boolean', default: false })

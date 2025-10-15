@@ -8,7 +8,6 @@ import {
   Query,
   Req,
   UseGuards,
-  ValidationPipe,
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { Request } from 'express';
@@ -19,7 +18,6 @@ import { CreateAdminDto } from 'src/modules/admin/dto/create-admin.dto';
 import { UpdateAdminDto } from 'src/modules/admin/dto/update-admin.dto';
 import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';
 import { AdminGuard } from 'src/modules/authorization/guards/admin.guard';
-import { AdminRole } from 'src/common/decorators/admin-role.decorator';
 import { AdminRoles } from 'src/common/enums/admin.enum';
 import { AccessPolicies } from 'src/modules/authorization/policy/policy.types';
 
@@ -45,7 +43,9 @@ export class AdminController extends BaseController<
       adminRole: AdminRoles.ADMIN,
       requireAuthenticated: true,
     },
+    checkAdminStatus: { adminRole: AdminRoles.ADMIN },
     getAdminStats: { adminRole: AdminRoles.ADMIN },
+    searchAdmins: { adminRole: AdminRoles.ADMIN },
   };
 
   constructor(private readonly adminService: AdminService) {
@@ -105,11 +105,8 @@ export class AdminController extends BaseController<
    * POST /admin/assign
    */
   @Post('assign')
-  async assignAdminRole(
-    @Body(ValidationPipe) dto: CreateAdminDto,
-    @Req() req: Request
-  ) {
-    const assignedBy = (req.user as any)?.id;
+  async assignAdminRole(@Body() dto: CreateAdminDto, @Req() req: Request) {
+    const assignedBy = dto.assignedBy ?? (req.user as any)?.id;
     const result = await this.adminService.processAdminAssignment(
       dto.userId,
       assignedBy

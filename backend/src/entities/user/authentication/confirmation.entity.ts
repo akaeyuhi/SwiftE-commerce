@@ -16,7 +16,7 @@ export class Confirmation {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
+  @Column({ name: 'user_id' })
   userId: string;
 
   @Column()

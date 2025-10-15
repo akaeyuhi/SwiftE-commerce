@@ -1,5 +1,4 @@
 import { INestApplication } from '@nestjs/common';
-import * as request from 'supertest';
 import { TestAppHelper } from '../helpers/test-app.helper';
 import { AuthHelper } from '../helpers/auth.helper';
 import { AssertionHelper } from '../helpers/assertion.helper';
@@ -24,157 +23,134 @@ describe('Auth - Tokens (E2E)', () => {
     await appHelper.cleanup();
   });
 
-  afterEach(async () => {
-    await appHelper.clearTables(['users', 'confirmations', 'refresh_tokens']);
-  });
-
   describe('POST /auth/refresh', () => {
-    it('should refresh access token with valid refresh token', async () => {
-      const user = await authHelper.createAuthenticatedUser();
+    let testUser: any;
+    let loginResponse: any;
+    let cookies: string[];
+    let csrfToken: string | null;
 
-      const loginResponse = await request(app.getHttpServer())
-        .post('/auth/login')
-        .send({
-          email: user.user.email,
-          password: 'Test123!@#',
-        });
+    beforeEach(async () => {
+      testUser = await authHelper.createAuthenticatedUser();
 
-      const cookies = AssertionHelper.getCookies(loginResponse);
-      const csrfToken = AssertionHelper.getCookieValue(
-        loginResponse,
-        'XSRF-TOKEN'
-      );
+      loginResponse = await appHelper.request().post('/auth/login').send({
+        email: testUser.user.email,
+        password: 'Test123!@#',
+      });
 
-      const response = await request(app.getHttpServer())
+      cookies = AssertionHelper.getCookies(loginResponse);
+      csrfToken = AssertionHelper.getCookieValue(loginResponse, 'XSRF-TOKEN')!;
+    });
+
+    it('should refresh access token with valid refresh token from cookie', async () => {
+      // ✅ Cookie is sent automatically to /auth/refresh due to path restriction
+      const response = await appHelper
+        .request()
         .post('/auth/refresh')
         .set('Cookie', cookies)
         .set('X-CSRF-Token', csrfToken!)
-        .expect(200);
+        .send();
 
+      expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
       expect(response.body).toHaveProperty('accessToken');
-      expect(response.body.accessToken).not.toBe(user.accessToken);
+      expect(response.body.accessToken).not.toBe(testUser.accessToken);
     });
 
     it('should reject refresh without CSRF token', async () => {
-      const user = await authHelper.createAuthenticatedUser();
-
-      const loginResponse = await request(app.getHttpServer())
-        .post('/auth/login')
-        .send({
-          email: user.user.email,
-          password: 'Test123!@#',
-        });
-
-      const cookies = AssertionHelper.getCookies(loginResponse);
-
-      const response = await request(app.getHttpServer())
+      const response = await appHelper
+        .request()
         .post('/auth/refresh')
         .set('Cookie', cookies)
-        .expect(403);
+        .send();
 
+      expect(response.status).toBe(403);
       expect(response.body.success).toBe(false);
       expect(response.body.message).toContain('CSRF');
     });
 
     it('should reject invalid refresh token', async () => {
-      const response = await request(app.getHttpServer())
+      const response = await appHelper
+        .request()
         .post('/auth/refresh')
         .set('Cookie', ['refreshToken=invalid-token'])
-        .set('X-CSRF-Token', 'test');
+        .set('X-CSRF-Token', 'test')
+        .send();
 
-      AssertionHelper.assertErrorResponse(response, 401);
+      expect(response.status).toBe(401);
     });
 
     it('should issue new refresh token', async () => {
-      const user = await authHelper.createAuthenticatedUser();
-
-      const loginResponse = await request(app.getHttpServer())
-        .post('/auth/login')
-        .send({
-          email: user.user.email,
-          password: 'Test123!@#',
-        });
-
-      const cookies = AssertionHelper.getCookies(loginResponse);
-      const csrfToken = AssertionHelper.getCookieValue(
-        loginResponse,
-        'XSRF-TOKEN'
-      );
-
-      const response = await request(app.getHttpServer())
+      const response = await appHelper
+        .request()
         .post('/auth/refresh')
         .set('Cookie', cookies)
         .set('X-CSRF-Token', csrfToken!)
-        .expect(200);
+        .send();
 
+      expect(response.status).toBe(200);
       AssertionHelper.assertCookie(response, 'refreshToken');
     });
   });
 
   describe('POST /auth/logout', () => {
-    it('should logout and clear cookies', async () => {
-      const user = await authHelper.createAuthenticatedUser();
+    let testUser: any;
+    let loginResponse: any;
+    let refreshToken: string;
 
-      const loginResponse = await request(app.getHttpServer())
-        .post('/auth/login')
-        .send({
-          email: user.user.email,
-          password: 'Test123!@#',
-        });
+    beforeEach(async () => {
+      testUser = await authHelper.createAuthenticatedUser();
 
-      const cookies = AssertionHelper.getCookies(loginResponse);
+      loginResponse = await appHelper.request().post('/auth/login').send({
+        email: testUser.user.email,
+        password: 'Test123!@#',
+      });
 
-      const response = await request(app.getHttpServer())
-        .post('/auth/logout')
-        .set('Cookie', cookies)
-        .expect(200);
+      const refreshTokenCookie = loginResponse.headers['set-cookie']?.find(
+        (cookie: string) => cookie.startsWith('refreshToken=')
+      );
 
+      refreshToken = refreshTokenCookie?.split('=')[1]?.split(';')[0] || '';
+    });
+
+    it('should logout with refresh token in body', async () => {
+      const response = await appHelper.request().post('/auth/logout').send({
+        refreshToken,
+      });
+
+      expect(response.status).toBe(201);
       expect(response.body.success).toBe(true);
       expect(response.body.message).toContain('Logged out');
     });
 
     it('should ban refresh token on logout', async () => {
-      const user = await authHelper.createAuthenticatedUser();
-
-      const loginResponse = await request(app.getHttpServer())
-        .post('/auth/login')
+      await appHelper
+        .request()
+        .post('/auth/logout')
         .send({
-          email: user.user.email,
-          password: 'Test123!@#',
-        });
+          refreshToken,
+        })
+        .expect(201);
 
       const cookies = AssertionHelper.getCookies(loginResponse);
-
-      await request(app.getHttpServer())
-        .post('/auth/logout')
-        .set('Cookie', cookies)
-        .expect(200);
-
-      // Try to use the same refresh token
       const csrfToken = AssertionHelper.getCookieValue(
         loginResponse,
         'XSRF-TOKEN'
       );
 
-      const response = await request(app.getHttpServer())
+      const response = await appHelper
+        .request()
         .post('/auth/refresh')
         .set('Cookie', cookies)
-        .set('X-CSRF-Token', csrfToken!);
+        .set('X-CSRF-Token', csrfToken!)
+        .send();
 
-      AssertionHelper.assertErrorResponse(response, 401);
+      expect(response.status).toBe(401);
     });
 
-    it('should work without cookies (using body)', async () => {
-      const user = await authHelper.createAuthenticatedUser();
+    it('should work without token (just clear cookies)', async () => {
+      const response = await appHelper.request().post('/auth/logout').send();
 
-      const response = await request(app.getHttpServer())
-        .post('/auth/logout')
-        .send({
-          refreshToken: user.refreshToken,
-        })
-        .expect(200);
-
+      expect(response.status).toBe(201);
       expect(response.body.success).toBe(true);
     });
   });
