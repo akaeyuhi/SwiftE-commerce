@@ -3,7 +3,8 @@ import {
   IsOptional,
   IsUUID,
   MinLength,
-  MaxLength, IsArray,
+  MaxLength,
+  IsArray,
 } from 'class-validator';
 
 /**
