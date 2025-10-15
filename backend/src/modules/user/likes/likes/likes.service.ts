@@ -1,4 +1,8 @@
-import {BadRequestException, Injectable, NotFoundException} from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { BaseService } from 'src/common/abstracts/base.service';
 import { CreateLikeDto } from './dto/create-like.dto';
 import { Like } from 'src/entities/user/like.entity';
