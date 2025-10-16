@@ -64,13 +64,15 @@ export class Product implements StoreOwnedEntity {
   @Column({ type: 'int', default: 0 })
   viewCount: number;
 
-  @OneToMany(() => ProductVariant, (variant) => variant.product)
+  @OneToMany(() => ProductVariant, (variant) => variant.product, {
+    cascade: true,
+  })
   variants: ProductVariant[];
 
-  @OneToMany(() => ProductPhoto, (photo) => photo.product)
+  @OneToMany(() => ProductPhoto, (photo) => photo.product, { cascade: true })
   photos: ProductPhoto[];
 
-  @OneToMany(() => Review, (review) => review.product)
+  @OneToMany(() => Review, (review) => review.product, { cascade: true })
   reviews: Review[];
 
   @CreateDateColumn()

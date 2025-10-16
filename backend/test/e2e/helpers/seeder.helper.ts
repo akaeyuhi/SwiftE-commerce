@@ -318,7 +318,7 @@ export class SeederHelper {
       // Create inventory for this variant
       const inventory = inventoryRepo.create({
         variantId: savedVariant.id,
-        storeId: product.store.id,
+        storeId: product.storeId,
         quantity: Math.floor(Math.random() * 100 + 50), // Random stock between 50-150
         lastRestockedAt: new Date(),
       });

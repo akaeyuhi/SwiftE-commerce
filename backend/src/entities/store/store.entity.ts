@@ -58,27 +58,27 @@ export class Store implements UserOwnedEntity {
   updatedAt: Date;
 
   // Relations
-  @OneToMany(() => Product, (product) => product.store)
+  @OneToMany(() => Product, (product) => product.store, { cascade: true })
   products: Product[];
 
-  @OneToMany(() => Inventory, (inventory) => inventory.store)
+  @OneToMany(() => Inventory, (inventory) => inventory.store, { cascade: true })
   inventories: Inventory[];
 
-  @OneToMany(() => Order, (order) => order.store)
+  @OneToMany(() => Order, (order) => order.store, { cascade: true })
   orders: Order[];
 
-  @OneToMany(() => Category, (category) => category.store)
+  @OneToMany(() => Category, (category) => category.store, { cascade: true })
   categories: Category[];
 
-  @OneToMany(() => ShoppingCart, (cart) => cart.store)
+  @OneToMany(() => ShoppingCart, (cart) => cart.store, { cascade: true })
   carts: ShoppingCart[];
 
-  @OneToMany(() => NewsPost, (post) => post.store)
+  @OneToMany(() => NewsPost, (post) => post.store, { cascade: true })
   newsPosts: NewsPost[];
 
-  @OneToMany(() => AiLog, (log) => log.store)
+  @OneToMany(() => AiLog, (log) => log.store, { cascade: true })
   aiLogs: AiLog[];
 
-  @OneToMany(() => StoreRole, (userRole) => userRole.store)
+  @OneToMany(() => StoreRole, (userRole) => userRole.store, { cascade: true })
   storeRoles: StoreRole[];
 }

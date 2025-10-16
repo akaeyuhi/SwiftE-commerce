@@ -46,12 +46,12 @@ export class CartItemService extends BaseService<
       throw new BadRequestException('quantity must be >= 1');
 
     const partial: any = {
-      cart: { id: dto.cartId },
-      variant: { id: dto.variantId },
+      cartId: dto.cartId,
+      variantId: dto.variantId,
       quantity: dto.quantity,
     };
 
-    return await this.repository.createEntity(partial);
+    return await this.itemRepo.createEntity(partial);
   }
 
   /**
@@ -77,8 +77,8 @@ export class CartItemService extends BaseService<
     }
 
     return this.itemRepo.createEntity({
-      cart: { id: cartId },
-      variant: { id: variantId },
+      cartId,
+      variantId,
       quantity,
     });
   }

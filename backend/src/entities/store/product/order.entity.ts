@@ -53,7 +53,7 @@ export class Order implements UserOwnedEntity, StoreOwnedEntity {
   @Column(() => OrderInfo, { prefix: 'billing_' })
   billing?: OrderInfo;
 
-  @OneToMany(() => OrderItem, (item) => item.order)
+  @OneToMany(() => OrderItem, (item) => item.order, { cascade: true })
   items: OrderItem[];
 
   @CreateDateColumn()

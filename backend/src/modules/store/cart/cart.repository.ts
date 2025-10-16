@@ -29,7 +29,7 @@ export class CartRepository extends BaseRepository<ShoppingCart> {
         user: { id: userId },
         store: { id: storeId },
       },
-      relations: ['store', 'items', 'items.variant'],
+      relations: ['user', 'store', 'items', 'items.variant'],
     });
   }
 

@@ -6,6 +6,7 @@ import { UpdateCartDto } from 'src/modules/store/cart/dto/update-cart.dto';
 import { CartRepository } from 'src/modules/store/cart/cart.repository';
 import { CartItemService } from 'src/modules/store/cart/cart-item/cart-item.service';
 import { CartItem } from 'src/entities/store/cart/cart-item.entity';
+import { CartItemDto } from 'src/modules/store/cart/cart-item/dto/cart-item.dto';
 
 /**
  * CartService
@@ -58,11 +59,10 @@ export class CartService extends BaseService<
     userId: string,
     storeId: string
   ): Promise<ShoppingCart | null> {
-    return this.cartRepo.findByUserAndStore(userId, storeId);
+    return await this.cartRepo.findByUserAndStore(userId, storeId);
   }
 
   /**
-   * @deprecated
    * Add (or increment) an item in user's cart for a specific store.
    *
    * Behavior:
@@ -71,24 +71,25 @@ export class CartService extends BaseService<
    *
    * @param userId - uuid of the user
    * @param storeId - uuid of the store
-   * @param variantId - uuid of product variant to add
-   * @param quantity - positive integer (default 1)
+   * @param dto
    * @returns created or updated CartItem
    */
   async addItemToUserCart(
     userId: string,
     storeId: string,
-    variantId: string,
-    quantity = 1
+    dto: CartItemDto
   ): Promise<CartItem> {
-    if (quantity <= 0) throw new BadRequestException('Quantity must be > 0');
+    if (dto.quantity <= 0)
+      throw new BadRequestException('Quantity must be > 0');
 
     const cart = await this.getOrCreateCart(userId, storeId);
-    return this.cartItemService.addOrIncrement({
+    const item = await this.cartItemService.addOrIncrement({
       cartId: cart.id,
-      variantId,
-      quantity,
+      variantId: dto.variantId,
+      quantity: dto.quantity,
     });
+    await this.addToCart(cart, item);
+    return item;
   }
 
   /**
@@ -140,7 +141,15 @@ export class CartService extends BaseService<
    * @param userId - uuid of the user
    * @returns array of ShoppingCart (with store and items relations loaded by repository)
    */
-  async getUserMergedCarts(userId: string): Promise<ShoppingCart[]> {
-    return this.cartRepo.findAllByUser(userId);
+  async getUserMergedCarts(
+    userId: string
+  ): Promise<{ userId: string; result: ShoppingCart[] }> {
+    const result = await this.cartRepo.findAllByUser(userId);
+    return { userId, result };
+  }
+
+  async addToCart(cart: ShoppingCart, item: CartItem) {
+    cart.items.push(item);
+    return this.cartRepo.save(cart);
   }
 }

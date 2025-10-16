@@ -66,27 +66,27 @@ export class User implements BaseEntity {
 
   // Relations
 
-  @OneToMany(() => Store, (store) => store.owner)
+  @OneToMany(() => Store, (store) => store.owner, { cascade: true })
   ownedStores: Store[];
 
-  @OneToMany(() => StoreRole, (sr) => sr.user)
+  @OneToMany(() => StoreRole, (sr) => sr.user, { cascade: true })
   roles: StoreRole[];
 
-  @OneToMany(() => ShoppingCart, (cart) => cart.user)
+  @OneToMany(() => ShoppingCart, (cart) => cart.user, { cascade: true })
   carts: ShoppingCart[];
 
-  @OneToMany(() => Order, (order) => order.user)
+  @OneToMany(() => Order, (order) => order.user, { cascade: true })
   orders: Order[];
 
-  @OneToMany(() => Review, (review) => review.user)
+  @OneToMany(() => Review, (review) => review.user, { cascade: true })
   reviews: Review[];
 
-  @OneToMany(() => NewsPost, (post) => post.author)
+  @OneToMany(() => NewsPost, (post) => post.author, { cascade: true })
   newsPosts: NewsPost[];
 
-  @OneToMany(() => AiLog, (log) => log.user)
+  @OneToMany(() => AiLog, (log) => log.user, { cascade: true })
   aiLogs: AiLog[];
 
-  @OneToMany(() => Like, (like) => like.user)
+  @OneToMany(() => Like, (like) => like.user, { cascade: true })
   likes: Like[];
 }

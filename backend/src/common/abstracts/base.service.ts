@@ -143,6 +143,8 @@ export abstract class BaseService<
    * @throws NotFoundException when no row was deleted
    */
   async remove(id: string): Promise<void> {
+    const exists = await this.findOne(id);
+    if (!exists) throw new NotFoundException(`Entity with id ${id} not found`);
     const res = await this.repository.delete(id);
     if (res.affected === 0)
       throw new NotFoundException(`Entity with id ${id} not found`);

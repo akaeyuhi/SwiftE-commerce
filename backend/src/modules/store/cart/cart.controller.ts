@@ -7,6 +7,10 @@ import {
   Param,
   ParseUUIDPipe,
   UseInterceptors,
+  Body,
+  NotFoundException,
+  Req,
+  ForbiddenException,
 } from '@nestjs/common';
 import { CartService } from 'src/modules/store/cart/cart.service';
 import { CreateCartDto } from 'src/modules/store/cart/dto/create-cart.dto';
@@ -18,6 +22,13 @@ import { StoreRolesGuard } from 'src/modules/authorization/guards/store-roles.gu
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { AccessPolicies } from 'src/modules/authorization/policy/policy.types';
 import { RecordEventInterceptor } from 'src/modules/infrastructure/interceptors/record-event/record-event.interceptor';
+import { AdminGuard } from 'src/modules/authorization/guards/admin.guard';
+import { RecordEvent } from 'src/common/decorators/record-event.decorator';
+import { AnalyticsEventType } from 'src/entities/infrastructure/analytics/analytics-event.entity';
+import { CartItemDto } from 'src/modules/store/cart/cart-item/dto/cart-item.dto';
+import { CartItem } from 'src/entities/store/cart/cart-item.entity';
+import { EntityOwnerGuard } from 'src/modules/authorization/guards/entity-owner.guard';
+import { EntityOwner } from 'src/common/decorators/entity-owner.decorator';
 
 /**
  * CartController
@@ -28,7 +39,7 @@ import { RecordEventInterceptor } from 'src/modules/infrastructure/interceptors/
  *
  */
 @Controller('stores/:storeId/:userId/cart')
-@UseGuards(JwtAuthGuard, StoreRolesGuard)
+@UseGuards(JwtAuthGuard, AdminGuard, StoreRolesGuard, EntityOwnerGuard)
 @UseInterceptors(RecordEventInterceptor)
 export class CartController extends BaseController<
   ShoppingCart,
@@ -52,10 +63,39 @@ export class CartController extends BaseController<
     getOrCreateCart: { requireAuthenticated: true },
     getUserMergedCarts: { requireAuthenticated: true },
     clearCart: { requireAuthenticated: true, storeRoles: [StoreRoles.ADMIN] },
+    removeCart: { requireAuthenticated: true, storeRoles: [StoreRoles.ADMIN] },
   };
 
   constructor(private readonly cartService: CartService) {
     super(cartService);
+  }
+
+  /**
+   * Add an item to the user's cart (create or increment).
+   *
+   * Body: { cartId, variantId, quantity }
+   *
+   * @param storeId - UUID of the store
+   * @param userId - UUID of the user
+   * @param dto - CartItemDto containing cartId, variantId, quantity
+   * @returns created or updated CartItem
+   */
+  @Post(':cartId/add-item')
+  @RecordEvent({
+    eventType: AnalyticsEventType.ADD_TO_CART,
+    productId: 'body.productId',
+    storeId: 'params.storeId',
+    userId: 'params.userId',
+    value: 'body.quantity',
+    when: 'after',
+  })
+  @EntityOwner({ serviceToken: CartService, idParam: 'cartId' })
+  async addOrIncrement(
+    @Param('storeId', new ParseUUIDPipe()) storeId: string,
+    @Param('userId', new ParseUUIDPipe()) userId: string,
+    @Body() dto: CartItemDto
+  ): Promise<CartItem> {
+    return this.cartService.addItemToUserCart(userId, storeId, dto);
   }
 
   /**
@@ -65,14 +105,22 @@ export class CartController extends BaseController<
    *
    * @param storeId - UUID of the store
    * @param userId - UUID of the user
+   * @param req
    * @returns the ShoppingCart for the (user, store)
    */
   @Get('user-cart')
   async findOneByUserAndStore(
     @Param('storeId', new ParseUUIDPipe()) storeId: string,
-    @Param('userId', new ParseUUIDPipe()) userId: string
+    @Param('userId', new ParseUUIDPipe()) userId: string,
+    @Req() req: Request
   ): Promise<ShoppingCart | null> {
-    return this.cartService.getCartByUserAndStore(userId, storeId);
+    const currentUser = (req as any).user;
+    if (!currentUser.isAdmin || currentUser.id !== userId) {
+      throw new ForbiddenException(`You can't view other people carts`);
+    }
+    const cart = await this.cartService.getCartByUserAndStore(userId, storeId);
+    if (!cart) throw new NotFoundException(`Such cart doesn't exists`);
+    return cart;
   }
 
   /**
@@ -139,7 +187,7 @@ export class CartController extends BaseController<
   async getUserMergedCarts(
     @Param('storeId', new ParseUUIDPipe()) _storeId: string,
     @Param('userId', new ParseUUIDPipe()) userId: string
-  ): Promise<ShoppingCart[]> {
+  ): Promise<{ userId: string; result: ShoppingCart[] }> {
     return this.cartService.getUserMergedCarts(userId);
   }
 }

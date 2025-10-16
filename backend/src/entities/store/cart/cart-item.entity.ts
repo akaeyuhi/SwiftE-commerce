@@ -5,7 +5,7 @@ import {
   ManyToOne,
   CreateDateColumn,
   UpdateDateColumn,
-  Index,
+  Index, OneToOne, JoinColumn,
 } from 'typeorm';
 import { ShoppingCart } from 'src/entities/store/cart/cart.entity';
 import { ProductVariant } from 'src/entities/store/product/variant.entity';
@@ -27,7 +27,8 @@ export class CartItem implements BaseEntity {
   @Column({ name: 'variant_id' })
   variantId: string;
 
-  @ManyToOne(() => ProductVariant, { onDelete: 'CASCADE' })
+  @OneToOne(() => ProductVariant, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'variant_id', referencedColumnName: 'id' })
   variant: ProductVariant;
 
   @Column({ type: 'int', default: 1 })

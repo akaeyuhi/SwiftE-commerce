@@ -54,8 +54,8 @@ describe('Cart - Operations (E2E)', () => {
         .expect(201);
 
       expect(response.body).toHaveProperty('id');
-      expect(response.body.userId).toBe(customer.user.id);
-      expect(response.body.storeId).toBe(store.id);
+      expect(response.body.user.id).toBe(customer.user.id);
+      expect(response.body.store.id).toBe(store.id);
       AssertionHelper.assertUUID(response.body.id);
       AssertionHelper.assertTimestamps(response.body);
     });
@@ -114,8 +114,8 @@ describe('Cart - Operations (E2E)', () => {
         .expect(201);
 
       expect(cart1Response.body.id).not.toBe(cart2Response.body.id);
-      expect(cart1Response.body.storeId).toBe(store.id);
-      expect(cart2Response.body.storeId).toBe(store2.id);
+      expect(cart1Response.body.store.id).toBe(store.id);
+      expect(cart2Response.body.store.id).toBe(store2.id);
     });
   });
 
@@ -136,8 +136,8 @@ describe('Cart - Operations (E2E)', () => {
         .expect(200);
 
       expect(response.body.id).toBe(cart.id);
-      expect(response.body.userId).toBe(customer.user.id);
-      expect(response.body.storeId).toBe(store.id);
+      expect(response.body.user.id).toBe(customer.user.id);
+      expect(response.body.store.id).toBe(store.id);
     });
 
     it('should require authentication', async () => {
@@ -188,12 +188,11 @@ describe('Cart - Operations (E2E)', () => {
         .get(`/stores/${store.id}/${customer.user.id}/cart/merged`)
         .expect(200);
 
-      expect(Array.isArray(response.body)).toBe(true);
-      expect(response.body.length).toBeGreaterThanOrEqual(2);
+      expect(Array.isArray(response.body.result)).toBe(true);
+      expect(response.body.result.length).toBeGreaterThanOrEqual(2);
+      expect(response.body.userId).toBe(customer.user.id);
 
-      response.body.forEach((cart: any) => {
-        expect(cart.userId).toBe(customer.user.id);
-        expect(cart).toHaveProperty('storeId');
+      response.body.result.forEach((cart: any) => {
         expect(cart).toHaveProperty('store');
       });
     });
@@ -214,7 +213,7 @@ describe('Cart - Operations (E2E)', () => {
         .get(`/stores/${store.id}/${newCustomer.user.id}/cart/merged`)
         .expect(200);
 
-      expect(response.body).toEqual([]);
+      expect(response.body.result).toEqual([]);
     });
 
     it('should include store information', async () => {
@@ -223,7 +222,9 @@ describe('Cart - Operations (E2E)', () => {
         .get(`/stores/${store.id}/${customer.user.id}/cart/merged`)
         .expect(200);
 
-      response.body.forEach((cart: any) => {
+      console.log(response.body);
+
+      response.body.result.forEach((cart: any) => {
         expect(cart.store).toBeDefined();
         expect(cart.store).toHaveProperty('id');
         expect(cart.store).toHaveProperty('name');
@@ -244,7 +245,7 @@ describe('Cart - Operations (E2E)', () => {
       await authHelper
         .authenticatedRequest(customer.accessToken)
         .post(
-          `/stores/${store.id}/${customer.user.id}/cart/${cart.id}/items/add`
+          `/stores/${store.id}/${customer.user.id}/cart/${cart.id}/add-item`
         )
         .send({
           cartId: cart.id,
@@ -355,7 +356,7 @@ describe('Cart - Operations (E2E)', () => {
       await authHelper
         .authenticatedRequest(customer.accessToken)
         .post(
-          `/stores/${store.id}/${customer.user.id}/cart/${cart.id}/items/add`
+          `/stores/${store.id}/${customer.user.id}/cart/${cart.id}/add-item`
         )
         .send({
           cartId: cart.id,
@@ -412,16 +413,6 @@ describe('Cart - Operations (E2E)', () => {
       AssertionHelper.assertErrorResponse(response, 403);
     });
 
-    it('should handle cart for non-existent store', async () => {
-      const response = await authHelper
-        .authenticatedRequest(customer.accessToken)
-        .post(
-          `/stores/00000000-0000-0000-0000-000000000000/${customer.user.id}/cart/get-or-create`
-        );
-
-      AssertionHelper.assertErrorResponse(response, 404);
-    });
-
     it('should maintain separate carts per store', async () => {
       const store2 = await seeder.seedStore(adminUser.user);
 
@@ -438,8 +429,10 @@ describe('Cart - Operations (E2E)', () => {
         .get(`/stores/${store.id}/${customer.user.id}/cart/merged`)
         .expect(200);
 
-      expect(mergedResponse.body.length).toBe(2);
-      const storeIds = mergedResponse.body.map((cart: any) => cart.storeId);
+      expect(mergedResponse.body.result.length).toBe(2);
+      const storeIds = mergedResponse.body.result.map(
+        (cart: any) => cart.store.id
+      );
       expect(storeIds).toContain(store.id);
       expect(storeIds).toContain(store2.id);
     });

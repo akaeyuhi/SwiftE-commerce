@@ -21,3 +21,9 @@ export class CartItemDto {
   @Min(1)
   quantity: number = 1;
 }
+
+export class UpdateCartItemQuantityDto {
+  @IsInt()
+  @Min(1)
+  quantity: number = 1;
+}
