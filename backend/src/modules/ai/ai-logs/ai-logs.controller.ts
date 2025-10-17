@@ -95,27 +95,23 @@ export class AiLogsController {
     @Body() dto: CreateAiLogDto,
     @Req() req: Request
   ) {
-    try {
-      const user = req.user as any;
+    const user = req.user as any;
 
-      const log = await this.logsService.record({
-        userId: dto.userId || user.id,
-        storeId: storeId ?? dto.storeId,
-        feature: dto.feature,
-        prompt: dto.prompt,
-        details: dto.details,
-      });
+    const log = await this.logsService.record({
+      userId: dto.userId || user.id,
+      storeId: storeId ?? dto.storeId,
+      feature: dto.feature,
+      prompt: dto.prompt,
+      details: dto.details,
+    });
 
-      return {
-        success: true,
-        data: {
-          logId: log.id,
-          createdAt: log.createdAt,
-        },
-      };
-    } catch (error) {
-      throw new BadRequestException(`Failed to create log: ${error.message}`);
-    }
+    return {
+      success: true,
+      data: {
+        logId: log.id,
+        createdAt: log.createdAt,
+      },
+    };
   }
 
   /**
@@ -128,39 +124,31 @@ export class AiLogsController {
     @Query() query: LogQueryDto,
     @Req() req: Request
   ) {
-    try {
-      // Apply security filters based on user permissions
-      const filters = this.buildSecurityFilters(req, query, storeId);
+    // Apply security filters based on user permissions
+    const filters = this.buildSecurityFilters(req, query, storeId);
 
-      console.log(filters, query);
+    const logs = await this.logsService.findByFilter({
+      ...filters,
+      limit: query.limit || 100,
+      offset: query.offset || 0,
+      dateFrom: query.dateFrom ? new Date(query.dateFrom) : undefined,
+      dateTo: query.dateTo ? new Date(query.dateTo) : undefined,
+      feature: query.feature,
+      hasDetails: query.hasDetails,
+    });
 
-      const logs = await this.logsService.findByFilter({
-        ...filters,
-        limit: query.limit || 100,
-        offset: query.offset || 0,
-        dateFrom: query.dateFrom ? new Date(query.dateFrom) : undefined,
-        dateTo: query.dateTo ? new Date(query.dateTo) : undefined,
-        feature: query.feature,
-        hasDetails: query.hasDetails,
-      });
-
-      return {
-        success: true,
-        data: {
-          logs,
-          metadata: {
-            count: logs.length,
-            filters,
-            retrievedAt: new Date().toISOString(),
-            userId: filters.userId,
-          },
+    return {
+      success: true,
+      data: {
+        logs,
+        metadata: {
+          count: logs.length,
+          filters,
+          retrievedAt: new Date().toISOString(),
+          userId: filters.userId,
         },
-      };
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to retrieve logs: ${error.message}`
-      );
-    }
+      },
+    };
   }
 
   /**
@@ -173,35 +161,29 @@ export class AiLogsController {
     @Query() query: UsageStatsQueryDto,
     @Req() req: Request
   ) {
-    try {
-      const filters = this.buildSecurityFilters(req, query, storeId);
+    const filters = this.buildSecurityFilters(req, query, storeId);
 
-      const stats = await this.logsService.getUsageStats({
-        ...filters,
-        dateFrom: query.dateFrom ? new Date(query.dateFrom) : undefined,
-        dateTo: query.dateTo ? new Date(query.dateTo) : undefined,
-      });
+    const stats = await this.logsService.getUsageStats({
+      ...filters,
+      dateFrom: query.dateFrom ? new Date(query.dateFrom) : undefined,
+      dateTo: query.dateTo ? new Date(query.dateTo) : undefined,
+    });
 
-      return {
-        success: true,
-        data: {
-          stats,
-          metadata: {
-            period: {
-              from: query.dateFrom,
-              to: query.dateTo,
-            },
-            filters,
-            generatedAt: new Date().toISOString(),
-            userId: filters.userId,
+    return {
+      success: true,
+      data: {
+        stats,
+        metadata: {
+          period: {
+            from: query.dateFrom,
+            to: query.dateTo,
           },
+          filters,
+          generatedAt: new Date().toISOString(),
+          userId: filters.userId,
         },
-      };
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get usage stats: ${error.message}`
-      );
-    }
+      },
+    };
   }
 
   /**
@@ -214,31 +196,25 @@ export class AiLogsController {
     @Query() query: UsageStatsQueryDto,
     @Req() req: Request
   ) {
-    try {
-      const filters = this.buildSecurityFilters(req, query, storeId);
+    const filters = this.buildSecurityFilters(req, query, storeId);
 
-      const topFeatures = await this.logsService.getTopFeatures(query.limit, {
-        ...filters,
-        dateFrom: query.dateFrom ? new Date(query.dateFrom) : undefined,
-        dateTo: query.dateTo ? new Date(query.dateTo) : undefined,
-      });
+    const topFeatures = await this.logsService.getTopFeatures(query.limit, {
+      ...filters,
+      dateFrom: query.dateFrom ? new Date(query.dateFrom) : undefined,
+      dateTo: query.dateTo ? new Date(query.dateTo) : undefined,
+    });
 
-      return {
-        success: true,
-        data: {
-          features: topFeatures,
-          metadata: {
-            limit: query.limit,
-            generatedAt: new Date().toISOString(),
-            userId: filters.userId,
-          },
+    return {
+      success: true,
+      data: {
+        features: topFeatures,
+        metadata: {
+          limit: query.limit,
+          generatedAt: new Date().toISOString(),
+          userId: filters.userId,
         },
-      };
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get top features: ${error.message}`
-      );
-    }
+      },
+    };
   }
 
   /**
@@ -251,30 +227,24 @@ export class AiLogsController {
     @Query() query: UsageStatsQueryDto,
     @Req() req: Request
   ) {
-    try {
-      const filters = this.buildSecurityFilters(req, query, storeId);
+    const filters = this.buildSecurityFilters(req, query, storeId);
 
-      const dailyUsage = await this.logsService.getDailyUsage(
-        query.days,
-        filters
-      );
+    const dailyUsage = await this.logsService.getDailyUsage(
+      query.days,
+      filters
+    );
 
-      return {
-        success: true,
-        data: {
-          dailyUsage,
-          metadata: {
-            days: query.days,
-            generatedAt: new Date().toISOString(),
-            userId: filters.userId,
-          },
+    return {
+      success: true,
+      data: {
+        dailyUsage,
+        metadata: {
+          days: query.days,
+          generatedAt: new Date().toISOString(),
+          userId: filters.userId,
         },
-      };
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get daily usage: ${error.message}`
-      );
-    }
+      },
+    };
   }
 
   /**
@@ -287,32 +257,26 @@ export class AiLogsController {
     @Query() query: UsageStatsQueryDto,
     @Req() req: Request
   ) {
-    try {
-      const filters = this.buildSecurityFilters(req, query, storeId);
+    const filters = this.buildSecurityFilters(req, query, storeId);
 
-      const errorLogs = await this.logsService.getErrorLogs(query.limit, {
-        ...filters,
-        dateFrom: query.dateFrom ? new Date(query.dateFrom) : undefined,
-        dateTo: query.dateTo ? new Date(query.dateTo) : undefined,
-      });
+    const errorLogs = await this.logsService.getErrorLogs(query.limit, {
+      ...filters,
+      dateFrom: query.dateFrom ? new Date(query.dateFrom) : undefined,
+      dateTo: query.dateTo ? new Date(query.dateTo) : undefined,
+    });
 
-      return {
-        success: true,
-        data: {
-          errorLogs,
-          metadata: {
-            count: errorLogs.length,
-            limit: query.limit,
-            generatedAt: new Date().toISOString(),
-            userId: filters.userId,
-          },
+    return {
+      success: true,
+      data: {
+        errorLogs,
+        metadata: {
+          count: errorLogs.length,
+          limit: query.limit,
+          generatedAt: new Date().toISOString(),
+          userId: filters.userId,
         },
-      };
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get error logs: ${error.message}`
-      );
-    }
+      },
+    };
   }
 
   /**
@@ -325,27 +289,21 @@ export class AiLogsController {
     @Query() query: UsageStatsQueryDto,
     @Req() req: Request
   ) {
-    try {
-      const filters = this.buildSecurityFilters(req, query, storeId);
+    const filters = this.buildSecurityFilters(req, query, storeId);
 
-      const trends = await this.logsService.getUsageTrends(query.days, filters);
+    const trends = await this.logsService.getUsageTrends(query.days, filters);
 
-      return {
-        success: true,
-        data: {
-          trends,
-          metadata: {
-            period: query.days,
-            generatedAt: new Date().toISOString(),
-            userId: filters.userId,
-          },
+    return {
+      success: true,
+      data: {
+        trends,
+        metadata: {
+          period: query.days,
+          generatedAt: new Date().toISOString(),
+          userId: filters.userId,
         },
-      };
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get usage trends: ${error.message}`
-      );
-    }
+      },
+    };
   }
 
   /**
@@ -385,22 +343,18 @@ export class AiLogsController {
   @Post('cleanup')
   @HttpCode(HttpStatus.OK)
   async cleanupLogs(@Body() dto: CleanupLogsDto) {
-    try {
-      const result = await this.logsService.cleanup(
-        dto.retentionDays || 30,
-        dto.dryRun || false
-      );
+    const result = await this.logsService.cleanup(
+      dto.retentionDays || 30,
+      dto.dryRun || false
+    );
 
-      return {
-        success: true,
-        data: {
-          ...result,
-          cleanupAt: new Date().toISOString(),
-        },
-      };
-    } catch (error) {
-      throw new BadRequestException(`Cleanup failed: ${error.message}`);
-    }
+    return {
+      success: true,
+      data: {
+        ...result,
+        cleanupAt: new Date().toISOString(),
+      },
+    };
   }
 
   private extractUser(req: Request): { id: string; isSiteAdmin: boolean } {

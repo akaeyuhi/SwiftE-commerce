@@ -4,7 +4,6 @@ import {
   Get,
   Body,
   UseGuards,
-  BadRequestException,
   Param,
 } from '@nestjs/common';
 import { EmailService } from './email.service';
@@ -58,26 +57,20 @@ export class EmailController {
   @Post('user-confirmation')
   @AdminRole(AdminRoles.ADMIN)
   async sendUserConfirmation(@Body() dto: SendUserConfirmationDto) {
-    try {
-      const jobId = await this.emailQueueService.sendUserConfirmation(
-        dto.userEmail,
-        dto.userName,
-        dto.confirmationUrl,
-        dto.storeName
-      );
+    const jobId = await this.emailQueueService.sendUserConfirmation(
+      dto.userEmail,
+      dto.userName,
+      dto.confirmationUrl,
+      dto.storeName
+    );
 
-      return {
-        success: true,
-        data: {
-          jobId,
-          scheduledAt: new Date().toISOString(),
-        },
-      };
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to schedule confirmation email: ${error.message}`
-      );
-    }
+    return {
+      success: true,
+      data: {
+        jobId,
+        scheduledAt: new Date().toISOString(),
+      },
+    };
   }
 
   /**
@@ -87,26 +80,20 @@ export class EmailController {
   @Post('welcome')
   @AdminRole(AdminRoles.ADMIN)
   async sendWelcomeEmail(@Body() dto: SendWelcomeEmailDto) {
-    try {
-      const jobId = await this.emailQueueService.sendWelcomeEmail(
-        dto.userEmail,
-        dto.userName,
-        dto.storeUrl,
-        dto.storeName
-      );
+    const jobId = await this.emailQueueService.sendWelcomeEmail(
+      dto.userEmail,
+      dto.userName,
+      dto.storeUrl,
+      dto.storeName
+    );
 
-      return {
-        success: true,
-        data: {
-          jobId,
-          scheduledAt: new Date().toISOString(),
-        },
-      };
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to schedule welcome email: ${error.message}`
-      );
-    }
+    return {
+      success: true,
+      data: {
+        jobId,
+        scheduledAt: new Date().toISOString(),
+      },
+    };
   }
 
   /**
@@ -119,25 +106,19 @@ export class EmailController {
     @Param('storeId') storeId: string,
     @Body() dto: SendStockAlertDto
   ) {
-    try {
-      const jobId = await this.emailQueueService.sendStockAlert(
-        dto.userEmail,
-        dto.userName,
-        dto.productData
-      );
+    const jobId = await this.emailQueueService.sendStockAlert(
+      dto.userEmail,
+      dto.userName,
+      dto.productData
+    );
 
-      return {
-        success: true,
-        data: {
-          jobId,
-          scheduledAt: new Date().toISOString(),
-        },
-      };
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to schedule stock alert: ${error.message}`
-      );
-    }
+    return {
+      success: true,
+      data: {
+        jobId,
+        scheduledAt: new Date().toISOString(),
+      },
+    };
   }
 
   /**
@@ -150,26 +131,20 @@ export class EmailController {
     @Param('storeId') storeId: string,
     @Body() dto: SendLowStockWarningDto
   ) {
-    try {
-      const jobId = await this.emailQueueService.sendLowStockWarning(
-        dto.storeOwnerEmail,
-        dto.storeOwnerName,
-        dto.productData,
-        dto.manageInventoryUrl
-      );
+    const jobId = await this.emailQueueService.sendLowStockWarning(
+      dto.storeOwnerEmail,
+      dto.storeOwnerName,
+      dto.productData,
+      dto.manageInventoryUrl
+    );
 
-      return {
-        success: true,
-        data: {
-          jobId,
-          scheduledAt: new Date().toISOString(),
-        },
-      };
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to schedule low stock warning: ${error.message}`
-      );
-    }
+    return {
+      success: true,
+      data: {
+        jobId,
+        scheduledAt: new Date().toISOString(),
+      },
+    };
   }
 
   /**
@@ -212,21 +187,15 @@ export class EmailController {
   @Get('queue/stats')
   @AdminRole(AdminRoles.ADMIN)
   async getQueueStats() {
-    try {
-      const stats = await this.emailQueueService.getStats();
+    const stats = await this.emailQueueService.getStats();
 
-      return {
-        success: true,
-        data: {
-          queue: 'email',
-          stats,
-          retrievedAt: new Date().toISOString(),
-        },
-      };
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get queue stats: ${error.message}`
-      );
-    }
+    return {
+      success: true,
+      data: {
+        queue: 'email',
+        stats,
+        retrievedAt: new Date().toISOString(),
+      },
+    };
   }
 }

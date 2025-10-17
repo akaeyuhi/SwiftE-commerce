@@ -79,31 +79,25 @@ export class AiPredictorController {
     @Query(ValidationPipe) query: BuildFeatureVectorDto,
     @Req() req: Request
   ) {
-    try {
-      const user = this.extractUser(req);
+    const user = this.extractUser(req);
 
-      const features = await this.predictorService.buildFeatureVector(
+    const features = await this.predictorService.buildFeatureVector(
+      productId,
+      query.storeId
+    );
+
+    return {
+      success: true,
+      data: {
         productId,
-        query.storeId
-      );
-
-      return {
-        success: true,
-        data: {
-          productId,
-          storeId: query.storeId || null,
-          features,
-          metadata: {
-            generatedAt: new Date().toISOString(),
-            userId: user.id,
-          },
+        storeId: query.storeId || null,
+        features,
+        metadata: {
+          generatedAt: new Date().toISOString(),
+          userId: user.id,
         },
-      };
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to build feature vector: ${error.message}`
-      );
-    }
+      },
+    };
   }
 
   /**
@@ -116,59 +110,45 @@ export class AiPredictorController {
     @Body(ValidationPipe) dto: SinglePredictDto,
     @Req() req: Request
   ) {
-    try {
-      const user = this.extractUser(req);
+    const user = this.extractUser(req);
 
-      let items: any[];
+    let items: any[];
 
-      if (dto.productId) {
-        items = [
-          {
-            productId: dto.productId,
-            storeId: dto.storeId,
-            features: dto.features,
-          },
-        ];
-      } else if (dto.features) {
-        items = [
-          {
-            features: dto.features,
-            storeId: dto.storeId,
-          },
-        ];
-      } else {
-        throw new BadRequestException(
-          'Either productId or features must be provided'
-        );
-      }
-
-      const results = await this.predictorService.predictBatch(items);
-      const prediction = results[0];
-
-      if (!prediction) {
-        throw new NotFoundException('No prediction generated');
-      }
-
-      return {
-        success: true,
-        data: {
-          prediction,
-          metadata: {
-            modelVersion: dto.modelVersion,
-            processedAt: new Date().toISOString(),
-            userId: user.id,
-          },
+    if (dto.productId) {
+      items = [
+        {
+          productId: dto.productId,
+          storeId: dto.storeId,
+          features: dto.features,
         },
-      };
-    } catch (error) {
-      if (
-        error instanceof BadRequestException ||
-        error instanceof NotFoundException
-      ) {
-        throw error;
-      }
-      throw new BadRequestException(`Prediction failed: ${error.message}`);
+      ];
+    } else if (dto.features) {
+      items = [
+        {
+          features: dto.features,
+          storeId: dto.storeId,
+        },
+      ];
+    } else items = [];
+
+    const results = await this.predictorService.predictBatch(items);
+    const prediction = results[0];
+
+    if (!prediction) {
+      throw new NotFoundException('No prediction generated');
     }
+
+    return {
+      success: true,
+      data: {
+        prediction,
+        metadata: {
+          modelVersion: dto.modelVersion,
+          processedAt: new Date().toISOString(),
+          userId: user.id,
+        },
+      },
+    };
   }
 
   /**
@@ -178,60 +158,56 @@ export class AiPredictorController {
   @Post('predict/batch')
   @HttpCode(HttpStatus.OK)
   async predictBatch(
-    @Body(ValidationPipe) dto: BatchPredictDto,
-    @Req() req: Request
+    @Body(ValidationPipe)
+    dto: BatchPredictDto,
+    @Req()
+    req: Request
   ) {
-    try {
-      const user = this.extractUser(req);
+    const user = this.extractUser(req);
 
-      if (!dto.items?.length) {
-        return { success: true, data: { results: [], metadata: { count: 0 } } };
-      }
+    if (!dto.items?.length) {
+      return { success: true, data: { results: [], metadata: { count: 0 } } };
+    }
 
-      if (dto.items.length > 1000) {
-        throw new BadRequestException(
-          'Cannot process more than 1000 items in a single batch'
-        );
-      }
-
-      let results;
-
-      if (dto.persist) {
-        // Persist predictions to database
-        const persisted = await this.predictorService.predictBatchAndPersist(
-          dto.items,
-          dto.modelVersion
-        );
-
-        results = persisted.map((p) => ({
-          predictorStatId: p.predictorStat?.id,
-          prediction: p.prediction,
-          success: true,
-        }));
-      } else {
-        // Just return predictions without persistence
-        results = await this.predictorService.predictBatch(dto.items);
-      }
-
-      return {
-        success: true,
-        data: {
-          results,
-          metadata: {
-            totalItems: dto.items.length,
-            processedItems: results.length,
-            persisted: dto.persist || false,
-            modelVersion: dto.modelVersion,
-            processedAt: new Date().toISOString(),
-            userId: user.id,
-          },
-        },
-      };
-    } catch (error) {
+    if (dto.items.length > 1000) {
       throw new BadRequestException(
-        `Batch prediction failed: ${error.message}`
+        'Cannot process more than 1000 items in a single batch'
       );
     }
+
+    let results;
+
+    if (dto.persist) {
+      // Persist predictions to database
+      const persisted = await this.predictorService.predictBatchAndPersist(
+        dto.items,
+        dto.modelVersion
+      );
+
+      results = persisted.map((p) => ({
+        predictorStatId: p.predictorStat?.id,
+        prediction: p.prediction,
+        success: true,
+      }));
+    } else {
+      // Just return predictions without persistence
+      results = await this.predictorService.predictBatch(dto.items);
+    }
+
+    return {
+      success: true,
+      data: {
+        results,
+        metadata: {
+          totalItems: dto.items.length,
+          processedItems: results.length,
+          persisted: dto.persist || false,
+          modelVersion: dto.modelVersion,
+          processedAt: new Date().toISOString(),
+          userId: user.id,
+        },
+      },
+    };
   }
 
   /**
@@ -240,40 +216,34 @@ export class AiPredictorController {
    */
   @Get('stores/:storeId/trending')
   async getTrendingProducts(
-    @Param('storeId', ParseUUIDPipe) storeId: string,
-    @Query(ValidationPipe) query: TrendingQueryDto,
-    @Req() req: Request
+    @Param('storeId', ParseUUIDPipe)
+    storeId: string,
+    @Query(ValidationPipe)
+    query: TrendingQueryDto,
+    @Req()
+    req: Request
   ) {
-    try {
-      const user = this.extractUser(req);
+    const user = this.extractUser(req);
 
-      const trending = await this.predictorService.getTrendingProducts(
+    const trending = await this.predictorService.getTrendingProducts(storeId, {
+      limit: query.limit || 10,
+      timeframe: query.timeframe || 'week',
+      minScore: query.minScore || 0.6,
+    });
+
+    return {
+      success: true,
+      data: {
         storeId,
-        {
-          limit: query.limit || 10,
+        trending,
+        metadata: {
           timeframe: query.timeframe || 'week',
           minScore: query.minScore || 0.6,
-        }
-      );
-
-      return {
-        success: true,
-        data: {
-          storeId,
-          trending,
-          metadata: {
-            timeframe: query.timeframe || 'week',
-            minScore: query.minScore || 0.6,
-            generatedAt: new Date().toISOString(),
-            userId: user.id,
-          },
+          generatedAt: new Date().toISOString(),
+          userId: user.id,
         },
-      };
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get trending products: ${error.message}`
-      );
-    }
+      },
+    };
   }
 
   /**
@@ -282,40 +252,37 @@ export class AiPredictorController {
    */
   @Get('stores/:storeId/stats')
   async getPredictionStats(
-    @Param('storeId', ParseUUIDPipe) storeId: string,
-    @Query(ValidationPipe) query: PredictionQueryDto,
-    @Req() req: Request
+    @Param('storeId', ParseUUIDPipe)
+    storeId: string,
+    @Query(ValidationPipe)
+    query: PredictionQueryDto,
+    @Req()
+    req: Request
   ) {
-    try {
-      const user = this.extractUser(req);
+    const user = this.extractUser(req);
 
-      const stats = await this.predictorService.getPredictionStats({
+    const stats = await this.predictorService.getPredictionStats({
+      storeId,
+      dateFrom: query.dateFrom ? new Date(query.dateFrom) : undefined,
+      dateTo: query.dateTo ? new Date(query.dateTo) : undefined,
+      modelVersion: query.modelVersion,
+    });
+
+    return {
+      success: true,
+      data: {
         storeId,
-        dateFrom: query.dateFrom ? new Date(query.dateFrom) : undefined,
-        dateTo: query.dateTo ? new Date(query.dateTo) : undefined,
-        modelVersion: query.modelVersion,
-      });
-
-      return {
-        success: true,
-        data: {
-          storeId,
-          stats,
-          metadata: {
-            period: {
-              from: query.dateFrom,
-              to: query.dateTo,
-            },
-            generatedAt: new Date().toISOString(),
-            userId: user.id,
+        stats,
+        metadata: {
+          period: {
+            from: query.dateFrom,
+            to: query.dateTo,
           },
+          generatedAt: new Date().toISOString(),
+          userId: user.id,
         },
-      };
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get prediction stats: ${error.message}`
-      );
-    }
+      },
+    };
   }
 
   /**
@@ -355,35 +322,34 @@ export class AiPredictorController {
    */
   @Get('models/comparison')
   @AdminRole(AdminRoles.ADMIN)
-  async getModelComparison(@Query(ValidationPipe) query: PredictionQueryDto) {
-    try {
-      // This would be implemented in the repository
-      const comparison = await this.predictorService.getPredictionStats({
-        dateFrom: query.dateFrom ? new Date(query.dateFrom) : undefined,
-        dateTo: query.dateTo ? new Date(query.dateTo) : undefined,
-      });
+  async getModelComparison(
+    @Query(ValidationPipe)
+    query: PredictionQueryDto
+  ) {
+    const comparison = await this.predictorService.getPredictionStats({
+      dateFrom: query.dateFrom ? new Date(query.dateFrom) : undefined,
+      dateTo: query.dateTo ? new Date(query.dateTo) : undefined,
+    });
 
-      return {
-        success: true,
-        data: {
-          comparison,
-          metadata: {
-            period: {
-              from: query.dateFrom,
-              to: query.dateTo,
-            },
-            generatedAt: new Date().toISOString(),
+    return {
+      success: true,
+      data: {
+        comparison,
+        metadata: {
+          period: {
+            from: query.dateFrom,
+            to: query.dateTo,
           },
+          generatedAt: new Date().toISOString(),
         },
-      };
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get model comparison: ${error.message}`
-      );
-    }
+      },
+    };
   }
 
-  private extractUser(req: Request): { id: string; storeId?: string } {
+  private extractUser(req: Request): {
+    id: string;
+    storeId?: string;
+  } {
     const user = (req as any).user;
     if (!user?.id) {
       throw new BadRequestException('User context not found');

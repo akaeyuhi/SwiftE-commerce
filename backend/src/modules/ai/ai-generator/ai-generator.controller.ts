@@ -81,35 +81,31 @@ export class AiGeneratorController {
     @Body() dto: GenerateNamesDto,
     @Req() req: Request
   ) {
-    try {
-      const user = this.extractUser(req);
+    const user = this.extractUser(req);
 
-      const names = await this.generatorService.generateProductNames({
-        storeStyle: dto.storeStyle,
-        seed: dto.seed,
-        count: dto.count || 6,
-        options: dto.options || {},
-        userId: user.id,
-        storeId: dto.storeId || storeId,
-      });
+    const names = await this.generatorService.generateProductNames({
+      storeStyle: dto.storeStyle,
+      seed: dto.seed,
+      count: dto.count || 6,
+      options: dto.options || {},
+      userId: user.id,
+      storeId: dto.storeId || storeId,
+    });
 
-      return {
-        success: true,
-        data: {
-          names,
-          metadata: {
-            count: names.length,
-            storeStyle: dto.storeStyle,
-            seed: dto.seed,
-            generatedAt: new Date().toISOString(),
-            userId: user.id,
-            storeId: dto.storeId || storeId,
-          },
+    return {
+      success: true,
+      data: {
+        names,
+        metadata: {
+          count: names.length,
+          storeStyle: dto.storeStyle,
+          seed: dto.seed,
+          generatedAt: new Date().toISOString(),
+          userId: user.id,
+          storeId: dto.storeId || storeId,
         },
-      };
-    } catch (error) {
-      throw new BadRequestException(`Name generation failed: ${error.message}`);
-    }
+      },
+    };
   }
 
   /**
@@ -123,37 +119,30 @@ export class AiGeneratorController {
     @Body() dto: GenerateDescriptionDto,
     @Req() req: Request
   ) {
-    try {
-      const user = this.extractUser(req);
+    const user = this.extractUser(req);
 
-      const description =
-        await this.generatorService.generateProductDescription({
-          name: dto.name,
-          productSpec: dto.productSpec,
+    const description = await this.generatorService.generateProductDescription({
+      name: dto.name,
+      productSpec: dto.productSpec,
+      tone: dto.tone || 'professional and engaging',
+      options: dto.options || {},
+      userId: user.id,
+      storeId: dto.storeId || storeId,
+    });
+
+    return {
+      success: true,
+      data: {
+        result: description,
+        metadata: {
+          productName: dto.name,
           tone: dto.tone || 'professional and engaging',
-          options: dto.options || {},
+          generatedAt: new Date().toISOString(),
           userId: user.id,
           storeId: dto.storeId || storeId,
-        });
-
-      return {
-        success: true,
-        data: {
-          result: description,
-          metadata: {
-            productName: dto.name,
-            tone: dto.tone || 'professional and engaging',
-            generatedAt: new Date().toISOString(),
-            userId: user.id,
-            storeId: dto.storeId || storeId,
-          },
         },
-      };
-    } catch (error) {
-      throw new BadRequestException(
-        `Description generation failed: ${error.message}`
-      );
-    }
+      },
+    };
   }
 
   /**
@@ -167,37 +156,31 @@ export class AiGeneratorController {
     @Body() dto: GenerateIdeasDto,
     @Req() req: Request
   ) {
-    try {
-      const user = this.extractUser(req);
+    const user = this.extractUser(req);
 
-      const ideas = await this.generatorService.generateProductIdeas({
-        storeStyle: dto.storeStyle,
-        seed: dto.seed,
-        count: dto.count || 6,
-        options: dto.options || {},
-        userId: user.id,
-        storeId: dto.storeId || storeId,
-      });
+    const ideas = await this.generatorService.generateProductIdeas({
+      storeStyle: dto.storeStyle,
+      seed: dto.seed,
+      count: dto.count || 6,
+      options: dto.options || {},
+      userId: user.id,
+      storeId: dto.storeId || storeId,
+    });
 
-      return {
-        success: true,
-        data: {
-          ideas,
-          metadata: {
-            count: ideas.length,
-            storeStyle: dto.storeStyle,
-            seed: dto.seed,
-            generatedAt: new Date().toISOString(),
-            userId: user.id,
-            storeId: dto.storeId || storeId,
-          },
+    return {
+      success: true,
+      data: {
+        ideas,
+        metadata: {
+          count: ideas.length,
+          storeStyle: dto.storeStyle,
+          seed: dto.seed,
+          generatedAt: new Date().toISOString(),
+          userId: user.id,
+          storeId: dto.storeId || storeId,
         },
-      };
-    } catch (error) {
-      throw new BadRequestException(
-        `Ideas generation failed: ${error.message}`
-      );
-    }
+      },
+    };
   }
 
   /**
@@ -211,33 +194,27 @@ export class AiGeneratorController {
     @Body() dto: GenerateCustomDto,
     @Req() req: Request
   ) {
-    try {
-      const user = this.extractUser(req);
+    const user = this.extractUser(req);
 
-      const result = await this.generatorService.generateCustom({
-        prompt: dto.prompt,
-        options: dto.options || {},
-        userId: user.id,
-        storeId: dto.storeId || storeId,
-      });
+    const result = await this.generatorService.generateCustom({
+      prompt: dto.prompt,
+      options: dto.options || {},
+      userId: user.id,
+      storeId: dto.storeId || storeId,
+    });
 
-      return {
-        success: true,
-        data: {
-          result,
-          metadata: {
-            promptLength: dto.prompt.length,
-            generatedAt: new Date().toISOString(),
-            userId: user.id,
-            storeId: dto.storeId || storeId,
-          },
+    return {
+      success: true,
+      data: {
+        result,
+        metadata: {
+          promptLength: dto.prompt.length,
+          generatedAt: new Date().toISOString(),
+          userId: user.id,
+          storeId: dto.storeId || storeId,
         },
-      };
-    } catch (error) {
-      throw new BadRequestException(
-        `Custom generation failed: ${error.message}`
-      );
-    }
+      },
+    };
   }
 
   /**
@@ -246,24 +223,18 @@ export class AiGeneratorController {
    */
   @Get('types')
   async getGenerationTypes() {
-    try {
-      const types = this.generatorService.getGenerationTypes();
+    const types = this.generatorService.getGenerationTypes();
 
-      return {
-        success: true,
-        data: {
-          types,
-          metadata: {
-            count: types.length,
-            retrievedAt: new Date().toISOString(),
-          },
+    return {
+      success: true,
+      data: {
+        types,
+        metadata: {
+          count: types.length,
+          retrievedAt: new Date().toISOString(),
         },
-      };
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get generation types: ${error.message}`
-      );
-    }
+      },
+    };
   }
 
   /**
@@ -276,35 +247,29 @@ export class AiGeneratorController {
     @Query() query: GenerationQueryDto,
     @Req() req: Request
   ) {
-    try {
-      const user = this.extractUser(req);
+    const user = this.extractUser(req);
 
-      const stats = await this.generatorService.getUsageStats({
+    const stats = await this.generatorService.getUsageStats({
+      storeId,
+      dateFrom: query.dateFrom ? new Date(query.dateFrom) : undefined,
+      dateTo: query.dateTo ? new Date(query.dateTo) : undefined,
+    });
+
+    return {
+      success: true,
+      data: {
         storeId,
-        dateFrom: query.dateFrom ? new Date(query.dateFrom) : undefined,
-        dateTo: query.dateTo ? new Date(query.dateTo) : undefined,
-      });
-
-      return {
-        success: true,
-        data: {
-          storeId,
-          stats,
-          metadata: {
-            period: {
-              from: query.dateFrom,
-              to: query.dateTo,
-            },
-            generatedAt: new Date().toISOString(),
-            userId: user.id,
+        stats,
+        metadata: {
+          period: {
+            from: query.dateFrom,
+            to: query.dateTo,
           },
+          generatedAt: new Date().toISOString(),
+          userId: user.id,
         },
-      };
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get usage stats: ${error.message}`
-      );
-    }
+      },
+    };
   }
 
   /**
