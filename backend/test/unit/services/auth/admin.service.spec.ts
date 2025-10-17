@@ -609,7 +609,7 @@ describe('AdminService', () => {
       it('should create a new admin', async () => {
         const createDto: CreateAdminDto = {
           userId: 'user3',
-          assignedByUser: 'super-admin',
+          assignedBy: 'super-admin',
           isActive: true,
         };
         const createdAdmin = {

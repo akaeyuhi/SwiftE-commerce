@@ -331,7 +331,7 @@ describe('UserController', () => {
         roleName: StoreRoles.ADMIN,
         storeId: 's1',
       };
-      service.revokeStoreRole!.mockResolvedValue(undefined);
+      service.revokeStoreRole!.mockResolvedValue(undefined as any);
 
       const res = await controller.revokeStoreRole('u1', roleDto);
 

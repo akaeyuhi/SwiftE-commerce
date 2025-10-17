@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { Product } from 'src/entities/store/product/product.entity';
 import { BaseRepository } from 'src/common/abstracts/base.repository';
-import {AnalyticsEventType} from "src/entities/infrastructure/analytics/analytics-event.entity";
+import { AnalyticsEventType } from 'src/entities/infrastructure/analytics/analytics-event.entity';
 
 @Injectable()
 export class ProductRankingRepository extends BaseRepository<Product> {

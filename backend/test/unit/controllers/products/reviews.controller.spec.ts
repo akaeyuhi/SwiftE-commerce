@@ -31,7 +31,12 @@ describe('ReviewsController', () => {
     createdAt: new Date(),
     updatedAt: new Date(),
   } as Review;
-  const dto: CreateReviewDto = { productId: 'p1', rating: 5, comment: 'C' };
+  const dto: CreateReviewDto = {
+    title: 'title',
+    productId: 'p1',
+    rating: 5,
+    comment: 'C',
+  };
 
   beforeEach(async () => {
     svc = createServiceMock<ReviewsService>([

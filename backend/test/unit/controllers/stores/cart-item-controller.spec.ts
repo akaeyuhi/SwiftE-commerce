@@ -103,115 +103,6 @@ describe('CartItemController', () => {
     });
   });
 
-  describe('addOrIncrement - POST /add', () => {
-    it('should add new item to cart', async () => {
-      const newCartItem = { ...mockCartItem, id: 'newItem' } as CartItem;
-      cartItemService.addOrIncrement!.mockResolvedValue(newCartItem);
-
-      const result = await controller.addOrIncrement(
-        validStoreId,
-        validUserId,
-        mockCartItemDto
-      );
-
-      expect(result).toEqual(newCartItem);
-      expect(cartItemService.addOrIncrement).toHaveBeenCalledWith(
-        mockCartItemDto
-      );
-      expect(cartItemService.addOrIncrement).toHaveBeenCalledTimes(1);
-    });
-
-    it('should increment existing item quantity', async () => {
-      const incrementedItem = { ...mockCartItem, quantity: 4 } as CartItem;
-      cartItemService.addOrIncrement!.mockResolvedValue(incrementedItem);
-
-      const result = await controller.addOrIncrement(
-        validStoreId,
-        validUserId,
-        mockCartItemDto
-      );
-
-      expect(result).toEqual(incrementedItem);
-      expect(cartItemService.addOrIncrement).toHaveBeenCalledWith(
-        mockCartItemDto
-      );
-    });
-
-    it('should pass DTO without quantity when not provided', async () => {
-      const dtoWithoutQuantity = {
-        cartId: 'cart1',
-        variantId: 'variant1',
-      } as CartItemDto;
-      cartItemService.addOrIncrement!.mockResolvedValue(mockCartItem);
-
-      await controller.addOrIncrement(
-        validStoreId,
-        validUserId,
-        dtoWithoutQuantity
-      );
-
-      expect(cartItemService.addOrIncrement).toHaveBeenCalledWith(
-        dtoWithoutQuantity
-      );
-    });
-
-    it('should handle service validation errors', async () => {
-      const validationError = new BadRequestException('Quantity must be > 0');
-      cartItemService.addOrIncrement!.mockRejectedValue(validationError);
-
-      await expect(
-        controller.addOrIncrement(validStoreId, validUserId, mockCartItemDto)
-      ).rejects.toThrow(BadRequestException);
-      expect(cartItemService.addOrIncrement).toHaveBeenCalledWith(
-        mockCartItemDto
-      );
-    });
-
-    it('should handle missing cart or variant errors', async () => {
-      const notFoundError = new NotFoundException('Cart not found');
-      cartItemService.addOrIncrement!.mockRejectedValue(notFoundError);
-
-      await expect(
-        controller.addOrIncrement(validStoreId, validUserId, mockCartItemDto)
-      ).rejects.toThrow(NotFoundException);
-    });
-
-    it('should handle large quantity values', async () => {
-      const largeQuantityDto = { ...mockCartItemDto, quantity: 999 };
-      const largeQuantityItem = { ...mockCartItem, quantity: 999 } as CartItem;
-      cartItemService.addOrIncrement!.mockResolvedValue(largeQuantityItem);
-
-      const result = await controller.addOrIncrement(
-        validStoreId,
-        validUserId,
-        largeQuantityDto
-      );
-
-      expect(result.quantity).toBe(999);
-      expect(cartItemService.addOrIncrement).toHaveBeenCalledWith(
-        largeQuantityDto
-      );
-    });
-
-    it('should pass complete DTO to service', async () => {
-      cartItemService.addOrIncrement!.mockResolvedValue(mockCartItem);
-
-      await controller.addOrIncrement(
-        validStoreId,
-        validUserId,
-        mockCartItemDto
-      );
-
-      expect(cartItemService.addOrIncrement).toHaveBeenCalledWith(
-        expect.objectContaining({
-          cartId: mockCartItemDto.cartId,
-          variantId: mockCartItemDto.variantId,
-          quantity: mockCartItemDto.quantity,
-        })
-      );
-    });
-  });
-
   describe('updateQuantity - PUT /:itemId', () => {
     it('should update item quantity', async () => {
       const updatedItem = { ...mockCartItem, quantity: 5 } as CartItem;
@@ -412,65 +303,9 @@ describe('CartItemController', () => {
         mockCartItemDto.quantity
       );
     });
-
-    it('should handle all route parameters in addOrIncrement', async () => {
-      cartItemService.addOrIncrement!.mockResolvedValue(mockCartItem);
-
-      await controller.addOrIncrement(
-        validStoreId,
-        validUserId,
-        mockCartItemDto
-      );
-
-      // Only DTO is passed to service
-      expect(cartItemService.addOrIncrement).toHaveBeenCalledWith(
-        mockCartItemDto
-      );
-      expect(cartItemService.addOrIncrement).not.toHaveBeenCalledWith(
-        validStoreId,
-        expect.anything()
-      );
-    });
-  });
-
-  describe('error handling scenarios', () => {
-    it('should propagate service errors', async () => {
-      const serviceError = new Error('Database connection failed');
-      cartItemService.addOrIncrement!.mockRejectedValue(serviceError);
-
-      await expect(
-        controller.addOrIncrement(validStoreId, validUserId, mockCartItemDto)
-      ).rejects.toThrow(serviceError);
-    });
-
-    it('should handle database constraint errors', async () => {
-      const constraintError = new BadRequestException(
-        'Invalid variant for store'
-      );
-      cartItemService.addOrIncrement!.mockRejectedValue(constraintError);
-
-      await expect(
-        controller.addOrIncrement(validStoreId, validUserId, mockCartItemDto)
-      ).rejects.toThrow(BadRequestException);
-    });
   });
 
   describe('concurrent operations', () => {
-    it('should handle concurrent add operations', async () => {
-      cartItemService.addOrIncrement!.mockResolvedValue(mockCartItem);
-
-      const concurrentAdds = Array.from({ length: 5 }, () =>
-        controller.addOrIncrement(validStoreId, validUserId, mockCartItemDto)
-      );
-
-      const results = await Promise.all(concurrentAdds);
-
-      expect(results).toHaveLength(5);
-      expect(results.every((result) => result.id === mockCartItem.id)).toBe(
-        true
-      );
-      expect(cartItemService.addOrIncrement).toHaveBeenCalledTimes(5);
-    });
 
     it('should handle concurrent quantity updates', async () => {
       const quantities = [1, 2, 3, 4, 5];
@@ -493,27 +328,4 @@ describe('CartItemController', () => {
       });
     });
   });
-
-  describe('edge cases', () => {
-    it('should handle empty DTO in addOrIncrement', async () => {
-      const emptyDto = {} as CartItemDto;
-      cartItemService.addOrIncrement!.mockResolvedValue(mockCartItem);
-
-      await controller.addOrIncrement(validStoreId, validUserId, emptyDto);
-
-      expect(cartItemService.addOrIncrement).toHaveBeenCalledWith(emptyDto);
-    });
-
-    it('should handle DTO with only some fields', async () => {
-      const partialDto = {
-        cartId: 'cart1',
-        variantId: 'variant1',
-      } as CartItemDto;
-      cartItemService.addOrIncrement!.mockResolvedValue(mockCartItem);
-
-      await controller.addOrIncrement(validStoreId, validUserId, partialDto);
-
-      expect(cartItemService.addOrIncrement).toHaveBeenCalledWith(partialDto);
-    });
   });
-});

@@ -6,7 +6,7 @@ import { RefreshTokenStrategy } from 'src/modules/auth/strategies/auth-refresh.s
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RefreshToken } from 'src/entities/user/authentication/refresh-token.entity';
 import { RefreshTokenModule } from 'src/modules/auth/refresh-token/refresh-token.module';
-import {ConfigModule, ConfigService} from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { RefreshTokenService } from 'src/modules/auth/refresh-token/refresh-token.service';

@@ -364,11 +364,11 @@ describe('UserService', () => {
         true as unknown as DeleteResult
       );
 
-      await service.revokeStoreRole('u1', 'sr1', 's1');
+      await service.revokeStoreRole('u1', StoreRoles.ADMIN, 's1');
 
       expect(userRepo.removeRoleFromUser).toHaveBeenCalledWith(
         'u1',
-        'sr1',
+        StoreRoles.ADMIN,
         's1'
       );
     });

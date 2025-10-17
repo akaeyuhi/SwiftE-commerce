@@ -157,7 +157,7 @@ describe('AiGeneratorController', () => {
       const result = await controller.generateDescription(dto, mockRequest);
 
       expect(result.success).toBe(true);
-      expect(result.data.description).toBe(description);
+      expect(result.data.result.description).toBe(description);
       expect(result.data.metadata.productName).toBe('Wireless Headphones');
     });
 

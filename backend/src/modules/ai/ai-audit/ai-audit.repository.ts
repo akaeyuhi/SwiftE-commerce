@@ -6,7 +6,11 @@ import {
   AuditQueryOptions,
   AuditStats,
 } from 'src/common/interfaces/ai/audit.interface';
-import {AuditFilterOptions, AuditStatsFilterOptions, EncryptionIntegrityResult} from "src/modules/ai/ai-audit/types";
+import {
+  AuditFilterOptions,
+  AuditStatsFilterOptions,
+  EncryptionIntegrityResult,
+} from 'src/modules/ai/ai-audit/types';
 
 /**
  * AiAuditRepository with advanced querying and security features

@@ -1,11 +1,17 @@
-import {BadRequestException, ConflictException, Inject, Injectable, NotFoundException,} from '@nestjs/common';
-import {BaseService} from 'src/common/abstracts/base.service';
-import {Admin} from 'src/entities/user/authentication/admin.entity';
-import {AdminRepository} from 'src/modules/admin/admin.repository';
-import {CreateAdminDto} from 'src/modules/admin/dto/create-admin.dto';
-import {UpdateAdminDto} from 'src/modules/admin/dto/update-admin.dto';
-import {AdminStats, FormattedAdmin} from 'src/modules/admin/types';
-import {IUserService} from 'src/common/contracts/admin.contract';
+import {
+  BadRequestException,
+  ConflictException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { BaseService } from 'src/common/abstracts/base.service';
+import { Admin } from 'src/entities/user/authentication/admin.entity';
+import { AdminRepository } from 'src/modules/admin/admin.repository';
+import { CreateAdminDto } from 'src/modules/admin/dto/create-admin.dto';
+import { UpdateAdminDto } from 'src/modules/admin/dto/update-admin.dto';
+import { AdminStats, FormattedAdmin } from 'src/modules/admin/types';
+import { IUserService } from 'src/common/contracts/admin.contract';
 
 @Injectable()
 export class AdminService extends BaseService<
@@ -22,7 +28,7 @@ export class AdminService extends BaseService<
 
   async findByUserId(userId: string): Promise<Admin | null> {
     return await this.repository.findOne({
-      where: {userId},
+      where: { userId },
       relations: ['user'],
     });
   }

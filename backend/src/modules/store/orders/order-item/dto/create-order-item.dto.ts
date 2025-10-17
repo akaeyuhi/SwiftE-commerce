@@ -4,7 +4,8 @@ import {
   Min,
   IsNumber,
   IsOptional,
-  IsString, IsPositive,
+  IsString,
+  IsPositive,
 } from 'class-validator';
 
 /**

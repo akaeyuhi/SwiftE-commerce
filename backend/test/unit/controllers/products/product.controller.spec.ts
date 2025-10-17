@@ -13,11 +13,9 @@ import { ProductsController } from 'src/modules/products/controllers/products.co
 import { PolicyService } from 'src/modules/authorization/policy/policy.service';
 import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';
 import { StoreRolesGuard } from 'src/modules/authorization/guards/store-roles.guard';
-import {AnalyticsQueueService} from "src/modules/infrastructure/queues/analytics-queue/analytics-queue.service";
-import {RecordEventInterceptor} from "src/modules/infrastructure/interceptors/record-event/record-event.interceptor";
-import {
-  ProductPhotosInterceptor
-} from "src/modules/infrastructure/interceptors/product-photo/product-photo.interceptor";
+import { AnalyticsQueueService } from 'src/modules/infrastructure/queues/analytics-queue/analytics-queue.service';
+import { RecordEventInterceptor } from 'src/modules/infrastructure/interceptors/record-event/record-event.interceptor';
+import { ProductPhotosInterceptor } from 'src/modules/infrastructure/interceptors/product-photo/product-photo.interceptor';
 
 describe('ProductsController', () => {
   let controller: ProductsController;

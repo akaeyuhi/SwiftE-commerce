@@ -90,7 +90,7 @@ describe('CategoriesController', () => {
     it('delegates create', async () => {
       const dto = { name: 'New', description: '' };
       service.create!.mockResolvedValue(mockCategory);
-      const res = await controller.create(dto as any);
+      const res = await controller.create(dto as any, 's1');
       expect(service.create).toHaveBeenCalledWith(dto);
       expect(res).toEqual(mockCategory);
     });

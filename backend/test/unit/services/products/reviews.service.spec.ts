@@ -11,7 +11,12 @@ describe('ReviewsService', () => {
   let svc: ReviewsService;
   let repo: Partial<MockedMethods<ReviewsRepository>>;
 
-  const dto: CreateReviewDto = { productId: 'p1', rating: 4, comment: 'Nice' };
+  const dto: CreateReviewDto = {
+    title: 'title',
+    productId: 'p1',
+    rating: 4,
+    comment: 'Nice',
+  };
   const mock = {
     id: 'r1',
     ...dto,

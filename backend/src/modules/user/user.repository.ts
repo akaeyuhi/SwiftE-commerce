@@ -5,7 +5,7 @@ import { BaseRepository } from 'src/common/abstracts/base.repository';
 import { StoreRole } from 'src/entities/user/authentication/store-role.entity';
 import { Store } from 'src/entities/store/store.entity';
 import { StoreDto } from 'src/modules/store/dto/store.dto';
-import {StoreRoles} from "src/common/enums/store-roles.enum";
+import { StoreRoles } from 'src/common/enums/store-roles.enum';
 
 @Injectable()
 export class UserRepository extends BaseRepository<User> {

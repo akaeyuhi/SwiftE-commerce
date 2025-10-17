@@ -382,7 +382,7 @@ describe('ProductsService', () => {
       storeService.getEntityById.mockResolvedValue(mockStore);
       photoService.addPhotos!.mockResolvedValue([savedPhoto] as any);
 
-      await service.addMainPhoto('p1', 's1', photo);
+      await service.addMainPhoto('p1', 's1', [photo]);
 
       expect(photoService.addPhotos).toHaveBeenCalledWith(
         mockProduct,
@@ -397,7 +397,7 @@ describe('ProductsService', () => {
       productRepo.findOneBy!.mockResolvedValue(null);
 
       await expect(
-        service.addMainPhoto('nonexistent', 's1', photo)
+        service.addMainPhoto('nonexistent', 's1', [photo])
       ).rejects.toThrow(NotFoundException);
     });
   });
