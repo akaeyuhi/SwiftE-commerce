@@ -11,8 +11,13 @@ export class UserMapper extends BaseMapper<User, UserDto> {
       email: entity.email,
       firstName: entity.firstName!,
       lastName: entity.lastName!,
+      isEmailVerified: entity.isEmailVerified,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
+      siteRole: entity.siteRole,
+      isActive: entity.isActive,
+      deactivatedAt: entity.deactivatedAt,
+      emailVerifiedAt: entity.emailVerifiedAt,
     };
   }
 

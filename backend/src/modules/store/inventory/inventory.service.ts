@@ -1,4 +1,9 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   LowStockEvent,
@@ -8,6 +13,7 @@ import { InventoryThresholdsConfig } from './config/inventory-thresholds.config'
 import { InventoryRepository } from 'src/modules/store/inventory/inventory.repository';
 import { Inventory } from 'src/entities/store/product/inventory.entity';
 import { BaseService } from 'src/common/abstracts/base.service';
+import { domainEventFactory } from 'src/common/events/helper';
 
 /**
  * InventoryService
@@ -77,25 +83,25 @@ export class InventoryService extends BaseService<Inventory> {
       where: { variantId },
       lock: { mode: 'pessimistic_write' },
     });
-    if (!inv) throw new NotFoundException('Inventory not found');
+    if (!inv)
+      throw new NotFoundException(
+        `Inventory for variant ${variantId} not found`
+      );
     inv.quantity += delta;
     if (inv.quantity < 0) throw new Error('Insufficient stock');
     return this.inventoryRepo.save(inv);
   }
 
-  async set(variantId: string, qty: number) {
-    let inv = await this.inventoryRepo.findOne({
-      where: { variantId },
-    });
-    if (!inv) {
-      inv = this.inventoryRepo.create({
-        variant: { id: variantId } as any,
+  async setInventory(storeId: string, variantId: string, qty: number) {
+    const inventory = await this.findInventoryByVariantId(variantId);
+    if (!inventory) {
+      return await this.create({
+        variantId,
+        storeId,
         quantity: qty,
       });
-    } else {
-      inv.quantity = qty;
     }
-    return this.inventoryRepo.save(inv);
+    return await this.update(inventory.id, { quantity: qty });
   }
 
   /**
@@ -121,10 +127,12 @@ export class InventoryService extends BaseService<Inventory> {
         `Attempted to set negative inventory for variant ${variantId}. ` +
           `Current: ${inventory.quantity}, Delta: ${delta}`
       );
-      throw new Error('Insufficient stock');
+      throw new BadRequestException(
+        `Insufficient stock on variant ${variantId}`
+      );
     }
 
-    return this.update(inventory.id, { quantity: newQuantity });
+    return await this.update(inventory.id, { quantity: newQuantity });
   }
 
   /**
@@ -152,8 +160,14 @@ export class InventoryService extends BaseService<Inventory> {
     previousQuantity: number,
     category?: string
   ): Promise<void> {
-    const currentQuantity = inventory.quantity;
-    const product = inventory.variant.product;
+    const updatedInv = (await this.inventoryRepo.findOne({
+      where: { id: inventory.id },
+      relations: ['variant', 'variant.product'],
+    }))!;
+    const currentQuantity = updatedInv.quantity;
+    const product = updatedInv.variant.product;
+
+    console.log(currentQuantity, previousQuantity);
 
     // Out of stock (highest priority)
     if (
@@ -161,19 +175,25 @@ export class InventoryService extends BaseService<Inventory> {
       !this.thresholdsConfig.isOutOfStock(previousQuantity)
     ) {
       const event = new OutOfStockEvent(
-        inventory.variant.id,
+        inventory.variantId,
         product.id,
-        inventory.store.id,
+        inventory.storeId,
         inventory.variant.sku,
         product.name,
         category
       );
 
       this.logger.warn(
-        `OUT OF STOCK: ${product.name} (SKU: ${inventory.variant.sku}) - Store: ${inventory.store.id}`
+        `OUT OF STOCK: ${product.name} (SKU: ${inventory.variant.sku}) - Store: ${inventory.storeId}`
       );
 
-      this.eventEmitter.emit('inventory.out-of-stock', event);
+      const domainEvent = domainEventFactory<OutOfStockEvent>(
+        'inventory.out-of-stock',
+        inventory.id,
+        event
+      );
+
+      this.eventEmitter.emit('inventory.out-of-stock', domainEvent);
       return;
     }
 
@@ -206,14 +226,14 @@ export class InventoryService extends BaseService<Inventory> {
     const threshold = this.thresholdsConfig.getLowStockThreshold();
 
     // Calculate sales velocity (last 7 days) - implement based on your Order entity
-    const recentSales = await this.calculateRecentSales(inventory.variant.id);
+    const recentSales = await this.calculateRecentSales(inventory.variantId);
     const estimatedDays =
       recentSales > 0 ? Math.floor(inventory.quantity / (recentSales / 7)) : 0;
 
     const event = new LowStockEvent(
-      inventory.variant.id,
+      inventory.variantId,
       product.id,
-      inventory.store.id,
+      inventory.storeId,
       inventory.variant.sku,
       product.name,
       inventory.quantity,
@@ -228,7 +248,13 @@ export class InventoryService extends BaseService<Inventory> {
         `Current: ${inventory.quantity}, Threshold: ${threshold}, Est. days: ${estimatedDays}`
     );
 
-    this.eventEmitter.emit('inventory.low-stock', event);
+    const domainEvent = domainEventFactory<LowStockEvent>(
+      'inventory.low-stock',
+      inventory.id,
+      event
+    );
+
+    this.eventEmitter.emit('inventory.low-stock', domainEvent);
   }
 
   /**

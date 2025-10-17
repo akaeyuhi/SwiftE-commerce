@@ -46,7 +46,7 @@ import { Product } from 'src/entities/store/product/product.entity';
     DataSyncService,
     HealthCheckService,
   ],
-  controllers: [EventsController, AnalyticsController, AdminStatsController],
+  controllers: [AdminStatsController, EventsController, AnalyticsController],
   exports: [
     AnalyticsService,
     StoreDailyStatsRepository,

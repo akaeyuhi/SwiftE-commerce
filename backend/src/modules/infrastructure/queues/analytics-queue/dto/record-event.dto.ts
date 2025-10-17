@@ -1,4 +1,11 @@
-import { IsOptional, IsEnum, IsUUID, IsNumber, IsIn } from 'class-validator';
+import {
+  IsOptional,
+  IsEnum,
+  IsUUID,
+  IsNumber,
+  IsIn,
+  IsString,
+} from 'class-validator';
 import { AnalyticsEventType } from 'src/entities/infrastructure/analytics/analytics-event.entity';
 
 export type Maybe<T> = T | undefined;

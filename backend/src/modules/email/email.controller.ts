@@ -4,8 +4,8 @@ import {
   Get,
   Body,
   UseGuards,
-  ValidationPipe,
   BadRequestException,
+  Param,
 } from '@nestjs/common';
 import { EmailService } from './email.service';
 import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';
@@ -38,7 +38,7 @@ export class EmailController {
    */
   @Post('send')
   @AdminRole(AdminRoles.ADMIN)
-  async sendEmail(@Body(ValidationPipe) dto: SendEmailDto) {
+  async sendEmail(@Body() dto: SendEmailDto) {
     const result = await this.emailService.sendEmail(dto);
 
     return {
@@ -56,10 +56,8 @@ export class EmailController {
    * Send user confirmation email
    */
   @Post('user-confirmation')
-  @StoreRole(StoreRoles.ADMIN, StoreRoles.MODERATOR)
-  async sendUserConfirmation(
-    @Body(ValidationPipe) dto: SendUserConfirmationDto
-  ) {
+  @AdminRole(AdminRoles.ADMIN)
+  async sendUserConfirmation(@Body() dto: SendUserConfirmationDto) {
     try {
       const jobId = await this.emailQueueService.sendUserConfirmation(
         dto.userEmail,
@@ -87,8 +85,8 @@ export class EmailController {
    * Send welcome email
    */
   @Post('welcome')
-  @StoreRole(StoreRoles.ADMIN, StoreRoles.MODERATOR)
-  async sendWelcomeEmail(@Body(ValidationPipe) dto: SendWelcomeEmailDto) {
+  @AdminRole(AdminRoles.ADMIN)
+  async sendWelcomeEmail(@Body() dto: SendWelcomeEmailDto) {
     try {
       const jobId = await this.emailQueueService.sendWelcomeEmail(
         dto.userEmail,
@@ -115,9 +113,12 @@ export class EmailController {
    * POST /email/stock-alert
    * Send stock alert to users
    */
-  @Post('stock-alert')
+  @Post(':storeId/stock-alert')
   @StoreRole(StoreRoles.ADMIN, StoreRoles.MODERATOR)
-  async sendStockAlert(@Body(ValidationPipe) dto: SendStockAlertDto) {
+  async sendStockAlert(
+    @Param('storeId') storeId: string,
+    @Body() dto: SendStockAlertDto
+  ) {
     try {
       const jobId = await this.emailQueueService.sendStockAlert(
         dto.userEmail,
@@ -143,9 +144,12 @@ export class EmailController {
    * POST /email/low-stock-warning
    * Send low stock warning to store owners
    */
-  @Post('low-stock-warning')
+  @Post(':storeId/low-stock-warning')
   @StoreRole(StoreRoles.ADMIN)
-  async sendLowStockWarning(@Body(ValidationPipe) dto: SendLowStockWarningDto) {
+  async sendLowStockWarning(
+    @Param('storeId') storeId: string,
+    @Body() dto: SendLowStockWarningDto
+  ) {
     try {
       const jobId = await this.emailQueueService.sendLowStockWarning(
         dto.storeOwnerEmail,

@@ -7,6 +7,7 @@ import { UpdateNewsDto } from './dto/update-news.dto';
 import { NewsRepository } from './news.repository';
 import { NewsPostDto } from './dto/news.dto';
 import { NewsPublishedEvent } from 'src/common/events/news/news-published.event';
+import { domainEventFactory } from 'src/common/events/helper';
 
 /**
  * NewsService
@@ -150,7 +151,13 @@ export class NewsService extends BaseService<
         undefined // category - add if you have this field
       );
 
-      this.eventEmitter.emit('news.published', event);
+      const domainEvent = domainEventFactory<NewsPublishedEvent>(
+        'news.published',
+        post.id,
+        event
+      );
+
+      this.eventEmitter.emit('news.published', domainEvent);
 
       console.log(`Emitted news.published event for post ${post.id}`);
     } catch (error) {

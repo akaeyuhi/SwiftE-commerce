@@ -1,7 +1,6 @@
 import {
   Controller,
   UseGuards,
-  Post,
   Put,
   Param,
   Body,
@@ -9,14 +8,15 @@ import {
   Get,
 } from '@nestjs/common';
 import { CartItemService } from 'src/modules/store/cart/cart-item/cart-item.service';
-import {CartItemDto, UpdateCartItemQuantityDto} from 'src/modules/store/cart/cart-item/dto/cart-item.dto';
+import {
+  CartItemDto,
+  UpdateCartItemQuantityDto,
+} from 'src/modules/store/cart/cart-item/dto/cart-item.dto';
 import { BaseController } from 'src/common/abstracts/base.controller';
 import { CartItem } from 'src/entities/store/cart/cart-item.entity';
 import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';
 import { StoreRolesGuard } from 'src/modules/authorization/guards/store-roles.guard';
 import { AccessPolicies } from 'src/modules/authorization/policy/policy.types';
-import { AnalyticsEventType } from 'src/entities/infrastructure/analytics/analytics-event.entity';
-import { RecordEvent } from 'src/common/decorators/record-event.decorator';
 import { AdminGuard } from 'src/modules/authorization/guards/admin.guard';
 
 /**

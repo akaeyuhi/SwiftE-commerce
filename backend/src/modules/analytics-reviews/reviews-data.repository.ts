@@ -77,10 +77,11 @@ export class AnalyticsReviewsRepository implements IReviewsRepository {
       .andWhere('product.deletedAt IS NULL')
       .groupBy('product.id')
       .addGroupBy('product.name')
-      .orderBy('reviewCount', 'DESC')
+      .orderBy('"reviewCount"', 'DESC') // ✅ Quote the alias
       .limit(5)
       .getRawMany();
   }
+
   async getRatingAggregate(productId: string): Promise<AggregateRating> {
     const aggregateQb = this.reviewsRepository
       .createQueryBuilder('r')

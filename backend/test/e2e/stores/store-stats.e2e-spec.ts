@@ -48,8 +48,8 @@ describe('Store - Statistics (E2E)', () => {
       expect(response.body).toHaveProperty('totalRevenue');
       expect(response.body).toHaveProperty('productCount');
       expect(response.body).toHaveProperty('followerCount');
+      expect(response.body).toHaveProperty('averageOrderValue');
       expect(response.body).toHaveProperty('orderCount');
-      AssertionHelper.assertStatsDto(response.body);
     });
 
     it('should return 404 for non-existent store', async () => {

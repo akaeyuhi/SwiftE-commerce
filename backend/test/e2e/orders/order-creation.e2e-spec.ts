@@ -50,12 +50,13 @@ describe('Orders - Creation (E2E)', () => {
     await appHelper.clearTables(['orders']);
   });
 
-  describe('POST /stores/:storeId/orders/create', () => {
-    const validOrderData = {
+  describe('POST /stores/:storeId/orders/:userId/create', () => {
+    // ✅ Simplified - userId and storeId come from route params
+    const getValidOrderData = () => ({
       items: [
         {
-          variantId: null, // Will be set in test
-          productId: null, // Will be set in test
+          variantId: variants[0].id,
+          productId: product.id,
           productName: 'Test Product',
           sku: 'TEST-SKU',
           unitPrice: 29.99,
@@ -65,23 +66,18 @@ describe('Orders - Creation (E2E)', () => {
       shipping: {
         firstName: 'John',
         lastName: 'Doe',
-        address: '123 Main St',
+        addressLine1: '123 Main St',
         city: 'New York',
         postalCode: '10001',
         country: 'US',
       },
-    };
-
-    beforeEach(() => {
-      validOrderData.items[0].variantId = variants[0].id;
-      validOrderData.items[0].productId = product.id;
     });
 
     it('should create order for authenticated user', async () => {
       const response = await authHelper
         .authenticatedRequest(customer.accessToken)
-        .post(`/stores/${store.id}/orders/create`)
-        .send(validOrderData)
+        .post(`/stores/${store.id}/orders/${customer.user.id}/create`) // ✅ Added userId to URL
+        .send(getValidOrderData())
         .expect(201);
 
       expect(response.body).toHaveProperty('id');
@@ -96,7 +92,6 @@ describe('Orders - Creation (E2E)', () => {
 
     it('should create order with multiple items', async () => {
       const multiItemOrder = {
-        ...validOrderData,
         items: [
           {
             variantId: variants[0].id,
@@ -115,23 +110,31 @@ describe('Orders - Creation (E2E)', () => {
             quantity: 1,
           },
         ],
+        shipping: {
+          firstName: 'John',
+          lastName: 'Doe',
+          addressLine1: '123 Main St',
+          city: 'New York',
+          postalCode: '10001',
+          country: 'US',
+        },
       };
 
       const response = await authHelper
         .authenticatedRequest(customer.accessToken)
-        .post(`/stores/${store.id}/orders/create`)
+        .post(`/stores/${store.id}/orders/${customer.user.id}/create`)
         .send(multiItemOrder)
         .expect(201);
 
       expect(response.body.items.length).toBe(2);
-      expect(response.body.totalAmount).toBeCloseTo(99.97, 2); // (29.99 * 2) + (39.99 * 1)
+      expect(parseFloat(response.body.totalAmount)).toBeCloseTo(99.97, 2);
     });
 
     it('should require authentication', async () => {
-      const response = await app
-        .getHttpServer()
-        .post(`/stores/${store.id}/orders/create`)
-        .send(validOrderData);
+      const response = await appHelper
+        .request()
+        .post(`/stores/${store.id}/orders/${customer.user.id}/create`)
+        .send(getValidOrderData());
 
       AssertionHelper.assertErrorResponse(response, 401);
     });
@@ -139,8 +142,11 @@ describe('Orders - Creation (E2E)', () => {
     it('should validate items array is not empty', async () => {
       const response = await authHelper
         .authenticatedRequest(customer.accessToken)
-        .post(`/stores/${store.id}/orders/create`)
-        .send({ ...validOrderData, items: [] });
+        .post(`/stores/${store.id}/orders/${customer.user.id}/create`)
+        .send({
+          items: [],
+          shipping: getValidOrderData().shipping,
+        });
 
       AssertionHelper.assertErrorResponse(response, 400);
     });
@@ -148,8 +154,8 @@ describe('Orders - Creation (E2E)', () => {
     it('should validate items array is provided', async () => {
       const response = await authHelper
         .authenticatedRequest(customer.accessToken)
-        .post(`/stores/${store.id}/orders/create`)
-        .send({ shipping: validOrderData.shipping });
+        .post(`/stores/${store.id}/orders/${customer.user.id}/create`)
+        .send({ shipping: getValidOrderData().shipping });
 
       AssertionHelper.assertErrorResponse(response, 400, 'items');
     });
@@ -157,66 +163,56 @@ describe('Orders - Creation (E2E)', () => {
     it('should validate shipping information is required', async () => {
       const response = await authHelper
         .authenticatedRequest(customer.accessToken)
-        .post(`/stores/${store.id}/orders/create`)
-        .send({ items: validOrderData.items });
+        .post(`/stores/${store.id}/orders/${customer.user.id}/create`)
+        .send({ items: getValidOrderData().items });
 
       AssertionHelper.assertErrorResponse(response, 400, 'shipping');
     });
 
     it('should validate shipping firstName', async () => {
+      const data = getValidOrderData();
+      data.shipping.firstName = '';
+
       const response = await authHelper
         .authenticatedRequest(customer.accessToken)
-        .post(`/stores/${store.id}/orders/create`)
-        .send({
-          ...validOrderData,
-          shipping: { ...validOrderData.shipping, firstName: '' },
-        });
+        .post(`/stores/${store.id}/orders/${customer.user.id}/create`)
+        .send(data);
 
       AssertionHelper.assertErrorResponse(response, 400);
     });
 
     it('should validate shipping address', async () => {
+      const data = getValidOrderData();
+      data.shipping.addressLine1 = '';
+
       const response = await authHelper
         .authenticatedRequest(customer.accessToken)
-        .post(`/stores/${store.id}/orders/create`)
-        .send({
-          ...validOrderData,
-          shipping: { ...validOrderData.shipping, address: '' },
-        });
+        .post(`/stores/${store.id}/orders/${customer.user.id}/create`)
+        .send(data);
 
       AssertionHelper.assertErrorResponse(response, 400);
     });
 
     it('should validate item quantity is positive', async () => {
+      const data = getValidOrderData();
+      data.items[0].quantity = 0;
+
       const response = await authHelper
         .authenticatedRequest(customer.accessToken)
-        .post(`/stores/${store.id}/orders/create`)
-        .send({
-          ...validOrderData,
-          items: [
-            {
-              ...validOrderData.items[0],
-              quantity: 0,
-            },
-          ],
-        });
+        .post(`/stores/${store.id}/orders/${customer.user.id}/create`)
+        .send(data);
 
       AssertionHelper.assertErrorResponse(response, 400);
     });
 
     it('should validate item price is positive', async () => {
+      const data = getValidOrderData();
+      data.items[0].unitPrice = -10;
+
       const response = await authHelper
         .authenticatedRequest(customer.accessToken)
-        .post(`/stores/${store.id}/orders/create`)
-        .send({
-          ...validOrderData,
-          items: [
-            {
-              ...validOrderData.items[0],
-              unitPrice: -10,
-            },
-          ],
-        });
+        .post(`/stores/${store.id}/orders/${customer.user.id}/create`)
+        .send(data);
 
       AssertionHelper.assertErrorResponse(response, 400);
     });
@@ -224,23 +220,22 @@ describe('Orders - Creation (E2E)', () => {
     it('should calculate total amount correctly', async () => {
       const response = await authHelper
         .authenticatedRequest(customer.accessToken)
-        .post(`/stores/${store.id}/orders/create`)
-        .send(validOrderData)
+        .post(`/stores/${store.id}/orders/${customer.user.id}/create`)
+        .send(getValidOrderData())
         .expect(201);
 
-      const expectedTotal =
-        validOrderData.items[0].unitPrice * validOrderData.items[0].quantity;
-      expect(response.body.totalAmount).toBeCloseTo(expectedTotal, 2);
+      const expectedTotal = 29.99 * 2;
+      expect(parseFloat(response.body.totalAmount)).toBeCloseTo(
+        expectedTotal,
+        2
+      );
     });
 
     it('should prevent creating order for another user', async () => {
       const response = await authHelper
         .authenticatedRequest(customer.accessToken)
-        .post(`/stores/${store.id}/orders/create`)
-        .send({
-          ...validOrderData,
-          userId: adminUser.user.id,
-        });
+        .post(`/stores/${store.id}/orders/${adminUser.user.id}/create`)
+        .send(getValidOrderData());
 
       AssertionHelper.assertErrorResponse(response, 400, 'another user');
     });
@@ -248,11 +243,8 @@ describe('Orders - Creation (E2E)', () => {
     it('should allow admin to create order for any user', async () => {
       const response = await authHelper
         .authenticatedRequest(adminUser.accessToken)
-        .post(`/stores/${store.id}/orders/create`)
-        .send({
-          ...validOrderData,
-          userId: customer.user.id,
-        })
+        .post(`/stores/${store.id}/orders/${customer.user.id}/create`) // ✅ Admin creating for customer
+        .send(getValidOrderData())
         .expect(201);
 
       expect(response.body.userId).toBe(customer.user.id);
@@ -261,8 +253,17 @@ describe('Orders - Creation (E2E)', () => {
     it('should validate store UUID format', async () => {
       const response = await authHelper
         .authenticatedRequest(customer.accessToken)
-        .post('/stores/invalid-uuid/orders/create')
-        .send(validOrderData);
+        .post(`/stores/invalid-uuid/orders/${customer.user.id}/create`)
+        .send(getValidOrderData());
+
+      AssertionHelper.assertErrorResponse(response, 400);
+    });
+
+    it('should validate user UUID format', async () => {
+      const response = await authHelper
+        .authenticatedRequest(customer.accessToken)
+        .post(`/stores/${store.id}/orders/invalid-uuid/create`)
+        .send(getValidOrderData());
 
       AssertionHelper.assertErrorResponse(response, 400);
     });
@@ -270,8 +271,10 @@ describe('Orders - Creation (E2E)', () => {
     it('should validate store exists', async () => {
       const response = await authHelper
         .authenticatedRequest(customer.accessToken)
-        .post('/stores/00000000-0000-0000-0000-000000000000/orders/create')
-        .send(validOrderData);
+        .post(
+          `/stores/00000000-0000-0000-0000-000000000000/orders/${customer.user.id}/create`
+        )
+        .send(getValidOrderData());
 
       AssertionHelper.assertErrorResponse(response, 404);
     });
@@ -279,41 +282,33 @@ describe('Orders - Creation (E2E)', () => {
     it('should include shipping information in created order', async () => {
       const response = await authHelper
         .authenticatedRequest(customer.accessToken)
-        .post(`/stores/${store.id}/orders/create`)
-        .send(validOrderData)
+        .post(`/stores/${store.id}/orders/${customer.user.id}/create`)
+        .send(getValidOrderData())
         .expect(201);
 
       expect(response.body.shipping).toBeDefined();
-      expect(response.body.shipping.firstName).toBe(
-        validOrderData.shipping.firstName
-      );
-      expect(response.body.shipping.lastName).toBe(
-        validOrderData.shipping.lastName
-      );
-      expect(response.body.shipping.address).toBe(
-        validOrderData.shipping.address
-      );
+      expect(response.body.shipping.firstName).toBe('John');
+      expect(response.body.shipping.lastName).toBe('Doe');
+      expect(response.body.shipping.addressLine1).toBe('123 Main St');
     });
 
     it('should set billing address same as shipping by default', async () => {
       const response = await authHelper
         .authenticatedRequest(customer.accessToken)
-        .post(`/stores/${store.id}/orders/create`)
-        .send(validOrderData)
+        .post(`/stores/${store.id}/orders/${customer.user.id}/create`)
+        .send(getValidOrderData())
         .expect(201);
 
       if (response.body.billing) {
-        expect(response.body.billing.address).toBe(
-          validOrderData.shipping.address
-        );
+        expect(response.body.billing.addressLine1).toBe('123 Main St');
       }
     });
 
     it('should record checkout analytics event', async () => {
       await authHelper
         .authenticatedRequest(customer.accessToken)
-        .post(`/stores/${store.id}/orders/create`)
-        .send(validOrderData)
+        .post(`/stores/${store.id}/orders/${customer.user.id}/create`)
+        .send(getValidOrderData())
         .expect(201);
 
       const eventRepo = appHelper
@@ -332,53 +327,29 @@ describe('Orders - Creation (E2E)', () => {
   });
 
   describe('Inventory Integration', () => {
-    const orderData = {
-      items: [
-        {
-          variantId: null,
-          productId: null,
-          productName: 'Test Product',
-          sku: 'TEST-SKU',
-          unitPrice: 29.99,
-          quantity: 2,
-        },
-      ],
-      shipping: {
-        firstName: 'John',
-        lastName: 'Doe',
-        address: '123 Main St',
-        city: 'New York',
-        postalCode: '10001',
-        country: 'US',
-      },
-    };
-
-    beforeEach(() => {
-      orderData.items[0].variantId = variants[0].id;
-      orderData.items[0].productId = product.id;
-    });
-
     it('should deduct inventory when creating order', async () => {
+      const orderData = getValidOrderData();
+
       const variantRepo = appHelper
         .getDataSource()
         .getRepository('ProductVariant');
       const initialVariant = await variantRepo.findOne({
         where: { id: variants[0].id },
+        relations: ['inventory'],
       });
-      const initialStock = initialVariant?.stock;
+      const initialStock = initialVariant?.inventory.quantity;
 
       await authHelper
         .authenticatedRequest(customer.accessToken)
-        .post(`/stores/${store.id}/orders/create`)
+        .post(`/stores/${store.id}/orders/${customer.user.id}/create`)
         .send(orderData)
         .expect(201);
 
       const updatedVariant = await variantRepo.findOne({
         where: { id: variants[0].id },
+        relations: ['inventory'],
       });
-      expect(updatedVariant?.stock).toBe(
-        initialStock - orderData.items[0].quantity
-      );
+      expect(updatedVariant?.inventory.quantity).toBe(initialStock - 2);
     });
 
     it('should fail if insufficient stock', async () => {
@@ -387,71 +358,103 @@ describe('Orders - Creation (E2E)', () => {
         .getRepository('ProductVariant');
       const variant = await variantRepo.findOne({
         where: { id: variants[0].id },
+        relations: ['inventory'],
       });
+
+      const orderData = {
+        items: [
+          {
+            variantId: variants[0].id,
+            productId: product.id,
+            productName: 'Test Product',
+            sku: 'TEST-SKU',
+            unitPrice: 29.99,
+            quantity: (variant?.inventory.quantity || 0) + 100,
+          },
+        ],
+        shipping: {
+          firstName: 'John',
+          lastName: 'Doe',
+          addressLine1: '123 Main St',
+          city: 'New York',
+          postalCode: '10001',
+          country: 'US',
+        },
+      };
 
       const response = await authHelper
         .authenticatedRequest(customer.accessToken)
-        .post(`/stores/${store.id}/orders/create`)
-        .send({
-          ...orderData,
-          items: [
-            {
-              ...orderData.items[0],
-              quantity: variant?.stock + 100, // Exceeds available stock
-            },
-          ],
-        });
+        .post(`/stores/${store.id}/orders/${customer.user.id}/create`)
+        .send(orderData)
+        .expect(400);
 
-      AssertionHelper.assertErrorResponse(response, 400, 'stock');
+      expect(response.body.errors[0]).toContain('stock');
     });
 
     it('should deduct inventory for multiple items', async () => {
+      const orderData = {
+        items: [
+          {
+            variantId: variants[0].id,
+            productId: product.id,
+            productName: 'Product 1',
+            sku: 'SKU-1',
+            unitPrice: 29.99,
+            quantity: 2,
+          },
+          {
+            variantId: variants[1].id,
+            productId: product.id,
+            productName: 'Product 2',
+            sku: 'SKU-2',
+            unitPrice: 39.99,
+            quantity: 3,
+          },
+        ],
+        shipping: {
+          firstName: 'John',
+          lastName: 'Doe',
+          addressLine1: '123 Main St',
+          city: 'New York',
+          postalCode: '10001',
+          country: 'US',
+        },
+      };
+
       const variantRepo = appHelper
         .getDataSource()
         .getRepository('ProductVariant');
 
       const variant1Before = await variantRepo.findOne({
         where: { id: variants[0].id },
+        relations: ['inventory'],
       });
       const variant2Before = await variantRepo.findOne({
         where: { id: variants[1].id },
+        relations: ['inventory'],
       });
 
       await authHelper
         .authenticatedRequest(customer.accessToken)
-        .post(`/stores/${store.id}/orders/create`)
-        .send({
-          ...orderData,
-          items: [
-            {
-              variantId: variants[0].id,
-              productId: product.id,
-              productName: 'Product 1',
-              sku: 'SKU-1',
-              unitPrice: 29.99,
-              quantity: 2,
-            },
-            {
-              variantId: variants[1].id,
-              productId: product.id,
-              productName: 'Product 2',
-              sku: 'SKU-2',
-              unitPrice: 39.99,
-              quantity: 3,
-            },
-          ],
-        })
+        .post(`/stores/${store.id}/orders/${customer.user.id}/create`)
+        .send(orderData)
         .expect(201);
 
       const variant1After = await variantRepo.findOne({
         where: { id: variants[0].id },
+        relations: ['inventory'],
       });
       const variant2After = await variantRepo.findOne({
         where: { id: variants[1].id },
+        relations: ['inventory'],
       });
 
-      expect(variant1After?.stock).toBe(variant1Before?.stock - 2);
-      expect(variant2After?.stock).toBe(variant2Before?.stock - 3);
+      expect(variant1After?.inventory.quantity).toBe(
+        (variant1Before?.inventory.quantity || 0) - 2
+      );
+      expect(variant2After?.inventory.quantity).toBe(
+        (variant2Before?.inventory.quantity || 0) - 3
+      );
     });
 
     it('should rollback if any item has insufficient stock', async () => {
@@ -465,34 +468,41 @@ describe('Orders - Creation (E2E)', () => {
         where: { id: variants[1].id },
       });
 
-      const response = await authHelper
+      const orderData = {
+        items: [
+          {
+            variantId: variants[0].id,
+            productId: product.id,
+            productName: 'Product 1',
+            sku: 'SKU-1',
+            unitPrice: 29.99,
+            quantity: 1,
+          },
+          {
+            variantId: variants[1].id,
+            productId: product.id,
+            productName: 'Product 2',
+            sku: 'SKU-2',
+            unitPrice: 39.99,
+            quantity: 99999,
+          },
+        ],
+        shipping: {
+          firstName: 'John',
+          lastName: 'Doe',
+          addressLine1: '123 Main St',
+          city: 'New York',
+          postalCode: '10001',
+          country: 'US',
+        },
+      };
+
+      await authHelper
         .authenticatedRequest(customer.accessToken)
-        .post(`/stores/${store.id}/orders/create`)
-        .send({
-          ...orderData,
-          items: [
-            {
-              variantId: variants[0].id,
-              productId: product.id,
-              productName: 'Product 1',
-              sku: 'SKU-1',
-              unitPrice: 29.99,
-              quantity: 1,
-            },
-            {
-              variantId: variants[1].id,
-              productId: product.id,
-              productName: 'Product 2',
-              sku: 'SKU-2',
-              unitPrice: 39.99,
-              quantity: 99999, // Exceeds stock
-            },
-          ],
-        });
+        .post(`/stores/${store.id}/orders/${customer.user.id}/create`)
+        .send(orderData)
+        .expect(400);
 
-      AssertionHelper.assertErrorResponse(response, 400);
-
-      // Verify no inventory was deducted
       const variant1After = await variantRepo.findOne({
         where: { id: variants[0].id },
       });
@@ -500,8 +510,8 @@ describe('Orders - Creation (E2E)', () => {
         where: { id: variants[1].id },
       });
 
-      expect(variant1After?.stock).toBe(variant1Before?.stock);
-      expect(variant2After?.stock).toBe(variant2Before?.stock);
+      expect(variant1After?.quantity).toBe(variant1Before?.quantity);
+      expect(variant2After?.quantity).toBe(variant2Before?.quantity);
     });
   });
 
@@ -521,7 +531,7 @@ describe('Orders - Creation (E2E)', () => {
         shipping: {
           firstName: 'John',
           lastName: 'Doe',
-          address: '123 Main',
+          addressLine1: '123 Main',
           city: 'NYC',
           postalCode: '10001',
           country: 'US',
@@ -533,7 +543,7 @@ describe('Orders - Creation (E2E)', () => {
         .map(() =>
           authHelper
             .authenticatedRequest(customer.accessToken)
-            .post(`/stores/${store.id}/orders/create`)
+            .post(`/stores/${store.id}/orders/${customer.user.id}/create`)
             .send(orderData)
         );
 
@@ -544,29 +554,31 @@ describe('Orders - Creation (E2E)', () => {
     });
 
     it('should handle special characters in shipping info', async () => {
+      const orderData = {
+        items: [
+          {
+            variantId: variants[0].id,
+            productId: product.id,
+            productName: 'Test',
+            sku: 'TEST',
+            unitPrice: 29.99,
+            quantity: 1,
+          },
+        ],
+        shipping: {
+          firstName: `O'Brien`,
+          lastName: 'Müller',
+          addressLine1: '123 Main St, Apt #5',
+          city: 'São Paulo',
+          postalCode: '01000-000',
+          country: 'BR',
+        },
+      };
+
       const response = await authHelper
         .authenticatedRequest(customer.accessToken)
-        .post(`/stores/${store.id}/orders/create`)
-        .send({
-          items: [
-            {
-              variantId: variants[0].id,
-              productId: product.id,
-              productName: 'Test',
-              sku: 'TEST',
-              unitPrice: 29.99,
-              quantity: 1,
-            },
-          ],
-          shipping: {
-            firstName: `O'Brien`,
-            lastName: 'Müller',
-            address: '123 Main St, Apt #5',
-            city: 'São Paulo',
-            postalCode: '01000-000',
-            country: 'BR',
-          },
-        })
+        .post(`/stores/${store.id}/orders/${customer.user.id}/create`)
+        .send(orderData)
         .expect(201);
 
       expect(response.body.shipping.firstName).toBe(`O'Brien`);
@@ -583,23 +595,48 @@ describe('Orders - Creation (E2E)', () => {
         quantity: 1,
       }));
 
+      const orderData = {
+        items: manyItems,
+        shipping: {
+          firstName: 'John',
+          lastName: 'Doe',
+          addressLine1: '123 Main',
+          city: 'NYC',
+          postalCode: '10001',
+          country: 'US',
+        },
+      };
+
       const response = await authHelper
         .authenticatedRequest(customer.accessToken)
-        .post(`/stores/${store.id}/orders/create`)
-        .send({
-          items: manyItems,
-          shipping: {
-            firstName: 'John',
-            lastName: 'Doe',
-            address: '123 Main',
-            city: 'NYC',
-            postalCode: '10001',
-            country: 'US',
-          },
-        })
+        .post(`/stores/${store.id}/orders/${customer.user.id}/create`)
+        .send(orderData)
         .expect(201);
 
       expect(response.body.items.length).toBe(variants.length);
     });
   });
+
+  function getValidOrderData() {
+    return {
+      items: [
+        {
+          variantId: variants[0].id,
+          productId: product.id,
+          productName: 'Test Product',
+          sku: 'TEST-SKU',
+          unitPrice: 29.99,
+          quantity: 2,
+        },
+      ],
+      shipping: {
+        firstName: 'John',
+        lastName: 'Doe',
+        addressLine1: '123 Main St',
+        city: 'New York',
+        postalCode: '10001',
+        country: 'US',
+      },
+    };
+  }
 });

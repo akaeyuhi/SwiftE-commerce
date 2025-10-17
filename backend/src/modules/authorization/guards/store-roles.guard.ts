@@ -74,6 +74,8 @@ export class StoreRolesGuard implements CanActivate {
         throw new ForbiddenException('Insufficient store role');
       }
 
+      request.user.isStoreAuthorative = allowed;
+
       return true;
     }
 
@@ -115,6 +117,8 @@ export class StoreRolesGuard implements CanActivate {
         'Insufficient store role or not authenticated'
       );
     }
+
+    request.user.isStoreAuthorative = allowed;
 
     return true;
   }

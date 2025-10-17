@@ -25,8 +25,6 @@ import {
   ProductSearchOptions,
 } from 'src/modules/products/types';
 import { ProductSearchRepository } from 'src/modules/products/repositories/product-search.repository';
-import { ProductQueryRepository } from 'src/modules/products/repositories/product-query.repository';
-import { ProductRankingRepository } from 'src/modules/products/repositories/product-ranking.repository';
 
 /**
  * ProductsService
@@ -55,8 +53,6 @@ export class ProductsService extends BaseService<
 > {
   constructor(
     private readonly productRepo: ProductRepository,
-    private readonly productQueryRepo: ProductQueryRepository,
-    private readonly productRankingRepo: ProductRankingRepository,
     private readonly productSearchRepo: ProductSearchRepository,
     private readonly categoriesService: CategoriesService,
     private readonly photoService: ProductPhotoService,
@@ -83,7 +79,8 @@ export class ProductsService extends BaseService<
    */
   async findProductDetail(id: string): Promise<ProductDetailDto> {
     const product = await this.productRepo.findWithRelations(id);
-    if (!product) throw new NotFoundException('Product not found');
+    if (!product)
+      throw new NotFoundException(`Product with id ${id} not found`);
 
     return this.productsMapper.toDetailDto(product);
   }
@@ -92,6 +89,11 @@ export class ProductsService extends BaseService<
    */
   async findAllByStoreAsList(storeId: string): Promise<ProductListDto[]> {
     const products = await this.productRepo.findAllByStore(storeId);
+    if (!products) {
+      throw new NotFoundException(
+        `Products with store id ${storeId} not found`
+      );
+    }
     return this.productsMapper.toListDtos(products);
   }
 
@@ -146,7 +148,7 @@ export class ProductsService extends BaseService<
     const product = await this.productRepo.createEntity({
       name: dto.name,
       description: dto.description,
-      store,
+      storeId: store.id,
     });
 
     if (dto.categoryIds && dto.categoryIds.length > 1) {
@@ -160,11 +162,11 @@ export class ProductsService extends BaseService<
     if (photos && photos.length > 0) {
       const savePhotos = [...photos];
       const firstPhoto = savePhotos.shift()! ?? mainPhoto;
-      await this.addMainPhoto(product.id, store.id, firstPhoto);
+      await this.addMainPhoto(product.id, store.id, [firstPhoto]);
       await this.addPhotos(product.id, store.id, savePhotos);
     }
 
-    return product;
+    return (await this.findProductWithRelations(product.id))!;
   }
 
   /**
@@ -196,13 +198,18 @@ export class ProductsService extends BaseService<
   ): Promise<ProductPhoto[] | null> {
     if (!photos || photos.length === 0) return null;
 
-    const product = await this.productRepo.findOneBy({ id: productId });
+    const product = await this.productRepo.findWithRelations(productId);
     if (!product) throw new NotFoundException('Product not found');
 
     const store = await this.storeService.getEntityById(storeId);
     if (!store) throw new NotFoundException('Store not found');
+    const addPhotos = await this.photoService.addPhotos(product, store, photos);
 
-    return await this.photoService.addPhotos(product, store, photos);
+    if (addPhotos) {
+      product.photos = [...product.photos, ...addPhotos];
+    }
+    await this.productRepo.save(product);
+    return addPhotos;
   }
 
   /**
@@ -217,22 +224,35 @@ export class ProductsService extends BaseService<
    *
    * @param productId - id of the product
    * @param storeId - id of the store (used for a filesystem path)
-   * @param photo - uploaded file to use as main photo
+   * @param photos - uploaded file to use as main photo
    * @returns the created ProductPhoto entity (or whatever photoService returns)
    * @throws NotFoundException when product is not found
    */
   async addMainPhoto(
     productId: string,
     storeId: string,
-    photo: Express.Multer.File
+    photos: Express.Multer.File[]
   ) {
-    const product = await this.productRepo.findOneBy({ id: productId });
+    const product = await this.findProductWithRelations(productId);
     if (!product) throw new NotFoundException('Product not found');
 
     const store = await this.storeService.getEntityById(storeId);
     if (!store) throw new NotFoundException('Store not found');
 
-    return this.photoService.addPhotos(product, store, [photo], true);
+    const addedPhotos = await this.photoService.addPhotos(
+      product,
+      store,
+      photos,
+      true
+    );
+
+    if (addedPhotos && addedPhotos.length > 0) {
+      const mainPhoto = addedPhotos[0];
+      product.mainPhotoUrl = mainPhoto.url;
+      product.photos.push(mainPhoto);
+      await this.productRepo.save(product);
+      return mainPhoto;
+    }
   }
 
   /**
@@ -244,6 +264,8 @@ export class ProductsService extends BaseService<
    * @param photoId - id of the ProductPhoto row to delete
    */
   async removePhoto(photoId: string) {
+    const photo = await this.photoService.findOne(photoId);
+    if (!photo) throw new NotFoundException('Photo not found');
     return this.photoService.deletePhotoAndFile(photoId);
   }
 
@@ -342,7 +364,8 @@ export class ProductsService extends BaseService<
       ],
     });
 
-    if (!product) throw new NotFoundException('Product not found');
+    if (!product)
+      throw new NotFoundException(`Product with id ${productId} not found`);
 
     return this.productsMapper.toStatsDto(product);
   }
@@ -436,15 +459,15 @@ export class ProductsService extends BaseService<
 
     const normalizedQuery = query.trim().toLowerCase();
 
-    const results = await this.autocompleteProducts(
+    const results = await this.productSearchRepo.autocompleteProducts(
       storeId,
       normalizedQuery,
       limit
     );
 
-    return results.map((r) => ({
-      id: r.id,
-      name: r.name,
+    return results.map((r: any) => ({
+      id: r.p_id,
+      name: r.p_name,
       mainPhotoUrl: r.mainPhotoUrl,
       minPrice: r.minPrice ? Number(r.minPrice) : undefined,
     }));
@@ -454,6 +477,10 @@ export class ProductsService extends BaseService<
    * Soft delete a product
    */
   async softDelete(id: string): Promise<void> {
+    const exists = await this.findOne(id);
+    if (!exists) {
+      throw new NotFoundException(`Product with id ${id} not found`);
+    }
     await this.productRepo.softDelete(id);
   }
 

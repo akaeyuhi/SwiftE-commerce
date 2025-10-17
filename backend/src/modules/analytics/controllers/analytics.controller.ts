@@ -1,32 +1,28 @@
 import {
-  Controller,
-  UseGuards,
-  Get,
-  Post,
-  Body,
-  Param,
-  Query,
-  ParseUUIDPipe,
-  ValidationPipe,
-  HttpStatus,
-  HttpCode,
   BadRequestException,
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Query,
+  UseGuards,
+  ValidationPipe,
 } from '@nestjs/common';
-import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';
-import { AdminGuard } from 'src/modules/authorization/guards/admin.guard';
-import { StoreRolesGuard } from 'src/modules/authorization/guards/store-roles.guard';
-import { AnalyticsService } from '../analytics.service';
-import { RecordEventDto } from 'src/modules/infrastructure/queues/analytics-queue/dto/record-event.dto';
-import { AccessPolicies } from 'src/modules/authorization/policy/policy.types';
-import { StoreRoles } from 'src/common/enums/store-roles.enum';
-import { AdminRoles } from 'src/common/enums/admin.enum';
-import { AdminRole } from 'src/common/decorators/admin-role.decorator';
-import {
-  AggregationRequestDto,
-  AnalyticsQueryDto,
-  BatchEventsDto,
-} from 'src/modules/analytics/dto';
-import { AiTransform } from 'src/modules/ai/decorators/ai-transform.decorator';
+import {JwtAuthGuard} from 'src/modules/authorization/guards/jwt-auth.guard';
+import {AdminGuard} from 'src/modules/authorization/guards/admin.guard';
+import {StoreRolesGuard} from 'src/modules/authorization/guards/store-roles.guard';
+import {AnalyticsService} from '../analytics.service';
+import {RecordEventDto} from 'src/modules/infrastructure/queues/analytics-queue/dto/record-event.dto';
+import {AccessPolicies} from 'src/modules/authorization/policy/policy.types';
+import {StoreRoles} from 'src/common/enums/store-roles.enum';
+import {AdminRoles} from 'src/common/enums/admin.enum';
+import {AdminRole} from 'src/common/decorators/admin-role.decorator';
+import {AggregationRequestDto, AnalyticsQueryDto, BatchEventsDto,} from 'src/modules/analytics/dto';
+import {AiTransform} from 'src/modules/ai/decorators/ai-transform.decorator';
 
 /**
  * AnalyticsController with CamelCase Conventions
@@ -56,7 +52,8 @@ export class AnalyticsController {
       storeRoles: [StoreRoles.ADMIN, StoreRoles.MODERATOR],
     },
     getBatchProductStats: {
-      storeRoles: [StoreRoles.ADMIN, StoreRoles.MODERATOR],
+      adminRole: AdminRoles.ADMIN,
+      /*storeRoles: [StoreRoles.ADMIN, StoreRoles.MODERATOR],*/
     },
 
     // Detailed analytics
@@ -79,8 +76,8 @@ export class AnalyticsController {
     getUserJourney: { storeRoles: [StoreRoles.ADMIN] },
 
     // Comparisons
-    getStoreComparison: { storeRoles: [StoreRoles.ADMIN] },
-    getProductComparison: { storeRoles: [StoreRoles.ADMIN] },
+    getStoreComparison: { adminRole: AdminRoles.ADMIN },
+    getProductComparison: { adminRole: AdminRoles.ADMIN },
     getPeriodComparison: { storeRoles: [StoreRoles.ADMIN] },
 
     // Performance analytics
@@ -99,11 +96,27 @@ export class AnalyticsController {
     // System
     getHealth: { adminRole: AdminRoles.ADMIN },
     getStats: { adminRole: AdminRoles.ADMIN },
-    getSupportedAggregators: { storeRoles: [StoreRoles.ADMIN] },
-    getAggregationSchema: { storeRoles: [StoreRoles.ADMIN] },
   };
 
   constructor(private readonly analyticsService: AnalyticsService) {}
+
+  @Get('stores/top-performing')
+  @AdminRole(AdminRoles.ADMIN)
+  async getTopPerformingStores(
+    @Query(ValidationPipe) query: AnalyticsQueryDto
+  ) {
+    return await this.analyticsService.aggregate('topPerformingStores', {
+      limit: query.limit || 10,
+      from: query.from,
+      to: query.to,
+    });
+  }
+
+  @Get('stores/top/revenue')
+  @AdminRole(AdminRoles.ADMIN)
+  async getTopStoresByRevenue(@Query(ValidationPipe) query: AnalyticsQueryDto) {
+    return await this.analyticsService.getTopStoresByRevenue(query.limit || 10);
+  }
 
   // ===============================
   // Event Tracking Endpoints
@@ -115,29 +128,25 @@ export class AnalyticsController {
     @Param('storeId', ParseUUIDPipe) storeId: string,
     @Body(ValidationPipe) dto: RecordEventDto
   ) {
-    try {
-      dto.storeId = dto.storeId ?? storeId;
+    dto.storeId = dto.storeId ?? storeId;
 
-      if (dto.storeId !== storeId) {
-        throw new BadRequestException(
-          'StoreId in body must match route parameter'
-        );
-      }
-
-      await this.analyticsService.trackEvent(dto);
-
-      return {
-        success: true,
-        message: 'Event tracked successfully',
-        event: {
-          storeId: dto.storeId,
-          eventType: dto.eventType,
-          timestamp: new Date().toISOString(),
-        },
-      };
-    } catch (error) {
-      throw new BadRequestException(`Failed to track event: ${error.message}`);
+    if (dto.storeId !== storeId) {
+      throw new BadRequestException(
+        'StoreId in body must match route parameter'
+      );
     }
+
+    await this.analyticsService.trackEvent(dto);
+
+    return {
+      success: true,
+      message: 'Event tracked successfully',
+      event: {
+        storeId: dto.storeId,
+        eventType: dto.eventType,
+        timestamp: new Date().toISOString(),
+      },
+    };
   }
 
   @Post('stores/:storeId/events/batch')
@@ -146,78 +155,49 @@ export class AnalyticsController {
     @Param('storeId', ParseUUIDPipe) storeId: string,
     @Body(ValidationPipe) dto: BatchEventsDto
   ) {
-    try {
-      const events = dto.events.map((event) => ({
-        ...event,
-        storeId: event.storeId ?? storeId,
-      }));
+    const events = dto.events.map((event) => ({
+      ...event,
+      storeId: event.storeId ?? storeId,
+    }));
 
-      const invalidEvents = events.filter((event) => event.storeId !== storeId);
-      if (invalidEvents.length > 0) {
-        throw new BadRequestException(
-          'All events must belong to the specified store'
-        );
-      }
-
-      const result = await this.analyticsService.batchTrack(events);
-
-      return {
-        success: true,
-        processed: result.success,
-        failed: result.failed,
-        total: events.length,
-        errors: result.errors.length > 0 ? result.errors : undefined,
-      };
-    } catch (error) {
-      throw new BadRequestException(`Failed to track events: ${error.message}`);
+    const invalidEvents = events.filter((event) => event.storeId !== storeId);
+    if (invalidEvents.length > 0) {
+      throw new BadRequestException(
+        'All events must belong to the specified store'
+      );
     }
+
+    const result = await this.analyticsService.batchTrack(events);
+
+    return {
+      success: true,
+      processed: result.success,
+      failed: result.failed,
+      total: events.length,
+      errors: result.errors.length > 0 ? result.errors : undefined,
+    };
   }
 
   // ===============================
   // Quick Stats (Cached - Instant Response)
   // ===============================
 
-  @Get('products/:productId/quick-stats')
-  async getProductQuickStats(
-    @Param('productId', ParseUUIDPipe) productId: string
-  ) {
-    try {
-      return await this.analyticsService.getProductQuickStats(productId);
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get product stats: ${error.message}`
-      );
-    }
-  }
-
   @Get('stores/:storeId/quick-stats')
   async getStoreQuickStats(@Param('storeId', ParseUUIDPipe) storeId: string) {
-    try {
-      return await this.analyticsService.getStoreQuickStats(storeId);
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get store stats: ${error.message}`
-      );
-    }
+    return await this.analyticsService.getStoreQuickStats(storeId);
   }
 
   @Post('products/batch-stats')
   async getBatchProductStats(@Body() dto: { productIds: string[] }) {
-    try {
-      if (!dto.productIds || dto.productIds.length === 0) {
-        throw new BadRequestException('productIds array is required');
-      }
-      if (dto.productIds.length > 100) {
-        throw new BadRequestException(
-          'Maximum 100 products can be queried at once'
-        );
-      }
-      return await this.analyticsService.getBatchProductStats(dto.productIds);
-    } catch (error) {
+    if (!dto.productIds || dto.productIds.length === 0) {
+      throw new BadRequestException('productIds array is required');
+    }
+    if (dto.productIds.length > 100) {
       throw new BadRequestException(
-        `Failed to get batch stats: ${error.message}`
+        'Maximum 100 products can be queried at once'
       );
     }
+    return await this.analyticsService.getBatchProductStats(dto.productIds);
   }
 
   // ===============================
@@ -229,18 +209,12 @@ export class AnalyticsController {
     @Param('storeId', ParseUUIDPipe) storeId: string,
     @Query(ValidationPipe) query: AnalyticsQueryDto
   ) {
-    try {
-      return await this.analyticsService.aggregate('storeStats', {
-        storeId,
-        from: query.from,
-        to: query.to,
-        includeTimeseries: query.includeTimeseries,
-      });
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get store analytics: ${error.message}`
-      );
-    }
+    return await this.analyticsService.aggregate('storeStats', {
+      storeId,
+      from: query.from,
+      to: query.to,
+      includeTimeseries: query.includeTimeseries,
+    });
   }
 
   @Get('stores/:storeId/conversion')
@@ -248,17 +222,11 @@ export class AnalyticsController {
     @Param('storeId', ParseUUIDPipe) storeId: string,
     @Query(ValidationPipe) query: AnalyticsQueryDto
   ) {
-    try {
-      return await this.analyticsService.computeStoreConversion(
-        storeId,
-        query.from,
-        query.to
-      );
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get conversion metrics: ${error.message}`
-      );
-    }
+    return await this.analyticsService.computeStoreConversion(
+      storeId,
+      query.from,
+      query.to
+    );
   }
 
   @Get('stores/:storeId/ratings')
@@ -266,99 +234,22 @@ export class AnalyticsController {
     @Param('storeId', ParseUUIDPipe) storeId: string,
     @Query(ValidationPipe) query: AnalyticsQueryDto
   ) {
-    try {
-      return await this.analyticsService.aggregate('storeRatingsSummary', {
-        storeId,
-        from: query.from,
-        to: query.to,
-      });
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get store ratings: ${error.message}`
-      );
-    }
+    return await this.analyticsService.aggregate('storeRatingsSummary', {
+      storeId,
+      from: query.from,
+      to: query.to,
+    });
   }
-
-  // ===============================
-  // Product Analytics Endpoints
-  // ===============================
-
-  @Get('stores/:storeId/products/:productId')
-  async getProductAnalytics(
-    @Param('storeId', ParseUUIDPipe) storeId: string,
-    @Param('productId', ParseUUIDPipe) productId: string,
-    @Query(ValidationPipe) query: AnalyticsQueryDto
-  ) {
-    try {
-      return await this.analyticsService.aggregate('productStats', {
-        storeId,
-        productId,
-        from: query.from,
-        to: query.to,
-        includeTimeseries: query.includeTimeseries,
-      });
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get product analytics: ${error.message}`
-      );
-    }
-  }
-
-  @Get('stores/:storeId/products/:productId/conversion')
-  async getProductConversion(
-    @Param('storeId', ParseUUIDPipe) storeId: string,
-    @Param('productId', ParseUUIDPipe) productId: string,
-    @Query(ValidationPipe) query: AnalyticsQueryDto
-  ) {
-    try {
-      return await this.analyticsService.computeProductConversion(
-        productId,
-        query.from,
-        query.to
-      );
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get product conversion: ${error.message}`
-      );
-    }
-  }
-
-  @Get('stores/:storeId/products/:productId/rating')
-  async getProductRating(
-    @Param('storeId', ParseUUIDPipe) storeId: string,
-    @Param('productId', ParseUUIDPipe) productId: string
-  ) {
-    try {
-      return await this.analyticsService.aggregate('productRating', {
-        storeId,
-        productId,
-      });
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get product rating: ${error.message}`
-      );
-    }
-  }
-
-  // ===============================
-  // Leaderboards & Rankings
-  // ===============================
 
   @Get('stores/:storeId/products/top/views')
   async getTopProductsByViews(
     @Param('storeId', ParseUUIDPipe) storeId: string,
     @Query(ValidationPipe) query: AnalyticsQueryDto
   ) {
-    try {
-      return await this.analyticsService.getTopProductsByViews(
-        storeId,
-        query.limit || 10
-      );
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get top products: ${error.message}`
-      );
-    }
+    return await this.analyticsService.getTopProductsByViews(
+      storeId,
+      query.limit || 10
+    );
   }
 
   @Get('stores/:storeId/products/top/conversion')
@@ -366,16 +257,10 @@ export class AnalyticsController {
     @Param('storeId', ParseUUIDPipe) storeId: string,
     @Query(ValidationPipe) query: AnalyticsQueryDto
   ) {
-    try {
-      return await this.analyticsService.getTopProductsByConversionCached(
-        storeId,
-        query.limit || 10
-      );
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get top products: ${error.message}`
-      );
-    }
+    return await this.analyticsService.getTopProductsByConversionCached(
+      storeId,
+      query.limit || 10
+    );
   }
 
   @Get('stores/:storeId/products/top')
@@ -383,32 +268,12 @@ export class AnalyticsController {
     @Param('storeId', ParseUUIDPipe) storeId: string,
     @Query(ValidationPipe) query: AnalyticsQueryDto
   ) {
-    try {
-      return await this.analyticsService.getTopProductsByConversion(
-        storeId,
-        query.from,
-        query.to,
-        query.limit || 10
-      );
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get top products: ${error.message}`
-      );
-    }
-  }
-
-  @Get('stores/top/revenue')
-  @AdminRole(AdminRoles.ADMIN)
-  async getTopStoresByRevenue(@Query(ValidationPipe) query: AnalyticsQueryDto) {
-    try {
-      return await this.analyticsService.getTopStoresByRevenue(
-        query.limit || 10
-      );
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get top stores: ${error.message}`
-      );
-    }
+    return await this.analyticsService.getTopProductsByConversion(
+      storeId,
+      query.from,
+      query.to,
+      query.limit || 10
+    );
   }
 
   // ===============================
@@ -420,18 +285,12 @@ export class AnalyticsController {
     @Param('storeId', ParseUUIDPipe) storeId: string,
     @Query(ValidationPipe) query: AnalyticsQueryDto
   ) {
-    try {
-      return await this.analyticsService.aggregate('funnelAnalysis', {
-        storeId,
-        productId: query.productId,
-        from: query.from,
-        to: query.to,
-      });
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get funnel analysis: ${error.message}`
-      );
-    }
+    return await this.analyticsService.aggregate('funnelAnalysis', {
+      storeId,
+      productId: query.productId,
+      from: query.from,
+      to: query.to,
+    });
   }
 
   @Get('stores/:storeId/revenue-trends')
@@ -439,17 +298,11 @@ export class AnalyticsController {
     @Param('storeId', ParseUUIDPipe) storeId: string,
     @Query(ValidationPipe) query: AnalyticsQueryDto
   ) {
-    try {
-      return await this.analyticsService.aggregate('revenueTrends', {
-        storeId,
-        from: query.from,
-        to: query.to,
-      });
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get revenue trends: ${error.message}`
-      );
-    }
+    return await this.analyticsService.aggregate('revenueTrends', {
+      storeId,
+      from: query.from,
+      to: query.to,
+    });
   }
 
   @Get('stores/:storeId/cohort-analysis')
@@ -457,17 +310,11 @@ export class AnalyticsController {
     @Param('storeId', ParseUUIDPipe) storeId: string,
     @Query(ValidationPipe) query: AnalyticsQueryDto
   ) {
-    try {
-      return await this.analyticsService.aggregate('cohortAnalysis', {
-        storeId,
-        from: query.from,
-        to: query.to,
-      });
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get cohort analysis: ${error.message}`
-      );
-    }
+    return await this.analyticsService.aggregate('cohortAnalysis', {
+      storeId,
+      from: query.from,
+      to: query.to,
+    });
   }
 
   @Get('stores/:storeId/user-journey')
@@ -475,17 +322,11 @@ export class AnalyticsController {
     @Param('storeId', ParseUUIDPipe) storeId: string,
     @Query(ValidationPipe) query: AnalyticsQueryDto
   ) {
-    try {
-      return await this.analyticsService.aggregate('userJourney', {
-        storeId,
-        from: query.from,
-        to: query.to,
-      });
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get user journey: ${error.message}`
-      );
-    }
+    return await this.analyticsService.aggregate('userJourney', {
+      storeId,
+      from: query.from,
+      to: query.to,
+    });
   }
 
   // ===============================
@@ -501,24 +342,18 @@ export class AnalyticsController {
       to?: string;
     }
   ) {
-    try {
-      if (!dto.storeIds || dto.storeIds.length < 2) {
-        throw new BadRequestException('At least 2 store IDs required');
-      }
-      if (dto.storeIds.length > 10) {
-        throw new BadRequestException('Maximum 10 stores can be compared');
-      }
-
-      return await this.analyticsService.aggregate('storeComparison', {
-        storeIds: dto.storeIds,
-        from: dto.from,
-        to: dto.to,
-      });
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to compare stores: ${error.message}`
-      );
+    if (!dto.storeIds || dto.storeIds.length < 2) {
+      throw new BadRequestException('At least 2 store IDs required');
     }
+    if (dto.storeIds.length > 10) {
+      throw new BadRequestException('Maximum 10 stores can be compared');
+    }
+
+    return await this.analyticsService.aggregate('storeComparison', {
+      storeIds: dto.storeIds,
+      from: dto.from,
+      to: dto.to,
+    });
   }
 
   @Post('products/compare')
@@ -530,24 +365,18 @@ export class AnalyticsController {
       to?: string;
     }
   ) {
-    try {
-      if (!dto.productIds || dto.productIds.length < 2) {
-        throw new BadRequestException('At least 2 product IDs required');
-      }
-      if (dto.productIds.length > 20) {
-        throw new BadRequestException('Maximum 20 products can be compared');
-      }
-
-      return await this.analyticsService.aggregate('productComparison', {
-        productIds: dto.productIds,
-        from: dto.from,
-        to: dto.to,
-      });
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to compare products: ${error.message}`
-      );
+    if (!dto.productIds || dto.productIds.length < 2) {
+      throw new BadRequestException('At least 2 product IDs required');
     }
+    if (dto.productIds.length > 20) {
+      throw new BadRequestException('Maximum 20 products can be compared');
+    }
+
+    return await this.analyticsService.aggregate('productComparison', {
+      productIds: dto.productIds,
+      from: dto.from,
+      to: dto.to,
+    });
   }
 
   @Get('stores/:storeId/period-comparison')
@@ -555,59 +384,29 @@ export class AnalyticsController {
     @Param('storeId', ParseUUIDPipe) storeId: string,
     @Query(ValidationPipe) query: AnalyticsQueryDto
   ) {
-    try {
-      return await this.analyticsService.aggregate('periodComparison', {
-        storeId,
-        productId: query.productId,
-        from: query.from,
-        to: query.to,
-      });
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to compare periods: ${error.message}`
-      );
-    }
+    return await this.analyticsService.aggregate('periodComparison', {
+      storeId,
+      productId: query.productId,
+      from: query.from,
+      to: query.to,
+    });
   }
 
   // ===============================
   // Performance Analytics Endpoints
   // ===============================
 
-  @Get('stores/top-performing')
-  @AdminRole(AdminRoles.ADMIN)
-  async getTopPerformingStores(
-    @Query(ValidationPipe) query: AnalyticsQueryDto
-  ) {
-    try {
-      return await this.analyticsService.aggregate('topPerformingStores', {
-        limit: query.limit || 10,
-        from: query.from,
-        to: query.to,
-      });
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get top performing stores: ${error.message}`
-      );
-    }
-  }
-
   @Get('stores/:storeId/top-performing-products')
   async getTopPerformingProducts(
     @Param('storeId', ParseUUIDPipe) storeId: string,
     @Query(ValidationPipe) query: AnalyticsQueryDto
   ) {
-    try {
-      return await this.analyticsService.aggregate('topPerformingProducts', {
-        storeId,
-        limit: query.limit || 10,
-        from: query.from,
-        to: query.to,
-      });
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get top performing products: ${error.message}`
-      );
-    }
+    return await this.analyticsService.aggregate('topPerformingProducts', {
+      storeId,
+      limit: query.limit || 10,
+      from: query.from,
+      to: query.to,
+    });
   }
 
   @Get('stores/:storeId/underperforming')
@@ -615,18 +414,66 @@ export class AnalyticsController {
     @Param('storeId', ParseUUIDPipe) storeId: string,
     @Query(ValidationPipe) query: AnalyticsQueryDto
   ) {
-    try {
-      return await this.analyticsService.aggregate('underperformingAnalysis', {
-        storeId,
-        from: query.from,
-        to: query.to,
-      });
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get underperforming analysis: ${error.message}`
-      );
-    }
+    return await this.analyticsService.aggregate('underperformingAnalysis', {
+      storeId,
+      from: query.from,
+      to: query.to,
+    });
   }
+
+  // ===============================
+  // Product Analytics Endpoints
+  // ===============================
+
+  @Get('stores/:storeId/products/:productId')
+  async getProductAnalytics(
+    @Param('storeId', ParseUUIDPipe) storeId: string,
+    @Param('productId', ParseUUIDPipe) productId: string,
+    @Query(ValidationPipe) query: AnalyticsQueryDto
+  ) {
+    return await this.analyticsService.aggregate('productStats', {
+      storeId,
+      productId,
+      from: query.from,
+      to: query.to,
+      includeTimeseries: query.includeTimeseries,
+    });
+  }
+
+  @Get('stores/:storeId/products/:productId/conversion')
+  async getProductConversion(
+    @Param('storeId', ParseUUIDPipe) storeId: string,
+    @Param('productId', ParseUUIDPipe) productId: string,
+    @Query(ValidationPipe) query: AnalyticsQueryDto
+  ) {
+    return await this.analyticsService.computeProductConversion(
+      productId,
+      query.from,
+      query.to
+    );
+  }
+
+  @Get('stores/:storeId/products/:productId/rating')
+  async getProductRating(
+    @Param('storeId', ParseUUIDPipe) storeId: string,
+    @Param('productId', ParseUUIDPipe) productId: string
+  ) {
+    return await this.analyticsService.aggregate('productRating', {
+      storeId,
+      productId,
+    });
+  }
+
+  @Get('products/:productId/quick-stats')
+  async getProductQuickStats(
+    @Param('productId', ParseUUIDPipe) productId: string
+  ) {
+    return await this.analyticsService.getProductQuickStats(productId);
+  }
+
+  // ===============================
+  // Leaderboards & Rankings
+  // ===============================
 
   // ===============================
   // Data Sync Endpoints (Admin Only)
@@ -635,30 +482,16 @@ export class AnalyticsController {
   @Post('sync/products/:productId')
   @AdminRole(AdminRoles.ADMIN)
   async syncProductStats(@Param('productId', ParseUUIDPipe) productId: string) {
-    try {
-      return await this.analyticsService.syncCachedStatsWithAnalytics(
-        productId
-      );
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to sync product stats: ${error.message}`
-      );
-    }
+    return await this.analyticsService.syncCachedStatsWithAnalytics(productId);
   }
 
   @Post('sync/stores/:storeId')
   @AdminRole(AdminRoles.ADMIN)
   async syncStoreStats(@Param('storeId', ParseUUIDPipe) storeId: string) {
-    try {
-      return await this.analyticsService.syncCachedStatsWithAnalytics(
-        undefined,
-        storeId
-      );
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to sync store stats: ${error.message}`
-      );
-    }
+    return await this.analyticsService.syncCachedStatsWithAnalytics(
+      undefined,
+      storeId
+    );
   }
 
   // ===============================
@@ -666,17 +499,12 @@ export class AnalyticsController {
   // ===============================
 
   @Post('aggregations')
+  @AdminRole(AdminRoles.ADMIN)
   async getAggregation(@Body(ValidationPipe) dto: AggregationRequestDto) {
-    try {
-      return await this.analyticsService.aggregate(
-        dto.aggregatorName,
-        dto.options
-      );
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to run aggregation: ${error.message}`
-      );
-    }
+    return await this.analyticsService.aggregate(
+      dto.aggregatorName,
+      dto.options
+    );
   }
 
   // ===============================

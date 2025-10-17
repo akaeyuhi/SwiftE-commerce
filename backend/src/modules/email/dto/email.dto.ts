@@ -6,6 +6,8 @@ import {
   IsEnum,
   IsObject,
   ValidateNested,
+  IsNumber,
+  IsUrl,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { EmailPriority } from 'src/common/enums/email.enum';
@@ -17,6 +19,23 @@ export class EmailRecipientDto {
   @IsOptional()
   @IsString()
   name?: string;
+}
+
+// ✅ Create DTO for attachments
+export class EmailAttachmentDto {
+  @IsString()
+  filename: string;
+
+  @IsString()
+  content: string;
+
+  @IsOptional()
+  @IsString()
+  contentType?: string;
+
+  @IsOptional()
+  @IsString()
+  encoding?: string;
 }
 
 export class SendEmailDto {
@@ -50,6 +69,12 @@ export class SendEmailDto {
   @IsOptional()
   @IsEnum(EmailPriority)
   priority?: EmailPriority;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => EmailAttachmentDto) // ✅ Add Type decorator
+  attachments?: EmailAttachmentDto[];
 
   @IsOptional()
   @IsArray()
@@ -89,6 +114,28 @@ export class SendWelcomeEmailDto {
   storeName: string;
 }
 
+export class StockAlertProductDataDto {
+  @IsString()
+  name: string;
+
+  @IsString()
+  price: string;
+
+  @IsNumber()
+  stockQuantity: number;
+
+  @IsUrl()
+  url: string;
+
+  @IsOptional()
+  @IsString()
+  image?: string;
+
+  @IsOptional()
+  @IsString()
+  description?: string;
+}
+
 export class SendStockAlertDto {
   @IsEmail()
   userEmail: string;
@@ -96,15 +143,32 @@ export class SendStockAlertDto {
   @IsString()
   userName: string;
 
-  @IsObject()
-  productData: {
-    name: string;
-    price: string;
-    stockQuantity: number;
-    url: string;
-    image?: string;
-    description?: string;
-  };
+  @ValidateNested()
+  @Type(() => StockAlertProductDataDto)
+  productData: StockAlertProductDataDto;
+}
+
+export class LowStockWarningProductDataDto {
+  @IsString()
+  name: string;
+
+  @IsString()
+  sku: string;
+
+  @IsString()
+  category: string;
+
+  @IsNumber()
+  currentStock: number;
+
+  @IsNumber()
+  threshold: number;
+
+  @IsNumber()
+  recentSales: number;
+
+  @IsNumber()
+  estimatedDays: number;
 }
 
 export class SendLowStockWarningDto {
@@ -114,17 +178,11 @@ export class SendLowStockWarningDto {
   @IsString()
   storeOwnerName: string;
 
-  @IsObject()
-  productData: {
-    name: string;
-    sku: string;
-    category: string;
-    currentStock: number;
-    threshold: number;
-    recentSales: number;
-    estimatedDays: number;
-  };
+  @ValidateNested()
+  @Type(() => LowStockWarningProductDataDto)
+  productData: LowStockWarningProductDataDto;
 
   @IsString()
+  @IsUrl()
   manageInventoryUrl: string;
 }

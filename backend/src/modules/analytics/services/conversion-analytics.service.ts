@@ -188,7 +188,8 @@ export class ConversionAnalyticsService {
       ])
       .where('p.deletedAt IS NULL')
       .andWhere('p.viewCount > :minViews', { minViews: 10 })
-      .orderBy('(p.totalSales::float / NULLIF(p.viewCount, 0))', 'DESC')
+      // ✅ Quote the column name properly
+      .orderBy('("p"."totalSales"::float / NULLIF("p"."viewCount", 0))', 'DESC')
       .limit(limit);
 
     if (storeId) {

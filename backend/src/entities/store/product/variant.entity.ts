@@ -6,6 +6,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToOne,
+  JoinColumn,
 } from 'typeorm';
 import { Product } from 'src/entities/store/product/product.entity';
 import { Inventory } from 'src/entities/store/product/inventory.entity';
@@ -16,12 +17,13 @@ export class ProductVariant implements BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'product_id' })
+  @Column({ name: 'product_id', type: 'uuid' })
   productId: string;
 
   @ManyToOne(() => Product, (product) => product.variants, {
     onDelete: 'CASCADE',
   })
+  @JoinColumn({ name: 'product_id', referencedColumnName: 'id' })
   product: Product;
 
   @Column({ type: 'varchar', length: 255, unique: true })
@@ -33,7 +35,7 @@ export class ProductVariant implements BaseEntity {
   @Column({ type: 'jsonb', nullable: true })
   attributes?: Record<string, any>;
 
-  @OneToOne(() => Inventory, (inv) => inv.variant)
+  @OneToOne(() => Inventory, (inv) => inv.variant, { eager: true })
   inventory: Inventory;
 
   @CreateDateColumn()

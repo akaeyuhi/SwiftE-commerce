@@ -62,7 +62,7 @@ describe('User - Profile (E2E)', () => {
           lastName: 'User',
         });
 
-      AssertionHelper.assertErrorResponse(response, 400, 'already exists');
+      AssertionHelper.assertErrorResponse(response, 400, 'already in use');
     });
 
     it('should validate email format', async () => {
@@ -109,7 +109,7 @@ describe('User - Profile (E2E)', () => {
     });
 
     it('should require authentication', async () => {
-      const response = await app.getHttpServer().get('/users/profile');
+      const response = await appHelper.request().get('/users/profile');
 
       AssertionHelper.assertErrorResponse(response, 401);
     });
@@ -120,7 +120,7 @@ describe('User - Profile (E2E)', () => {
         .get('/users/profile')
         .expect(200);
 
-      expect(response.body).toHaveProperty('isVerified');
+      expect(response.body).toHaveProperty('isEmailVerified');
       expect(response.body).toHaveProperty('createdAt');
       expect(response.body).toHaveProperty('updatedAt');
       AssertionHelper.assertTimestamps(response.body);
@@ -207,19 +207,25 @@ describe('User - Profile (E2E)', () => {
   });
 
   describe('GET /users/:id/profile', () => {
+    let checkUser;
+
+    beforeEach(async () => {
+      checkUser = await authHelper.createAuthenticatedUser();
+    });
+
     it('should get user profile by id as admin', async () => {
       const response = await authHelper
         .authenticatedRequest(adminUser.accessToken)
-        .get(`/users/${regularUser.user.id}/profile`)
+        .get(`/users/${checkUser.user.id}/profile`)
         .expect(200);
 
-      expect(response.body.id).toBe(regularUser.user.id);
-      expect(response.body.email).toBe(regularUser.user.email);
+      expect(response.body.id).toBe(checkUser.user.id);
+      expect(response.body.email).toBe(checkUser.user.email);
     });
 
     it('should require admin role', async () => {
       const response = await authHelper
-        .authenticatedRequest(regularUser.accessToken)
+        .authenticatedRequest(checkUser.accessToken)
         .get(`/users/${adminUser.user.id}/profile`);
 
       AssertionHelper.assertErrorResponse(response, 403);
@@ -251,7 +257,7 @@ describe('User - Profile (E2E)', () => {
         .post(`/users/${newUser.user.id}/verify-email`)
         .expect(201);
 
-      expect(response.body).toHaveProperty('isVerified', true);
+      expect(response.body).toHaveProperty('isEmailVerified', true);
     });
 
     it('should require admin role', async () => {
@@ -274,7 +280,7 @@ describe('User - Profile (E2E)', () => {
         .post(`/users/${regularUser.user.id}/verify-email`)
         .expect(201);
 
-      expect(response.body.isVerified).toBe(true);
+      expect(response.body.isEmailVerified).toBe(true);
     });
   });
 
@@ -290,11 +296,25 @@ describe('User - Profile (E2E)', () => {
     });
 
     it('should return false for unverified user', async () => {
-      const newUser = await authHelper.createAuthenticatedUser();
+      const registerResponse = await appHelper
+        .request()
+        .post('/auth/register')
+        .send({
+          email: `test_${Date.now()}@example.com`,
+          firstName: 'Test',
+          lastName: 'User',
+          password: 'Test123!@#',
+        })
+        .timeout(10000)
+        .expect(201);
+
+      const newUser = registerResponse.body.user;
+
+      console.log(registerResponse.body);
 
       const response = await authHelper
-        .authenticatedRequest(newUser.accessToken)
-        .get(`/users/${newUser.user.id}/email-verified`)
+        .authenticatedRequest(registerResponse.body.accessToken)
+        .get(`/users/${newUser.id}/email-verified`)
         .expect(200);
 
       expect(response.body.isEmailVerified).toBe(false);
@@ -336,7 +356,7 @@ describe('User - Profile (E2E)', () => {
         .post(`/users/${userToDeactivate.user.id}/deactivate`);
 
       // Try to login
-      const response = await app.getHttpServer().post('/auth/login').send({
+      const response = await appHelper.request().post('/auth/login').send({
         email: userToDeactivate.user.email,
         password: 'Test123!@#',
       });
@@ -397,7 +417,7 @@ describe('User - Profile (E2E)', () => {
           email: userData.email,
           password: userData.password,
         })
-        .expect(200);
+        .expect(201);
 
       expect(response.body).toHaveProperty('accessToken');
     });

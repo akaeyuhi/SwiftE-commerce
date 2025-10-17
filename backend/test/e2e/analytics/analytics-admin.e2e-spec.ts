@@ -80,7 +80,7 @@ describe('Analytics - Admin (E2E)', () => {
         .get('/analytics/health')
         .expect(200);
 
-      expect(response.body).toHaveProperty('status');
+      expect(response.body).toHaveProperty('healthy');
     });
 
     it('should prevent non-admin access', async () => {
@@ -118,7 +118,7 @@ describe('Analytics - Admin (E2E)', () => {
     it('should get aggregator schema', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .get('/analytics/aggregators/storeStats/schema')
+        .get('/analytics/aggregators/storeConversion/schema')
         .expect(200);
 
       expect(response.body).toBeDefined();

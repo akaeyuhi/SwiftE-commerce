@@ -11,6 +11,7 @@ import {
 } from 'src/common/enums/notification.enum';
 import { AuthModule } from 'src/modules/auth/auth.module';
 import { NotificationsModule } from 'src/modules/infrastructure/notifications/notifications.module';
+import { randomUUID } from 'crypto';
 
 describe('Notifications - News (E2E)', () => {
   let appHelper: TestAppHelper;
@@ -51,11 +52,12 @@ describe('Notifications - News (E2E)', () => {
 
   describe('News Published Notifications', () => {
     it('should send news published notification', async () => {
+      const uuid = randomUUID();
       await newsNotificationService.notifyNewsPublished(
         follower1.user.email,
         follower1.user.firstName,
         {
-          newsId: 'news-123',
+          newsId: uuid,
           storeId: store.id,
           storeName: store.name,
           title: 'Exciting Store Update!',
@@ -72,7 +74,7 @@ describe('Notifications - News (E2E)', () => {
       const logRepo = appHelper
         .getDataSource()
         .getRepository('NewsNotificationLog');
-      const logs = await logRepo.find({ where: { newsId: 'news-123' } });
+      const logs = await logRepo.find({ where: { newsId: uuid } });
 
       expect(logs.length).toBe(1);
       expect(logs[0].notificationType).toBe(NotificationType.NEWS_PUBLISHED);
@@ -80,11 +82,12 @@ describe('Notifications - News (E2E)', () => {
     });
 
     it('should include unsubscribe link', async () => {
+      const uuid = randomUUID();
       await newsNotificationService.notifyNewsPublished(
         follower1.user.email,
         follower1.user.firstName,
         {
-          newsId: 'news-456',
+          newsId: uuid,
           storeId: store.id,
           storeName: store.name,
           title: 'News with Unsubscribe',
@@ -100,7 +103,7 @@ describe('Notifications - News (E2E)', () => {
       const logRepo = appHelper
         .getDataSource()
         .getRepository('NewsNotificationLog');
-      const logs = await logRepo.find({ where: { newsId: 'news-456' } });
+      const logs = await logRepo.find({ where: { newsId: uuid } });
 
       expect(logs[0].payload.unsubscribeUrl).toContain('unsubscribe');
     });
@@ -108,6 +111,7 @@ describe('Notifications - News (E2E)', () => {
 
   describe('Batch Follower Notifications', () => {
     it('should send notifications to multiple followers', async () => {
+      const uuid = randomUUID();
       const followers = [
         {
           email: follower1.user.email,
@@ -122,7 +126,7 @@ describe('Notifications - News (E2E)', () => {
       ];
 
       const newsData = {
-        newsId: 'news-batch-123',
+        newsId: uuid,
         storeId: store.id,
         storeName: store.name,
         title: 'Batch News Update',
@@ -145,7 +149,7 @@ describe('Notifications - News (E2E)', () => {
       const logRepo = appHelper
         .getDataSource()
         .getRepository('NewsNotificationLog');
-      const logs = await logRepo.find({ where: { newsId: 'news-batch-123' } });
+      const logs = await logRepo.find({ where: { newsId: uuid } });
 
       expect(logs.length).toBe(2);
       expect(logs.every((log) => log.status === NotificationStatus.SENT)).toBe(
@@ -154,6 +158,7 @@ describe('Notifications - News (E2E)', () => {
     });
 
     it('should generate unique unsubscribe URLs for each follower', async () => {
+      const uuid = randomUUID();
       const followers = [
         {
           email: follower1.user.email,
@@ -168,7 +173,7 @@ describe('Notifications - News (E2E)', () => {
       ];
 
       await newsNotificationService.notifyFollowers(followers, {
-        newsId: 'news-unsubscribe-test',
+        newsId: uuid,
         storeId: store.id,
         storeName: store.name,
         title: 'Unsubscribe Test',
@@ -184,7 +189,7 @@ describe('Notifications - News (E2E)', () => {
         .getDataSource()
         .getRepository('NewsNotificationLog');
       const logs = await logRepo.find({
-        where: { newsId: 'news-unsubscribe-test' },
+        where: { newsId: uuid },
       });
 
       // Each log should have a unique unsubscribe URL
@@ -194,12 +199,14 @@ describe('Notifications - News (E2E)', () => {
   });
 
   describe('Notification Statistics', () => {
+    let uuid;
     beforeEach(async () => {
+      uuid = randomUUID();
       await newsNotificationService.notifyNewsPublished(
         follower1.user.email,
         follower1.user.firstName,
         {
-          newsId: 'stats-test-news',
+          newsId: uuid,
           storeId: store.id,
           storeName: store.name,
           title: 'Stats Test News',
@@ -215,9 +222,7 @@ describe('Notifications - News (E2E)', () => {
 
     it('should get news notification statistics', async () => {
       const stats =
-        await newsNotificationService.getNewsNotificationStats(
-          'stats-test-news'
-        );
+        await newsNotificationService.getNewsNotificationStats(uuid);
 
       expect(stats.total).toBe(1);
       expect(stats.sent).toBe(1);
@@ -240,12 +245,13 @@ describe('Notifications - News (E2E)', () => {
 
   describe('Validation', () => {
     it('should validate email format', async () => {
+      const uuid = randomUUID();
       await expect(
         newsNotificationService.notifyNewsPublished(
           'invalid-email',
           'Test User',
           {
-            newsId: 'test',
+            newsId: uuid,
             storeId: store.id,
             storeName: store.name,
             title: 'Test',

@@ -170,7 +170,10 @@ export class VariantsService extends BaseService<
    * @returns ProductVariant or null
    */
   async findBySku(sku: string): Promise<ProductVariant | null> {
-    return this.variantRepo.findOne({ where: { sku } });
+    const variant = await this.variantRepo.findOne({ where: { sku } });
+    if (!variant)
+      throw new NotFoundException(`Variant with sku ${sku} not found`);
+    return variant;
   }
 
   /**
@@ -264,17 +267,7 @@ export class VariantsService extends BaseService<
   }
 
   async setInventory(storeId: string, variantId: string, qty: number) {
-    let inv = await this.inventoryService.findInventoryByVariantId(variantId);
-    if (!inv) {
-      inv = await this.inventoryService.create({
-        variantId,
-        storeId,
-        quantity: qty,
-      } as any);
-    } else {
-      await this.inventoryService.adjustInventory(variantId, qty);
-    }
-    return inv;
+    return this.inventoryService.setInventory(storeId, variantId, qty);
   }
 
   /**
@@ -284,10 +277,7 @@ export class VariantsService extends BaseService<
    * @param delta
    */
   async adjustInventory(variantId: string, delta: number) {
-    const inv = await this.inventoryService.findInventoryByVariantId(variantId);
-    if (!inv) throw new NotFoundException('Inventory not found');
-    const newQuantity = inv.quantity + delta;
-    return await this.inventoryService.adjustInventory(inv.id, newQuantity);
+    return this.inventoryService.adjustInventory(variantId, delta);
   }
 
   async findWithRelations(variantId: string): Promise<ProductVariant | null> {

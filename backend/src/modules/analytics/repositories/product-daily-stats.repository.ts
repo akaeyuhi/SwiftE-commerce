@@ -26,7 +26,7 @@ export class ProductDailyStatsRepository extends BaseAnalyticsRepository<Product
       ])
       .where('p.productId = :productId', { productId });
 
-    this.applyDateRange(qb, options, 'p.date');
+    this.applyDateRange(qb, options, 'date');
 
     const raw = await qb.getRawOne();
     return this.parseAggregationResult(raw);

@@ -1,4 +1,4 @@
-import { IsUUID, IsNumber, Min } from 'class-validator';
+import { IsUUID, IsNumber, Min, IsPositive } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateInventoryDto {
@@ -23,5 +23,6 @@ export class CreateInventoryDto {
   })
   @IsNumber()
   @Min(0)
+  @IsPositive()
   quantity: number;
 }

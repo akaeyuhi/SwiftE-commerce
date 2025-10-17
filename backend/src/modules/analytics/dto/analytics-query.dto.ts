@@ -11,6 +11,7 @@ import { Transform, Type } from 'class-transformer';
 
 export class AnalyticsQueryDto {
   @IsUUID()
+  @IsOptional()
   productId: string;
 
   @IsOptional()

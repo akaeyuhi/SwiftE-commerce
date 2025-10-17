@@ -19,13 +19,13 @@ export class Review implements UserOwnedEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'user_id' })
+  @Column({ name: 'user_id', type: 'uuid' })
   userId: string;
 
   @ManyToOne(() => User, (user) => user.reviews, { onDelete: 'CASCADE' })
   user: User;
 
-  @Column({ name: 'product_id' })
+  @Column({ name: 'product_id', type: 'uuid' })
   productId: string;
 
   @ManyToOne(() => Product, (product) => product.reviews, {

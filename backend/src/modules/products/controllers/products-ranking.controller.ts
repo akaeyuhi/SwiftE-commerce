@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Controller,
   Get,
   Param,
@@ -29,20 +28,14 @@ export class ProductsRankingController {
    */
   @Get('top/views')
   async getTopProductsByViews(
-    @Param('storeId', ParseUUIDPipe) storeId: string,
+    @Param('storeId', new ParseUUIDPipe()) storeId: string,
     @Query('limit') limit?: string
   ): Promise<ProductListDto[]> {
-    try {
-      const maxLimit = limit ? Math.min(parseInt(limit), 50) : 10;
-      return await this.productsRankingService.getTopProductsByViews(
-        storeId,
-        maxLimit
-      );
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get top products: ${error.message}`
-      );
-    }
+    const maxLimit = limit ? Math.min(parseInt(limit), 50) : 10;
+    return await this.productsRankingService.getTopProductsByViews(
+      storeId,
+      maxLimit
+    );
   }
 
   /**
@@ -51,20 +44,14 @@ export class ProductsRankingController {
    */
   @Get('top/sales')
   async getTopProductsBySales(
-    @Param('storeId', ParseUUIDPipe) storeId: string,
+    @Param('storeId', new ParseUUIDPipe()) storeId: string,
     @Query('limit') limit?: string
   ): Promise<ProductListDto[]> {
-    try {
-      const maxLimit = limit ? Math.min(parseInt(limit), 50) : 10;
-      return await this.productsRankingService.getTopProductsBySales(
-        storeId,
-        maxLimit
-      );
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get top products: ${error.message}`
-      );
-    }
+    const maxLimit = limit ? Math.min(parseInt(limit), 50) : 10;
+    return await this.productsRankingService.getTopProductsBySales(
+      storeId,
+      maxLimit
+    );
   }
 
   /**
@@ -73,20 +60,14 @@ export class ProductsRankingController {
    */
   @Get('top/rated')
   async getTopRatedProducts(
-    @Param('storeId', ParseUUIDPipe) storeId: string,
+    @Param('storeId', new ParseUUIDPipe()) storeId: string,
     @Query('limit') limit?: string
   ): Promise<ProductListDto[]> {
-    try {
-      const maxLimit = limit ? Math.min(parseInt(limit), 50) : 10;
-      return await this.productsRankingService.getTopRatedProducts(
-        storeId,
-        maxLimit
-      );
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get top products: ${error.message}`
-      );
-    }
+    const maxLimit = limit ? Math.min(parseInt(limit), 50) : 10;
+    return await this.productsRankingService.getTopRatedProducts(
+      storeId,
+      maxLimit
+    );
   }
 
   /**
@@ -95,20 +76,14 @@ export class ProductsRankingController {
    */
   @Get('top/conversion')
   async getTopProductsByConversion(
-    @Param('storeId', ParseUUIDPipe) storeId: string,
+    @Param('storeId', new ParseUUIDPipe()) storeId: string,
     @Query('limit') limit?: string
   ): Promise<ProductListDto[]> {
-    try {
-      const maxLimit = limit ? Math.min(parseInt(limit), 50) : 10;
-      return await this.productsRankingService.getTopProductsByConversionRate(
-        storeId,
-        maxLimit
-      );
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get top products: ${error.message}`
-      );
-    }
+    const maxLimit = limit ? Math.min(parseInt(limit), 50) : 10;
+    return await this.productsRankingService.getTopProductsByConversionRate(
+      storeId,
+      maxLimit
+    );
   }
 
   /**
@@ -117,22 +92,16 @@ export class ProductsRankingController {
    */
   @Get('trending')
   async getTrendingProducts(
-    @Param('storeId', ParseUUIDPipe) storeId: string,
+    @Param('storeId', new ParseUUIDPipe()) storeId: string,
     @Query('limit') limit?: string,
     @Query('days') days?: string
   ): Promise<ProductListDto[]> {
-    try {
-      const maxLimit = limit ? Math.min(parseInt(limit), 50) : 10;
-      const daysPeriod = days ? parseInt(days) : 7;
-      return await this.productsRankingService.getTrendingProducts(
-        storeId,
-        maxLimit,
-        daysPeriod
-      );
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get trending products: ${error.message}`
-      );
-    }
+    const maxLimit = limit ? Math.min(parseInt(limit), 50) : 10;
+    const daysPeriod = days ? parseInt(days) : 7;
+    return await this.productsRankingService.getTrendingProducts(
+      storeId,
+      maxLimit,
+      daysPeriod
+    );
   }
 }

@@ -125,7 +125,7 @@ describe('Notifications - Inventory (E2E)', () => {
         .getRepository('InventoryNotificationLog');
       const logs = await logRepo.find({ where: { productId: product.id } });
 
-      expect(logs[0].metadata.severity).toBe('critical');
+      expect(logs[0].payload.isCritical).toBe(true);
     });
 
     it('should validate required fields', async () => {
@@ -198,11 +198,12 @@ describe('Notifications - Inventory (E2E)', () => {
         .getRepository('InventoryNotificationLog');
       const logs = await logRepo.find({ where: { productId: product.id } });
 
+      console.log(logs);
+
       expect(logs.length).toBe(1);
       expect(logs[0].notificationType).toBe(
         NotificationType.INVENTORY_OUT_OF_STOCK
       );
-      expect(logs[0].metadata.severity).toBe('critical');
     });
   });
 

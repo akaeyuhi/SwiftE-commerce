@@ -24,7 +24,7 @@ export class StoreDailyStatsRepository extends BaseAnalyticsRepository<StoreDail
       ])
       .where('s.storeId = :storeId', { storeId });
 
-    this.applyDateRange(qb, options, 's.date');
+    this.applyDateRange(qb, options, 'date');
 
     const raw = await qb.getRawOne();
 
@@ -116,7 +116,11 @@ export class StoreDailyStatsRepository extends BaseAnalyticsRepository<StoreDail
       qb.where('stats.date <= :to', { to });
     }
 
-    return await qb.orderBy('totalRevenue', 'DESC').limit(limit).getRawMany();
+    // ✅ Use the full SUM expression instead of the alias
+    return await qb
+      .orderBy('SUM(stats.revenue)', 'DESC')
+      .limit(limit)
+      .getRawMany();
   }
 
   async getUnderperformingStores(from?: string, to?: string) {

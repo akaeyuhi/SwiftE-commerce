@@ -18,6 +18,7 @@ export class ProductDto {
   totalSales?: number;
   likeCount?: number;
   viewCount?: number;
+  mainPhotoUrl?: string;
 
   createdAt?: Date;
   updatedAt?: Date;

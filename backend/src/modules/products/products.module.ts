@@ -47,7 +47,7 @@ import { ReviewsModule } from 'src/modules/products/reviews/reviews.module';
       useClass: ProductStoreRepository,
     },
   ],
-  controllers: [ProductsController, ProductsRankingController],
+  controllers: [ProductsRankingController, ProductsController],
   exports: [ProductsService],
 })
 export class ProductsModule {}

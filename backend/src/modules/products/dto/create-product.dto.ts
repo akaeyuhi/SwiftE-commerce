@@ -13,6 +13,7 @@ export class CreateProductDto {
   description?: string;
 
   @IsUUID()
+  @IsOptional()
   storeId: string;
 
   /**

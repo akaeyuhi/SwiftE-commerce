@@ -188,7 +188,7 @@ describe('Orders - Status Management (E2E)', () => {
       const variant = await variantRepo.findOne({
         where: { id: order.items[0].variantId },
       });
-      const stockBefore = variant ? variant.stock : 0;
+      const stockBefore = variant ? variant.inventory.quantity : 0;
 
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
@@ -198,11 +198,16 @@ describe('Orders - Status Management (E2E)', () => {
 
       expect(response.body.status).toBe(OrderStatus.CANCELLED);
 
-      const updatedVariant = await variantRepo.findOne({
-        where: { id: order.items[0].variantId },
-      });
+      const newOrder = (
+        await authHelper
+          .authenticatedRequest(storeOwner.accessToken)
+          .get(`/stores/${store.id}/orders/${order.id}`)
+      ).body;
+
+      const updatedVariant = newOrder.items[0].variant;
+
       if (updatedVariant) {
-        expect(updatedVariant.stock).toBeGreaterThan(stockBefore);
+        expect(updatedVariant.inventory.quantity).toBeGreaterThan(stockBefore);
       }
     });
 
@@ -345,8 +350,12 @@ describe('Orders - Status Management (E2E)', () => {
         .send(shippingData)
         .expect(200);
 
-      expect(response.body.trackingNumber).toBe(shippingData.trackingNumber);
-      expect(response.body.shippingMethod).toBe(shippingData.shippingMethod);
+      expect(response.body.shipping.trackingNumber).toBe(
+        shippingData.trackingNumber
+      );
+      expect(response.body.shipping.shippingMethod).toBe(
+        shippingData.shippingMethod
+      );
     });
 
     it('should allow partial shipping updates', async () => {
@@ -356,7 +365,7 @@ describe('Orders - Status Management (E2E)', () => {
         .send({ trackingNumber: '1Z999AA10123456784' })
         .expect(200);
 
-      expect(response.body.trackingNumber).toBe('1Z999AA10123456784');
+      expect(response.body.shipping.trackingNumber).toBe('1Z999AA10123456784');
     });
 
     it('should prevent regular user from updating shipping', async () => {
@@ -384,8 +393,8 @@ describe('Orders - Status Management (E2E)', () => {
         .expect(200);
 
       expect(response.body.status).toBe(OrderStatus.DELIVERED);
-      expect(response.body.deliveredAt).toBeDefined();
-      expect(new Date(response.body.deliveredAt)).toBeInstanceOf(Date);
+      expect(response.body.shipping.deliveredAt).toBeDefined();
+      expect(new Date(response.body.shipping.deliveredAt)).toBeInstanceOf(Date);
     });
 
     it('should set deliveredAt timestamp', async () => {
@@ -397,7 +406,9 @@ describe('Orders - Status Management (E2E)', () => {
         .expect(200);
 
       const after = Date.now();
-      const deliveredAt = new Date(response.body.deliveredAt).getTime();
+      const deliveredAt = new Date(
+        response.body.shipping.deliveredAt
+      ).getTime();
 
       expect(deliveredAt).toBeGreaterThanOrEqual(before);
       expect(deliveredAt).toBeLessThanOrEqual(after);

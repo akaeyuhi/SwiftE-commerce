@@ -26,7 +26,7 @@ export class Product implements StoreOwnedEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'store_id' })
+  @Column({ name: 'store_id', type: 'uuid' })
   storeId: string;
 
   @ManyToOne(() => Store, (store) => store.products, { onDelete: 'CASCADE' })
@@ -64,15 +64,22 @@ export class Product implements StoreOwnedEntity {
   @Column({ type: 'int', default: 0 })
   viewCount: number;
 
+  @Column({ type: 'varchar', nullable: true })
+  mainPhotoUrl: string;
+
   @OneToMany(() => ProductVariant, (variant) => variant.product, {
     cascade: true,
   })
   variants: ProductVariant[];
 
-  @OneToMany(() => ProductPhoto, (photo) => photo.product, { cascade: true })
+  @OneToMany(() => ProductPhoto, (photo) => photo.product, {
+    cascade: ['update', 'remove'],
+  })
   photos: ProductPhoto[];
 
-  @OneToMany(() => Review, (review) => review.product, { cascade: true })
+  @OneToMany(() => Review, (review) => review.product, {
+    cascade: ['update', 'remove'],
+  })
   reviews: Review[];
 
   @CreateDateColumn()

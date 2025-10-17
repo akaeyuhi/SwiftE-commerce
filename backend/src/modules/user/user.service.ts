@@ -8,7 +8,7 @@ import { BaseService } from 'src/common/abstracts/base.service';
 
 import { User } from 'src/entities/user/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateProfileDto, UpdateUserDto } from './dto/update-user.dto';
 import { UserDto } from './dto/user.dto';
 import { UserMapper } from 'src/modules/user/user.mapper';
 import * as bcrypt from 'bcrypt';
@@ -113,21 +113,26 @@ export class UserService extends BaseService<
 
   async revokeStoreRole(
     userId: string,
-    roleId: string,
+    roleName: StoreRoles,
     storeId?: string
-  ): Promise<void> {
-    await this.userRepo.removeRoleFromUser(userId, roleId, storeId);
+  ): Promise<{ success: true }> {
+    try {
+      await this.userRepo.removeRoleFromUser(userId, roleName, storeId);
+      return { success: true };
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
   }
 
   async createStore(ownerId: string, dto: CreateStoreDto): Promise<StoreDto> {
-    const owner = await this.getEntityById(ownerId);
+    const owner = await this.findOneWithRelations(ownerId);
     if (!owner) throw new NotFoundException('Store owner not found');
 
-    dto.owner = owner;
-
-    const store = await this.storeService.create(dto);
+    const store = await this.storeService.create({ ...dto, ownerId });
 
     await this.assignStoreRole(owner.id, StoreRoles.ADMIN, store.id!);
+
+    await this.userRepo.addStoresToUser(owner, store);
 
     return store;
   }
@@ -207,9 +212,10 @@ export class UserService extends BaseService<
     emailVerifiedAt?: Date;
     storeRoles?: any[];
     createdAt: Date;
+    updatedAt?: Date;
   } | null> {
     const user = await this.getEntityById(userId);
-    if (!user) return null;
+    if (!user) throw new NotFoundException('User not found');
 
     const storeRoles = await this.getUserStoreRoles(userId);
 
@@ -226,6 +232,7 @@ export class UserService extends BaseService<
         roleName: role.roleName,
         assignedAt: role.assignedAt,
       })),
+      updatedAt: user.updatedAt,
       createdAt: user.createdAt,
     };
   }
@@ -235,10 +242,7 @@ export class UserService extends BaseService<
    */
   async updateProfile(
     userId: string,
-    updates: {
-      firstName?: string;
-      lastName?: string;
-    }
+    updates: UpdateProfileDto
   ): Promise<User | null> {
     const user = await this.findOne(userId);
     if (!user) {

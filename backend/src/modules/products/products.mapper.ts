@@ -37,6 +37,8 @@ export class ProductsMapper extends BaseMapper<Product, ProductDto> {
       store: entity.store,
       categories: entity.categories,
       variants: entity.variants,
+      mainPhotoUrl:
+        entity.mainPhotoUrl || entity.photos?.find((p) => p.isMain)?.url,
       photos: entity.photos,
       reviews: entity.reviews,
     };
@@ -65,7 +67,10 @@ export class ProductsMapper extends BaseMapper<Product, ProductDto> {
       likeCount: entity.likeCount || 0,
       viewCount: entity.viewCount || 0,
       totalSales: entity.totalSales || 0,
-      mainPhotoUrl: mainPhotoUrl || entity.photos?.find((p) => p.isMain)?.url,
+      mainPhotoUrl:
+        entity.mainPhotoUrl ||
+        mainPhotoUrl ||
+        entity.photos?.find((p) => p.isMain)?.url,
       minPrice,
       maxPrice,
     };

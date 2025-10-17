@@ -2,12 +2,14 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
   Param,
   ParseUUIDPipe,
   Post,
+  Put,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -22,14 +24,15 @@ import { UpdateStoreDto } from './dto/update-store.dto';
 import {
   StoreDto,
   StoreListDto,
-  StoreStatsDto,
   StoreSearchResultDto,
+  StoreStatsDto,
 } from './dto/store.dto';
 import { BaseController } from 'src/common/abstracts/base.controller';
 import { Store } from 'src/entities/store/store.entity';
 import { StoreRole } from 'src/common/decorators/store-role.decorator';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { AdvancedStoreSearchDto } from 'src/modules/store/dto/advanced-store-search.dto';
+import { AccessPolicies } from 'src/modules/authorization/policy/policy.types';
 
 /**
  * StoreController
@@ -49,6 +52,21 @@ export class StoreController extends BaseController<
   UpdateStoreDto,
   StoreDto
 > {
+  static accessPolicies: AccessPolicies = {
+    findAll: { requireAuthenticated: true, adminRole: AdminRoles.ADMIN },
+    findOne: { requireAuthenticated: true, adminRole: undefined },
+    update: {
+      requireAuthenticated: true,
+      storeRoles: [StoreRoles.ADMIN],
+      adminRole: undefined,
+    },
+    remove: {
+      requireAuthenticated: true,
+      storeRoles: [StoreRoles.ADMIN],
+      adminRole: undefined,
+    },
+  };
+
   constructor(private readonly storeService: StoreService) {
     super(storeService);
   }
@@ -121,6 +139,7 @@ export class StoreController extends BaseController<
    */
   @Post('advanced-search')
   @HttpCode(HttpStatus.OK)
+  @StoreRole(StoreRoles.ADMIN, StoreRoles.MODERATOR)
   async advancedSearch(@Body() searchDto: AdvancedStoreSearchDto): Promise<{
     stores: StoreSearchResultDto[];
     total: number;
@@ -197,16 +216,11 @@ export class StoreController extends BaseController<
    * Get detailed statistics for a specific store
    */
   @Get(':id/stats')
+  @StoreRole(StoreRoles.ADMIN, StoreRoles.MODERATOR)
   async getStoreStats(
     @Param('id', ParseUUIDPipe) id: string
   ): Promise<StoreStatsDto> {
-    try {
-      return await this.storeService.getStoreStats(id);
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get store stats: ${error.message}`
-      );
-    }
+    return await this.storeService.getStoreStats(id);
   }
 
   /**
@@ -214,6 +228,7 @@ export class StoreController extends BaseController<
    * Alias for stats endpoint (consistent with analytics API)
    */
   @Get(':id/quick-stats')
+  @StoreRole(StoreRoles.ADMIN, StoreRoles.MODERATOR)
   async getQuickStats(
     @Param('id', ParseUUIDPipe) id: string
   ): Promise<StoreStatsDto> {
@@ -287,7 +302,6 @@ export class StoreController extends BaseController<
    * Manually recalculate all cached statistics for a store
    */
   @Post(':id/recalculate-stats')
-  @AdminRole(AdminRoles.ADMIN)
   @StoreRole(StoreRoles.ADMIN)
   @HttpCode(HttpStatus.OK)
   async recalculateStats(@Param('id', ParseUUIDPipe) id: string) {
@@ -331,7 +345,6 @@ export class StoreController extends BaseController<
    * Check store data health and integrity
    */
   @Get(':id/health')
-  @AdminRole(AdminRoles.ADMIN)
   @StoreRole(StoreRoles.ADMIN)
   async checkStoreHealth(@Param('id', ParseUUIDPipe) id: string) {
     try {
@@ -341,5 +354,25 @@ export class StoreController extends BaseController<
         `Failed to check store health: ${error.message}`
       );
     }
+  }
+
+  @Put(':id')
+  async update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateStoreDto
+  ) {
+    return this.storeService.update(id, dto);
+  }
+
+  /**
+   * DELETE /stores/:storeId/
+   * Soft delete a store
+   */
+  @Delete(':id/soft')
+  @StoreRole(StoreRoles.ADMIN)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async softDelete(@Param('id', ParseUUIDPipe) id: string) {
+    await this.storeService.softDelete(id);
+    return { success: true };
   }
 }

@@ -152,6 +152,7 @@ export class ProductsRankingService {
       viewCount: p.p_viewCount || 0,
       totalSales: p.p_totalSales || 0,
       mainPhotoUrl: p.mainPhotoUrl || p.photoUrl,
+      conversionRate: p.conversionRate || 0,
       minPrice: p.minPrice ? Number(p.minPrice) : undefined,
       maxPrice: p.maxPrice ? Number(p.maxPrice) : undefined,
     }));

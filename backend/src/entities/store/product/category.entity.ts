@@ -26,7 +26,7 @@ export class Category implements StoreOwnedEntity {
   @Column({ type: 'text', nullable: true })
   description?: string;
 
-  @Column({ name: 'storeId' })
+  @Column({ name: 'storeId', type: 'uuid' })
   storeId: string;
 
   @ManyToOne(() => Store, (store) => store.categories, { onDelete: 'CASCADE' })

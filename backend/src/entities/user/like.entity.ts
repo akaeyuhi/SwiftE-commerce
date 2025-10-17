@@ -19,13 +19,13 @@ export class Like implements BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'user_id' })
+  @Column({ name: 'user_id', type: 'uuid' })
   userId: string;
 
   @ManyToOne(() => User, (u) => u.likes, { onDelete: 'CASCADE' })
   user: User;
 
-  @Column({ name: 'product_id', nullable: true })
+  @Column({ name: 'product_id', nullable: true, type: 'uuid' })
   productId?: string;
 
   @ManyToOne(() => Product, (p) => p, {
@@ -34,7 +34,7 @@ export class Like implements BaseEntity {
   })
   product?: Product;
 
-  @Column({ name: 'store_id', nullable: true })
+  @Column({ name: 'store_id', nullable: true, type: 'uuid' })
   storeId?: string;
 
   @ManyToOne(() => Store, (s) => s, {

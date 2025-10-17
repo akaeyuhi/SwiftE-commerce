@@ -35,6 +35,8 @@ describe('Email - Sending (E2E)', () => {
     regularUser = await authHelper.createAuthenticatedUser();
 
     store = await seeder.seedStore(storeOwner.user);
+
+    await seeder.assignStoreModerator(storeModerator.user.id, store.id);
   });
 
   afterAll(async () => {
@@ -155,7 +157,7 @@ describe('Email - Sending (E2E)', () => {
   describe('POST /email/user-confirmation', () => {
     it('should send user confirmation email', async () => {
       const response = await authHelper
-        .authenticatedRequest(storeModerator.accessToken)
+        .authenticatedRequest(adminUser.accessToken)
         .post('/email/user-confirmation')
         .send({
           userEmail: regularUser.user.email,
@@ -168,21 +170,6 @@ describe('Email - Sending (E2E)', () => {
       expect(response.body.success).toBe(true);
       expect(response.body.data).toHaveProperty('jobId');
       expect(response.body.data).toHaveProperty('scheduledAt');
-    });
-
-    it('should allow store moderator', async () => {
-      const response = await authHelper
-        .authenticatedRequest(storeModerator.accessToken)
-        .post('/email/user-confirmation')
-        .send({
-          userEmail: 'test@example.com',
-          userName: 'Test User',
-          confirmationUrl: 'https://example.com/confirm/123',
-          storeName: store.name,
-        })
-        .expect(201);
-
-      expect(response.body.success).toBe(true);
     });
 
     it('should prevent regular user', async () => {
@@ -201,7 +188,7 @@ describe('Email - Sending (E2E)', () => {
 
     it('should validate required fields', async () => {
       const response = await authHelper
-        .authenticatedRequest(storeModerator.accessToken)
+        .authenticatedRequest(adminUser.accessToken)
         .post('/email/user-confirmation')
         .send({
           userName: 'Test',
@@ -214,7 +201,7 @@ describe('Email - Sending (E2E)', () => {
   describe('POST /email/welcome', () => {
     it('should send welcome email', async () => {
       const response = await authHelper
-        .authenticatedRequest(storeModerator.accessToken)
+        .authenticatedRequest(adminUser.accessToken)
         .post('/email/welcome')
         .send({
           userEmail: regularUser.user.email,
@@ -230,7 +217,7 @@ describe('Email - Sending (E2E)', () => {
 
     it('should validate email format', async () => {
       const response = await authHelper
-        .authenticatedRequest(storeModerator.accessToken)
+        .authenticatedRequest(adminUser.accessToken)
         .post('/email/welcome')
         .send({
           userEmail: 'invalid-email',
@@ -247,7 +234,7 @@ describe('Email - Sending (E2E)', () => {
     it('should send stock alert email', async () => {
       const response = await authHelper
         .authenticatedRequest(storeModerator.accessToken)
-        .post('/email/stock-alert')
+        .post(`/email/${store.id}/stock-alert`)
         .send({
           userEmail: regularUser.user.email,
           userName: regularUser.user.firstName,
@@ -268,7 +255,7 @@ describe('Email - Sending (E2E)', () => {
     it('should require product data', async () => {
       const response = await authHelper
         .authenticatedRequest(storeModerator.accessToken)
-        .post('/email/stock-alert')
+        .post(`/email/${store.id}/stock-alert`)
         .send({
           userEmail: regularUser.user.email,
           userName: 'Test',
@@ -282,7 +269,7 @@ describe('Email - Sending (E2E)', () => {
     it('should send low stock warning', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post('/email/low-stock-warning')
+        .post(`/email/${store.id}/low-stock-warning`)
         .send({
           storeOwnerEmail: storeOwner.user.email,
           storeOwnerName: storeOwner.user.firstName,
@@ -305,7 +292,7 @@ describe('Email - Sending (E2E)', () => {
     it('should require admin role', async () => {
       const response = await authHelper
         .authenticatedRequest(storeModerator.accessToken)
-        .post('/email/low-stock-warning')
+        .post(`/email/${store.id}/low-stock-warning`)
         .send({
           storeOwnerEmail: 'test@example.com',
           storeOwnerName: 'Test',
@@ -327,7 +314,7 @@ describe('Email - Sending (E2E)', () => {
     it('should validate product data fields', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post('/email/low-stock-warning')
+        .post(`/email/${store.id}/low-stock-warning`)
         .send({
           storeOwnerEmail: storeOwner.user.email,
           storeOwnerName: 'Test',

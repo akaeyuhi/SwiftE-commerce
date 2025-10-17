@@ -34,10 +34,17 @@ describe('Variants (E2E)', () => {
     store = await seeder.seedStore(storeOwner.user);
     const products = await seeder.seedProducts(store, 1);
     product = products[0];
+
+    await seeder.assignStoreModerator(storeModerator.user.id, store.id);
   });
 
   afterAll(async () => {
+    await appHelper.clearDatabase();
     await appHelper.cleanup();
+  });
+
+  afterEach(async () => {
+    await appHelper.clearTables(['product_variants', 'inventory']);
   });
 
   describe('GET /stores/:storeId/products/:productId/variants', () => {
@@ -347,6 +354,7 @@ describe('Variants (E2E)', () => {
     let variant: any;
 
     beforeEach(async () => {
+      await appHelper.clearTables(['product_variants', 'inventory']);
       const variants = await seeder.seedVariants(product, 1);
       variant = variants[0];
 
@@ -552,7 +560,7 @@ describe('Variants (E2E)', () => {
       const updatedVariant = finalVariants.body.find(
         (v: any) => v.id === variant.id
       );
-      expect(updatedVariant.price).toBe(59.99);
+      expect(parseFloat(updatedVariant.price)).toBe(59.99);
       expect(updatedVariant.attributes).toMatchObject({
         size: 'XL',
         color: 'Black',

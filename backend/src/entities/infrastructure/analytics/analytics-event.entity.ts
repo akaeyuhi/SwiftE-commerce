@@ -24,7 +24,7 @@ export enum AnalyticsEventType {
 @Index(['eventType', 'createdAt'])
 @Index(['createdAt'])
 export class AnalyticsEvent {
-  @PrimaryGeneratedColumn('increment', { type: 'bigint' })
+  @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Column({ type: 'uuid', nullable: true })

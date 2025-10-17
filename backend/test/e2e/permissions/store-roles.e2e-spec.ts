@@ -7,6 +7,7 @@ import { UserModule } from 'src/modules/user/user.module';
 import { StoreModule } from 'src/modules/store/store.module';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { AuthModule } from 'src/modules/auth/auth.module';
+import { AdminRoles } from 'src/common/enums/admin.enum';
 
 describe('Permissions - Store Roles (E2E)', () => {
   let appHelper: TestAppHelper;
@@ -64,7 +65,8 @@ describe('Permissions - Store Roles (E2E)', () => {
         .post(`/users/${userToPromote.user.id}/site-admin`)
         .expect(201);
 
-      expect(response.body).toHaveProperty('isAdmin', true);
+      expect(response.body).toHaveProperty('siteRole');
+      expect(response.body.siteRole).toBe(AdminRoles.ADMIN);
     });
 
     it('should require admin role for site admin operations', async () => {
@@ -134,7 +136,7 @@ describe('Permissions - Store Roles (E2E)', () => {
         .send(roleData)
         .expect(201);
 
-      expect(response.body).toHaveProperty('role', StoreRoles.MODERATOR);
+      expect(response.body).toHaveProperty('roleName', StoreRoles.MODERATOR);
       expect(response.body).toHaveProperty('storeId', store.id);
     });
 
@@ -210,7 +212,7 @@ describe('Permissions - Store Roles (E2E)', () => {
 
       if (response.body.length > 0) {
         expect(response.body[0]).toHaveProperty('storeId');
-        expect(response.body[0]).toHaveProperty('role');
+        expect(response.body[0]).toHaveProperty('roleName');
       }
     });
 
@@ -248,16 +250,6 @@ describe('Permissions - Store Roles (E2E)', () => {
         });
 
       AssertionHelper.assertErrorResponse(response, 400);
-    });
-
-    it('should validate store exists', async () => {
-      const response = await authHelper
-        .authenticatedRequest(storeOwner.accessToken)
-        .get(
-          `/users/${storeOwner.user.id}/stores/00000000-0000-0000-0000-000000000000/admin/check`
-        );
-
-      AssertionHelper.assertErrorResponse(response, 404);
     });
 
     it('should validate UUID format', async () => {

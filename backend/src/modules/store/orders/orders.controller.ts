@@ -91,11 +91,27 @@ export class OrdersController extends BaseController<
    */
   static accessPolicies: AccessPolicies = {
     // Base CRUD
-    findAll: { requireAuthenticated: true, storeRoles: [StoreRoles.ADMIN] },
-    findOne: { requireAuthenticated: true }, // Owner check via EntityOwnerGuard
-    create: { requireAuthenticated: true, storeRoles: [StoreRoles.ADMIN] },
-    update: { requireAuthenticated: true, storeRoles: [StoreRoles.ADMIN] },
-    remove: { requireAuthenticated: true, storeRoles: [StoreRoles.ADMIN] },
+    findAll: {
+      requireAuthenticated: true,
+      storeRoles: [StoreRoles.ADMIN],
+      adminRole: undefined,
+    },
+    findOne: { requireAuthenticated: true, adminRole: undefined },
+    create: {
+      requireAuthenticated: true,
+      storeRoles: [StoreRoles.ADMIN],
+      adminRole: undefined,
+    },
+    update: {
+      requireAuthenticated: true,
+      storeRoles: [StoreRoles.ADMIN],
+      adminRole: undefined,
+    },
+    remove: {
+      requireAuthenticated: true,
+      storeRoles: [StoreRoles.ADMIN],
+      adminRole: undefined,
+    },
 
     // Store operations
     findAllByStore: {
@@ -124,6 +140,14 @@ export class OrdersController extends BaseController<
       storeRoles: [StoreRoles.ADMIN, StoreRoles.MODERATOR],
     },
     getInventoryImpact: {
+      requireAuthenticated: true,
+      storeRoles: [StoreRoles.ADMIN, StoreRoles.MODERATOR],
+    },
+    markAsDelivered: {
+      requireAuthenticated: true,
+      storeRoles: [StoreRoles.ADMIN, StoreRoles.MODERATOR],
+    },
+    updateShippingInfo: {
       requireAuthenticated: true,
       storeRoles: [StoreRoles.ADMIN, StoreRoles.MODERATOR],
     },
@@ -183,7 +207,7 @@ export class OrdersController extends BaseController<
    *
    * If insufficient stock, returns 400 with detailed error.
    */
-  @Post('create')
+  @Post(':userId/create')
   @ApiOperation({
     summary: 'Create new order',
     description:
@@ -246,11 +270,13 @@ export class OrdersController extends BaseController<
     when: 'after',
   })
   async createUserOrder(
+    @Param('userId', new ParseUUIDPipe()) userId: string,
     @Param('storeId', new ParseUUIDPipe()) storeId: string,
     @Body() dto: CreateOrderDto,
     @Req() req: Request
   ): Promise<Order> {
     // Set storeId from route
+    dto.userId = dto.userId ?? userId;
     dto.storeId = dto.storeId ?? storeId;
 
     // Get current user

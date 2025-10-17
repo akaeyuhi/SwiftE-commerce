@@ -16,6 +16,7 @@ describe('Analytics - Stats (E2E)', () => {
   let seeder: SeederHelper;
 
   let storeOwner: any;
+  let adminUser: any;
   let store: any;
   let product: any;
 
@@ -32,6 +33,7 @@ describe('Analytics - Stats (E2E)', () => {
     });
     authHelper = new AuthHelper(app, appHelper.getDataSource());
     seeder = new SeederHelper(appHelper.getDataSource());
+    adminUser = await authHelper.createAdminUser();
 
     storeOwner = await authHelper.createAuthenticatedUser();
     store = await seeder.seedStore(storeOwner.user);
@@ -101,10 +103,10 @@ describe('Analytics - Stats (E2E)', () => {
       const productIds = products.map((p) => p.id);
 
       const response = await authHelper
-        .authenticatedRequest(storeOwner.accessToken)
+        .authenticatedRequest(adminUser.accessToken)
         .post('/analytics/products/batch-stats')
         .send({ productIds })
-        .expect(200);
+        .expect(201);
 
       expect(Array.isArray(response.body)).toBe(true);
       expect(response.body.length).toBe(3);
@@ -118,7 +120,7 @@ describe('Analytics - Stats (E2E)', () => {
 
     it('should validate productIds array is provided', async () => {
       const response = await authHelper
-        .authenticatedRequest(storeOwner.accessToken)
+        .authenticatedRequest(adminUser.accessToken)
         .post('/analytics/products/batch-stats')
         .send({});
 
@@ -131,7 +133,7 @@ describe('Analytics - Stats (E2E)', () => {
       );
 
       const response = await authHelper
-        .authenticatedRequest(storeOwner.accessToken)
+        .authenticatedRequest(adminUser.accessToken)
         .post('/analytics/products/batch-stats')
         .send({ productIds });
 

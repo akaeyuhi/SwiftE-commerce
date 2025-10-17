@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { extname, join } from 'path';
 import { promises as fs } from 'fs';
 import { v4 as uuidv4 } from 'uuid';
@@ -34,21 +35,49 @@ import { Product } from 'src/entities/store/product/product.entity';
 @Injectable()
 export class ProductPhotoService extends BaseService<ProductPhoto> {
   private readonly logger = new Logger(ProductPhotoService.name);
+  private readonly baseUrl: string;
 
-  constructor(private readonly photoRepo: ProductPhotoRepository) {
+  constructor(
+    private readonly photoRepo: ProductPhotoRepository,
+    private readonly configService: ConfigService
+  ) {
     super(photoRepo);
+
+    // ✅ Get base URL from environment (e.g., http://localhost:3000 or https://api.example.com)
+    this.baseUrl =
+      this.configService.get<string>('APP_BASE_URL') || 'http://localhost:3000';
+  }
+
+  /**
+   * Build a full URL from a relative path
+   *
+   * @param relativePath - Relative path like /uploads/products/store-id/filename.jpg
+   * @returns Full URL like https://api.example.com/uploads/products/store-id/filename.jpg
+   *
+   * @example
+   * buildFullUrl('/uploads/products/123/photo.jpg')
+   * // Returns: 'https://api.example.com/uploads/products/123/photo.jpg'
+   */
+  private buildFullUrl(relativePath: string): string {
+    // Remove leading slash if present to avoid double slashes
+    const cleanPath = relativePath.replace(/^\/+/, '');
+
+    // Ensure baseUrl doesn't have trailing slash
+    const cleanBaseUrl = this.baseUrl.replace(/\/+$/, '');
+
+    return `${cleanBaseUrl}/${cleanPath}`;
   }
 
   /**
    * Move an uploaded file (from Multer tmp path or memory buffer) into the final
-   * storage location for the given store and return the public URL.
+   * storage location for the given store and return the full public URL.
    *
    * This is a low-level helper — prefer `saveFileAndCreatePhoto` which also
    * creates the DB row for the product photo.
    *
    * @param file - Express.Multer.File (may contain `.buffer` or `.path`)
    * @param storeId - store identifier used to compute final folder
-   * @returns public URL, e.g. `/uploads/products/<storeId>/<filename>`
+   * @returns full public URL, e.g. `https://api.example.com/uploads/products/<storeId>/<filename>`
    * @throws BadRequestException when file is not an image or lacks `buffer`/`path`
    */
   private async saveFileToStore(
@@ -86,7 +115,9 @@ export class ProductPhotoService extends BaseService<ProductPhoto> {
       throw new BadRequestException('Uploaded file has no buffer or path');
     }
 
-    return `/uploads/products/${storeId}/${filename}`;
+    // ✅ Build full URL instead of just relative path
+    const relativePath = `/uploads/products/${storeId}/${filename}`;
+    return this.buildFullUrl(relativePath);
   }
 
   /**
@@ -116,19 +147,20 @@ export class ProductPhotoService extends BaseService<ProductPhoto> {
     altText?: string,
     isMain = false
   ): Promise<ProductPhoto> {
-    // 1) Save file to disk
-    const publicUrl = await this.saveFileToStore(file, store.id);
+    // 1) Save file to disk and get full URL
+    const fullUrl = await this.saveFileToStore(file, store.id);
 
     // 2) If asked to be main, unset previous mains first
     if (isMain) {
       const prevMain = this.getProductMainPhoto(product);
-      await this.photoRepo.updateEntity(prevMain.id, { isMain: false });
+      if (prevMain)
+        await this.photoRepo.updateEntity(prevMain.id, { isMain: false });
     }
 
-    // 3) Create DB row for the photo
+    // 3) Create DB row for the photo with full URL
     return this.photoRepo.createEntity({
       product,
-      url: publicUrl,
+      url: fullUrl, // ✅ Now stores full URL
       altText,
       isMain,
     });
@@ -153,8 +185,10 @@ export class ProductPhotoService extends BaseService<ProductPhoto> {
     await this.photoRepo.deleteById(photoId);
 
     try {
-      const relative = photo.url.replace(/^\/+/, '');
-      const pathOnDisk = join(process.cwd(), relative);
+      // ✅ Extract relative path from full URL
+      const url = new URL(photo.url);
+      const relativePath = url.pathname.replace(/^\/+/, '');
+      const pathOnDisk = join(process.cwd(), relativePath);
       await fs.unlink(pathOnDisk).catch(() => undefined);
     } catch (err) {
       this.logger.warn('Failed to delete product photo file: ' + err?.message);
@@ -208,11 +242,7 @@ export class ProductPhotoService extends BaseService<ProductPhoto> {
     return dbPhotos;
   }
 
-  private getProductMainPhoto(product: Product): ProductPhoto {
-    const photo = product.photos.find((photo) => photo.isMain);
-    if (!photo) {
-      throw new BadRequestException('No main photo found');
-    }
-    return photo;
+  private getProductMainPhoto(product: Product): ProductPhoto | undefined {
+    return product.photos.find((photo) => photo.isMain);
   }
 }

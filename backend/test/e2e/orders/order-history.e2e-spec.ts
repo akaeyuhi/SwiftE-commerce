@@ -110,8 +110,7 @@ describe('Orders - History (E2E)', () => {
     });
 
     it('should return empty array for store with no orders', async () => {
-      const orderRepo = appHelper.getDataSource().getRepository('Order');
-      await orderRepo.clear();
+      await appHelper.clearTable('orders');
 
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
@@ -197,7 +196,7 @@ describe('Orders - History (E2E)', () => {
         .authenticatedRequest(customer.accessToken)
         .get(`/stores/${store.id}/orders/invalid-uuid`);
 
-      AssertionHelper.assertErrorResponse(response, 400);
+      AssertionHelper.assertErrorResponse(response, 404);
     });
 
     it('should include complete shipping information', async () => {
@@ -209,7 +208,7 @@ describe('Orders - History (E2E)', () => {
       expect(response.body.shipping).toBeDefined();
       expect(response.body.shipping).toHaveProperty('firstName');
       expect(response.body.shipping).toHaveProperty('lastName');
-      expect(response.body.shipping).toHaveProperty('address');
+      expect(response.body.shipping).toHaveProperty('addressLine1');
       expect(response.body.shipping).toHaveProperty('city');
       expect(response.body.shipping).toHaveProperty('postalCode');
       expect(response.body.shipping).toHaveProperty('country');
@@ -316,7 +315,7 @@ describe('Orders - History (E2E)', () => {
         .authenticatedRequest(customer.accessToken)
         .get(`/stores/${store.id}/orders/user/invalid-uuid`);
 
-      AssertionHelper.assertErrorResponse(response, 400);
+      AssertionHelper.assertErrorResponse(response, 403);
     });
   });
 

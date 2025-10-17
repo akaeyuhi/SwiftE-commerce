@@ -14,6 +14,7 @@ export class StoreMapper extends BaseMapper<Store, StoreDto> {
       id: entity.id,
       name: entity.name,
       description: entity.description,
+      ownerId: entity.ownerId,
       owner: entity.owner,
 
       // Include cached stats
@@ -40,7 +41,7 @@ export class StoreMapper extends BaseMapper<Store, StoreDto> {
     if (dto.id) store.id = dto.id;
     store.name = dto.name!;
     store.description = dto.description;
-    store.owner = dto.owner;
+    store.ownerId = dto.ownerId;
 
     // Don't manually set cached values - triggers handle them
     // But if you're creating from a DTO that has values, preserve them

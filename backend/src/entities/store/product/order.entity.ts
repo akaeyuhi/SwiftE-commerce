@@ -7,6 +7,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   Index,
+  JoinColumn,
 } from 'typeorm';
 import { User } from 'src/entities/user/user.entity';
 import { Store } from 'src/entities/store/store.entity';
@@ -25,16 +26,18 @@ export class Order implements UserOwnedEntity, StoreOwnedEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'user_id' })
+  @Column({ name: 'user_id', type: 'uuid' })
   userId: string;
 
   @ManyToOne(() => User, (user) => user.orders, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'user_id', referencedColumnName: 'id' })
   user: User;
 
-  @Column({ name: 'store_id' })
+  @Column({ name: 'store_id', type: 'uuid' })
   storeId: string;
 
   @ManyToOne(() => Store, (store) => store.orders, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'store_id', referencedColumnName: 'id' })
   store: Store;
 
   @Column({
@@ -53,7 +56,9 @@ export class Order implements UserOwnedEntity, StoreOwnedEntity {
   @Column(() => OrderInfo, { prefix: 'billing_' })
   billing?: OrderInfo;
 
-  @OneToMany(() => OrderItem, (item) => item.order, { cascade: true })
+  @OneToMany(() => OrderItem, (item) => item.order, {
+    cascade: ['update', 'remove'],
+  })
   items: OrderItem[];
 
   @CreateDateColumn()

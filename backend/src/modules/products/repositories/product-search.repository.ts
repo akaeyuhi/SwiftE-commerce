@@ -31,7 +31,7 @@ export class ProductSearchRepository extends BaseRepository<Product> {
         'p.viewCount',
         'p.totalSales',
       ])
-      .addSelect('photos.url', 'mainPhotoUrl')
+      .addSelect('MAX(photos.url)', 'mainPhotoUrl') // ✅ Use MAX instead of direct selection
       .addSelect('MIN(variants.price)', 'minPrice')
       .addSelect('MAX(variants.price)', 'maxPrice')
       .where('p.storeId = :storeId', { storeId })
@@ -41,9 +41,7 @@ export class ProductSearchRepository extends BaseRepository<Product> {
     if (searchTerms.length === 1) {
       qb.andWhere(
         '(LOWER(p.name) LIKE :query OR LOWER(p.description) LIKE :query)',
-        {
-          query: `%${query}%`,
-        }
+        { query: `%${query}%` }
       );
     } else {
       searchTerms.forEach((term, index) => {
@@ -58,9 +56,7 @@ export class ProductSearchRepository extends BaseRepository<Product> {
     if (options?.categoryId) {
       qb.leftJoin('p.categories', 'category').andWhere(
         'category.id = :categoryId',
-        {
-          categoryId: options.categoryId,
-        }
+        { categoryId: options.categoryId }
       );
     }
 
@@ -83,14 +79,14 @@ export class ProductSearchRepository extends BaseRepository<Product> {
 
     // Relevance score
     let relevanceScore = `
-      CASE
-        WHEN LOWER(p.name) = :exactQuery THEN 1000
-        WHEN LOWER(p.name) LIKE :startsWithQuery THEN 500
-        WHEN LOWER(p.name) LIKE :query THEN 100
-        WHEN LOWER(p.description) LIKE :query THEN 50
-        ELSE 10
-      END
-    `;
+    CASE
+      WHEN LOWER(p.name) = :exactQuery THEN 1000
+      WHEN LOWER(p.name) LIKE :startsWithQuery THEN 500
+      WHEN LOWER(p.name) LIKE :query THEN 100
+      WHEN LOWER(p.description) LIKE :query THEN 50
+      ELSE 10
+    END
+  `;
     relevanceScore += ` + (p.viewCount * 0.1) + (p.likeCount * 0.5) + (p.totalSales * 2)`;
 
     qb.addSelect(`(${relevanceScore})`, 'relevanceScore')
@@ -98,7 +94,8 @@ export class ProductSearchRepository extends BaseRepository<Product> {
       .setParameter('startsWithQuery', `${query}%`)
       .setParameter('query', `%${query}%`);
 
-    qb.groupBy('p.id').addGroupBy('photos.url');
+    // ✅ Only group by p.id - removed photos.url since we use MAX()
+    qb.groupBy('p.id');
 
     if (havingConditions.length > 0) {
       qb.having(havingConditions.join(' AND '));
@@ -108,7 +105,7 @@ export class ProductSearchRepository extends BaseRepository<Product> {
     this.applySorting(qb, options?.sortBy || 'relevance');
     qb.limit(limit);
 
-    return this.mapToListDto(await qb.getRawMany());
+    return qb.getMany();
   }
 
   async advancedSearch(
@@ -204,8 +201,8 @@ export class ProductSearchRepository extends BaseRepository<Product> {
     const offset = filters.offset || 0;
     qb.skip(offset).take(limit);
 
-    const results = await qb.getRawMany();
-    return { products: this.mapToListDto(results), total };
+    const results = await qb.getMany();
+    return { products: results, total };
   }
 
   async autocompleteProducts(
@@ -258,7 +255,7 @@ export class ProductSearchRepository extends BaseRepository<Product> {
         break;
       case 'relevance':
       default:
-        qb.orderBy('relevanceScore', 'DESC').addOrderBy('p.viewCount', 'DESC');
+        qb.orderBy('p.viewCount', 'DESC');
         break;
     }
   }
@@ -292,21 +289,5 @@ export class ProductSearchRepository extends BaseRepository<Product> {
         qb.orderBy('p.createdAt', sortOrder);
         break;
     }
-  }
-
-  private mapToListDto(rawProducts: any[]): ProductListDto[] {
-    return rawProducts.map((p) => ({
-      id: p.p_id,
-      name: p.p_name,
-      description: p.p_description,
-      averageRating: Number(p.p_averageRating) || 0,
-      reviewCount: p.p_reviewCount || 0,
-      likeCount: p.p_likeCount || 0,
-      viewCount: p.p_viewCount || 0,
-      totalSales: p.p_totalSales || 0,
-      mainPhotoUrl: p.mainPhotoUrl,
-      minPrice: p.minPrice ? Number(p.minPrice) : undefined,
-      maxPrice: p.maxPrice ? Number(p.maxPrice) : undefined,
-    }));
   }
 }

@@ -6,11 +6,15 @@ import { StoreModule } from 'src/modules/store/store.module';
 import { UserModule } from 'src/modules/user/user.module';
 import { EmailModule } from 'src/modules/email/email.module';
 import { AuthModule } from 'src/modules/auth/auth.module';
+import { Store } from 'src/entities/store/store.entity';
+import { SeederHelper } from 'test/e2e/helpers/seeder.helper';
 
 describe('Email - Admin (E2E)', () => {
   let appHelper: TestAppHelper;
   let app: INestApplication;
   let authHelper: AuthHelper;
+  let store: Store;
+  let seeder: SeederHelper;
 
   let adminUser: any;
   let storeOwner: any;
@@ -21,9 +25,12 @@ describe('Email - Admin (E2E)', () => {
       imports: [EmailModule, StoreModule, AuthModule, UserModule],
     });
     authHelper = new AuthHelper(app, appHelper.getDataSource());
+    seeder = new SeederHelper(appHelper.getDataSource());
 
     adminUser = await authHelper.createAdminUser();
     storeOwner = await authHelper.createAuthenticatedUser();
+
+    store = await seeder.seedStore(storeOwner.user);
   });
 
   afterAll(async () => {
@@ -123,8 +130,8 @@ describe('Email - Admin (E2E)', () => {
         { method: 'post', path: '/email/send' },
         { method: 'post', path: '/email/user-confirmation' },
         { method: 'post', path: '/email/welcome' },
-        { method: 'post', path: '/email/stock-alert' },
-        { method: 'post', path: '/email/low-stock-warning' },
+        { method: 'post', path: `/email/${store.id}/stock-alert` },
+        { method: 'post', path: `/email/${store.id}/low-stock-warning` },
         { method: 'get', path: '/email/health' },
         { method: 'get', path: '/email/queue/stats' },
       ];
@@ -203,7 +210,7 @@ describe('Email - Admin (E2E)', () => {
 
     it('should handle missing template data', async () => {
       const response = await authHelper
-        .authenticatedRequest(storeOwner.accessToken)
+        .authenticatedRequest(adminUser.accessToken)
         .post('/email/user-confirmation')
         .send({
           userEmail: 'test@example.com',

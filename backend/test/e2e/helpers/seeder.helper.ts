@@ -389,7 +389,7 @@ export class SeederHelper {
         shipping: {
           firstName: 'John',
           lastName: 'Doe',
-          address: `${123 + i} Main St`,
+          addressLine1: `${123 + i} Main St`,
           city: 'New York',
           postalCode: '10001',
           country: 'US',
@@ -399,7 +399,7 @@ export class SeederHelper {
         billing: {
           firstName: 'John',
           lastName: 'Doe',
-          address: `${123 + i} Main St`,
+          addressLine1: `${123 + i} Main St`,
           city: 'New York',
           postalCode: '10001',
           country: 'US',

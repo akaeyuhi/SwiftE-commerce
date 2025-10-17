@@ -4,16 +4,16 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
+  ParseFilePipe,
   ParseUUIDPipe,
   Post,
   Query,
-  UploadedFile,
   UploadedFiles,
   UseGuards,
   UseInterceptors,
-  HttpCode,
-  HttpStatus,
 } from '@nestjs/common';
 import { ProductsService } from 'src/modules/products/services/products.service';
 import { CreateProductDto } from 'src/modules/products/dto/create-product.dto';
@@ -26,13 +26,17 @@ import { RecordEventInterceptor } from 'src/modules/infrastructure/interceptors/
 import { RecordEvents } from 'src/common/decorators/record-event.decorator';
 import { UploadProductPhotos } from 'src/common/decorators/upload-product-photos.decorator';
 import {
+  ProductDetailDto,
   ProductDto,
   ProductListDto,
-  ProductDetailDto,
   ProductStatsDto,
 } from 'src/modules/products/dto/product.dto';
 import { AnalyticsEventType } from 'src/entities/infrastructure/analytics/analytics-event.entity';
 import { AdvancedSearchDto } from 'src/modules/products/dto/advanced-search.dto';
+import { AccessPolicies } from 'src/modules/authorization/policy/policy.types';
+import { AdminRoles } from 'src/common/enums/admin.enum';
+import { StoreRoles } from 'src/common/enums/store-roles.enum';
+import { StoreRole } from 'src/common/decorators/store-role.decorator';
 
 /**
  * ProductsController
@@ -64,6 +68,26 @@ export class ProductsController extends BaseController<
   UpdateProductDto,
   ProductDto
 > {
+  static accessPolicies: AccessPolicies = {
+    findAll: { requireAuthenticated: true, adminRole: AdminRoles.ADMIN },
+    findOne: { requireAuthenticated: true, adminRole: undefined },
+    create: {
+      requireAuthenticated: true,
+      storeRoles: [StoreRoles.ADMIN],
+      adminRole: undefined,
+    },
+    update: {
+      requireAuthenticated: true,
+      storeRoles: [StoreRoles.ADMIN],
+      adminRole: undefined,
+    },
+    remove: {
+      requireAuthenticated: true,
+      storeRoles: [StoreRoles.ADMIN],
+      adminRole: undefined,
+    },
+  };
+
   constructor(private readonly productsService: ProductsService) {
     super(productsService);
   }
@@ -80,13 +104,7 @@ export class ProductsController extends BaseController<
   async findAllProducts(
     @Param('storeId', ParseUUIDPipe) storeId: string
   ): Promise<ProductListDto[]> {
-    try {
-      return await this.productsService.findAllByStoreAsList(storeId);
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to fetch products: ${error.message}`
-      );
-    }
+    return await this.productsService.findAllByStoreAsList(storeId);
   }
 
   /**
@@ -101,19 +119,10 @@ export class ProductsController extends BaseController<
     @Query('sortBy')
     sortBy?: 'relevance' | 'views' | 'sales' | 'rating' | 'price' | 'recent'
   ): Promise<ProductListDto[]> {
-    try {
-      const maxLimit = limit ? Math.min(parseInt(limit), 50) : 20;
-      return await this.productsService.searchProducts(
-        storeId,
-        query,
-        maxLimit,
-        { sortBy }
-      );
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to search products: ${error.message}`
-      );
-    }
+    const maxLimit = limit ? Math.min(parseInt(limit), 50) : 20;
+    return await this.productsService.searchProducts(storeId, query, maxLimit, {
+      sortBy,
+    });
   }
 
   /**
@@ -137,6 +146,7 @@ export class ProductsController extends BaseController<
    */
   @Post('advanced-search')
   @HttpCode(HttpStatus.OK)
+  @StoreRole(StoreRoles.ADMIN, StoreRoles.MODERATOR)
   async advancedSearch(
     @Param('storeId', ParseUUIDPipe) storeId: string,
     @Body() searchDto: AdvancedSearchDto
@@ -146,27 +156,21 @@ export class ProductsController extends BaseController<
     page: number;
     limit: number;
   }> {
-    try {
-      const result = await this.productsService.advancedProductSearch({
-        storeId,
-        ...searchDto,
-      });
+    const result = await this.productsService.advancedProductSearch({
+      storeId,
+      ...searchDto,
+    });
 
-      const page = searchDto.offset
-        ? Math.floor(searchDto.offset / (searchDto.limit || 20)) + 1
-        : 1;
+    const page = searchDto.offset
+      ? Math.floor(searchDto.offset / (searchDto.limit || 20)) + 1
+      : 1;
 
-      return {
-        products: result.products,
-        total: result.total,
-        page,
-        limit: searchDto.limit || 20,
-      };
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to perform advanced search: ${error.message}`
-      );
-    }
+    return {
+      products: result.products,
+      total: result.total,
+      page,
+      limit: searchDto.limit || 20,
+    };
   }
 
   /**
@@ -200,22 +204,16 @@ export class ProductsController extends BaseController<
       minPrice?: number;
     }>
   > {
-    try {
-      if (!query || query.trim().length < 2) {
-        return [];
-      }
-
-      const maxLimit = limit ? Math.min(parseInt(limit), 20) : 10;
-      return await this.productsService.autocompleteProducts(
-        storeId,
-        query.trim(),
-        maxLimit
-      );
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get autocomplete suggestions: ${error.message}`
-      );
+    if (!query || query.trim().length < 2) {
+      return [];
     }
+
+    const maxLimit = limit ? Math.min(parseInt(limit), 20) : 10;
+    return await this.productsService.autocompleteProducts(
+      storeId,
+      query.trim(),
+      maxLimit
+    );
   }
 
   // ===============================
@@ -231,11 +229,7 @@ export class ProductsController extends BaseController<
     @Param('storeId', ParseUUIDPipe) storeId: string,
     @Param('id', ParseUUIDPipe) id: string
   ): Promise<ProductDetailDto> {
-    try {
-      return await this.productsService.findProductDetail(id);
-    } catch (error) {
-      throw new BadRequestException(`Failed to get product: ${error.message}`);
-    }
+    return await this.productsService.findProductDetail(id);
   }
 
   /**
@@ -247,13 +241,7 @@ export class ProductsController extends BaseController<
     @Param('storeId', ParseUUIDPipe) storeId: string,
     @Param('id', ParseUUIDPipe) id: string
   ): Promise<ProductStatsDto> {
-    try {
-      return await this.productsService.getProductStats(id);
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get product stats: ${error.message}`
-      );
-    }
+    return await this.productsService.getProductStats(id);
   }
 
   /**
@@ -261,6 +249,7 @@ export class ProductsController extends BaseController<
    * Get quick stats (cached values only)
    */
   @Get(':id/quick-stats')
+  @StoreRole(StoreRoles.ADMIN, StoreRoles.MODERATOR)
   async getQuickStats(
     @Param('storeId', ParseUUIDPipe) storeId: string,
     @Param('id', ParseUUIDPipe) id: string
@@ -278,21 +267,18 @@ export class ProductsController extends BaseController<
    */
   @UploadProductPhotos()
   @Post()
+  @StoreRole(StoreRoles.ADMIN, StoreRoles.MODERATOR)
   @HttpCode(HttpStatus.CREATED)
   async createProduct(
     @Param('storeId', ParseUUIDPipe) storeId: string,
     @Body() body: CreateProductDto,
-    @UploadedFiles() photos?: Express.Multer.File[],
-    @UploadedFile() mainPhoto?: Express.Multer.File
+    @UploadedFiles(new ParseFilePipe({ fileIsRequired: false }))
+    files?: { photos: Express.Multer.File[]; mainPhoto: Express.Multer.File[] }
   ) {
-    if (!body || !body.name) {
-      throw new BadRequestException('name is required');
-    }
-
     return await this.productsService.create(
       { ...body, storeId } as CreateProductDto,
-      photos,
-      mainPhoto
+      files?.photos,
+      files?.mainPhoto?.[0]
     );
   }
 
@@ -301,6 +287,7 @@ export class ProductsController extends BaseController<
    * Soft delete a product
    */
   @Delete(':id/soft')
+  @StoreRole(StoreRoles.ADMIN)
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteProduct(
     @Param('storeId', ParseUUIDPipe) storeId: string,
@@ -320,16 +307,17 @@ export class ProductsController extends BaseController<
    */
   @UploadProductPhotos()
   @Post(':id/photos')
+  @StoreRole(StoreRoles.ADMIN, StoreRoles.MODERATOR)
   async addPhotosToProduct(
     @Param('storeId', ParseUUIDPipe) storeId: string,
     @Param('id', ParseUUIDPipe) productId: string,
-    @UploadedFiles() photos?: Express.Multer.File[]
+    @UploadedFiles() files?: { photos: Express.Multer.File[] }
   ) {
-    if (!photos || photos.length === 0) {
+    if (!files || !files.photos || files.photos.length === 0) {
       throw new BadRequestException('No photos uploaded');
     }
 
-    return this.productsService.addPhotos(productId, storeId, photos);
+    return this.productsService.addPhotos(productId, storeId, files.photos);
   }
 
   /**
@@ -338,16 +326,21 @@ export class ProductsController extends BaseController<
    */
   @UploadProductPhotos()
   @Post(':id/photos/main')
+  @StoreRole(StoreRoles.ADMIN, StoreRoles.MODERATOR)
   async addMainPhotoToProduct(
     @Param('storeId', ParseUUIDPipe) storeId: string,
     @Param('id', ParseUUIDPipe) productId: string,
-    @UploadedFile() photo: Express.Multer.File
+    @UploadedFiles() files: { mainPhoto: Express.Multer.File[] }
   ) {
-    if (!photo) {
-      throw new BadRequestException('No photo uploaded');
+    if (!files || !files?.mainPhoto || !files?.mainPhoto?.[0]) {
+      throw new BadRequestException('No main photo uploaded');
     }
 
-    return this.productsService.addMainPhoto(productId, storeId, photo);
+    return this.productsService.addMainPhoto(
+      productId,
+      storeId,
+      files.mainPhoto
+    );
   }
 
   /**
@@ -356,6 +349,7 @@ export class ProductsController extends BaseController<
    */
   @Delete(':productId/photos/:photoId')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @StoreRole(StoreRoles.ADMIN)
   async deletePhoto(
     @Param('storeId', ParseUUIDPipe) storeId: string,
     @Param('productId', ParseUUIDPipe) productId: string,
@@ -387,6 +381,7 @@ export class ProductsController extends BaseController<
    */
   @Post(':id/categories/:categoryId')
   @HttpCode(HttpStatus.OK)
+  @StoreRole(StoreRoles.ADMIN, StoreRoles.MODERATOR)
   async assignCategoryToProduct(
     @Param('storeId', ParseUUIDPipe) storeId: string,
     @Param('id', ParseUUIDPipe) productId: string,
@@ -401,6 +396,7 @@ export class ProductsController extends BaseController<
    */
   @Delete(':id/categories/:categoryId')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @StoreRole(StoreRoles.ADMIN)
   async removeCategoryFromProduct(
     @Param('storeId', ParseUUIDPipe) storeId: string,
     @Param('id', ParseUUIDPipe) productId: string,
@@ -420,22 +416,17 @@ export class ProductsController extends BaseController<
    */
   @Post(':id/recalculate-stats')
   @HttpCode(HttpStatus.OK)
+  @StoreRole(StoreRoles.ADMIN)
   async recalculateStats(
     @Param('storeId', ParseUUIDPipe) storeId: string,
     @Param('id', ParseUUIDPipe) id: string
   ) {
-    try {
-      await this.productsService.recalculateProductStats(id);
-      return {
-        success: true,
-        message: 'Product statistics recalculated successfully',
-        productId: id,
-      };
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to recalculate stats: ${error.message}`
-      );
-    }
+    await this.productsService.recalculateProductStats(id);
+    return {
+      success: true,
+      message: 'Product statistics recalculated successfully',
+      productId: id,
+    };
   }
 
   /**
@@ -444,21 +435,16 @@ export class ProductsController extends BaseController<
    */
   @Post(':id/increment-view')
   @HttpCode(HttpStatus.OK)
+  @StoreRole(StoreRoles.ADMIN)
   async incrementViewCount(
     @Param('storeId', ParseUUIDPipe) storeId: string,
     @Param('id', ParseUUIDPipe) id: string
   ) {
-    try {
-      await this.productsService.incrementViewCount(id);
-      return {
-        success: true,
-        message: 'View count incremented',
-        productId: id,
-      };
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to increment view: ${error.message}`
-      );
-    }
+    await this.productsService.incrementViewCount(id);
+    return {
+      success: true,
+      message: 'View count incremented',
+      productId: id,
+    };
   }
 }

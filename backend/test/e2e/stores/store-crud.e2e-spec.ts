@@ -1,5 +1,4 @@
 import { INestApplication } from '@nestjs/common';
-import * as request from 'supertest';
 import { TestAppHelper } from '../helpers/test-app.helper';
 import { AuthHelper } from '../helpers/auth.helper';
 import { SeederHelper } from '../helpers/seeder.helper';
@@ -66,7 +65,7 @@ describe('Store - CRUD (E2E)', () => {
     });
 
     it('should require authentication', async () => {
-      const response = await request(app.getHttpServer()).get('/stores');
+      const response = await appHelper.request().get('/stores');
 
       AssertionHelper.assertErrorResponse(response, 401);
     });
@@ -112,7 +111,7 @@ describe('Store - CRUD (E2E)', () => {
     it('should create a new store', async () => {
       const response = await authHelper
         .authenticatedRequest(regularUser.accessToken)
-        .post('/stores')
+        .post(`/users/${regularUser.user.id}/stores`)
         .send(validStoreData)
         .expect(201);
 
@@ -125,20 +124,20 @@ describe('Store - CRUD (E2E)', () => {
     it('should initialize stats to zero', async () => {
       const response = await authHelper
         .authenticatedRequest(regularUser.accessToken)
-        .post('/stores')
+        .post(`/users/${regularUser.user.id}/stores`)
         .send(validStoreData)
         .expect(201);
 
-      expect(response.body.productCount).toBe(0);
-      expect(response.body.followerCount).toBe(0);
-      expect(response.body.totalRevenue).toBe(0);
-      expect(response.body.orderCount).toBe(0);
+      expect(parseFloat(response.body.productCount)).toBe(0);
+      expect(parseFloat(response.body.followerCount)).toBe(0);
+      expect(parseFloat(response.body.totalRevenue)).toBe(0);
+      expect(parseFloat(response.body.orderCount)).toBe(0);
     });
 
     it('should require name', async () => {
       const response = await authHelper
         .authenticatedRequest(regularUser.accessToken)
-        .post('/stores')
+        .post(`/users/${regularUser.user.id}/stores`)
         .send({ description: 'No name' });
 
       AssertionHelper.assertErrorResponse(response, 400, 'name');
@@ -147,7 +146,7 @@ describe('Store - CRUD (E2E)', () => {
     it('should validate name length', async () => {
       const response = await authHelper
         .authenticatedRequest(regularUser.accessToken)
-        .post('/stores')
+        .post(`/users/${regularUser.user.id}/stores`)
         .send({
           ...validStoreData,
           name: 'ab', // Too short
@@ -157,8 +156,9 @@ describe('Store - CRUD (E2E)', () => {
     });
 
     it('should require authentication', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/stores')
+      const response = await appHelper
+        .request()
+        .post(`/users/${regularUser.user.id}/stores`)
         .send(validStoreData);
 
       AssertionHelper.assertErrorResponse(response, 401);
@@ -175,8 +175,8 @@ describe('Store - CRUD (E2E)', () => {
       };
 
       const response = await authHelper
-        .authenticatedRequest(regularUser.accessToken)
-        .patch(`/stores/${store.id}`)
+        .authenticatedRequest(adminUser.accessToken)
+        .put(`/stores/${store.id}`)
         .send(updateData)
         .expect(200);
 
@@ -187,7 +187,7 @@ describe('Store - CRUD (E2E)', () => {
     it('should return 404 for non-existent store', async () => {
       const response = await authHelper
         .authenticatedRequest(adminUser.accessToken)
-        .patch('/stores/00000000-0000-0000-0000-000000000000')
+        .put('/stores/00000000-0000-0000-0000-000000000000')
         .send({ name: 'Update' });
 
       AssertionHelper.assertErrorResponse(response, 404);
@@ -197,8 +197,8 @@ describe('Store - CRUD (E2E)', () => {
       const store = await seeder.seedStore(regularUser.user);
 
       const response = await authHelper
-        .authenticatedRequest(regularUser.accessToken)
-        .patch(`/stores/${store.id}`)
+        .authenticatedRequest(adminUser.accessToken)
+        .put(`/stores/${store.id}`)
         .send({ name: 'a' }); // Too short
 
       AssertionHelper.assertErrorResponse(response, 400);
@@ -211,8 +211,8 @@ describe('Store - CRUD (E2E)', () => {
 
       await authHelper
         .authenticatedRequest(adminUser.accessToken)
-        .delete(`/stores/${store.id}`)
-        .expect(200);
+        .delete(`/stores/${store.id}/soft`)
+        .expect(204);
 
       // Verify soft delete in database
       const storeRepo = appHelper.getDataSource().getRepository('Store');

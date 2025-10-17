@@ -21,13 +21,13 @@ export class NewsPost implements UserOwnedEntity, StoreOwnedEntity {
   })
   store: Store;
 
-  @Column({ name: 'store_id' })
+  @Column({ name: 'store_id', type: 'uuid' })
   storeId: string;
 
   @ManyToOne(() => User, (user) => user.newsPosts, { onDelete: 'SET NULL' })
   author: User;
 
-  @Column({ name: 'author_id' })
+  @Column({ name: 'author_id', type: 'uuid' })
   authorId: string;
 
   @Column({ type: 'varchar', length: 255 })

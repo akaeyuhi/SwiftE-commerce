@@ -41,8 +41,12 @@ export class AnalyticsEventRepository extends BaseAnalyticsRepository<AnalyticsE
   ): Promise<ProductMetrics> {
     const qb = this.createQueryBuilder('e')
       .select([
-        ...this.buildMetricSelections(['views', 'purchases', 'addToCarts']),
-        ...this.buildValueSelections(['purchases']),
+        ...this.buildMetricSelections([
+          AnalyticsEventType.VIEW,
+          AnalyticsEventType.PURCHASE,
+          AnalyticsEventType.ADD_TO_CART,
+        ]),
+        ...this.buildValueSelections([AnalyticsEventType.PURCHASE]),
       ])
       .where('e.productId = :productId', { productId })
       .setParameters({
@@ -74,12 +78,12 @@ export class AnalyticsEventRepository extends BaseAnalyticsRepository<AnalyticsE
     const qb = this.createQueryBuilder('e')
       .select([
         ...this.buildMetricSelections([
-          'views',
-          'purchases',
-          'addToCarts',
-          'checkouts',
+          AnalyticsEventType.VIEW,
+          AnalyticsEventType.PURCHASE,
+          AnalyticsEventType.ADD_TO_CART,
+          AnalyticsEventType.CHECKOUT,
         ]),
-        ...this.buildValueSelections(['purchases']),
+        ...this.buildValueSelections([AnalyticsEventType.PURCHASE]),
       ])
       .where('e.storeId = :storeId', { storeId })
       .setParameters({

@@ -123,7 +123,7 @@ describe('Products - CRUD (E2E)', () => {
     });
 
     it('should create product with categories', async () => {
-      const categories = await seeder.seedCategories(2);
+      const categories = await seeder.seedCategories(store, 2);
 
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)

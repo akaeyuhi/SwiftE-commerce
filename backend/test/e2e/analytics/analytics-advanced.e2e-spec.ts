@@ -16,6 +16,7 @@ describe('Analytics - Advanced (E2E)', () => {
   let seeder: SeederHelper;
 
   let storeOwner: any;
+  let adminUser: any;
   let store: any;
   let product: any;
 
@@ -32,6 +33,7 @@ describe('Analytics - Advanced (E2E)', () => {
     });
     authHelper = new AuthHelper(app, appHelper.getDataSource());
     seeder = new SeederHelper(appHelper.getDataSource());
+    adminUser = await authHelper.createAdminUser();
 
     storeOwner = await authHelper.createAuthenticatedUser();
     store = await seeder.seedStore(storeOwner.user);
@@ -106,21 +108,21 @@ describe('Analytics - Advanced (E2E)', () => {
       const store2 = await seeder.seedStore(storeOwner.user);
 
       const response = await authHelper
-        .authenticatedRequest(storeOwner.accessToken)
+        .authenticatedRequest(adminUser.accessToken)
         .post('/analytics/stores/compare')
         .send({
           storeIds: [store.id, store2.id],
           from: '2025-01-01',
           to: '2025-12-31',
         })
-        .expect(200);
+        .expect(201);
 
       expect(response.body).toBeDefined();
     });
 
     it('should validate minimum 2 stores for comparison', async () => {
       const response = await authHelper
-        .authenticatedRequest(storeOwner.accessToken)
+        .authenticatedRequest(adminUser.accessToken)
         .post('/analytics/stores/compare')
         .send({ storeIds: [store.id] });
 
@@ -131,7 +133,7 @@ describe('Analytics - Advanced (E2E)', () => {
       const storeIds = Array(11).fill(store.id);
 
       const response = await authHelper
-        .authenticatedRequest(storeOwner.accessToken)
+        .authenticatedRequest(adminUser.accessToken)
         .post('/analytics/stores/compare')
         .send({ storeIds });
 
@@ -142,14 +144,14 @@ describe('Analytics - Advanced (E2E)', () => {
       const products = await seeder.seedProducts(store, 2);
 
       const response = await authHelper
-        .authenticatedRequest(storeOwner.accessToken)
+        .authenticatedRequest(adminUser.accessToken)
         .post('/analytics/products/compare')
         .send({
           productIds: products.map((p) => p.id),
           from: '2025-01-01',
           to: '2025-12-31',
         })
-        .expect(200);
+        .expect(201);
 
       expect(response.body).toBeDefined();
     });
@@ -158,7 +160,7 @@ describe('Analytics - Advanced (E2E)', () => {
       const productIds = Array(21).fill(product.id);
 
       const response = await authHelper
-        .authenticatedRequest(storeOwner.accessToken)
+        .authenticatedRequest(adminUser.accessToken)
         .post('/analytics/products/compare')
         .send({ productIds });
 
@@ -191,7 +193,7 @@ describe('Analytics - Advanced (E2E)', () => {
   describe('Generic Aggregation', () => {
     it('should run custom aggregation', async () => {
       const response = await authHelper
-        .authenticatedRequest(storeOwner.accessToken)
+        .authenticatedRequest(adminUser.accessToken)
         .post('/analytics/aggregations')
         .send({
           aggregatorName: 'storeStats',
@@ -201,14 +203,14 @@ describe('Analytics - Advanced (E2E)', () => {
             to: '2025-12-31',
           },
         })
-        .expect(200);
+        .expect(201);
 
       expect(response.body).toBeDefined();
     });
 
     it('should handle invalid aggregator name', async () => {
       const response = await authHelper
-        .authenticatedRequest(storeOwner.accessToken)
+        .authenticatedRequest(adminUser.accessToken)
         .post('/analytics/aggregations')
         .send({
           aggregatorName: 'invalidAggregator',

@@ -5,6 +5,19 @@ import { ProductPhotosInterceptor } from 'src/modules/infrastructure/interceptor
 
 /**
  * Decorator to handle product photo uploads with Swagger documentation
+ *
+ * Supports:
+ * - mainPhoto: Single main product photo (required)
+ * - photos: Array of additional product photos (optional)
+ *
+ * @param maxCount Maximum number of additional photos allowed (default: from constants)
+ *
+ * @example
+ * @Post()
+ * @UploadProductPhotos(5)
+ * async create(
+ *   @UploadedFiles() files: { mainPhoto?: Express.Multer.File[], photos?: Express.Multer.File[] }
+ * ) { ... }
  */
 export function UploadProductPhotos(
   maxCount: number = PRODUCT_PHOTOS_MAX_COUNT
@@ -16,12 +29,18 @@ export function UploadProductPhotos(
       schema: {
         type: 'object',
         properties: {
+          mainPhoto: {
+            type: 'string',
+            format: 'binary',
+            description: 'Main product photo (single file)',
+          },
           photos: {
             type: 'array',
             items: {
               type: 'string',
               format: 'binary',
             },
+            description: `Additional product photos (max ${maxCount} files)`,
             maxItems: maxCount,
           },
         },

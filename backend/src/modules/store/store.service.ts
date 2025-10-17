@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateStoreDto } from './dto/create-store.dto';
 import { UpdateStoreDto } from './dto/update-store.dto';
 import { BaseService } from 'src/common/abstracts/base.service';
@@ -65,7 +69,7 @@ export class StoreService extends BaseService<
   async getStoreStats(storeId: string): Promise<StoreStatsDto> {
     const store = await this.storeRepo.findStoreStats(storeId);
 
-    if (!store) throw new BadRequestException('Store not found');
+    if (!store) throw new NotFoundException('Store not found');
 
     return this.mapper.toStatsDto(store);
   }
@@ -243,5 +247,12 @@ export class StoreService extends BaseService<
       name: store.name,
       followerCount: store.followerCount || 0,
     }));
+  }
+
+  /**
+   * Soft delete a product
+   */
+  async softDelete(id: string): Promise<void> {
+    await this.storeRepo.softDelete(id);
   }
 }

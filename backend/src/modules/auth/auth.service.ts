@@ -69,6 +69,12 @@ export class AuthService {
       throw new UnauthorizedException('Invalid password or email');
     }
 
+    if (!user.isActive) {
+      throw new UnauthorizedException(
+        `User ${user.email} is deactivated at ${user.deactivatedAt}`
+      );
+    }
+
     const payload: JwtPayload = {
       id: user.id,
       email: user.email,
@@ -140,7 +146,7 @@ export class AuthService {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        isEmailVerified: user || false,
+        isEmailVerified: user.isEmailVerified || false,
       },
       message:
         'Registration successful! Please check your email to verify your account.',

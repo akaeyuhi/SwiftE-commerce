@@ -26,6 +26,7 @@ import {
 } from 'src/common/events/orders/order-status-change.event';
 import { OrderInfo } from 'src/common/embeddables/order-info.embeddable';
 import { UpdateShippingInfoDto } from 'src/modules/store/orders/dto/update-shipping-info.dto';
+import { domainEventFactory } from 'src/common/events/helper';
 
 /**
  * OrdersService
@@ -74,6 +75,18 @@ export class OrdersService extends BaseService<
       throw new BadRequestException('Order must contain at least one item');
     }
 
+    const checkStore = await this.dataSource
+      .getRepository('Store')
+      .findOne({ where: { id: dto.storeId } });
+
+    if (!checkStore) {
+      throw new NotFoundException(`Store with id ${dto.storeId} doesn't exist`);
+    }
+
+    if (!dto.shipping) {
+      throw new BadRequestException(`Shipping info is missing`);
+    }
+
     await this.validateInventoryAvailability(dto.items);
 
     const computedTotal = dto.items.reduce((sum, it) => {
@@ -87,12 +100,12 @@ export class OrdersService extends BaseService<
     const created = await this.dataSource.transaction(async (manager) => {
       const orderRepoTx = manager.getRepository(Order);
       const orderToSave = orderRepoTx.create({
-        user: { id: dto.userId },
-        store: { id: dto.storeId },
+        userId: dto.userId,
+        storeId: dto.storeId,
         status: dto.status ?? OrderStatus.PENDING,
         totalAmount,
         shipping: dto.shipping,
-        billing: dto.billing,
+        billing: dto.billing ?? dto.shipping,
       });
 
       const savedOrder = await orderRepoTx.save(orderToSave);
@@ -362,7 +375,13 @@ export class OrdersService extends BaseService<
           : undefined
       );
 
-      this.eventEmitter.emit('order.created', event);
+      const domainEvent = domainEventFactory<OrderCreatedEvent>(
+        'order.created',
+        order.id,
+        event
+      );
+
+      this.eventEmitter.emit('order.created', domainEvent);
 
       this.logger.debug(`Emitted order.created event for order ${order.id}`);
     } catch (error) {
@@ -408,7 +427,13 @@ export class OrdersService extends BaseService<
           : undefined
       );
 
-      this.eventEmitter.emit('order.status-changed', event);
+      const domainEvent = domainEventFactory<OrderStatusChangeEvent>(
+        'order.status-changed',
+        order.id,
+        event
+      );
+
+      this.eventEmitter.emit('order.status-changed', domainEvent);
 
       this.logger.debug(
         `Emitted order.status-changed event for order ${order.id}: ${previousStatus} → ${newStatus}`

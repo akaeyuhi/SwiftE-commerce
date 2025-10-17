@@ -1,4 +1,3 @@
-// src/modules/product-photo/constants.ts
 import { join } from 'path';
 
 /**
@@ -6,7 +5,7 @@ import { join } from 'path';
  * Centralizing helps keep controller, interceptor and service aligned.
  */
 export const PRODUCT_PHOTOS_FIELD = 'photos';
-
+export const PRODUCT_MAIN_PHOTO_FIELD = 'mainPhoto';
 /**
  * Temporary (multer) upload directory. Multer will write incoming files here first.
  * ProductPhotoService will move each file into the final folder:

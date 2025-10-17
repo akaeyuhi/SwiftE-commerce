@@ -9,10 +9,12 @@ import {
   UseGuards,
   Req,
   BadRequestException,
+  ParseUUIDPipe,
+  ParseEnumPipe,
 } from '@nestjs/common';
 import { UserService } from 'src/modules/user/user.service';
 import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateProfileDto, UpdateUserDto } from './dto/update-user.dto';
 import { UserDto } from './dto/user.dto';
 import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';
 import { StoreRole } from 'src/common/decorators/store-role.decorator';
@@ -60,10 +62,7 @@ export class UserController extends BaseController<
    * Update current user's profile
    */
   @Put('profile')
-  async updateProfile(
-    @Req() req: Request,
-    @Body() updates: { firstName?: string; lastName?: string }
-  ) {
+  async updateProfile(@Req() req: Request, @Body() updates: UpdateProfileDto) {
     const userId = (req.user as any)?.id;
     if (!userId) {
       throw new BadRequestException('User ID not found');
@@ -76,7 +75,7 @@ export class UserController extends BaseController<
    */
   @Get(':id/profile')
   @AdminRole(AdminRoles.ADMIN)
-  async getUserProfile(@Param('id') userId: string) {
+  async getUserProfile(@Param('id', new ParseUUIDPipe()) userId: string) {
     return this.userService.getProfile(userId);
   }
 
@@ -85,7 +84,7 @@ export class UserController extends BaseController<
    */
   @Post(':id/verify-email')
   @AdminRole(AdminRoles.ADMIN)
-  async markAsVerified(@Param('id') userId: string) {
+  async markAsVerified(@Param('id', new ParseUUIDPipe()) userId: string) {
     return this.userService.markAsVerified(userId);
   }
 
@@ -93,7 +92,7 @@ export class UserController extends BaseController<
    * Check if user's email is verified
    */
   @Get(':id/email-verified')
-  async isEmailVerified(@Param('id') userId: string) {
+  async isEmailVerified(@Param('id', new ParseUUIDPipe()) userId: string) {
     const isVerified = await this.userService.isEmailVerified(userId);
     return { isEmailVerified: isVerified };
   }
@@ -103,9 +102,9 @@ export class UserController extends BaseController<
    */
   @Get(':id/stores/:storeId/roles/:roleName/check')
   async userHasStoreRole(
-    @Param('id') userId: string,
-    @Param('storeId') storeId: string,
-    @Param('roleName') roleName: StoreRoles
+    @Param('id', new ParseUUIDPipe()) userId: string,
+    @Param('storeId', new ParseUUIDPipe()) storeId: string,
+    @Param('roleName', new ParseEnumPipe(StoreRoles)) roleName: StoreRoles
   ) {
     const hasRole = await this.userService.userHasStoreRole(
       userId,
@@ -120,8 +119,8 @@ export class UserController extends BaseController<
    */
   @Get(':id/stores/:storeId/admin/check')
   async userIsStoreAdmin(
-    @Param('id') userId: string,
-    @Param('storeId') storeId: string
+    @Param('id', new ParseUUIDPipe()) userId: string,
+    @Param('storeId', new ParseUUIDPipe()) storeId: string
   ) {
     const isAdmin = await this.userService.userIsStoreAdmin(userId, storeId);
     return { isStoreAdmin: isAdmin };
@@ -131,7 +130,7 @@ export class UserController extends BaseController<
    * Get user's store roles
    */
   @Get(':id/store-roles')
-  async getUserStoreRoles(@Param('id') userId: string) {
+  async getUserStoreRoles(@Param('id', new ParseUUIDPipe()) userId: string) {
     return this.userService.getUserStoreRoles(userId);
   }
 
@@ -140,7 +139,7 @@ export class UserController extends BaseController<
    */
   @Get(':id/site-admin/check')
   @AdminRole(AdminRoles.ADMIN)
-  async isUserSiteAdmin(@Param('id') userId: string) {
+  async isUserSiteAdmin(@Param('id', new ParseUUIDPipe()) userId: string) {
     const isSiteAdmin = await this.userService.isUserSiteAdmin(userId);
     return { isSiteAdmin };
   }
@@ -150,7 +149,7 @@ export class UserController extends BaseController<
    */
   @Post(':id/site-admin')
   @AdminRole(AdminRoles.ADMIN)
-  async assignSiteAdminRole(@Param('id') userId: string) {
+  async assignSiteAdminRole(@Param('id', new ParseUUIDPipe()) userId: string) {
     return this.userService.assignSiteAdminRole(userId);
   }
 
@@ -159,7 +158,7 @@ export class UserController extends BaseController<
    */
   @Post(':id/deactivate')
   @AdminRole(AdminRoles.ADMIN)
-  async deactivateAccount(@Param('id') userId: string) {
+  async deactivateAccount(@Param('id', new ParseUUIDPipe()) userId: string) {
     await this.userService.deactivateAccount(userId);
     return { message: 'Account deactivated successfully' };
   }
@@ -169,7 +168,7 @@ export class UserController extends BaseController<
    */
   @Post(':id/reactivate')
   @AdminRole(AdminRoles.ADMIN)
-  async reactivateAccount(@Param('id') userId: string) {
+  async reactivateAccount(@Param('id', new ParseUUIDPipe()) userId: string) {
     await this.userService.reactivateAccount(userId);
     return { message: 'Account reactivated successfully' };
   }
@@ -181,7 +180,10 @@ export class UserController extends BaseController<
   @Post(':id/roles')
   @StoreRole(StoreRoles.ADMIN)
   @AdminRole(AdminRoles.ADMIN)
-  async assignRole(@Param('id') userId: string, @Body() dto: RoleDto) {
+  async assignRole(
+    @Param('id', new ParseUUIDPipe()) userId: string,
+    @Body() dto: RoleDto
+  ) {
     return this.userService.assignStoreRole(
       userId,
       dto.roleName,
@@ -197,12 +199,18 @@ export class UserController extends BaseController<
   @Delete(':id/roles')
   @StoreRole(StoreRoles.ADMIN)
   @AdminRole(AdminRoles.ADMIN)
-  async revokeStoreRole(@Param('id') userId: string, @Body() dto: RoleDto) {
+  async revokeStoreRole(
+    @Param('id', new ParseUUIDPipe()) userId: string,
+    @Body() dto: RoleDto
+  ) {
     return this.userService.revokeStoreRole(userId, dto.roleName, dto.storeId);
   }
 
   @Post(':id/stores')
-  async createStore(@Param('id') userId: string, @Body() dto: CreateStoreDto) {
+  async createStore(
+    @Param('id', new ParseUUIDPipe()) userId: string,
+    @Body() dto: CreateStoreDto
+  ) {
     return this.userService.createStore(userId, dto);
   }
 }

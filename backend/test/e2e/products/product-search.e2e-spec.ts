@@ -173,7 +173,7 @@ describe('Products - Search (E2E)', () => {
     });
 
     it('should filter by categories', async () => {
-      const categories = await seeder.seedCategories(2);
+      const categories = await seeder.seedCategories(store, 2);
 
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)

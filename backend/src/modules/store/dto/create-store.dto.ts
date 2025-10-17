@@ -1,14 +1,16 @@
-import { IsString, IsOptional, MinLength } from 'class-validator';
-import { User } from 'src/entities/user/user.entity';
+import { IsString, IsOptional, MinLength, IsUUID } from 'class-validator';
 
 export class CreateStoreDto {
   @IsString()
-  @MinLength(2)
+  @MinLength(3)
   name: string;
 
   @IsOptional()
   @IsString()
+  @MinLength(3)
   description?: string;
 
-  owner: User;
+  @IsUUID()
+  @IsOptional()
+  ownerId: string;
 }

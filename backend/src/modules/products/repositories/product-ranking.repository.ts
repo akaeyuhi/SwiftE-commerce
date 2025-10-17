@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { Product } from 'src/entities/store/product/product.entity';
 import { BaseRepository } from 'src/common/abstracts/base.repository';
+import {AnalyticsEventType} from "src/entities/infrastructure/analytics/analytics-event.entity";
 
 @Injectable()
 export class ProductRankingRepository extends BaseRepository<Product> {
@@ -100,20 +101,20 @@ export class ProductRankingRepository extends BaseRepository<Product> {
     limit = 10,
     minViews = 50
   ): Promise<any[]> {
-    return this.createQueryBuilder('p')
+    const subQuery = this.createQueryBuilder('p')
       .leftJoin('p.photos', 'photos', 'photos.isMain = true')
       .leftJoin('p.variants', 'variants')
       .select([
-        'p.id',
-        'p.name',
-        'p.description',
-        'p.averageRating',
-        'p.reviewCount',
-        'p.likeCount',
-        'p.viewCount',
-        'p.totalSales',
+        'p.id AS id',
+        'p.name AS name',
+        'p.description AS description',
+        'p.averageRating AS "averageRating"',
+        'p.reviewCount AS "reviewCount"',
+        'p.likeCount AS "likeCount"',
+        'p.viewCount AS "viewCount"',
+        'p.totalSales AS "totalSales"',
       ])
-      .addSelect('photos.url', 'mainPhotoUrl')
+      .addSelect('MAX(photos.url)', 'mainPhotoUrl')
       .addSelect('MIN(variants.price)', 'minPrice')
       .addSelect('MAX(variants.price)', 'maxPrice')
       .addSelect(
@@ -124,10 +125,15 @@ export class ProductRankingRepository extends BaseRepository<Product> {
       .andWhere('p.deletedAt IS NULL')
       .andWhere('p.viewCount >= :minViews', { minViews })
       .andWhere('p.totalSales > 0')
-      .groupBy('p.id')
-      .addGroupBy('photos.url')
-      .orderBy('conversionRate', 'DESC')
-      .addOrderBy('p.totalSales', 'DESC')
+      .groupBy('p.id');
+
+    return await this.manager
+      .createQueryBuilder()
+      .select('*')
+      .from(`(${subQuery.getQuery()})`, 'results')
+      .setParameters(subQuery.getParameters())
+      .orderBy('"conversionRate"', 'DESC')
+      .addOrderBy('"totalSales"', 'DESC')
       .limit(limit)
       .getRawMany();
   }
@@ -142,7 +148,7 @@ export class ProductRankingRepository extends BaseRepository<Product> {
       .leftJoinAndSelect(
         'analytics_events',
         'events',
-        'events.product_id = p.id AND events.created_at >= :dateThreshold',
+        'events.productId = p.id AND events.createdAt >= :dateThreshold',
         { dateThreshold }
       )
       .select([
@@ -160,15 +166,15 @@ export class ProductRankingRepository extends BaseRepository<Product> {
       .addSelect('MIN(variants.price)', 'minPrice')
       .addSelect('MAX(variants.price)', 'maxPrice')
       .addSelect(
-        `COUNT(CASE WHEN events.event_type = 'view' THEN 1 END)`,
+        `COUNT(CASE WHEN events.eventType = '${AnalyticsEventType.VIEW}' THEN 1 END)`,
         'recentViews'
       )
       .addSelect(
-        `COUNT(CASE WHEN events.event_type = 'like' THEN 1 END)`,
+        `COUNT(CASE WHEN events.eventType = '${AnalyticsEventType.LIKE}' THEN 1 END)`,
         'recentLikes'
       )
       .addSelect(
-        `COUNT(CASE WHEN events.event_type = 'purchase' THEN 1 END)`,
+        `COUNT(CASE WHEN events.eventType = '${AnalyticsEventType.PURCHASE}' THEN 1 END)`,
         'recentSales'
       )
       .where('p.storeId = :storeId', { storeId })

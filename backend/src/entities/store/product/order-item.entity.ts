@@ -23,9 +23,6 @@ export class OrderItem implements BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'order_id' })
-  orderId: string;
-
   @ManyToOne(() => Order, (order) => order.items, { onDelete: 'CASCADE' })
   order: Order;
 
@@ -33,7 +30,7 @@ export class OrderItem implements BaseEntity {
   @ManyToOne(() => Product, { nullable: true })
   product?: Product;
 
-  @Column({ name: 'variant_id', nullable: true })
+  @Column({ name: 'variant_id', nullable: true, type: 'uuid' })
   variantId?: string;
 
   /** Optional FK to ProductVariant for convenience */

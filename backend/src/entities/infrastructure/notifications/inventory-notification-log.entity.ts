@@ -19,9 +19,9 @@ import {
 @Index(['status', 'retryCount'], {
   where: `status != '${NotificationStatus.DELIVERED}'`,
 })
-@Index(['createdAt']) // For partitioning
+@Index(['createdAt'])
 export class InventoryNotificationLog implements NotificationLog {
-  @PrimaryGeneratedColumn('increment', { type: 'bigint' })
+  @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Column({ type: 'uuid' })

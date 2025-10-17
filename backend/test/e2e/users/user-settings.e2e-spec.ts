@@ -256,7 +256,7 @@ describe('User - Settings (E2E)', () => {
       await storeRepo.save([
         {
           name: 'Store 1',
-          owner: regularUser.user,
+          ownerId: regularUser.user.id,
           description: 'A test store',
           productCount: 0,
           followerCount: 0,
@@ -265,7 +265,7 @@ describe('User - Settings (E2E)', () => {
         },
         {
           name: 'Store 2',
-          owner: regularUser.user,
+          ownerId: regularUser.user.id,
           productCount: 0,
           description: 'A test store',
           followerCount: 0,

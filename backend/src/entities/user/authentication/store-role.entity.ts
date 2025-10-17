@@ -26,7 +26,7 @@ export class StoreRole implements UserOwnedEntity {
   @ManyToOne(() => User, (user) => user.roles, { onDelete: 'CASCADE' })
   user: User;
 
-  @Column({ name: 'user_id' })
+  @Column({ name: 'user_id', type: 'uuid' })
   userId: string;
 
   @ManyToOne(() => Store, (store) => store.storeRoles, {
@@ -35,7 +35,7 @@ export class StoreRole implements UserOwnedEntity {
   })
   store: Store;
 
-  @Column({ name: 'store_id' })
+  @Column({ name: 'store_id', type: 'uuid' })
   storeId: string;
 
   @CreateDateColumn({ name: 'created_at' })

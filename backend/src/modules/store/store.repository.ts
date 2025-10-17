@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { Store } from 'src/entities/store/store.entity';
 import { BaseRepository } from 'src/common/abstracts/base.repository';
@@ -6,6 +6,7 @@ import {
   StoreSearchByNameOptions,
   StoreSearchOptions,
 } from 'src/modules/store/types';
+import { OrderStatus } from 'src/common/enums/order-status.enum';
 
 @Injectable()
 export class StoreRepository extends BaseRepository<Store> {
@@ -58,64 +59,68 @@ export class StoreRepository extends BaseRepository<Store> {
    * Use this for data integrity checks or migrations
    */
   async recalculateStats(storeId: string): Promise<void> {
-    await this.manager.query(
-      `
-      UPDATE stores s
-      SET 
-        product_count = (
-          SELECT COUNT(*) 
-          FROM products p 
-          WHERE p.store_id = s.id AND p.deleted_at IS NULL
-        ),
-        follower_count = (
-          SELECT COUNT(*) 
-          FROM store_followers sf 
-          WHERE sf.store_id = s.id
-        ),
-        order_count = (
-          SELECT COUNT(*) 
-          FROM orders o 
-          WHERE o.store_id = s.id
-        ),
-        total_revenue = COALESCE((
-          SELECT SUM(total_amount) 
-          FROM orders o 
-          WHERE o.store_id = s.id AND o.status = 'completed'
-        ), 0)
-      WHERE s.id = $1
-    `,
-      [storeId]
-    );
+    const store = await this.findOne({
+      where: { id: storeId },
+    });
+
+    if (!store) {
+      throw new NotFoundException('Store not found');
+    }
+
+    const productCount = await this.manager
+      .getRepository('Product')
+      .createQueryBuilder('p')
+      .where('p.storeId = :storeId', { storeId })
+      .andWhere('p.deletedAt IS NULL')
+      .getCount();
+
+    const followerCount = await this.manager
+      .getRepository('StoreFollower')
+      .count({
+        where: { store: { id: storeId } },
+      });
+
+    // Count orders
+    const orderCount = await this.manager.getRepository('Order').count({
+      where: { storeId },
+    });
+
+    // Calculate total revenue from completed orders
+    const revenueResult = await this.manager
+      .getRepository('Order')
+      .createQueryBuilder('o')
+      .select('COALESCE(SUM(o.totalAmount), 0)', 'total')
+      .where('o.storeId = :storeId', { storeId })
+      .andWhere('o.status = :status', { status: OrderStatus.DELIVERED })
+      .getOne();
+
+    const totalRevenue = parseFloat(revenueResult?.total || '0');
+
+    // Update store with new stats
+    await this.update(storeId, {
+      productCount,
+      followerCount,
+      orderCount,
+      totalRevenue,
+    });
   }
 
   /**
    * Recalculate stats for all stores (admin operation)
    */
   async recalculateAllStats(): Promise<void> {
-    await this.manager.query(`
-      UPDATE stores s
-      SET 
-        product_count = (
-          SELECT COUNT(*) 
-          FROM products p 
-          WHERE p.store_id = s.id AND p.deleted_at IS NULL
-        ),
-        follower_count = (
-          SELECT COUNT(*) 
-          FROM store_followers sf 
-          WHERE sf.store_id = s.id
-        ),
-        order_count = (
-          SELECT COUNT(*) 
-          FROM orders o 
-          WHERE o.store_id = s.id
-        ),
-        total_revenue = COALESCE((
-          SELECT SUM(total_amount) 
-          FROM orders o 
-          WHERE o.store_id = s.id AND o.status = 'completed'
-        ), 0)
-    `);
+    // Get all stores
+    const stores = await this.find({
+      select: ['id'],
+    });
+
+    // Process in batches to avoid memory issues with large datasets
+    const batchSize = 50;
+    for (let i = 0; i < stores.length; i += batchSize) {
+      const batch = stores.slice(i, i + batchSize);
+
+      await Promise.all(batch.map((store) => this.recalculateStats(store.id)));
+    }
   }
 
   async searchStoreByName(
@@ -201,16 +206,13 @@ export class StoreRepository extends BaseRepository<Store> {
         qb.orderBy('store.createdAt', 'DESC');
         break;
       default:
-        qb.orderBy('relevanceScore', 'DESC').addOrderBy(
-          'store.followerCount',
-          'DESC'
-        );
+        qb.orderBy('store.followerCount', 'DESC');
         break;
     }
 
     qb.limit(limit);
 
-    return await qb.getRawMany();
+    return await qb.getMany();
   }
 
   async advancedStoreSearch(filters: StoreSearchOptions) {

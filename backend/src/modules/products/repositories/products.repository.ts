@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { Product } from 'src/entities/store/product/product.entity';
 import { BaseRepository } from 'src/common/abstracts/base.repository';
@@ -13,11 +13,10 @@ export class ProductRepository extends BaseRepository<Product> {
    * Find products belonging to a given store
    */
   async findAllByStore(storeId: string): Promise<Product[]> {
-    return this.createQueryBuilder('p')
-      .leftJoinAndSelect('p.store', 's')
-      .leftJoinAndSelect('p.photos', 'photos')
-      .where('s.id = :storeId', { storeId })
-      .getMany();
+    return this.find({
+      where: { storeId },
+      relations: ['photos', 'categories'],
+    });
   }
 
   /**
@@ -57,17 +56,48 @@ export class ProductRepository extends BaseRepository<Product> {
    * Manually recalculate cached statistics
    */
   async recalculateStats(productId: string): Promise<void> {
-    await this.manager.query(
-      `
-      UPDATE products p
-      SET 
-        review_count = (SELECT COUNT(*) FROM reviews r WHERE r.product_id = p.id),
-        average_rating = (SELECT ROUND(AVG(rating)::NUMERIC, 2) FROM reviews r WHERE r.product_id = p.id),
-        like_count = (SELECT COUNT(*) FROM likes l WHERE l.product_id = p.id),
-        total_sales = COALESCE((SELECT SUM(quantity) FROM order_items oi WHERE oi.product_id = p.id), 0)
-      WHERE p.id = $1
-    `,
-      [productId]
-    );
+    const product = await this.findOne({
+      where: { id: productId },
+    });
+
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
+
+    // Count reviews
+    const reviewCount = await this.manager.getRepository('Review').count({
+      where: { productId },
+    });
+
+    // Calculate average rating
+    const ratingResult = await this.manager
+      .getRepository('Review')
+      .createQueryBuilder('r')
+      .select('ROUND(AVG(r.rating)::NUMERIC, 2)', 'avgRating')
+      .where('r.productId = :productId', { productId })
+      .getRawOne();
+
+    const averageRating = parseFloat(ratingResult?.avgRating || '0');
+
+    // Count likes
+    const likeCount = await this.manager.getRepository('Like').count({
+      where: { productId },
+    });
+
+    const salesResult = await this.manager
+      .getRepository('OrderItem')
+      .createQueryBuilder('oi')
+      .select('COALESCE(SUM(oi.quantity), 0)', 'totalSales')
+      .where('oi.product.id = :productId', { productId })
+      .getRawOne();
+
+    const totalSales = parseInt(salesResult?.totalSales || '0', 10);
+
+    await this.update(productId, {
+      reviewCount,
+      averageRating,
+      likeCount,
+      totalSales,
+    });
   }
 }

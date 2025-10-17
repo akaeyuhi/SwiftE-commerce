@@ -85,9 +85,9 @@ describe('Products - Photos (E2E)', () => {
         .post(`/stores/${store.id}/products`)
         .field('name', 'Full Product')
         .field('description', 'Complete with all photos')
-        .attach('mainPhoto', createTestImageBuffer(), 'main.png')
         .attach('photos', createTestImageBuffer(), 'photo1.png')
         .attach('photos', createTestImageBuffer(), 'photo2.png')
+        .attach('mainPhoto', createTestImageBuffer(), 'main.png')
         .expect(201);
 
       expect(response.body).toHaveProperty('mainPhotoUrl');
@@ -99,7 +99,7 @@ describe('Products - Photos (E2E)', () => {
         .authenticatedRequest(storeOwner.accessToken)
         .post(`/stores/${store.id}/products`)
         .field('name', 'Product')
-        .attach('mainPhoto', Buffer.from('not an image'), 'file.txt');
+        .attach('photos', Buffer.from('not an image'), 'file.txt');
 
       // Should reject non-image files
       AssertionHelper.assertErrorResponse(response, 400);
@@ -116,7 +116,7 @@ describe('Products - Photos (E2E)', () => {
         .attach('mainPhoto', largeBuffer, 'large.png');
 
       // Should reject oversized files
-      AssertionHelper.assertErrorResponse(response, 400);
+      AssertionHelper.assertErrorResponse(response, 413);
     });
   });
 
@@ -129,9 +129,8 @@ describe('Products - Photos (E2E)', () => {
         .attach('photos', createTestImageBuffer(), 'photo2.png')
         .expect(201);
 
-      expect(response.body).toHaveProperty('success');
-      expect(response.body.photos).toBeDefined();
-      expect(response.body.photos.length).toBeGreaterThanOrEqual(2);
+      expect(response.body).toBeDefined();
+      expect(response.body.length).toBeGreaterThanOrEqual(2);
     });
 
     it('should require at least one photo', async () => {
@@ -165,7 +164,7 @@ describe('Products - Photos (E2E)', () => {
 
       const response = await req.expect(201);
 
-      expect(response.body.photos.length).toBe(photoCount);
+      expect(response.body.length).toBe(photoCount);
     });
   });
 
@@ -174,11 +173,11 @@ describe('Products - Photos (E2E)', () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
         .post(`/stores/${store.id}/products/${product.id}/photos/main`)
-        .attach('photo', createTestImageBuffer(), 'main.png')
+        .attach('mainPhoto', createTestImageBuffer(), 'main.png')
         .expect(201);
 
-      expect(response.body).toHaveProperty('mainPhotoUrl');
-      expect(response.body.mainPhotoUrl).toBeTruthy();
+      expect(response.body).toHaveProperty('url');
+      expect(response.body.url).toBeTruthy();
     });
 
     it('should require photo file', async () => {
@@ -186,7 +185,11 @@ describe('Products - Photos (E2E)', () => {
         .authenticatedRequest(storeOwner.accessToken)
         .post(`/stores/${store.id}/products/${product.id}/photos/main`);
 
-      AssertionHelper.assertErrorResponse(response, 400, 'No photo uploaded');
+      AssertionHelper.assertErrorResponse(
+        response,
+        400,
+        'No main photo uploaded'
+      );
     });
 
     it('should replace existing main photo', async () => {
@@ -194,17 +197,17 @@ describe('Products - Photos (E2E)', () => {
       await authHelper
         .authenticatedRequest(storeOwner.accessToken)
         .post(`/stores/${store.id}/products/${product.id}/photos/main`)
-        .attach('photo', createTestImageBuffer(), 'main1.png')
+        .attach('mainPhoto', createTestImageBuffer(), 'main1.png')
         .expect(201);
 
       // Replace with second main photo
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
         .post(`/stores/${store.id}/products/${product.id}/photos/main`)
-        .attach('photo', createTestImageBuffer(), 'main2.png')
+        .attach('mainPhoto', createTestImageBuffer(), 'main2.png')
         .expect(201);
 
-      expect(response.body.mainPhotoUrl).toBeDefined();
+      expect(response.body.url).toBeDefined();
     });
 
     it('should return 404 for non-existent product', async () => {
@@ -213,7 +216,7 @@ describe('Products - Photos (E2E)', () => {
         .post(
           `/stores/${store.id}/products/00000000-0000-0000-0000-000000000000/photos/main`
         )
-        .attach('photo', createTestImageBuffer(), 'main.png');
+        .attach('mainPhoto', createTestImageBuffer(), 'main.png');
 
       AssertionHelper.assertErrorResponse(response, 404);
     });
@@ -228,7 +231,7 @@ describe('Products - Photos (E2E)', () => {
         .attach('photos', createTestImageBuffer(), 'photo.png')
         .expect(201);
 
-      const photoId = addResponse.body.photos[0].id;
+      const photoId = addResponse.body[0].id;
 
       // Then delete it
       await authHelper
@@ -268,12 +271,12 @@ describe('Products - Photos (E2E)', () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
         .post(`/stores/${store.id}/products/${product.id}/photos/main`)
-        .attach('photo', createTestImageBuffer(), 'test.png')
+        .attach('mainPhoto', createTestImageBuffer(), 'test.png')
         .expect(201);
 
-      expect(response.body.mainPhotoUrl).toBeDefined();
-      expect(typeof response.body.mainPhotoUrl).toBe('string');
-      expect(response.body.mainPhotoUrl).toMatch(/^https?:\/\//);
+      expect(response.body.url).toBeDefined();
+      expect(typeof response.body.url).toBe('string');
+      expect(response.body.url).toMatch(/^https?:\/\//);
     });
 
     it('should include photo metadata', async () => {
@@ -283,7 +286,7 @@ describe('Products - Photos (E2E)', () => {
         .attach('photos', createTestImageBuffer(), 'photo.png')
         .expect(201);
 
-      const photo = response.body.photos[0];
+      const photo = response.body[0];
       expect(photo).toHaveProperty('id');
       expect(photo).toHaveProperty('url');
       AssertionHelper.assertUUID(photo.id);

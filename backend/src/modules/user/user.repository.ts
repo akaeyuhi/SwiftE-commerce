@@ -3,6 +3,9 @@ import { DataSource } from 'typeorm';
 import { User } from 'src/entities/user/user.entity';
 import { BaseRepository } from 'src/common/abstracts/base.repository';
 import { StoreRole } from 'src/entities/user/authentication/store-role.entity';
+import { Store } from 'src/entities/store/store.entity';
+import { StoreDto } from 'src/modules/store/dto/store.dto';
+import {StoreRoles} from "src/common/enums/store-roles.enum";
 
 @Injectable()
 export class UserRepository extends BaseRepository<User> {
@@ -29,7 +32,7 @@ export class UserRepository extends BaseRepository<User> {
     if (!id) return null;
     return this.findOne({
       where: { id },
-      relations: ['roles', 'carts', 'orders', 'aiLogs'],
+      relations: ['roles', 'carts', 'orders', 'aiLogs', 'ownedStores'],
     });
   }
 
@@ -49,15 +52,27 @@ export class UserRepository extends BaseRepository<User> {
     return this.save({ ...user, roles: [...user.roles, role] });
   }
 
-  async removeRoleFromUser(userId: string, roleId: string, storeId?: string) {
-    const qb = this.manager
-      .getRepository('UserRole')
-      .createQueryBuilder('ur')
-      .delete()
-      .where('ur.userId = :userId', { userId })
-      .andWhere('ur.roleId = :roleId', { roleId });
+  async addStoresToUser(user: User, ...stores: Array<Store | StoreDto>) {
+    user.ownedStores.push(...(stores as Store[]));
+    return this.save(user);
+  }
 
-    if (storeId) qb.andWhere('ur.storeId = :storeId', { storeId });
+  async removeRoleFromUser(
+    userId: string,
+    roleName: StoreRoles,
+    storeId?: string
+  ) {
+    const qb = this.manager
+      .createQueryBuilder()
+      .delete()
+      .from('StoreRole')
+      .where('userId = :userId', { userId })
+      .andWhere('roleName = :roleName', { roleName });
+
+    if (storeId) {
+      qb.andWhere('storeId = :storeId', { storeId });
+    }
+
     return qb.execute();
   }
 }

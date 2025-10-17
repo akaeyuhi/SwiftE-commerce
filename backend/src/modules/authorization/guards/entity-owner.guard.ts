@@ -74,6 +74,14 @@ export class EntityOwnerGuard implements CanActivate {
       }
     }
 
+    if (user?.isStoreAuthorative === true) return true;
+
+    const userIdParam = request.params?.['userId'];
+
+    if (opts.allowMissingEntity && userIdParam && userIdParam === user.id) {
+      return true;
+    }
+
     // 2) if no serviceToken provided, we can still attempt a "probe" entity using route params
     const idParam = opts.idParam ?? 'id';
     const entityId = request.params?.[idParam];
@@ -91,7 +99,7 @@ export class EntityOwnerGuard implements CanActivate {
       }
 
       // Attempt to load entity using common method names
-      if (entityId) {
+      if (entityId && this.policyService.isValidUUID(entityId)) {
         // Prefer BaseService.getEntityById if present
         if (typeof provider.getEntityById === 'function') {
           entity = await provider.getEntityById(entityId);
@@ -136,7 +144,6 @@ export class EntityOwnerGuard implements CanActivate {
     if (!allowed)
       throw new ForbiddenException('Not authorized to access this resource');
 
-    // optionally attach loaded entity for later handlers to reuse
     request.entity = entity;
 
     return true;

@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import {
   AccessPolicies,
@@ -107,6 +107,9 @@ export class PolicyService {
     // if no policy defined => allow (guard will pick defaults in the BaseController)
     if (!policy) return true;
 
+    if (!this.isValidUUID(user.id))
+      throw new BadRequestException('UUID is invalid');
+
     if (policy.requireAuthenticated && !user) return false;
 
     if (policy.adminRole) {
@@ -120,6 +123,8 @@ export class PolicyService {
       // we expect storeId in params (common names: id, storeId)
       const storeId =
         params?.storeId ?? params?.id ?? params?.store_id ?? undefined;
+      if (!this.isValidUUID(storeId))
+        throw new BadRequestException('UUID is invalid');
       if (!storeId) return false;
       return await this.userHasStoreRoles(user, storeId, policy.storeRoles);
     }
@@ -142,6 +147,8 @@ export class PolicyService {
   ): string | undefined {
     if (!entity) return undefined;
 
+    if (entity.storeId) return entity.storeId;
+
     if ((entity as StoreOwnedEntity).store) {
       const s = (entity as StoreOwnedEntity).store;
       if (s && typeof s === 'object' && 'id' in s) return s.id;
@@ -160,6 +167,9 @@ export class PolicyService {
     entity?: UserOwnedEntity | any
   ): string | undefined {
     if (!entity) return undefined;
+    if (entity.userId) return entity.userId;
+    if (entity.ownerId) return entity.ownerId;
+    if (entity.authorId) return entity.authorId;
     if (entity.user && (entity.user as any).id) return (entity.user as any).id;
     if (entity.author && (entity.author as any).id)
       return (entity.author as any).id;
@@ -200,7 +210,6 @@ export class PolicyService {
     entity?: StoreOwnedEntity | Store | null
   ): Promise<boolean> {
     if (!user || !user.id) return false;
-
     // site admin has full control
     if (await this.isSiteAdmin(user)) return true;
 
@@ -273,5 +282,11 @@ export class PolicyService {
     }
 
     return mergedPolicy;
+  }
+
+  isValidUUID(uuid: string): boolean {
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(uuid);
   }
 }

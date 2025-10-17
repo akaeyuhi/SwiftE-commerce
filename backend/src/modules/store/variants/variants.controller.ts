@@ -108,6 +108,7 @@ export class VariantsController extends BaseController<
     type: () => [ProductVariant],
   })
   async findAllProductVariants(
+    @Param('storeId', new ParseUUIDPipe()) storeId: string,
     @Param('productId', new ParseUUIDPipe()) productId: string
   ): Promise<ProductVariant[]> {
     return this.variantsService.listByProduct(productId);
@@ -248,7 +249,7 @@ export class VariantsController extends BaseController<
     @Param('storeId', new ParseUUIDPipe()) storeId: string,
     @Param('productId', new ParseUUIDPipe()) _productId: string,
     @Param('id', new ParseUUIDPipe()) id: string,
-    @Body() body: { quantity: number }
+    @Body() body: UpdateVariantDto
   ) {
     return this.variantsService.setInventory(storeId, id, body.quantity);
   }
@@ -336,8 +337,8 @@ export class VariantsController extends BaseController<
     @Param('storeId', new ParseUUIDPipe()) _storeId: string,
     @Param('productId', new ParseUUIDPipe()) _productId: string,
     @Param('id', new ParseUUIDPipe()) id: string,
-    @Body() body: { price: number }
+    @Body() body: UpdateVariantDto
   ) {
-    return this.variantsService.updatePrice(id, body.price);
+    return this.variantsService.updatePrice(id, body.price!);
   }
 }

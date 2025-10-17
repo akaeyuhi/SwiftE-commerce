@@ -28,7 +28,9 @@ export class ShoppingCart implements UserOwnedEntity, StoreOwnedEntity {
   @ManyToOne(() => Store, (store) => store.carts, { onDelete: 'CASCADE' })
   store: Store;
 
-  @OneToMany(() => CartItem, (item) => item.cart, { cascade: true })
+  @OneToMany(() => CartItem, (item) => item.cart, {
+    cascade: ['update', 'remove'],
+  })
   items: CartItem[];
 
   // Auto-cleanup abandoned carts after 30 days

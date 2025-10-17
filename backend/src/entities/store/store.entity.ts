@@ -7,6 +7,7 @@ import {
   ManyToOne,
   OneToMany,
   Index,
+  DeleteDateColumn,
 } from 'typeorm';
 import { User } from 'src/entities/user/user.entity';
 import { Product } from 'src/entities/store/product/product.entity';
@@ -32,7 +33,7 @@ export class Store implements UserOwnedEntity {
   @Column({ type: 'text' })
   description: string;
 
-  @Column({ name: 'owner_id' })
+  @Column({ name: 'owner_id', type: 'uuid' })
   ownerId: string;
 
   @ManyToOne(() => User, (user) => user.ownedStores, { onDelete: 'SET NULL' })
@@ -57,28 +58,47 @@ export class Store implements UserOwnedEntity {
   @UpdateDateColumn()
   updatedAt: Date;
 
+  @DeleteDateColumn()
+  deletedAt?: Date;
+
   // Relations
-  @OneToMany(() => Product, (product) => product.store, { cascade: true })
+  @OneToMany(() => Product, (product) => product.store, {
+    cascade: ['update', 'remove'],
+  })
   products: Product[];
 
-  @OneToMany(() => Inventory, (inventory) => inventory.store, { cascade: true })
+  @OneToMany(() => Inventory, (inventory) => inventory.store, {
+    cascade: ['update', 'remove'],
+  })
   inventories: Inventory[];
 
-  @OneToMany(() => Order, (order) => order.store, { cascade: true })
+  @OneToMany(() => Order, (order) => order.store, {
+    cascade: ['update', 'remove'],
+  })
   orders: Order[];
 
-  @OneToMany(() => Category, (category) => category.store, { cascade: true })
+  @OneToMany(() => Category, (category) => category.store, {
+    cascade: ['update', 'remove'],
+  })
   categories: Category[];
 
-  @OneToMany(() => ShoppingCart, (cart) => cart.store, { cascade: true })
+  @OneToMany(() => ShoppingCart, (cart) => cart.store, {
+    cascade: ['update', 'remove'],
+  })
   carts: ShoppingCart[];
 
-  @OneToMany(() => NewsPost, (post) => post.store, { cascade: true })
+  @OneToMany(() => NewsPost, (post) => post.store, {
+    cascade: ['update', 'remove'],
+  })
   newsPosts: NewsPost[];
 
-  @OneToMany(() => AiLog, (log) => log.store, { cascade: true })
+  @OneToMany(() => AiLog, (log) => log.store, {
+    cascade: ['update', 'remove'],
+  })
   aiLogs: AiLog[];
 
-  @OneToMany(() => StoreRole, (userRole) => userRole.store, { cascade: true })
+  @OneToMany(() => StoreRole, (userRole) => userRole.store, {
+    cascade: ['update', 'remove'],
+  })
   storeRoles: StoreRole[];
 }
