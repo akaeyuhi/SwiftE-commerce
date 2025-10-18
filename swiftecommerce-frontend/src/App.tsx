@@ -1,35 +1,28 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
-
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-20">
+        <h1 className="text-4xl font-bold text-center mb-4">
+          🚀 SwiftE-commerce Frontend
+        </h1>
+        <p className="text-center text-muted-foreground text-lg">
+          Enterprise-grade React + TypeScript e-commerce platform
         </p>
+        <div className="mt-8 flex justify-center gap-4">
+          <div className="bg-card p-6 rounded-lg border">
+            <h2 className="font-semibold mb-2">✅ Setup Complete</h2>
+            <ul className="text-sm text-muted-foreground space-y-1">
+              <li>• React 18.3 + TypeScript</li>
+              <li>• Vite 5.4</li>
+              <li>• Tailwind CSS</li>
+              <li>• TanStack Query</li>
+              <li>• Zustand</li>
+            </ul>
+          </div>
+        </div>
       </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    </div>
+  );
 }
 
-export default App
+export default App;
