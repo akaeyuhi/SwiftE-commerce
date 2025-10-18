@@ -20,7 +20,7 @@ export class OrdersRepository extends BaseRepository<Order> {
    */
   async findByUser(userId: string): Promise<Order[]> {
     return this.find({
-      where: { user: { id: userId } },
+      where: { userId },
       relations: ['store', 'items', 'items.variant', 'items.product'],
       order: { createdAt: 'DESC' },
     });
@@ -31,7 +31,7 @@ export class OrdersRepository extends BaseRepository<Order> {
    */
   async findByStore(storeId: string): Promise<Order[]> {
     return this.find({
-      where: { store: { id: storeId } },
+      where: { storeId },
       relations: ['user', 'items', 'items.variant', 'items.product'],
       order: { createdAt: 'DESC' },
     });

@@ -1,4 +1,3 @@
-// src/modules/ai/ai-generator/ai-generator.controller.ts
 import {
   Controller,
   Get,
@@ -8,7 +7,6 @@ import {
   Param,
   UseGuards,
   Req,
-  ValidationPipe,
   HttpStatus,
   HttpCode,
   BadRequestException,
@@ -19,8 +17,6 @@ import { AiGeneratorService } from './ai-generator.service';
 import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';
 import { AdminGuard } from 'src/modules/authorization/guards/admin.guard';
 import { StoreRolesGuard } from 'src/modules/authorization/guards/store-roles.guard';
-import { StoreRole } from 'src/common/decorators/store-role.decorator';
-import { AdminRole } from 'src/common/decorators/admin-role.decorator';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { AdminRoles } from 'src/common/enums/admin.enum';
 import { AccessPolicies } from 'src/modules/authorization/policy/policy.types';
@@ -31,9 +27,10 @@ import {
   GenerateCustomDto,
   GenerationQueryDto,
 } from './dto/generator-request.dto';
+import { AiTransform } from 'src/modules/ai/decorators/ai-transform.decorator';
 
 /**
- * Enhanced AI Generator Controller
+ * AI Generator Controller
  *
  * Provides AI text generation endpoints with:
  * - Product name generation
@@ -47,11 +44,11 @@ import {
  * - Rate limiting per user/store
  * - Content moderation and filtering
  */
-@Controller('ai/generator')
+@Controller('stores/:storeId/ai/generator')
 @UseGuards(JwtAuthGuard, AdminGuard, StoreRolesGuard)
+@AiTransform()
 export class AiGeneratorController {
   static accessPolicies: AccessPolicies = {
-    // Generation endpoints - store level access
     generateNames: {
       storeRoles: [StoreRoles.ADMIN, StoreRoles.MODERATOR],
     },
@@ -79,40 +76,36 @@ export class AiGeneratorController {
    */
   @Post('names')
   @HttpCode(HttpStatus.OK)
-  @StoreRole(StoreRoles.ADMIN, StoreRoles.MODERATOR)
   async generateNames(
-    @Body(ValidationPipe) dto: GenerateNamesDto,
+    @Param('storeId', new ParseUUIDPipe()) storeId: string,
+    @Body() dto: GenerateNamesDto,
     @Req() req: Request
   ) {
-    try {
-      const user = this.extractUser(req);
+    const user = this.extractUser(req);
 
-      const names = await this.generatorService.generateProductNames({
-        storeStyle: dto.storeStyle,
-        seed: dto.seed,
-        count: dto.count || 6,
-        options: dto.options || {},
-        userId: user.id,
-        storeId: dto.storeId || user.storeId,
-      });
+    const names = await this.generatorService.generateProductNames({
+      storeStyle: dto.storeStyle,
+      seed: dto.seed,
+      count: dto.count || 6,
+      options: dto.options || {},
+      userId: user.id,
+      storeId: dto.storeId || storeId,
+    });
 
-      return {
-        success: true,
-        data: {
-          names,
-          metadata: {
-            count: names.length,
-            storeStyle: dto.storeStyle,
-            seed: dto.seed,
-            generatedAt: new Date().toISOString(),
-            userId: user.id,
-            storeId: dto.storeId || user.storeId,
-          },
+    return {
+      success: true,
+      data: {
+        names,
+        metadata: {
+          count: names.length,
+          storeStyle: dto.storeStyle,
+          seed: dto.seed,
+          generatedAt: new Date().toISOString(),
+          userId: user.id,
+          storeId: dto.storeId || storeId,
         },
-      };
-    } catch (error) {
-      throw new BadRequestException(`Name generation failed: ${error.message}`);
-    }
+      },
+    };
   }
 
   /**
@@ -121,42 +114,35 @@ export class AiGeneratorController {
    */
   @Post('description')
   @HttpCode(HttpStatus.OK)
-  @StoreRole(StoreRoles.ADMIN, StoreRoles.MODERATOR)
   async generateDescription(
-    @Body(ValidationPipe) dto: GenerateDescriptionDto,
+    @Param('storeId', new ParseUUIDPipe()) storeId: string,
+    @Body() dto: GenerateDescriptionDto,
     @Req() req: Request
   ) {
-    try {
-      const user = this.extractUser(req);
+    const user = this.extractUser(req);
 
-      const description =
-        await this.generatorService.generateProductDescription({
-          name: dto.name,
-          productSpec: dto.productSpec,
+    const description = await this.generatorService.generateProductDescription({
+      name: dto.name,
+      productSpec: dto.productSpec,
+      tone: dto.tone || 'professional and engaging',
+      options: dto.options || {},
+      userId: user.id,
+      storeId: dto.storeId || storeId,
+    });
+
+    return {
+      success: true,
+      data: {
+        result: description,
+        metadata: {
+          productName: dto.name,
           tone: dto.tone || 'professional and engaging',
-          options: dto.options || {},
+          generatedAt: new Date().toISOString(),
           userId: user.id,
-          storeId: dto.storeId || user.storeId,
-        });
-
-      return {
-        success: true,
-        data: {
-          description,
-          metadata: {
-            productName: dto.name,
-            tone: dto.tone || 'professional and engaging',
-            generatedAt: new Date().toISOString(),
-            userId: user.id,
-            storeId: dto.storeId || user.storeId,
-          },
+          storeId: dto.storeId || storeId,
         },
-      };
-    } catch (error) {
-      throw new BadRequestException(
-        `Description generation failed: ${error.message}`
-      );
-    }
+      },
+    };
   }
 
   /**
@@ -165,42 +151,36 @@ export class AiGeneratorController {
    */
   @Post('ideas')
   @HttpCode(HttpStatus.OK)
-  @StoreRole(StoreRoles.ADMIN, StoreRoles.MODERATOR)
   async generateIdeas(
-    @Body(ValidationPipe) dto: GenerateIdeasDto,
+    @Param('storeId', new ParseUUIDPipe()) storeId: string,
+    @Body() dto: GenerateIdeasDto,
     @Req() req: Request
   ) {
-    try {
-      const user = this.extractUser(req);
+    const user = this.extractUser(req);
 
-      const ideas = await this.generatorService.generateProductIdeas({
-        storeStyle: dto.storeStyle,
-        seed: dto.seed,
-        count: dto.count || 6,
-        options: dto.options || {},
-        userId: user.id,
-        storeId: dto.storeId || user.storeId,
-      });
+    const ideas = await this.generatorService.generateProductIdeas({
+      storeStyle: dto.storeStyle,
+      seed: dto.seed,
+      count: dto.count || 6,
+      options: dto.options || {},
+      userId: user.id,
+      storeId: dto.storeId || storeId,
+    });
 
-      return {
-        success: true,
-        data: {
-          ideas,
-          metadata: {
-            count: ideas.length,
-            storeStyle: dto.storeStyle,
-            seed: dto.seed,
-            generatedAt: new Date().toISOString(),
-            userId: user.id,
-            storeId: dto.storeId || user.storeId,
-          },
+    return {
+      success: true,
+      data: {
+        ideas,
+        metadata: {
+          count: ideas.length,
+          storeStyle: dto.storeStyle,
+          seed: dto.seed,
+          generatedAt: new Date().toISOString(),
+          userId: user.id,
+          storeId: dto.storeId || storeId,
         },
-      };
-    } catch (error) {
-      throw new BadRequestException(
-        `Ideas generation failed: ${error.message}`
-      );
-    }
+      },
+    };
   }
 
   /**
@@ -209,38 +189,32 @@ export class AiGeneratorController {
    */
   @Post('custom')
   @HttpCode(HttpStatus.OK)
-  @StoreRole(StoreRoles.ADMIN, StoreRoles.MODERATOR)
   async generateCustom(
-    @Body(ValidationPipe) dto: GenerateCustomDto,
+    @Param('storeId', new ParseUUIDPipe()) storeId: string,
+    @Body() dto: GenerateCustomDto,
     @Req() req: Request
   ) {
-    try {
-      const user = this.extractUser(req);
+    const user = this.extractUser(req);
 
-      const result = await this.generatorService.generateCustom({
-        prompt: dto.prompt,
-        options: dto.options || {},
-        userId: user.id,
-        storeId: dto.storeId || user.storeId,
-      });
+    const result = await this.generatorService.generateCustom({
+      prompt: dto.prompt,
+      options: dto.options || {},
+      userId: user.id,
+      storeId: dto.storeId || storeId,
+    });
 
-      return {
-        success: true,
-        data: {
-          result,
-          metadata: {
-            promptLength: dto.prompt.length,
-            generatedAt: new Date().toISOString(),
-            userId: user.id,
-            storeId: dto.storeId || user.storeId,
-          },
+    return {
+      success: true,
+      data: {
+        result,
+        metadata: {
+          promptLength: dto.prompt.length,
+          generatedAt: new Date().toISOString(),
+          userId: user.id,
+          storeId: dto.storeId || storeId,
         },
-      };
-    } catch (error) {
-      throw new BadRequestException(
-        `Custom generation failed: ${error.message}`
-      );
-    }
+      },
+    };
   }
 
   /**
@@ -249,66 +223,53 @@ export class AiGeneratorController {
    */
   @Get('types')
   async getGenerationTypes() {
-    try {
-      const types = this.generatorService.getGenerationTypes();
+    const types = this.generatorService.getGenerationTypes();
 
-      return {
-        success: true,
-        data: {
-          types,
-          metadata: {
-            count: types.length,
-            retrievedAt: new Date().toISOString(),
-          },
+    return {
+      success: true,
+      data: {
+        types,
+        metadata: {
+          count: types.length,
+          retrievedAt: new Date().toISOString(),
         },
-      };
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get generation types: ${error.message}`
-      );
-    }
+      },
+    };
   }
 
   /**
-   * GET /ai/generator/stores/:storeId/usage
+   * GET /stores/:storeId/ai/generator/usage
    * Get usage statistics for a store
    */
-  @Get('stores/:storeId/usage')
-  @StoreRole(StoreRoles.ADMIN)
+  @Get('usage')
   async getUsageStats(
     @Param('storeId', ParseUUIDPipe) storeId: string,
-    @Query(ValidationPipe) query: GenerationQueryDto,
+    @Query() query: GenerationQueryDto,
     @Req() req: Request
   ) {
-    try {
-      const user = this.extractUser(req);
+    const user = this.extractUser(req);
 
-      const stats = await this.generatorService.getUsageStats({
+    const stats = await this.generatorService.getUsageStats({
+      storeId,
+      dateFrom: query.dateFrom ? new Date(query.dateFrom) : undefined,
+      dateTo: query.dateTo ? new Date(query.dateTo) : undefined,
+    });
+
+    return {
+      success: true,
+      data: {
         storeId,
-        dateFrom: query.dateFrom ? new Date(query.dateFrom) : undefined,
-        dateTo: query.dateTo ? new Date(query.dateTo) : undefined,
-      });
-
-      return {
-        success: true,
-        data: {
-          storeId,
-          stats,
-          metadata: {
-            period: {
-              from: query.dateFrom,
-              to: query.dateTo,
-            },
-            generatedAt: new Date().toISOString(),
-            userId: user.id,
+        stats,
+        metadata: {
+          period: {
+            from: query.dateFrom,
+            to: query.dateTo,
           },
+          generatedAt: new Date().toISOString(),
+          userId: user.id,
         },
-      };
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get usage stats: ${error.message}`
-      );
-    }
+      },
+    };
   }
 
   /**
@@ -316,10 +277,13 @@ export class AiGeneratorController {
    * Health check for generator service
    */
   @Get('health')
-  @AdminRole(AdminRoles.ADMIN)
-  async healthCheck() {
+  async healthCheck(
+    @Param('storeId', new ParseUUIDPipe()) storeId: string,
+    @Req() req: Request
+  ) {
     try {
-      const health = await this.generatorService.healthCheck();
+      const user = this.extractUser(req);
+      const health = await this.generatorService.healthCheck(user.id, storeId);
 
       return {
         success: true,
@@ -342,14 +306,13 @@ export class AiGeneratorController {
     }
   }
 
-  private extractUser(req: Request): { id: string; storeId?: string } {
+  private extractUser(req: Request): { id: string } {
     const user = (req as any).user;
     if (!user?.id) {
       throw new BadRequestException('User context not found');
     }
     return {
       id: user.id,
-      storeId: user.storeId,
     };
   }
 }

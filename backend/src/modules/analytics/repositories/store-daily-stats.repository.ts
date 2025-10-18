@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { BaseAnalyticsRepository } from 'src/common/abstracts/analytics/base.analytics.repository';
-import { StoreDailyStats } from '../entities/store-daily-stats.entity';
+import { StoreDailyStats } from 'src/entities/infrastructure/analytics/store-daily-stats.entity';
 import { DateRangeOptions } from 'src/common/interfaces/infrastructure/analytics.interface';
 
 @Injectable()
@@ -24,9 +24,21 @@ export class StoreDailyStatsRepository extends BaseAnalyticsRepository<StoreDail
       ])
       .where('s.storeId = :storeId', { storeId });
 
-    this.applyDateRange(qb, options, 's.date');
+    this.applyDateRange(qb, options, 'date');
 
     const raw = await qb.getRawOne();
+
+    // Handle empty result
+    if (!raw || Object.keys(raw).length === 0) {
+      return {
+        views: 0,
+        purchases: 0,
+        addToCarts: 0,
+        revenue: 0,
+        checkouts: 0,
+      };
+    }
+
     return this.parseAggregationResult(raw);
   }
 
@@ -80,11 +92,53 @@ export class StoreDailyStatsRepository extends BaseAnalyticsRepository<StoreDail
 
     return raw.map((r) => ({
       storeId: r.storeId,
-      views: Number(r.views || 0),
-      purchases: Number(r.purchases || 0),
-      revenue: Number(r.revenue || 0),
-      conversionRate: Number(r.conversionRate || 0),
+      views: Number(r.views) || 0,
+      purchases: Number(r.purchases) || 0,
+      revenue: Number(r.revenue) || 0,
+      conversionRate: Number(r.conversionRate) || 0,
     }));
+  }
+
+  async getTopStoreDaily(from: string, to: string, limit = 10) {
+    const qb = this.createQueryBuilder('stats')
+      .select('stats.storeId', 'storeId')
+      .addSelect('SUM(stats.views)', 'totalViews')
+      .addSelect('SUM(stats.purchases)', 'totalPurchases')
+      .addSelect('SUM(stats.revenue)', 'totalRevenue')
+      .addSelect('SUM(stats.addToCarts)', 'totalAddToCarts')
+      .groupBy('stats.storeId');
+
+    if (from && to) {
+      qb.where('stats.date BETWEEN :from AND :to', { from, to });
+    } else if (from) {
+      qb.where('stats.date >= :from', { from });
+    } else if (to) {
+      qb.where('stats.date <= :to', { to });
+    }
+
+    // ✅ Use the full SUM expression instead of the alias
+    return await qb
+      .orderBy('SUM(stats.revenue)', 'DESC')
+      .limit(limit)
+      .getRawMany();
+  }
+
+  async getUnderperformingStores(from?: string, to?: string) {
+    const qb = this.createQueryBuilder('stats')
+      .leftJoin('stores', 's', 's.id = stats.storeId')
+      .select('stats.storeId', 'id')
+      .addSelect('s.name', 'name')
+      .addSelect('SUM(stats.views)', 'views')
+      .addSelect('SUM(stats.purchases)', 'purchases')
+      .addSelect('SUM(stats.revenue)', 'revenue')
+      .groupBy('stats.storeId')
+      .addGroupBy('s.name');
+
+    if (from && to) {
+      qb.andWhere('stats.date BETWEEN :from AND :to', { from, to });
+    }
+
+    return await qb.getRawMany();
   }
 
   /**

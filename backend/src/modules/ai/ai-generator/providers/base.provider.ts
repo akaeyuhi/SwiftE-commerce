@@ -13,6 +13,7 @@ import {
   AiServiceRequest,
   AiServiceResponse,
 } from 'src/common/interfaces/ai/ai.interface';
+import { GenerationRequest } from 'src/modules/ai/ai-generator/types';
 
 export interface ProviderConfig {
   name: string;
@@ -21,6 +22,7 @@ export interface ProviderConfig {
   defaultModel: string;
   timeout: number;
   maxRetries: number;
+  defaultProvider?: string;
 }
 
 export interface GenerationRequestData {
@@ -72,10 +74,11 @@ export abstract class BaseAiProvider
    */
   async generate(
     prompt: string,
-    options: AiGenerateOptions = {}
+    options: AiGenerateOptions = {},
+    originalRequest: AiServiceRequest<GenerationRequest>
   ): Promise<AiGenerateResult> {
     const request: AiServiceRequest<GenerationRequestData> = {
-      feature: 'text_generation',
+      ...originalRequest,
       provider: this.config.name,
       model: options.model || this.config.defaultModel,
       prompt,
@@ -161,6 +164,7 @@ export abstract class BaseAiProvider
           processingTime,
           sanitized: sanitizedPrompt !== request.data.prompt,
         },
+        finishReason: result.finishReason,
       };
     } catch (error) {
       this.logger.error(`${this.config.name} API call failed:`, error);
@@ -214,7 +218,10 @@ export abstract class BaseAiProvider
   /**
    * Health check for the provider
    */
-  async healthCheck(): Promise<{
+  async healthCheck(
+    userId: string,
+    storeId: string
+  ): Promise<{
     healthy: boolean;
     provider: string;
     model: string;
@@ -224,10 +231,19 @@ export abstract class BaseAiProvider
     try {
       const startTime = Date.now();
 
-      await this.generate('Hello', {
-        maxTokens: 10,
-        temperature: 0.1,
-      });
+      await this.generate(
+        'Hello',
+        {
+          maxTokens: 10,
+          temperature: 0.1,
+        },
+        {
+          feature: 'healthCheck',
+          data: undefined!,
+          userId,
+          storeId,
+        }
+      );
 
       const responseTime = Date.now() - startTime;
 

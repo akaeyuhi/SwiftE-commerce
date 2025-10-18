@@ -5,10 +5,15 @@ import {
   IsNumber,
   Min,
   Max,
+  IsUUID,
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 
 export class AnalyticsQueryDto {
+  @IsUUID()
+  @IsOptional()
+  productId: string;
+
   @IsOptional()
   @IsDateString()
   from?: string;

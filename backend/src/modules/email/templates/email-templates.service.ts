@@ -4,7 +4,6 @@ import {
   EmailTemplate,
   EmailSendResult,
 } from 'src/common/interfaces/infrastructure/email.interface';
-import { SMTPProvider } from '../providers/smtp.provider';
 import * as fs from 'node:fs';
 import { join } from 'path';
 import { EmailJobType } from 'src/common/enums/email.enum';
@@ -21,10 +20,7 @@ export class EmailTemplatesService {
   private readonly logger = new Logger(EmailTemplatesService.name);
   private readonly templates = new Map<EmailJobType, TemplateConfig>();
 
-  constructor(
-    private readonly mailerService: MailerService,
-    private readonly smtpProvider: SMTPProvider
-  ) {
+  constructor(private readonly mailerService: MailerService) {
     this.initializeTemplates();
   }
 
@@ -119,6 +115,13 @@ export class EmailTemplatesService {
       subject: '{{notificationTitle}}',
       previewText: 'You have a new notification',
       category: 'notification',
+    });
+
+    this.templates.set(EmailJobType.NEWS_PUBLISHED, {
+      templateFile: 'news-published',
+      subject: 'New Post from {{storeName}}: {{newsTitle}}',
+      previewText: '{{newsExcerpt}}',
+      category: 'news',
     });
 
     this.logger.log(`Initialized ${this.templates.size} email templates`);

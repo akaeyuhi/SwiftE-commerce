@@ -1,12 +1,4 @@
-import {
-  Controller,
-  Post,
-  Get,
-  Body,
-  UseGuards,
-  ValidationPipe,
-  BadRequestException,
-} from '@nestjs/common';
+import { Controller, Post, Get, Body, UseGuards, Param } from '@nestjs/common';
 import { EmailService } from './email.service';
 import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';
 import { AdminGuard } from 'src/modules/authorization/guards/admin.guard';
@@ -38,7 +30,7 @@ export class EmailController {
    */
   @Post('send')
   @AdminRole(AdminRoles.ADMIN)
-  async sendEmail(@Body(ValidationPipe) dto: SendEmailDto) {
+  async sendEmail(@Body() dto: SendEmailDto) {
     const result = await this.emailService.sendEmail(dto);
 
     return {
@@ -56,30 +48,22 @@ export class EmailController {
    * Send user confirmation email
    */
   @Post('user-confirmation')
-  @StoreRole(StoreRoles.ADMIN, StoreRoles.MODERATOR)
-  async sendUserConfirmation(
-    @Body(ValidationPipe) dto: SendUserConfirmationDto
-  ) {
-    try {
-      const jobId = await this.emailQueueService.sendUserConfirmation(
-        dto.userEmail,
-        dto.userName,
-        dto.confirmationUrl,
-        dto.storeName
-      );
+  @AdminRole(AdminRoles.ADMIN)
+  async sendUserConfirmation(@Body() dto: SendUserConfirmationDto) {
+    const jobId = await this.emailQueueService.sendUserConfirmation(
+      dto.userEmail,
+      dto.userName,
+      dto.confirmationUrl,
+      dto.storeName
+    );
 
-      return {
-        success: true,
-        data: {
-          jobId,
-          scheduledAt: new Date().toISOString(),
-        },
-      };
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to schedule confirmation email: ${error.message}`
-      );
-    }
+    return {
+      success: true,
+      data: {
+        jobId,
+        scheduledAt: new Date().toISOString(),
+      },
+    };
   }
 
   /**
@@ -87,85 +71,74 @@ export class EmailController {
    * Send welcome email
    */
   @Post('welcome')
-  @StoreRole(StoreRoles.ADMIN, StoreRoles.MODERATOR)
-  async sendWelcomeEmail(@Body(ValidationPipe) dto: SendWelcomeEmailDto) {
-    try {
-      const jobId = await this.emailQueueService.sendWelcomeEmail(
-        dto.userEmail,
-        dto.userName,
-        dto.storeUrl,
-        dto.storeName
-      );
+  @AdminRole(AdminRoles.ADMIN)
+  async sendWelcomeEmail(@Body() dto: SendWelcomeEmailDto) {
+    const jobId = await this.emailQueueService.sendWelcomeEmail(
+      dto.userEmail,
+      dto.userName,
+      dto.storeUrl,
+      dto.storeName
+    );
 
-      return {
-        success: true,
-        data: {
-          jobId,
-          scheduledAt: new Date().toISOString(),
-        },
-      };
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to schedule welcome email: ${error.message}`
-      );
-    }
+    return {
+      success: true,
+      data: {
+        jobId,
+        scheduledAt: new Date().toISOString(),
+      },
+    };
   }
 
   /**
    * POST /email/stock-alert
    * Send stock alert to users
    */
-  @Post('stock-alert')
+  @Post(':storeId/stock-alert')
   @StoreRole(StoreRoles.ADMIN, StoreRoles.MODERATOR)
-  async sendStockAlert(@Body(ValidationPipe) dto: SendStockAlertDto) {
-    try {
-      const jobId = await this.emailQueueService.sendStockAlert(
-        dto.userEmail,
-        dto.userName,
-        dto.productData
-      );
+  async sendStockAlert(
+    @Param('storeId') storeId: string,
+    @Body() dto: SendStockAlertDto
+  ) {
+    const jobId = await this.emailQueueService.sendStockAlert(
+      dto.userEmail,
+      dto.userName,
+      dto.productData
+    );
 
-      return {
-        success: true,
-        data: {
-          jobId,
-          scheduledAt: new Date().toISOString(),
-        },
-      };
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to schedule stock alert: ${error.message}`
-      );
-    }
+    return {
+      success: true,
+      data: {
+        jobId,
+        scheduledAt: new Date().toISOString(),
+      },
+    };
   }
 
   /**
    * POST /email/low-stock-warning
    * Send low stock warning to store owners
    */
-  @Post('low-stock-warning')
+  @Post(':storeId/low-stock-warning')
   @StoreRole(StoreRoles.ADMIN)
-  async sendLowStockWarning(@Body(ValidationPipe) dto: SendLowStockWarningDto) {
-    try {
-      const jobId = await this.emailQueueService.sendLowStockWarning(
-        dto.storeOwnerEmail,
-        dto.storeOwnerName,
-        dto.productData,
-        dto.manageInventoryUrl
-      );
+  async sendLowStockWarning(
+    @Param('storeId') storeId: string,
+    @Body() dto: SendLowStockWarningDto
+  ) {
+    const jobId = await this.emailQueueService.sendLowStockWarning(
+      dto.storeOwnerEmail,
+      dto.storeOwnerName,
+      dto.storeName,
+      dto.productData,
+      dto.manageInventoryUrl
+    );
 
-      return {
-        success: true,
-        data: {
-          jobId,
-          scheduledAt: new Date().toISOString(),
-        },
-      };
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to schedule low stock warning: ${error.message}`
-      );
-    }
+    return {
+      success: true,
+      data: {
+        jobId,
+        scheduledAt: new Date().toISOString(),
+      },
+    };
   }
 
   /**
@@ -208,21 +181,15 @@ export class EmailController {
   @Get('queue/stats')
   @AdminRole(AdminRoles.ADMIN)
   async getQueueStats() {
-    try {
-      const stats = await this.emailQueueService.getStats();
+    const stats = await this.emailQueueService.getStats();
 
-      return {
-        success: true,
-        data: {
-          queue: 'email',
-          stats,
-          retrievedAt: new Date().toISOString(),
-        },
-      };
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get queue stats: ${error.message}`
-      );
-    }
+    return {
+      success: true,
+      data: {
+        queue: 'email',
+        stats,
+        retrievedAt: new Date().toISOString(),
+      },
+    };
   }
 }

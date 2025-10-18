@@ -1,17 +1,16 @@
-// src/modules/analytics/controllers/analytics.controller.ts
 import {
-  Controller,
-  UseGuards,
-  Get,
-  Post,
-  Body,
-  Param,
-  Query,
-  ParseUUIDPipe,
-  ValidationPipe,
-  HttpStatus,
-  HttpCode,
   BadRequestException,
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Query,
+  UseGuards,
+  ValidationPipe,
 } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';
 import { AdminGuard } from 'src/modules/authorization/guards/admin.guard';
@@ -27,343 +26,524 @@ import {
   AnalyticsQueryDto,
   BatchEventsDto,
 } from 'src/modules/analytics/dto';
+import { AiTransform } from 'src/modules/ai/decorators/ai-transform.decorator';
 
 /**
- * AnalyticsController
+ * AnalyticsController with CamelCase Conventions
  *
  * Unified controller for all analytics operations including:
- * - Event tracking (public endpoints)
- * - Analytics queries (store admin access)
- * - Advanced aggregations (admin access)
- * - Health and monitoring (admin access)
+ * - Event tracking (store moderator+ access)
+ * - Quick stats from cached values (instant response)
+ * - Detailed analytics queries (store admin access)
+ * - Advanced aggregations and insights
+ * - Leaderboards and rankings
+ * - Health and monitoring (site admin access)
  */
 @Controller('analytics')
 @UseGuards(JwtAuthGuard, AdminGuard, StoreRolesGuard)
+@AiTransform()
 export class AnalyticsController {
   static accessPolicies: AccessPolicies = {
-    // Event tracking - allow store roles
+    // Event tracking
     recordEvent: { storeRoles: [StoreRoles.ADMIN, StoreRoles.MODERATOR] },
     recordEvents: { storeRoles: [StoreRoles.ADMIN, StoreRoles.MODERATOR] },
 
-    // Basic analytics - store admins
-    getStoreAnalytics: { storeRoles: [StoreRoles.ADMIN] },
-    getProductAnalytics: { storeRoles: [StoreRoles.ADMIN] },
+    // Quick stats (cached)
+    getProductQuickStats: {
+      storeRoles: [StoreRoles.ADMIN, StoreRoles.MODERATOR],
+    },
+    getStoreQuickStats: {
+      storeRoles: [StoreRoles.ADMIN, StoreRoles.MODERATOR],
+    },
+    getBatchProductStats: {
+      adminRole: AdminRoles.ADMIN,
+      /*storeRoles: [StoreRoles.ADMIN, StoreRoles.MODERATOR],*/
+    },
 
-    // Advanced aggregations - site admins or store admins
+    // Detailed analytics
+    getStoreAnalytics: { storeRoles: [StoreRoles.ADMIN] },
+    getStoreConversion: { storeRoles: [StoreRoles.ADMIN] },
+    getProductAnalytics: { storeRoles: [StoreRoles.ADMIN] },
+    getProductConversion: { storeRoles: [StoreRoles.ADMIN] },
+    getProductRating: { storeRoles: [StoreRoles.ADMIN] },
+    getStoreRatings: { storeRoles: [StoreRoles.ADMIN] },
+
+    // Leaderboards
+    getTopProductsByViews: { storeRoles: [StoreRoles.ADMIN] },
+    getTopProductsByConversion: { storeRoles: [StoreRoles.ADMIN] },
+    getTopProducts: { storeRoles: [StoreRoles.ADMIN] },
+
+    // Advanced analytics
+    getFunnelAnalysis: { storeRoles: [StoreRoles.ADMIN] },
+    getRevenueTrends: { storeRoles: [StoreRoles.ADMIN] },
+    getCohortAnalysis: { storeRoles: [StoreRoles.ADMIN] },
+    getUserJourney: { storeRoles: [StoreRoles.ADMIN] },
+
+    // Comparisons
+    getStoreComparison: { adminRole: AdminRoles.ADMIN },
+    getProductComparison: { adminRole: AdminRoles.ADMIN },
+    getPeriodComparison: { storeRoles: [StoreRoles.ADMIN] },
+
+    // Performance analytics
+    getTopPerformingStores: { adminRole: AdminRoles.ADMIN },
+    getTopStoresByRevenue: { adminRole: AdminRoles.ADMIN },
+    getTopPerformingProducts: { storeRoles: [StoreRoles.ADMIN] },
+    getUnderperformingAnalysis: { storeRoles: [StoreRoles.ADMIN] },
+
+    // Data sync
+    syncProductStats: { adminRole: AdminRoles.ADMIN },
+    syncStoreStats: { adminRole: AdminRoles.ADMIN },
+
+    // Generic
     getAggregation: { storeRoles: [StoreRoles.ADMIN] },
 
-    // System endpoints - site admins only
+    // System
     getHealth: { adminRole: AdminRoles.ADMIN },
     getStats: { adminRole: AdminRoles.ADMIN },
-    getSupportedAggregators: { storeRoles: [StoreRoles.ADMIN] },
   };
 
   constructor(private readonly analyticsService: AnalyticsService) {}
+
+  @Get('stores/top-performing')
+  @AdminRole(AdminRoles.ADMIN)
+  async getTopPerformingStores(
+    @Query(ValidationPipe) query: AnalyticsQueryDto
+  ) {
+    return await this.analyticsService.aggregate('topPerformingStores', {
+      limit: query.limit || 10,
+      from: query.from,
+      to: query.to,
+    });
+  }
+
+  @Get('stores/top/revenue')
+  @AdminRole(AdminRoles.ADMIN)
+  async getTopStoresByRevenue(@Query(ValidationPipe) query: AnalyticsQueryDto) {
+    return await this.analyticsService.getTopStoresByRevenue(query.limit || 10);
+  }
 
   // ===============================
   // Event Tracking Endpoints
   // ===============================
 
-  /**
-   * POST /analytics/stores/:storeId/events
-   * Record a single analytics event
-   */
   @Post('stores/:storeId/events')
   @HttpCode(HttpStatus.CREATED)
   async recordEvent(
     @Param('storeId', ParseUUIDPipe) storeId: string,
     @Body(ValidationPipe) dto: RecordEventDto
   ) {
-    try {
-      // Ensure storeId consistency
-      dto.storeId = dto.storeId ?? storeId;
+    dto.storeId = dto.storeId ?? storeId;
 
-      if (dto.storeId !== storeId) {
-        throw new BadRequestException(
-          'StoreId in body must match route parameter'
-        );
-      }
-
-      await this.analyticsService.trackEvent(dto);
-      return { success: true, message: 'Event tracked successfully' };
-    } catch (error) {
-      throw new BadRequestException(`Failed to track event: ${error.message}`);
+    if (dto.storeId !== storeId) {
+      throw new BadRequestException(
+        'StoreId in body must match route parameter'
+      );
     }
+
+    await this.analyticsService.trackEvent(dto);
+
+    return {
+      success: true,
+      message: 'Event tracked successfully',
+      event: {
+        storeId: dto.storeId,
+        eventType: dto.eventType,
+        timestamp: new Date().toISOString(),
+      },
+    };
   }
 
-  /**
-   * POST /analytics/stores/:storeId/events/batch
-   * Record multiple analytics events in batch
-   */
   @Post('stores/:storeId/events/batch')
   @HttpCode(HttpStatus.CREATED)
   async recordEvents(
     @Param('storeId', ParseUUIDPipe) storeId: string,
     @Body(ValidationPipe) dto: BatchEventsDto
   ) {
-    try {
-      // Validate and normalize events
-      const events = dto.events.map((event) => ({
-        ...event,
-        storeId: event.storeId ?? storeId,
-      }));
+    const events = dto.events.map((event) => ({
+      ...event,
+      storeId: event.storeId ?? storeId,
+    }));
 
-      // Validate all events belong to the same store
-      const invalidEvents = events.filter((event) => event.storeId !== storeId);
-      if (invalidEvents.length > 0) {
-        throw new BadRequestException(
-          'All events must belong to the specified store'
-        );
-      }
-
-      const result = await this.analyticsService.batchTrack(events);
-      return {
-        success: true,
-        processed: result.success,
-        failed: result.failed,
-        errors: result.errors.length > 0 ? result.errors : undefined,
-      };
-    } catch (error) {
-      throw new BadRequestException(`Failed to track events: ${error.message}`);
+    const invalidEvents = events.filter((event) => event.storeId !== storeId);
+    if (invalidEvents.length > 0) {
+      throw new BadRequestException(
+        'All events must belong to the specified store'
+      );
     }
+
+    const result = await this.analyticsService.batchTrack(events);
+
+    return {
+      success: true,
+      processed: result.success,
+      failed: result.failed,
+      total: events.length,
+      errors: result.errors.length > 0 ? result.errors : undefined,
+    };
   }
 
   // ===============================
-  // Basic Analytics Endpoints
+  // Quick Stats (Cached - Instant Response)
   // ===============================
 
-  /**
-   * GET /analytics/stores/:storeId
-   * Get comprehensive store analytics
-   */
+  @Get('stores/:storeId/quick-stats')
+  async getStoreQuickStats(@Param('storeId', ParseUUIDPipe) storeId: string) {
+    return await this.analyticsService.getStoreQuickStats(storeId);
+  }
+
+  @Post('products/batch-stats')
+  async getBatchProductStats(@Body() dto: { productIds: string[] }) {
+    if (!dto.productIds || dto.productIds.length === 0) {
+      throw new BadRequestException('productIds array is required');
+    }
+    if (dto.productIds.length > 100) {
+      throw new BadRequestException(
+        'Maximum 100 products can be queried at once'
+      );
+    }
+    return await this.analyticsService.getBatchProductStats(dto.productIds);
+  }
+
+  // ===============================
+  // Store Analytics Endpoints
+  // ===============================
+
   @Get('stores/:storeId')
   async getStoreAnalytics(
     @Param('storeId', ParseUUIDPipe) storeId: string,
     @Query(ValidationPipe) query: AnalyticsQueryDto
   ) {
-    try {
-      return await this.analyticsService.aggregate('store_stats', {
-        storeId,
-        from: query.from,
-        to: query.to,
-        includeTimeseries: query.includeTimeseries,
-      });
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get store analytics: ${error.message}`
-      );
-    }
+    return await this.analyticsService.aggregate('storeStats', {
+      storeId,
+      from: query.from,
+      to: query.to,
+      includeTimeseries: query.includeTimeseries,
+    });
   }
 
-  /**
-   * GET /analytics/stores/:storeId/conversion
-   * Get store conversion metrics
-   */
   @Get('stores/:storeId/conversion')
   async getStoreConversion(
     @Param('storeId', ParseUUIDPipe) storeId: string,
     @Query(ValidationPipe) query: AnalyticsQueryDto
   ) {
-    try {
-      return await this.analyticsService.aggregate('store_conversion', {
-        storeId,
-        from: query.from,
-        to: query.to,
-      });
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get conversion metrics: ${error.message}`
-      );
-    }
+    return await this.analyticsService.computeStoreConversion(
+      storeId,
+      query.from,
+      query.to
+    );
   }
 
-  /**
-   * GET /analytics/stores/:storeId/products/:productId
-   * Get comprehensive product analytics
-   */
-  @Get('stores/:storeId/products/:productId')
-  async getProductAnalytics(
+  @Get('stores/:storeId/ratings')
+  async getStoreRatings(
     @Param('storeId', ParseUUIDPipe) storeId: string,
-    @Param('productId', ParseUUIDPipe) productId: string,
     @Query(ValidationPipe) query: AnalyticsQueryDto
   ) {
-    try {
-      return await this.analyticsService.aggregate('product_stats', {
-        storeId,
-        productId,
-        from: query.from,
-        to: query.to,
-        includeTimeseries: query.includeTimeseries,
-      });
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get product analytics: ${error.message}`
-      );
-    }
+    return await this.analyticsService.aggregate('storeRatingsSummary', {
+      storeId,
+      from: query.from,
+      to: query.to,
+    });
   }
 
-  /**
-   * GET /analytics/stores/:storeId/products/:productId/conversion
-   * Get product conversion metrics
-   */
-  @Get('stores/:storeId/products/:productId/conversion')
-  async getProductConversion(
+  @Get('stores/:storeId/products/top/views')
+  async getTopProductsByViews(
     @Param('storeId', ParseUUIDPipe) storeId: string,
-    @Param('productId', ParseUUIDPipe) productId: string,
     @Query(ValidationPipe) query: AnalyticsQueryDto
   ) {
-    try {
-      return await this.analyticsService.aggregate('product_conversion', {
-        storeId,
-        productId,
-        from: query.from,
-        to: query.to,
-      });
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get product conversion: ${error.message}`
-      );
-    }
+    return await this.analyticsService.getTopProductsByViews(
+      storeId,
+      query.limit || 10
+    );
   }
 
-  /**
-   * GET /analytics/stores/:storeId/products/top
-   * Get top performing products
-   */
+  @Get('stores/:storeId/products/top/conversion')
+  async getTopProductsByConversion(
+    @Param('storeId', ParseUUIDPipe) storeId: string,
+    @Query(ValidationPipe) query: AnalyticsQueryDto
+  ) {
+    return await this.analyticsService.getTopProductsByConversionCached(
+      storeId,
+      query.limit || 10
+    );
+  }
+
   @Get('stores/:storeId/products/top')
   async getTopProducts(
     @Param('storeId', ParseUUIDPipe) storeId: string,
     @Query(ValidationPipe) query: AnalyticsQueryDto
   ) {
-    try {
-      return await this.analyticsService.aggregate(
-        'top_products_by_conversion',
-        {
-          storeId,
-          from: query.from,
-          to: query.to,
-          limit: query.limit || 10,
-        }
-      );
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get top products: ${error.message}`
-      );
-    }
+    return await this.analyticsService.getTopProductsByConversion(
+      storeId,
+      query.from,
+      query.to,
+      query.limit || 10
+    );
   }
 
   // ===============================
   // Advanced Analytics Endpoints
   // ===============================
 
-  /**
-   * GET /analytics/stores/:storeId/funnel
-   * Get conversion funnel analysis
-   */
   @Get('stores/:storeId/funnel')
   async getFunnelAnalysis(
     @Param('storeId', ParseUUIDPipe) storeId: string,
     @Query(ValidationPipe) query: AnalyticsQueryDto
   ) {
-    try {
-      return await this.analyticsService.aggregate('funnel_analysis', {
-        storeId,
-        from: query.from,
-        to: query.to,
-      });
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get funnel analysis: ${error.message}`
-      );
-    }
+    return await this.analyticsService.aggregate('funnelAnalysis', {
+      storeId,
+      productId: query.productId,
+      from: query.from,
+      to: query.to,
+    });
   }
 
-  /**
-   * GET /analytics/stores/:storeId/revenue-trends
-   * Get revenue trends over time
-   */
   @Get('stores/:storeId/revenue-trends')
   async getRevenueTrends(
     @Param('storeId', ParseUUIDPipe) storeId: string,
     @Query(ValidationPipe) query: AnalyticsQueryDto
   ) {
-    try {
-      return await this.analyticsService.aggregate('revenue_trends', {
-        storeId,
-        from: query.from,
-        to: query.to,
-      });
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get revenue trends: ${error.message}`
-      );
-    }
+    return await this.analyticsService.aggregate('revenueTrends', {
+      storeId,
+      from: query.from,
+      to: query.to,
+    });
   }
 
-  /**
-   * POST /analytics/aggregations
-   * Generic aggregation endpoint for custom queries
-   */
-  @Post('aggregations')
-  async getAggregation(@Body(ValidationPipe) dto: AggregationRequestDto) {
-    try {
-      return await this.analyticsService.aggregate(
-        dto.aggregatorName,
-        dto.options
-      );
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to run aggregation: ${error.message}`
-      );
+  @Get('stores/:storeId/cohort-analysis')
+  async getCohortAnalysis(
+    @Param('storeId', ParseUUIDPipe) storeId: string,
+    @Query(ValidationPipe) query: AnalyticsQueryDto
+  ) {
+    return await this.analyticsService.aggregate('cohortAnalysis', {
+      storeId,
+      from: query.from,
+      to: query.to,
+    });
+  }
+
+  @Get('stores/:storeId/user-journey')
+  async getUserJourney(
+    @Param('storeId', ParseUUIDPipe) storeId: string,
+    @Query(ValidationPipe) query: AnalyticsQueryDto
+  ) {
+    return await this.analyticsService.aggregate('userJourney', {
+      storeId,
+      from: query.from,
+      to: query.to,
+    });
+  }
+
+  // ===============================
+  // Comparison Analytics Endpoints
+  // ===============================
+
+  @Post('stores/compare')
+  async getStoreComparison(
+    @Body(ValidationPipe)
+    dto: {
+      storeIds: string[];
+      from?: string;
+      to?: string;
     }
+  ) {
+    if (!dto.storeIds || dto.storeIds.length < 2) {
+      throw new BadRequestException('At least 2 store IDs required');
+    }
+    if (dto.storeIds.length > 10) {
+      throw new BadRequestException('Maximum 10 stores can be compared');
+    }
+
+    return await this.analyticsService.aggregate('storeComparison', {
+      storeIds: dto.storeIds,
+      from: dto.from,
+      to: dto.to,
+    });
+  }
+
+  @Post('products/compare')
+  async getProductComparison(
+    @Body(ValidationPipe)
+    dto: {
+      productIds: string[];
+      from?: string;
+      to?: string;
+    }
+  ) {
+    if (!dto.productIds || dto.productIds.length < 2) {
+      throw new BadRequestException('At least 2 product IDs required');
+    }
+    if (dto.productIds.length > 20) {
+      throw new BadRequestException('Maximum 20 products can be compared');
+    }
+
+    return await this.analyticsService.aggregate('productComparison', {
+      productIds: dto.productIds,
+      from: dto.from,
+      to: dto.to,
+    });
+  }
+
+  @Get('stores/:storeId/period-comparison')
+  async getPeriodComparison(
+    @Param('storeId', ParseUUIDPipe) storeId: string,
+    @Query(ValidationPipe) query: AnalyticsQueryDto
+  ) {
+    return await this.analyticsService.aggregate('periodComparison', {
+      storeId,
+      productId: query.productId,
+      from: query.from,
+      to: query.to,
+    });
+  }
+
+  // ===============================
+  // Performance Analytics Endpoints
+  // ===============================
+
+  @Get('stores/:storeId/top-performing-products')
+  async getTopPerformingProducts(
+    @Param('storeId', ParseUUIDPipe) storeId: string,
+    @Query(ValidationPipe) query: AnalyticsQueryDto
+  ) {
+    return await this.analyticsService.aggregate('topPerformingProducts', {
+      storeId,
+      limit: query.limit || 10,
+      from: query.from,
+      to: query.to,
+    });
+  }
+
+  @Get('stores/:storeId/underperforming')
+  async getUnderperformingAnalysis(
+    @Param('storeId', ParseUUIDPipe) storeId: string,
+    @Query(ValidationPipe) query: AnalyticsQueryDto
+  ) {
+    return await this.analyticsService.aggregate('underperformingAnalysis', {
+      storeId,
+      from: query.from,
+      to: query.to,
+    });
+  }
+
+  // ===============================
+  // Product Analytics Endpoints
+  // ===============================
+
+  @Get('stores/:storeId/products/:productId')
+  async getProductAnalytics(
+    @Param('storeId', ParseUUIDPipe) storeId: string,
+    @Param('productId', ParseUUIDPipe) productId: string,
+    @Query(ValidationPipe) query: AnalyticsQueryDto
+  ) {
+    return await this.analyticsService.aggregate('productStats', {
+      storeId,
+      productId,
+      from: query.from,
+      to: query.to,
+      includeTimeseries: query.includeTimeseries,
+    });
+  }
+
+  @Get('stores/:storeId/products/:productId/conversion')
+  async getProductConversion(
+    @Param('storeId', ParseUUIDPipe) storeId: string,
+    @Param('productId', ParseUUIDPipe) productId: string,
+    @Query(ValidationPipe) query: AnalyticsQueryDto
+  ) {
+    return await this.analyticsService.computeProductConversion(
+      productId,
+      query.from,
+      query.to
+    );
+  }
+
+  @Get('stores/:storeId/products/:productId/rating')
+  async getProductRating(
+    @Param('storeId', ParseUUIDPipe) storeId: string,
+    @Param('productId', ParseUUIDPipe) productId: string
+  ) {
+    return await this.analyticsService.aggregate('productRating', {
+      storeId,
+      productId,
+    });
+  }
+
+  @Get('products/:productId/quick-stats')
+  async getProductQuickStats(
+    @Param('productId', ParseUUIDPipe) productId: string
+  ) {
+    return await this.analyticsService.getProductQuickStats(productId);
+  }
+
+  // ===============================
+  // Leaderboards & Rankings
+  // ===============================
+
+  // ===============================
+  // Data Sync Endpoints (Admin Only)
+  // ===============================
+
+  @Post('sync/products/:productId')
+  @AdminRole(AdminRoles.ADMIN)
+  async syncProductStats(@Param('productId', ParseUUIDPipe) productId: string) {
+    return await this.analyticsService.syncCachedStatsWithAnalytics(productId);
+  }
+
+  @Post('sync/stores/:storeId')
+  @AdminRole(AdminRoles.ADMIN)
+  async syncStoreStats(@Param('storeId', ParseUUIDPipe) storeId: string) {
+    return await this.analyticsService.syncCachedStatsWithAnalytics(
+      undefined,
+      storeId
+    );
+  }
+
+  // ===============================
+  // Generic Aggregation Endpoint
+  // ===============================
+
+  @Post('aggregations')
+  @AdminRole(AdminRoles.ADMIN)
+  async getAggregation(@Body(ValidationPipe) dto: AggregationRequestDto) {
+    return await this.analyticsService.aggregate(
+      dto.aggregatorName,
+      dto.options
+    );
   }
 
   // ===============================
   // System & Monitoring Endpoints
   // ===============================
 
-  /**
-   * GET /analytics/health
-   * Get analytics service health status
-   */
   @Get('health')
   @AdminRole(AdminRoles.ADMIN)
   async getHealth() {
     return await this.analyticsService.healthCheck();
   }
 
-  /**
-   * GET /analytics/stats
-   * Get analytics service statistics
-   */
   @Get('stats')
   @AdminRole(AdminRoles.ADMIN)
   async getStats() {
     return await this.analyticsService.getStats();
   }
 
-  /**
-   * GET /analytics/aggregators
-   * Get list of supported aggregation types
-   */
   @Get('aggregators')
   async getSupportedAggregators() {
     const aggregators = this.analyticsService.getSupportedAggregators();
     return {
       aggregators,
       count: aggregators.length,
+      timestamp: new Date().toISOString(),
     };
   }
 
-  /**
-   * GET /analytics/aggregators/:name/schema
-   * Get schema for specific aggregation type
-   */
   @Get('aggregators/:name/schema')
   async getAggregationSchema(@Param('name') name: string) {
     const schema = this.analyticsService.getAggregationSchema(name);
     if (!schema) {
-      throw new BadRequestException(`Unknown aggregator: ${name}`);
+      throw new BadRequestException(
+        `Unknown aggregator: ${name}. Use GET /analytics/aggregators to see available options.`
+      );
     }
     return schema;
   }

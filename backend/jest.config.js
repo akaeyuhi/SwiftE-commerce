@@ -1,7 +1,7 @@
 module.exports = {
     preset: 'ts-jest',
     testEnvironment: 'node',
-    testPathIgnorePatterns: ["<rootDir>/dist/", '<rootDir>/test/unit/utils/'],
+    testPathIgnorePatterns: ["<rootDir>/dist/", '<rootDir>/test/unit/helpers/'],
     rootDir: './',
     testTimeout: 30000,
     moduleFileExtensions: ['js', 'json', 'ts'],

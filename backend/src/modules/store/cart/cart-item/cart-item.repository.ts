@@ -21,7 +21,7 @@ export class CartItemRepository extends BaseRepository<CartItem> {
    */
   async findByCart(cartId: string): Promise<CartItem[]> {
     return this.find({
-      where: { cart: { id: cartId } },
+      where: { cartId },
       relations: ['variant'],
       order: { createdAt: 'ASC' },
     });
@@ -50,7 +50,7 @@ export class CartItemRepository extends BaseRepository<CartItem> {
     variantId: string
   ): Promise<CartItem | null> {
     return this.findOne({
-      where: { cart: { id: cartId }, variant: { id: variantId } },
+      where: { cartId, variantId },
     });
   }
 }

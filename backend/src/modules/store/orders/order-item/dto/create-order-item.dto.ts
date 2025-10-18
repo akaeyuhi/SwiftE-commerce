@@ -5,6 +5,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  IsPositive,
 } from 'class-validator';
 
 /**
@@ -30,6 +31,7 @@ export class CreateOrderItemDto {
   sku?: string;
 
   @IsNumber()
+  @IsPositive()
   unitPrice: number;
 
   @IsInt()

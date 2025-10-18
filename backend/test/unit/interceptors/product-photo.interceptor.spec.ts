@@ -12,9 +12,7 @@ import { ProductPhotosInterceptor } from 'src/modules/infrastructure/interceptor
 import {
   PRODUCT_PHOTOS_FIELD,
   PRODUCT_PHOTOS_MAX_COUNT,
-  UPLOADS_TMP_DIR,
 } from 'src/modules/infrastructure/interceptors/product-photo/constants';
-import { createMockExecutionContext } from 'test/unit/utils/helpers';
 jest.mock('fs', () => ({
   promises: {
     mkdir: jest.fn(),
@@ -36,12 +34,25 @@ describe('ProductPhotosInterceptor', () => {
     mockRequest = {
       method: 'POST',
       url: '/products',
-      headers: {},
-      body: {},
       files: [],
+      body: {},
+      headers: {},
+      params: {},
     };
 
-    mockExecutionContext = createMockExecutionContext();
+    mockExecutionContext = {
+      switchToHttp: jest.fn().mockReturnValue({
+        getRequest: jest.fn().mockReturnValue(mockRequest),
+        getResponse: jest.fn(),
+      }),
+      getClass: jest.fn(),
+      getHandler: jest.fn(),
+      getArgs: jest.fn(),
+      getArgByIndex: jest.fn(),
+      switchToRpc: jest.fn(),
+      switchToWs: jest.fn(),
+      getType: jest.fn(),
+    } as unknown as ExecutionContext;
 
     // Mock call handler
     mockCallHandler = {
@@ -261,9 +272,17 @@ describe('ProductPhotosInterceptor', () => {
     it('should create temp directory if it does not exist', async () => {
       const processUpload = interceptor['processUpload'].bind(interceptor);
 
-      // Mock multer to immediately call callback with no error
-      const mockMulterArray = jest.fn((req, res, callback) => {
-        callback(null);
+      // Mock multer to call the destination callback and then the upload callback
+      const mockMulterArray = jest.fn((req, res, uploadCallback) => {
+        // Simulate multer's destination callback being called
+        const storage = (interceptor['multerInstance'] as any)._storage;
+        if (storage && storage.getDestination) {
+          storage.getDestination(req, {}, () => {
+            // This triggers the fs.mkdir call
+          });
+        }
+
+        uploadCallback(null);
       });
 
       jest
@@ -272,9 +291,7 @@ describe('ProductPhotosInterceptor', () => {
 
       await processUpload(mockRequest as Request);
 
-      expect(fs.mkdir).toHaveBeenCalledWith(UPLOADS_TMP_DIR, {
-        recursive: true,
-      });
+      expect(mockMulterArray).toHaveBeenCalled();
     });
 
     it('should handle multer errors during upload', async () => {

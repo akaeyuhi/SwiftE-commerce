@@ -80,9 +80,11 @@ export class OrderInfoDto {
  */
 export class CreateOrderDto {
   @IsUUID()
+  @IsOptional()
   userId: string;
 
   @IsUUID()
+  @IsOptional()
   storeId: string;
 
   @ValidateNested()

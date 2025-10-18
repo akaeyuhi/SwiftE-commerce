@@ -1,52 +1,17 @@
 import {
+  BadRequestException,
+  ConflictException,
+  Inject,
   Injectable,
   NotFoundException,
-  ConflictException,
-  BadRequestException,
 } from '@nestjs/common';
 import { BaseService } from 'src/common/abstracts/base.service';
-import { Admin } from 'src/entities/user/policy/admin.entity';
+import { Admin } from 'src/entities/user/authentication/admin.entity';
 import { AdminRepository } from 'src/modules/admin/admin.repository';
 import { CreateAdminDto } from 'src/modules/admin/dto/create-admin.dto';
 import { UpdateAdminDto } from 'src/modules/admin/dto/update-admin.dto';
-import { UserService } from 'src/modules/user/user.service';
-
-export interface FormattedAdmin {
-  id: string;
-  userId: string;
-  user: {
-    id: string;
-    email: string;
-    firstName?: string;
-    lastName?: string;
-    fullName?: string;
-    isEmailVerified: boolean;
-  };
-  assignedBy?: string;
-  assignedAt?: Date;
-  revokedBy?: string;
-  revokedAt?: Date;
-  isActive: boolean;
-  createdAt: Date;
-  updatedAt?: Date;
-  metadata?: Record<string, any>;
-}
-
-export interface AdminStats {
-  total: number;
-  active: number;
-  inactive: number;
-  recentAssignments: number;
-  trends: {
-    assignmentsByMonth: Record<string, number>;
-  };
-}
-
-export interface AdminSearchResult {
-  searchQuery: string;
-  results: FormattedAdmin[];
-  count: number;
-}
+import { AdminStats, FormattedAdmin } from 'src/modules/admin/types';
+import { IUserService } from 'src/common/contracts/admin.contract';
 
 @Injectable()
 export class AdminService extends BaseService<
@@ -56,14 +21,14 @@ export class AdminService extends BaseService<
 > {
   constructor(
     private readonly adminRepo: AdminRepository,
-    private readonly userService: UserService
+    @Inject(IUserService) private readonly userService: IUserService
   ) {
     super(adminRepo);
   }
 
   async findByUserId(userId: string): Promise<Admin | null> {
     return await this.repository.findOne({
-      where: { user: { id: userId } },
+      where: { userId },
       relations: ['user'],
     });
   }
@@ -189,7 +154,7 @@ export class AdminService extends BaseService<
     // Check if user exists
     const user = await this.userService.getEntityById(userId);
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException(`User with id ${userId} not found`);
     }
 
     // Check if user is already an admin
@@ -202,7 +167,7 @@ export class AdminService extends BaseService<
     if (existingAdmin && !existingAdmin.isActive) {
       return this.update(existingAdmin.id, {
         isActive: true,
-        assignedByUser,
+        assignedBy: assignedByUser,
         assignedAt: new Date(),
         revokedBy: undefined,
         revokedAt: undefined,
@@ -212,7 +177,7 @@ export class AdminService extends BaseService<
     // Create new admin record
     const adminData: CreateAdminDto = {
       userId,
-      assignedByUser,
+      assignedBy: assignedByUser,
       assignedAt: new Date(),
       isActive: true,
     };
@@ -258,6 +223,9 @@ export class AdminService extends BaseService<
    * Revoke site admin role from user
    */
   async revokeSiteAdminRole(userId: string, revokedBy?: string): Promise<void> {
+    if (userId === revokedBy)
+      throw new BadRequestException(`You can't revoke yourself`);
+
     const admin = await this.findByUserId(userId);
     if (!admin) {
       throw new NotFoundException('User is not a site administrator');
@@ -408,6 +376,8 @@ export class AdminService extends BaseService<
     const filteredAdmins = admins
       .filter((admin) => {
         if (activeOnly && !admin.isActive) return false;
+
+        console.log(admin);
 
         const user = admin.user;
         const query = searchQuery.toLowerCase().trim();

@@ -2,8 +2,8 @@ import { Global, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from 'src/entities/user/user.entity';
 import { Store } from 'src/entities/store/store.entity';
-import { Admin } from 'src/entities/user/policy/admin.entity';
-import { UserRole } from 'src/entities/user/policy/user-role.entity';
+import { Admin } from 'src/entities/user/authentication/admin.entity';
+import { StoreRole } from 'src/entities/user/authentication/store-role.entity';
 
 import { GuardUserRepository } from 'src/modules/authorization/guard-services/repositories/guard-user.repository';
 import { GuardStoreRepository } from 'src/modules/authorization/guard-services/repositories/guard-store.repository';
@@ -12,14 +12,14 @@ import { GuardUserService } from 'src/modules/authorization/guard-services/servi
 import { GuardStoreService } from 'src/modules/authorization/guard-services/services/guard-store.service';
 import { GuardAdminService } from 'src/modules/authorization/guard-services/services/guard-admin.service';
 import {
-  ADMIN_SERVICE,
-  STORE_SERVICE,
-  USER_SERVICE,
+  IAdminService,
+  IStoreService,
+  IUserService,
 } from 'src/common/contracts/policy.contract';
 
 @Global()
 @Module({
-  imports: [TypeOrmModule.forFeature([User, Store, Admin, UserRole])],
+  imports: [TypeOrmModule.forFeature([User, Store, Admin, StoreRole])],
   providers: [
     GuardUserRepository,
     GuardStoreRepository,
@@ -27,10 +27,10 @@ import {
     GuardUserService,
     GuardStoreService,
     GuardAdminService,
-    { provide: USER_SERVICE, useExisting: GuardUserService },
-    { provide: ADMIN_SERVICE, useExisting: GuardAdminService },
-    { provide: STORE_SERVICE, useExisting: GuardStoreService },
+    { provide: IUserService, useClass: GuardUserService },
+    { provide: IAdminService, useClass: GuardAdminService },
+    { provide: IStoreService, useClass: GuardStoreService },
   ],
-  exports: [USER_SERVICE, ADMIN_SERVICE, STORE_SERVICE],
+  exports: [IUserService, IAdminService, IStoreService],
 })
 export class GuardServicesModule {}

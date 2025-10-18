@@ -8,18 +8,16 @@ import {
   Query,
   Req,
   UseGuards,
-  ValidationPipe,
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { AdminService } from 'src/modules/admin/admin.service';
-import { Admin } from 'src/entities/user/policy/admin.entity';
+import { Admin } from 'src/entities/user/authentication/admin.entity';
 import { BaseController } from 'src/common/abstracts/base.controller';
 import { CreateAdminDto } from 'src/modules/admin/dto/create-admin.dto';
 import { UpdateAdminDto } from 'src/modules/admin/dto/update-admin.dto';
 import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';
 import { AdminGuard } from 'src/modules/authorization/guards/admin.guard';
-import { AdminRole } from 'src/common/decorators/admin-role.decorator';
 import { AdminRoles } from 'src/common/enums/admin.enum';
 import { AccessPolicies } from 'src/modules/authorization/policy/policy.types';
 
@@ -41,8 +39,13 @@ export class AdminController extends BaseController<
     getAdminHistory: { adminRole: AdminRoles.ADMIN },
     assignAdminRole: { adminRole: AdminRoles.ADMIN },
     revokeAdminRole: { adminRole: AdminRoles.ADMIN },
-    getMyAdminHistory: { requireAuthenticated: true },
+    getMyAdminHistory: {
+      adminRole: AdminRoles.ADMIN,
+      requireAuthenticated: true,
+    },
+    checkAdminStatus: { adminRole: AdminRoles.ADMIN },
     getAdminStats: { adminRole: AdminRoles.ADMIN },
+    searchAdmins: { adminRole: AdminRoles.ADMIN },
   };
 
   constructor(private readonly adminService: AdminService) {
@@ -53,7 +56,6 @@ export class AdminController extends BaseController<
    * GET /admin/active
    */
   @Get('active')
-  @AdminRole(AdminRoles.ADMIN)
   async getActiveAdmins(@Req() req: Request) {
     const requestingUserId = (req.user as any)?.id;
     const result =
@@ -69,7 +71,6 @@ export class AdminController extends BaseController<
    * GET /admin/history/:userId
    */
   @Get('history/:userId')
-  @AdminRole(AdminRoles.ADMIN)
   async getAdminHistory(
     @Param('userId', ParseUUIDPipe) userId: string,
     @Req() req: Request
@@ -104,12 +105,8 @@ export class AdminController extends BaseController<
    * POST /admin/assign
    */
   @Post('assign')
-  @AdminRole(AdminRoles.ADMIN)
-  async assignAdminRole(
-    @Body(ValidationPipe) dto: CreateAdminDto,
-    @Req() req: Request
-  ) {
-    const assignedBy = (req.user as any)?.id;
+  async assignAdminRole(@Body() dto: CreateAdminDto, @Req() req: Request) {
+    const assignedBy = dto.assignedBy ?? (req.user as any)?.id;
     const result = await this.adminService.processAdminAssignment(
       dto.userId,
       assignedBy
@@ -125,7 +122,6 @@ export class AdminController extends BaseController<
    * DELETE /admin/revoke/:userId
    */
   @Delete('revoke/:userId')
-  @AdminRole(AdminRoles.ADMIN)
   async revokeAdminRole(
     @Param('userId', ParseUUIDPipe) userId: string,
     @Req() req: Request
@@ -146,7 +142,6 @@ export class AdminController extends BaseController<
    * GET /admin/check/:userId
    */
   @Get('check/:userId')
-  @AdminRole(AdminRoles.ADMIN)
   async checkAdminStatus(
     @Param('userId', ParseUUIDPipe) userId: string,
     @Req() req: Request
@@ -164,7 +159,6 @@ export class AdminController extends BaseController<
    * GET /admin/stats
    */
   @Get('stats')
-  @AdminRole(AdminRoles.ADMIN)
   async getAdminStats(@Req() req: Request) {
     const generatedBy = (req.user as any)?.id;
     const result = await this.adminService.getAdminStats(generatedBy);
@@ -179,7 +173,6 @@ export class AdminController extends BaseController<
    * GET /admin/search
    */
   @Get('search')
-  @AdminRole(AdminRoles.ADMIN)
   async searchAdmins(
     @Query('q') searchQuery: string,
     @Query('active') activeOnly: boolean = true,

@@ -1,10 +1,9 @@
 import { Injectable, BadRequestException, Inject } from '@nestjs/common';
 import { BaseAiService } from 'src/common/abstracts/ai/base.ai.service';
-import { MultiTenantRateLimiter, RateLimitConfig } from './utils/rate-limiter';
+import { MultiTenantRateLimiter } from './utils/rate-limiter';
 import { AiLogsService } from '../ai-logs/ai-logs.service';
 import { AiAuditService } from '../ai-audit/ai-audit.service';
 import {
-  AiGenerateOptions,
   AiGenerateResult,
   AiProvider,
 } from 'src/common/interfaces/ai/generator.interface';
@@ -12,35 +11,25 @@ import {
   AiServiceRequest,
   AiServiceResponse,
 } from 'src/common/interfaces/ai/ai.interface';
+import {
+  CustomGenerationParams,
+  DescriptionGenerationParams,
+  GenerationRequest,
+  GenerationResponse,
+  GenerationType,
+  HealthCheckResult,
+  IdeasGenerationParams,
+  NameGenerationParams,
+} from 'src/modules/ai/ai-generator/types';
+import { ConfigService } from '@nestjs/config';
+import { promptTemplates } from 'src/modules/ai/ai-generator/utils/prompt-templates';
+import { RateLimitConfig } from 'src/modules/ai/ai-generator/utils/types';
+import { ProductSpecDto } from 'src/modules/ai/ai-generator/dto/generator-request.dto';
 
 export const AI_PROVIDER = Symbol('AI_PROVIDER');
 
-export interface GenerationRequest {
-  type: 'name' | 'description' | 'ideas' | 'custom';
-  prompt: string;
-  options: AiGenerateOptions;
-  context?: {
-    storeStyle?: string;
-    productSpec?: string;
-    tone?: string;
-    seed?: string;
-    count?: number;
-  };
-}
-
-export interface GenerationResponse {
-  type: string;
-  result: any;
-  raw: string;
-  metadata: {
-    processingTime: number;
-    tokensUsed: number;
-    cost?: number;
-  };
-}
-
 /**
- * Enhanced AI Generator Service
+ * AI Generator Service
  *
  * Extends BaseAiService to provide business-level AI generation methods.
  * Features:
@@ -57,52 +46,10 @@ export class AiGeneratorService extends BaseAiService<
 > {
   private readonly rateLimiter: MultiTenantRateLimiter;
 
-  // Template configurations
-  private readonly promptTemplates = new Map([
-    [
-      'productName',
-      {
-        template: `You are a creative product naming expert.
-Context: {{storeStyle}}
-Seed words: {{seed}}
-Generate {{count}} short, catchy product names (2-4 words each).
-Return only a JSON array of strings.`,
-        defaultOptions: { maxTokens: 200, temperature: 0.8 },
-      },
-    ],
-    [
-      'productDescription',
-      {
-        template: `Write a compelling product description for "{{productName}}".
-{{productSpec}}
-Tone: {{tone}}
-Length: 40-100 words.
-Return JSON: {"title": "<short title>", "description": "<description>"}`,
-        defaultOptions: { maxTokens: 300, temperature: 0.7 },
-      },
-    ],
-    [
-      'productIdeas',
-      {
-        template: `You are a product ideation assistant.
-Store style: {{storeStyle}}
-Seed concepts: {{seed}}
-Generate {{count}} innovative product ideas.
-For each idea provide: {"name": "...", "concept": "...", "rationale": "..."}
-Return as JSON array.`,
-        defaultOptions: { maxTokens: 500, temperature: 0.9 },
-      },
-    ],
-    [
-      'custom',
-      {
-        template: '{{prompt}}',
-        defaultOptions: { maxTokens: 256, temperature: 0.7 },
-      },
-    ],
-  ]);
+  private readonly promptTemplates = promptTemplates;
 
   constructor(
+    private readonly configService: ConfigService,
     @Inject(AI_PROVIDER) private readonly provider: AiProvider,
     private readonly aiLogsService: AiLogsService,
     private readonly aiAuditService: AiAuditService
@@ -111,9 +58,15 @@ Return as JSON array.`,
 
     // Initialize rate limiter with configuration from environment
     const rateLimitConfig: RateLimitConfig = {
-      capacity: parseInt(process.env.AI_RATE_CAPACITY || '30'),
-      refillRate: parseFloat(process.env.AI_RATE_REFILL_PER_SEC || '0.5'),
-      burstSize: parseInt(process.env.AI_RATE_BURST_SIZE || '10'),
+      capacity: parseInt(
+        this.configService.get<string>('AI_RATE_CAPACITY') ?? '30'
+      ),
+      refillRate: parseFloat(
+        this.configService.get<string>('AI_RATE_REFILL_PER_SEC') ?? '0.5'
+      ),
+      burstSize: parseInt(
+        this.configService.get<string>('AI_RATE_BURST_SIZE') ?? '10'
+      ),
     };
 
     this.rateLimiter = new MultiTenantRateLimiter(rateLimitConfig);
@@ -180,7 +133,11 @@ Return as JSON array.`,
       const finalOptions = { ...templateConfig.defaultOptions, ...options };
 
       // Make AI provider call
-      const aiResult = await this.provider.generate(finalPrompt, finalOptions);
+      const aiResult = await this.provider.generate(
+        finalPrompt,
+        finalOptions,
+        request
+      );
 
       // Parse and validate the result
       const parsedResult = this.parseGenerationResult(type, aiResult);
@@ -208,6 +165,7 @@ Return as JSON array.`,
         feature: request.feature,
         provider: 'ai_generator',
         model: options.model,
+        finishReason: aiResult.finishReason,
       };
     } catch (error) {
       this.logger.error(`Generation failed for type ${type}:`, error);
@@ -265,14 +223,7 @@ Return as JSON array.`,
   /**
    * Generate product names
    */
-  async generateProductNames(params: {
-    storeStyle?: string;
-    seed?: string;
-    count?: number;
-    options?: AiGenerateOptions;
-    userId?: string;
-    storeId?: string;
-  }): Promise<string[]> {
+  async generateProductNames(params: NameGenerationParams): Promise<string[]> {
     const {
       storeStyle,
       seed,
@@ -283,7 +234,7 @@ Return as JSON array.`,
     } = params;
 
     const request: AiServiceRequest<GenerationRequest> = {
-      feature: 'generator_names',
+      feature: 'generatorNames',
       provider: 'ai_generator',
       data: {
         type: 'name',
@@ -304,17 +255,9 @@ Return as JSON array.`,
     return response.result.result;
   }
 
-  /**
-   * Generate product description
-   */
-  async generateProductDescription(params: {
-    name: string;
-    productSpec?: string;
-    tone?: string;
-    options?: AiGenerateOptions;
-    userId?: string;
-    storeId?: string;
-  }): Promise<{ title: string; description: string }> {
+  async generateProductDescription(
+    params: DescriptionGenerationParams
+  ): Promise<{ title: string; description: string }> {
     const {
       name,
       productSpec,
@@ -324,39 +267,177 @@ Return as JSON array.`,
       storeId,
     } = params;
 
+    const prompt = this.buildStructuredPrompt(name, productSpec, tone);
+
     const request: AiServiceRequest<GenerationRequest> = {
-      feature: 'generator_description',
+      feature: 'generatorDescription',
       provider: 'ai_generator',
       data: {
         type: 'description',
-        prompt: `Generate description for ${name}`,
-        options,
-        context: { productSpec, tone },
+        prompt,
+        options: {
+          ...options,
+          maxTokens: options.maxTokens || 300,
+          temperature: options.temperature ?? 0.8,
+        },
+        context: {
+          productName: name,
+          productSpec,
+          tone,
+        },
       },
       userId,
       storeId,
     };
 
-    const response = await this.execute(request);
+    try {
+      const response = await this.execute(request);
 
-    if (!response.success || !response.result) {
-      throw new Error(response.error || 'Description generation failed');
+      if (!response.success || !response.result) {
+        throw new Error(response.error || 'Description generation failed');
+      }
+
+      const generatedText = response.result?.result || response.result;
+
+      const parsed = this.parseDescriptionResponse(generatedText, name);
+
+      return {
+        title: parsed.title,
+        description: parsed.description,
+      };
+    } catch (error) {
+      // ✅ Better error handling
+      console.error('Description generation error:', error);
+      throw new Error(
+        `Description generation failed: ${error.message || 'Unknown error'}`
+      );
+    }
+  }
+
+  /**
+   * Build a structured prompt for better AI responses
+   */
+  private buildStructuredPrompt(
+    name: string,
+    productSpec?: ProductSpecDto,
+    tone?: string
+  ): string {
+    const sections: string[] = [
+      'You are an expert e-commerce copywriter.',
+      `Write a ${tone} product description with the following structure:`,
+      '',
+      '**Product Details:**',
+      `Name: ${name}`,
+    ];
+
+    if (productSpec) {
+      if (productSpec.category) {
+        sections.push(`Category: ${productSpec.category}`);
+      }
+
+      if (productSpec.price !== undefined) {
+        sections.push(`Price: $${productSpec.price.toFixed(2)}`);
+      }
+
+      if (productSpec.material) {
+        sections.push(`Material: ${productSpec.material}`);
+      }
+
+      if (productSpec.features && productSpec.features.length > 0) {
+        sections.push('');
+        sections.push('**Key Features:**');
+        productSpec.features.forEach((feature, index) => {
+          sections.push(`${index + 1}. ${feature}`);
+        });
+      }
     }
 
-    return response.result.result;
+    sections.push('');
+    sections.push('**Instructions:**');
+    sections.push('1. Write a compelling product title (max 80 characters)');
+    sections.push('2. Write a detailed description (150-250 words) that:');
+    sections.push('   - Highlights the key benefits');
+    sections.push('   - Uses persuasive language');
+    sections.push('   - Includes specific features');
+    sections.push('   - Appeals to customer emotions');
+    sections.push('');
+    sections.push('**Format:**');
+    sections.push('Title: [Your product title here]');
+    sections.push('Description: [Your description here]');
+
+    return sections.join('\n');
+  }
+
+  /**
+   * Parse AI response to extract title and description
+   */
+  private parseDescriptionResponse(
+    response: any, // ✅ Accept any type
+    fallbackTitle: string
+  ): { title: string; description: string } {
+    // ✅ Handle different response types
+    let text: string;
+
+    if (typeof response === 'string') {
+      text = response;
+    } else if (response && typeof response === 'object') {
+      // Handle various object formats
+      text =
+        response.text ||
+        response.description ||
+        response.content ||
+        response.result ||
+        JSON.stringify(response);
+    } else {
+      // Fallback
+      text = String(response || '');
+    }
+
+    // ✅ Ensure text is a string
+    if (!text || typeof text !== 'string') {
+      return {
+        title: fallbackTitle,
+        description: 'Description generation failed',
+      };
+    }
+
+    // Remove markdown formatting
+    const cleaned = text.replace(/\*\*/g, '').trim();
+
+    // Pattern: "Title: ...\nDescription: ..."
+    const titleMatch = cleaned.match(/Title:\s*(.+?)(?:\n|$)/i);
+    const descMatch = cleaned.match(/Description:\s*(.+)/is);
+
+    if (titleMatch && descMatch) {
+      return {
+        title: titleMatch[1].trim().substring(0, 100),
+        description: descMatch[1].trim(),
+      };
+    }
+
+    // Fallback: Split by lines
+    const lines = cleaned.split('\n').filter((line) => line.trim());
+
+    if (lines.length > 1) {
+      return {
+        title: lines[0].trim().substring(0, 100),
+        description: lines.slice(1).join('\n').trim(),
+      };
+    }
+
+    // Last resort
+    return {
+      title: fallbackTitle,
+      description: cleaned,
+    };
   }
 
   /**
    * Generate product ideas
    */
-  async generateProductIdeas(params: {
-    storeStyle?: string;
-    seed?: string;
-    count?: number;
-    options?: AiGenerateOptions;
-    userId?: string;
-    storeId?: string;
-  }): Promise<Array<{ name: string; concept: string; rationale: string }>> {
+  async generateProductIdeas(
+    params: IdeasGenerationParams
+  ): Promise<Array<{ name: string; concept: string; rationale: string }>> {
     const {
       storeStyle,
       seed,
@@ -391,12 +472,7 @@ Return as JSON array.`,
   /**
    * Custom generation with prompt
    */
-  async generateCustom(params: {
-    prompt: string;
-    options?: AiGenerateOptions;
-    userId?: string;
-    storeId?: string;
-  }): Promise<string> {
+  async generateCustom(params: CustomGenerationParams): Promise<string> {
     const { prompt, options = {}, userId, storeId } = params;
 
     const request: AiServiceRequest<GenerationRequest> = {
@@ -427,15 +503,16 @@ Return as JSON array.`,
   /**
    * Get service health status
    */
-  async healthCheck(): Promise<{
-    healthy: boolean;
-    provider: any;
-    rateLimiter: any;
-    lastError?: string;
-  }> {
+  async healthCheck(
+    userId: string,
+    storeId: string
+  ): Promise<HealthCheckResult> {
     try {
       // Test the provider
-      const providerHealth = (await (this.provider as any).healthCheck?.()) || {
+      const providerHealth = (await (this.provider as any).healthCheck?.(
+        userId,
+        storeId
+      )) || {
         healthy: true,
       };
 
@@ -477,11 +554,7 @@ Return as JSON array.`,
   /**
    * Get available generation types and their templates
    */
-  getGenerationTypes(): Array<{
-    type: string;
-    description: string;
-    defaultOptions: AiGenerateOptions;
-  }> {
+  getGenerationTypes(): Array<GenerationType> {
     return [
       {
         type: 'name',
@@ -517,8 +590,10 @@ Return as JSON array.`,
     basePrompt: string,
     context: any = {}
   ): string {
+    // Map request type to template key
+    const templateKey = this.getTemplateKey(type);
     const templateConfig =
-      this.promptTemplates.get(type === 'name' ? 'productName' : type) ||
+      this.promptTemplates.get(templateKey) ||
       this.promptTemplates.get('custom')!;
 
     let prompt = templateConfig.template;
@@ -555,6 +630,20 @@ Return as JSON array.`,
 
     // Clean up extra whitespace
     return prompt.replace(/\s+/g, ' ').trim();
+  }
+
+  /**
+   * Map request type to template key
+   */
+  private getTemplateKey(type: string): string {
+    const typeToTemplateMap: Record<string, string> = {
+      name: 'productName',
+      description: 'productDescription',
+      ideas: 'productIdeas',
+      custom: 'custom',
+    };
+
+    return typeToTemplateMap[type] || 'custom';
   }
 
   private parseGenerationResult(type: string, aiResult: AiGenerateResult): any {

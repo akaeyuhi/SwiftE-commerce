@@ -15,11 +15,17 @@ export class AiAudit implements BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Column({ name: 'user_id' })
+  userId: string;
+
   @ManyToOne(() => User, (u) => u.aiLogs, {
     nullable: true,
     onDelete: 'SET NULL',
   })
   user?: User;
+
+  @Column({ name: 'store_id' })
+  storeId: string;
 
   @ManyToOne(() => Store, (s) => s.aiLogs, {
     nullable: true,

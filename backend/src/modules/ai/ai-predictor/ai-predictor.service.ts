@@ -1,7 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { lastValueFrom } from 'rxjs';
-import { DataSource } from 'typeorm';
 import { subDays } from 'date-fns';
 import { BaseAiService } from 'src/common/abstracts/ai/base.ai.service';
 import { AiPredictorRepository } from './ai-predictor.repository';
@@ -9,10 +8,9 @@ import { StoreDailyStatsRepository } from 'src/modules/analytics/repositories/st
 import { ProductDailyStatsRepository } from 'src/modules/analytics/repositories/product-daily-stats.repository';
 import { AiLogsService } from '../ai-logs/ai-logs.service';
 import { AiAuditService } from '../ai-audit/ai-audit.service';
-import { ProductVariant } from 'src/entities/store/product/variant.entity';
-import { Inventory } from 'src/entities/store/product/inventory.entity';
 import { AiPredictorStat } from 'src/entities/ai/ai-predictor-stat.entity';
 import { AiPredictRow, AiPredictBatchRequest } from './dto/ai-predict.dto';
+import { CaseTransformer } from 'src/common/utils/case-transformer.util';
 import {
   AiServiceRequest,
   AiServiceResponse,
@@ -21,43 +19,26 @@ import {
   PredictorRequestData,
   PredictorResponseData,
 } from 'src/common/interfaces/ai/predictor.interface';
+import { IReviewsRepository } from 'src/common/contracts/reviews.contract';
+import { ConfigService } from '@nestjs/config';
 import {
-  IReviewsRepository,
-  REVIEWS_REPOSITORY,
-} from 'src/common/contracts/reviews.contract';
-
-export interface FeatureVector {
-  sales_7d: number;
-  sales_14d: number;
-  sales_30d: number;
-  sales_7d_per_day: number;
-  sales_30d_per_day: number;
-  sales_ratio_7_30: number;
-  views_7d: number;
-  views_30d: number;
-  addToCarts_7d: number;
-  view_to_purchase_7d: number;
-  avg_price: number;
-  min_price: number;
-  max_price: number;
-  avg_rating: number;
-  rating_count: number;
-  inventory_qty: number;
-  days_since_restock: number;
-  day_of_week: number;
-  is_weekend: number;
-  store_views_7d: number;
-  store_purchases_7d: number;
-}
+  ChunkResult,
+  ErrorResult,
+  FeatureVector,
+} from 'src/modules/ai/ai-predictor/types';
+import {
+  IInventoryService,
+  IVariantService,
+} from 'src/common/contracts/ai-predictor.contract';
 
 /**
- * Enhanced AiPredictorService extending BaseAiService
+ * AiPredictorService with CamelCase Conventions
  *
- * Provides comprehensive prediction capabilities with:
- * - Feature vector building with caching
+ * Features:
+ * - Automatic snake_case ↔ camelCase transformation
+ * - Feature vector caching (5-minute TTL)
  * - Batch processing with chunking
- * - Error handling and retry logic
- * - Comprehensive logging and auditing
+ * - Comprehensive error handling
  * - Performance optimization
  */
 @Injectable()
@@ -81,20 +62,28 @@ export class AiPredictorService extends BaseAiService<
 
   constructor(
     private readonly httpService: HttpService,
+    private readonly configService: ConfigService,
     private readonly predictorRepo: AiPredictorRepository,
-    private readonly dataSource: DataSource,
+    private readonly aiLogsService: AiLogsService,
     private readonly storeStatsRepo: StoreDailyStatsRepository,
     private readonly productStatsRepo: ProductDailyStatsRepository,
-    private readonly aiLogsService: AiLogsService,
     private readonly aiAuditService: AiAuditService,
-    @Inject(REVIEWS_REPOSITORY) private readonly reviewsRepo: IReviewsRepository
+    @Inject(IReviewsRepository)
+    private readonly reviewsRepo: IReviewsRepository,
+    @Inject(IVariantService) private readonly variantService: IVariantService,
+    @Inject(IInventoryService)
+    private readonly inventoryService: IInventoryService
   ) {
     super();
 
-    this.predictorUrl =
-      process.env.PREDICTOR_URL ?? 'http://predictor:8080/predict_batch';
-    this.authToken = process.env.PREDICTOR_AUTH_TOKEN;
-    this.chunkSize = parseInt(process.env.PREDICTOR_CHUNK_SIZE ?? '50');
+    this.predictorUrl = this.configService.get<string>(
+      'PREDICTOR_URL',
+      'http://predictor:8080'
+    );
+    this.authToken = this.configService.get<string>('PREDICTOR_AUTH_TOKEN');
+    this.chunkSize = parseInt(
+      this.configService.get<string>('PREDICTOR_CHUNK_SIZE') ?? '50'
+    );
   }
 
   protected validateRequest(
@@ -111,7 +100,7 @@ export class AiPredictorService extends BaseAiService<
     }
 
     for (const item of request.data.items) {
-      if (typeof item === 'string') continue; // productId string is valid
+      if (typeof item === 'string') continue;
 
       if (typeof item === 'object') {
         const obj = item as any;
@@ -151,8 +140,9 @@ export class AiPredictorService extends BaseAiService<
         provider: 'predictor',
         model: request.data.modelVersion,
         usage: {
-          totalTokens: 0, // Predictor doesn't use tokens
+          totalTokens: 0,
         },
+        finishReason: '',
       };
     } catch (error) {
       this.logger.error('Predictor request processing failed:', error);
@@ -196,6 +186,7 @@ export class AiPredictorService extends BaseAiService<
 
   /**
    * Build comprehensive feature vector for a product with caching
+   * Returns features in camelCase format
    */
   async buildFeatureVector(
     productId: string,
@@ -211,13 +202,11 @@ export class AiPredictorService extends BaseAiService<
     try {
       const features = await this.computeFeatureVector(productId, storeId);
 
-      // Cache the result
       this.featureCache.set(cacheKey, {
         features,
         timestamp: Date.now(),
       });
 
-      // Clean up old cache entries periodically
       if (this.featureCache.size > 1000) {
         this.cleanupFeatureCache();
       }
@@ -233,7 +222,7 @@ export class AiPredictorService extends BaseAiService<
   }
 
   /**
-   * Internal batch prediction logic (extracted from original predictBatch)
+   * Internal batch prediction with automatic case transformation
    */
   private async predictBatchInternal(
     items: Array<
@@ -245,13 +234,9 @@ export class AiPredictorService extends BaseAiService<
   ) {
     if (!items || items.length === 0) return [];
 
-    // Normalize items to AiPredictRow format
     const normalized = await this.normalizeItems(items);
-
-    // Build missing feature vectors in parallel chunks
     await this.buildMissingFeatures(normalized);
 
-    // Process predictions in chunks
     return this.processPredictionChunks(
       normalized,
       modelVersion,
@@ -312,14 +297,12 @@ export class AiPredictorService extends BaseAiService<
       const promise = this.buildSingleItemFeatures(item);
       featureBuildingPromises.push(promise);
 
-      // Process in smaller batches to avoid overwhelming the system
       if (featureBuildingPromises.length >= 10) {
         await Promise.allSettled(featureBuildingPromises);
         featureBuildingPromises.length = 0;
       }
     }
 
-    // Process remaining promises
     if (featureBuildingPromises.length > 0) {
       await Promise.allSettled(featureBuildingPromises);
     }
@@ -370,7 +353,6 @@ export class AiPredictorService extends BaseAiService<
         );
         results.push(...chunkResults);
       } catch (error) {
-        // Handle chunk failure by marking all items as errors
         const errorResults = this.createErrorResults(chunk, i, error.message);
         results.push(...errorResults);
       }
@@ -386,11 +368,12 @@ export class AiPredictorService extends BaseAiService<
     userId?: string,
     contextStoreId?: string
   ) {
+    // Transform features to snake_case for predictor API
     const payload: AiPredictBatchRequest = {
       rows: chunk.map((item) => ({
         productId: item.productId,
         storeId: item.storeId,
-        features: item.features,
+        features: CaseTransformer.transformKeysToSnake(item.features),
       })),
     };
 
@@ -409,9 +392,10 @@ export class AiPredictorService extends BaseAiService<
       })
     );
 
-    const predictions = response.data?.results || [];
+    // Transform response back to camelCase
+    const transformedData = CaseTransformer.transformKeysToCamel(response.data);
+    const predictions = transformedData?.results || [];
 
-    // Store successful API call for auditing
     await this.storeChunkResult(chunk, response, userId, contextStoreId);
 
     return this.formatChunkResults(chunk, predictions, startIndex);
@@ -421,7 +405,7 @@ export class AiPredictorService extends BaseAiService<
     chunk: Array<AiPredictRow & { meta: any }>,
     predictions: any[],
     startIndex: number
-  ) {
+  ): Array<ChunkResult | ErrorResult> {
     return chunk.map((item, chunkIndex) => {
       const globalIndex = startIndex + chunkIndex;
       const buildError = (item as any).__buildError;
@@ -477,7 +461,7 @@ export class AiPredictorService extends BaseAiService<
     chunk: Array<AiPredictRow & { meta: any }>,
     startIndex: number,
     errorMessage: string
-  ) {
+  ): ErrorResult[] {
     return chunk.map((item, chunkIndex) => ({
       index: startIndex + chunkIndex,
       score: NaN,
@@ -502,7 +486,6 @@ export class AiPredictorService extends BaseAiService<
     userId?: string,
     storeId?: string
   ): Promise<void> {
-    // This matches the original storeResult method
     try {
       await this.aiLogsService.record({
         userId,
@@ -537,12 +520,13 @@ export class AiPredictorService extends BaseAiService<
     }
   }
 
-  /* eslint-disable camelcase */
+  /**
+   * Compute feature vector in camelCase format
+   */
   private async computeFeatureVector(
     productId: string,
     storeId?: string
   ): Promise<FeatureVector> {
-    // Date calculations
     const today = new Date();
     const formatDate = (d: Date) => d.toISOString().slice(0, 10);
 
@@ -551,7 +535,7 @@ export class AiPredictorService extends BaseAiService<
     const start30 = formatDate(subDays(today, 29));
     const end = formatDate(today);
 
-    // Parallel data fetching for performance
+    // Parallel data fetching
     const [
       agg7,
       agg14,
@@ -594,10 +578,9 @@ export class AiPredictorService extends BaseAiService<
 
     const sales7PerDay = sales7 / 7;
     const sales30PerDay = sales30 / 30;
-    const salesRatio7_30 = sales30 > 0 ? sales7 / sales30 : 0;
+    const salesRatio7To30 = sales30 > 0 ? sales7 / sales30 : 0;
     const viewToPurchase7 = views7 > 0 ? sales7 / views7 : 0;
 
-    // Store metrics (default to 0 if no store provided)
     const storeViews7 = storeAgg7?.views || 0;
     const storePurchases7 = storeAgg7?.purchases || 0;
 
@@ -605,28 +588,29 @@ export class AiPredictorService extends BaseAiService<
     const dow = today.getUTCDay();
     const isWeekend = dow === 0 || dow === 6 ? 1 : 0;
 
+    // Build feature vector in camelCase
     const features: FeatureVector = {
-      sales_7d: sales7,
-      sales_14d: sales14,
-      sales_30d: sales30,
-      sales_7d_per_day: Number(sales7PerDay.toFixed(6)),
-      sales_30d_per_day: Number(sales30PerDay.toFixed(6)),
-      sales_ratio_7_30: Number(salesRatio7_30.toFixed(6)),
-      views_7d: views7,
-      views_30d: views30,
-      addToCarts_7d: addToCarts7,
-      view_to_purchase_7d: Number(viewToPurchase7.toFixed(6)),
-      avg_price: priceStats.avg || 0,
-      min_price: priceStats.min || 0,
-      max_price: priceStats.max || 0,
-      avg_rating: ratingAgg?.avg || 0,
-      rating_count: ratingAgg?.count || 0,
-      inventory_qty: inventoryStats.quantity || 0,
-      days_since_restock: inventoryStats.daysSinceRestock || 365,
-      day_of_week: dow,
-      is_weekend: isWeekend,
-      store_views_7d: storeViews7,
-      store_purchases_7d: storePurchases7,
+      sales7d: sales7,
+      sales14d: sales14,
+      sales30d: sales30,
+      sales7dPerDay: Number(sales7PerDay.toFixed(6)),
+      sales30dPerDay: Number(sales30PerDay.toFixed(6)),
+      salesRatio7To30: Number(salesRatio7To30.toFixed(6)),
+      views7d: views7,
+      views30d: views30,
+      addToCarts7d: addToCarts7,
+      viewToPurchase7d: Number(viewToPurchase7.toFixed(6)),
+      avgPrice: priceStats.avg || 0,
+      minPrice: priceStats.min || 0,
+      maxPrice: priceStats.max || 0,
+      avgRating: ratingAgg?.averageRating || 0,
+      ratingCount: ratingAgg?.totalReviews || 0,
+      inventoryQty: inventoryStats.quantity || 0,
+      daysSinceRestock: inventoryStats.daysSinceRestock || 365,
+      dayOfWeek: dow,
+      isWeekend,
+      storeViews7d: storeViews7,
+      storePurchases7d: storePurchases7,
     };
 
     // Ensure no NaN values
@@ -641,49 +625,11 @@ export class AiPredictorService extends BaseAiService<
   }
 
   private async getPriceStats(productId: string) {
-    const variantRepo = this.dataSource.getRepository(ProductVariant);
-
-    const priceRaw = await variantRepo
-      .createQueryBuilder('v')
-      .select('AVG(v.price)::numeric', 'avg_price')
-      .addSelect('MIN(v.price)::numeric', 'min_price')
-      .addSelect('MAX(v.price)::numeric', 'max_price')
-      .where('v.product = :productId', { productId })
-      .getRawOne();
-
-    const avg = priceRaw?.avg_price ? Number(priceRaw.avg_price) : 0;
-    const min = priceRaw?.min_price ? Number(priceRaw.min_price) : avg;
-    const max = priceRaw?.max_price ? Number(priceRaw.max_price) : avg;
-
-    return { avg, min, max };
+    return this.variantService.getPriceStats(productId);
   }
 
   private async getInventoryStats(productId: string) {
-    const invRepo = this.dataSource.getRepository(Inventory);
-
-    const invRaw = await invRepo
-      .createQueryBuilder('inv')
-      .select('COALESCE(SUM(inv.quantity),0)', 'inventory_qty')
-      .addSelect('MAX(inv.updatedAt)::text', 'last_updated_at')
-      .innerJoin('inv.variant', 'v')
-      .where('v.product = :productId', { productId })
-      .getRawOne();
-
-    const quantity = invRaw ? Number(invRaw.inventory_qty || 0) : 0;
-    const lastRestockAt = invRaw?.last_updated_at
-      ? new Date(invRaw.last_updated_at)
-      : null;
-
-    const daysSinceRestock = lastRestockAt
-      ? Math.max(
-          0,
-          Math.floor(
-            (Date.now() - lastRestockAt.getTime()) / (1000 * 60 * 60 * 24)
-          )
-        )
-      : 365;
-
-    return { quantity, daysSinceRestock };
+    return this.inventoryService.getInventoryStats(productId);
   }
 
   private cleanupFeatureCache(): void {
@@ -707,16 +653,14 @@ export class AiPredictorService extends BaseAiService<
   // Public API Methods
   // ===============================
 
-  /**
-   * Public method that maintains the original interface
-   */
   async predictBatch(
     items: Array<
       string | { productId: string; storeId?: string } | AiPredictRow
     >
   ) {
+    if (!items || !items.length) return [];
     const request: AiServiceRequest<PredictorRequestData> = {
-      feature: 'batch_prediction',
+      feature: 'batchPrediction',
       provider: 'predictor',
       data: { items },
     };
@@ -725,9 +669,6 @@ export class AiPredictorService extends BaseAiService<
     return response.result?.predictions || [];
   }
 
-  /**
-   * Enhanced prediction with persistence
-   */
   async predictBatchAndPersist(
     items: Array<
       string | { productId: string; storeId?: string } | AiPredictRow
@@ -778,9 +719,6 @@ export class AiPredictorService extends BaseAiService<
     return persisted;
   }
 
-  /**
-   * Get trending products based on recent predictions
-   */
   async getTrendingProducts(
     storeId: string,
     options: {
@@ -792,9 +730,6 @@ export class AiPredictorService extends BaseAiService<
     return this.predictorRepo.getTrendingProducts(storeId, options);
   }
 
-  /**
-   * Get prediction statistics
-   */
   async getPredictionStats(
     filters: {
       storeId?: string;
@@ -807,17 +742,13 @@ export class AiPredictorService extends BaseAiService<
     return this.predictorRepo.getPredictionStats(filters);
   }
 
-  /**
-   * Health check for predictor service
-   */
   async healthCheck() {
     try {
-      // Test a simple prediction to verify service availability
       const testPayload = {
         rows: [
           {
             productId: 'test',
-            features: { test: 1 },
+            features: CaseTransformer.transformKeysToSnake({ test: 1 }),
           },
         ],
       };

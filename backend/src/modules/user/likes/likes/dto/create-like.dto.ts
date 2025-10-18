@@ -1,11 +1,9 @@
-import { IsIn, IsOptional, IsUUID } from 'class-validator';
+import { IsOptional, IsUUID } from 'class-validator';
 
 export class CreateLikeDto {
   @IsUUID()
-  userId: string;
-
-  @IsIn(['store', 'product'])
-  likedEntity: 'store' | 'product';
+  @IsOptional()
+  userId?: string;
 
   @IsOptional()
   @IsUUID()

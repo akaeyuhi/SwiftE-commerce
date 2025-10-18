@@ -27,7 +27,7 @@
       {{#if productImage}}
         <img src="{{productImage}}" alt="{{productName}}" class="product-image">
       {{/if}}
-      <p><strong>Price:</strong> {{currency productPrice}}</p>
+      <p><strong>Price:</strong> {{productPrice}}$</p>
       <p><strong>Stock:</strong> <span class="urgency">{{stockQuantity}} remaining</span></p>
       {{#if productDescription}}
         <p>{{truncate productDescription 150}}</p>

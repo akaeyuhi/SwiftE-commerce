@@ -1,8 +1,13 @@
 import { UserRepository } from 'src/modules/user/user.repository';
 import { User } from 'src/entities/user/user.entity';
 import { DataSource, EntityManager } from 'typeorm';
-import { createMock, MockedMethods } from '../utils/helpers';
+import {
+  createMock,
+  createMockEntityManager,
+  MockedMethods,
+} from 'test/unit/helpers';
 import { Test, TestingModule } from '@nestjs/testing';
+import { StoreRoles } from 'src/common/enums/store-roles.enum';
 
 describe('UserRepository', () => {
   let repository: UserRepository;
@@ -25,7 +30,7 @@ describe('UserRepository', () => {
   };
 
   beforeEach(async () => {
-    entityManager = createMock<EntityManager>(['getRepository']);
+    entityManager = createMockEntityManager('getRepository');
     dataSource = createMock<DataSource>(['createEntityManager']);
     dataSource.createEntityManager!.mockReturnValue(
       entityManager as unknown as EntityManager
@@ -269,7 +274,11 @@ describe('UserRepository', () => {
 
       entityManager.getRepository!.mockReturnValue(mockUserRoleRepo as any);
 
-      const result = await repository.removeRoleFromUser('u1', 'r1', 's1');
+      const result = await repository.removeRoleFromUser(
+        'u1',
+        StoreRoles.ADMIN,
+        's1'
+      );
 
       expect(result).toEqual(mockDeleteResult);
       expect(entityManager.getRepository).toHaveBeenCalledWith('UserRole');
@@ -309,7 +318,7 @@ describe('UserRepository', () => {
 
       const result = await repository.removeRoleFromUser(
         'u1',
-        'nonexistent',
+        'nonexistent' as StoreRoles,
         's1'
       );
 
@@ -333,15 +342,15 @@ describe('UserRepository', () => {
       entityManager.getRepository!.mockReturnValue(mockUserRoleRepo as any);
 
       await expect(
-        repository.removeRoleFromUser('u1', 'r1', 's1')
+        repository.removeRoleFromUser('u1', StoreRoles.ADMIN, 's1')
       ).rejects.toThrow(deleteError);
     });
 
     it('should handle different parameter combinations', async () => {
       const testCases = [
-        ['user1', 'role1', 'store1'],
-        ['user2', 'role2', 'store2'],
-        ['user-with-dashes', 'role_with_underscores', 'store.with.dots'],
+        ['user1', StoreRoles.ADMIN, 'store1'],
+        ['user2', StoreRoles.ADMIN, 'store2'],
+        ['user-with-dashes', 'role_with_underscores', 'stores.with.dots'],
       ];
 
       const mockQueryBuilder = {
@@ -357,16 +366,20 @@ describe('UserRepository', () => {
 
       entityManager.getRepository!.mockReturnValue(mockUserRoleRepo as any);
 
-      for (const [userId, roleId, storeId] of testCases) {
-        await repository.removeRoleFromUser(userId, roleId, storeId);
+      for (const [userId, roleName, storeId] of testCases) {
+        await repository.removeRoleFromUser(
+          userId,
+          roleName as StoreRoles,
+          storeId
+        );
 
         expect(mockQueryBuilder.where).toHaveBeenCalledWith(
           'ur.userId = :userId',
           { userId }
         );
         expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
-          'ur.roleId = :roleId',
-          { roleId }
+          'ur.roleName = :roleName',
+          { roleName }
         );
         expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
           'ur.storeId = :storeId',

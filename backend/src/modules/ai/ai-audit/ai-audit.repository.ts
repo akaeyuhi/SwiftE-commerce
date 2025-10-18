@@ -6,9 +6,14 @@ import {
   AuditQueryOptions,
   AuditStats,
 } from 'src/common/interfaces/ai/audit.interface';
+import {
+  AuditFilterOptions,
+  AuditStatsFilterOptions,
+  EncryptionIntegrityResult,
+} from 'src/modules/ai/ai-audit/types';
 
 /**
- * Enhanced AiAuditRepository with advanced querying and security features
+ * AiAuditRepository with advanced querying and security features
  */
 @Injectable()
 export class AiAuditRepository extends BaseRepository<AiAudit> {
@@ -20,15 +25,7 @@ export class AiAuditRepository extends BaseRepository<AiAudit> {
    * Find audits with comprehensive filtering
    */
   async findByFilter(
-    filter: {
-      storeId?: string;
-      userId?: string;
-      feature?: string;
-      provider?: string;
-      model?: string;
-      dateFrom?: Date;
-      dateTo?: Date;
-    },
+    filter: AuditFilterOptions,
     options: AuditQueryOptions = {}
   ): Promise<AiAudit[]> {
     const qb = this.createQueryBuilder('a')
@@ -64,11 +61,12 @@ export class AiAuditRepository extends BaseRepository<AiAudit> {
       qb.andWhere('a.createdAt <= :dateTo', { dateTo: filter.dateTo });
     }
 
-    if (options.limit) {
+    // Fix: Check for undefined instead of falsy value
+    if (options.limit !== undefined) {
       qb.limit(options.limit);
     }
 
-    if (options.offset) {
+    if (options.offset !== undefined) {
       qb.offset(options.offset);
     }
 
@@ -79,14 +77,7 @@ export class AiAuditRepository extends BaseRepository<AiAudit> {
    * Get comprehensive audit statistics
    */
   async getAuditStats(
-    filters: {
-      storeId?: string;
-      userId?: string;
-      feature?: string;
-      provider?: string;
-      dateFrom?: Date;
-      dateTo?: Date;
-    } = {}
+    filters: AuditStatsFilterOptions = {}
   ): Promise<AuditStats> {
     const qb = this.createQueryBuilder('a')
       .leftJoin('a.user', 'u')
@@ -226,12 +217,9 @@ export class AiAuditRepository extends BaseRepository<AiAudit> {
   /**
    * Validate encryption integrity
    */
-  async validateEncryptionIntegrity(sampleSize: number = 100): Promise<{
-    totalChecked: number;
-    validEntries: number;
-    corruptedEntries: number;
-    healthPercentage: number;
-  }> {
+  async validateEncryptionIntegrity(
+    sampleSize: number = 100
+  ): Promise<EncryptionIntegrityResult> {
     const recentAudits = await this.createQueryBuilder('a')
       .orderBy('RANDOM()')
       .limit(sampleSize)
@@ -293,7 +281,7 @@ export class AiAuditRepository extends BaseRepository<AiAudit> {
       .limit(preserveCount)
       .getRawMany();
 
-    const preserveIdList = preserveIds.map((row) => row.a_id);
+    const preserveIdList = preserveIds.map((row) => row.aId);
 
     // Delete old entries except preserved ones
     const deleteQb = this.createQueryBuilder()

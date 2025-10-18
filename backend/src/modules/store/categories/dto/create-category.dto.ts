@@ -1,14 +1,25 @@
-import { IsString, IsOptional, IsUUID } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsUUID,
+  MinLength,
+  MaxLength,
+  IsArray,
+} from 'class-validator';
 
 /**
  * DTO for creating Category.
  */
 export class CreateCategoryDto {
   @IsString()
+  @MinLength(3)
+  @MaxLength(40)
   name: string;
 
   @IsOptional()
   @IsString()
+  @MinLength(3)
+  @MaxLength(75)
   description?: string;
 
   /**
@@ -18,4 +29,12 @@ export class CreateCategoryDto {
   @IsOptional()
   @IsUUID()
   parentId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  storeId?: string;
+
+  @IsOptional()
+  @IsArray()
+  productIds?: string[];
 }

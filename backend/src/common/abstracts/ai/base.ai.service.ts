@@ -103,6 +103,7 @@ export abstract class BaseAiService<RequestData = any, ResponseData = any> {
         feature: request.feature,
         provider: request.provider || 'unknown',
         model: request.model,
+        finishReason: error.finishReason,
       };
 
       // Log failed request

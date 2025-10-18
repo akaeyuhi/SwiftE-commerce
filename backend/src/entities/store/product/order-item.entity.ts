@@ -30,6 +30,9 @@ export class OrderItem implements BaseEntity {
   @ManyToOne(() => Product, { nullable: true })
   product?: Product;
 
+  @Column({ name: 'variant_id', nullable: true, type: 'uuid' })
+  variantId?: string;
+
   /** Optional FK to ProductVariant for convenience */
   @ManyToOne(() => ProductVariant, { nullable: true })
   variant?: ProductVariant;

@@ -3,7 +3,7 @@ import { AuthJwtStrategy } from 'src/modules/auth/strategies/auth-jwt.strategy';
 import { ConfigService } from '@nestjs/config';
 import { UserService } from 'src/modules/user/user.service';
 import { UnauthorizedException } from '@nestjs/common';
-import { createMock, MockedMethods } from 'test/unit/utils/helpers';
+import { createMock, MockedMethods } from 'test/unit/helpers';
 import { User } from 'src/entities/user/user.entity';
 
 describe('AuthJwtStrategy', () => {

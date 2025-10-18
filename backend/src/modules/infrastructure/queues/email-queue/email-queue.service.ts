@@ -11,12 +11,10 @@ import { StoreRoles } from 'src/common/enums/store-roles.enum';
 /**
  * EmailQueueService (Global)
  *
- * Pure infrastructure service - NO business logic dependencies.
- * Does NOT import EmailService - processing is done in EmailQueueProcessor.
  * All email sending is queued for async processing.
  */
 @Injectable()
-export class EmailQueueService extends BaseQueueService<EmailJobData, any> {
+export class EmailQueueService extends BaseQueueService<EmailJobData> {
   protected readonly queueName = 'email';
   protected readonly logger = new Logger(EmailQueueService.name);
 
@@ -54,27 +52,6 @@ export class EmailQueueService extends BaseQueueService<EmailJobData, any> {
     // Processing is done in EmailQueueProcessor
     this.logger.debug(`Job ${job.id} will be processed by processor`);
     return { jobType, data };
-  }
-
-  protected async getJobStatus(jobId: string) {
-    const job = await this.queue.getJob(jobId);
-    if (!job) return null;
-
-    return {
-      id: job.id.toString(),
-      type: job.name,
-      data: job.data,
-      priority: job.opts.priority || 0,
-      attempts: job.attemptsMade,
-      maxAttempts: job.opts.attempts || 3,
-      delay: job.opts.delay || 0,
-      processedAt: job.processedOn ? new Date(job.processedOn) : undefined,
-      completedAt: job.finishedOn ? new Date(job.finishedOn) : undefined,
-      failedAt: job.failedReason ? new Date() : undefined,
-      error: job.failedReason,
-      progress: job.progress(),
-      state: await job.getState(),
-    };
   }
 
   protected async removeJob(jobId: string): Promise<void> {
@@ -261,6 +238,7 @@ export class EmailQueueService extends BaseQueueService<EmailJobData, any> {
   async sendLowStockWarning(
     storeOwnerEmail: string,
     storeOwnerName: string,
+    storeName: string,
     productData: {
       name: string;
       sku: string;
@@ -283,6 +261,7 @@ export class EmailQueueService extends BaseQueueService<EmailJobData, any> {
           html: '',
           templateId: 'low_stock_warning',
           templateData: {
+            storeName,
             storeOwnerName,
             productName: productData.name,
             productSku: productData.sku,
@@ -358,6 +337,7 @@ export class EmailQueueService extends BaseQueueService<EmailJobData, any> {
           templateId: 'password_reset',
           templateData: {
             userName,
+            storeName: 'Swift E-Commerce',
             resetUrl,
             expirationMinutes,
           },
@@ -369,9 +349,6 @@ export class EmailQueueService extends BaseQueueService<EmailJobData, any> {
     );
   }
 
-  /**
-   * Send order confirmation email
-   */
   async sendOrderConfirmation(
     userEmail: string,
     userName: string,
@@ -387,6 +364,10 @@ export class EmailQueueService extends BaseQueueService<EmailJobData, any> {
       }>;
       shippingAddress?: string;
       orderUrl: string;
+      storeName?: string;
+      orderDate?: string;
+      shippingMethod?: string;
+      deliveryInstructions?: string;
     },
     options?: QueueOptions
   ): Promise<string> {
@@ -401,13 +382,239 @@ export class EmailQueueService extends BaseQueueService<EmailJobData, any> {
           templateId: 'order_confirmation',
           templateData: {
             userName,
-            ...orderData,
+            orderNumber: orderData.orderNumber,
+            orderId: orderData.orderId,
+            totalAmount: orderData.totalAmount,
+            currency: orderData.currency,
+            items: orderData.items,
+            shippingAddress: orderData.shippingAddress,
+            orderUrl: orderData.orderUrl,
+            storeName: orderData.storeName,
+            orderDate: orderData.orderDate,
+            shippingMethod: orderData.shippingMethod,
+            deliveryInstructions: orderData.deliveryInstructions,
+            itemCount: orderData.items.length,
+            hasMultipleItems: orderData.items.length > 1,
           },
           priority: EmailPriority.HIGH,
           tags: ['order', 'confirmation'],
         },
       },
       { priority: EmailPriority.HIGH, ...options }
+    );
+  }
+
+  /**
+   * Send order shipped email
+   */
+  async sendOrderShipped(
+    userEmail: string,
+    userName: string,
+    orderData: {
+      orderId: string;
+      orderNumber: string;
+      trackingNumber?: string;
+      trackingUrl?: string;
+      estimatedDeliveryDate?: string;
+      shippingMethod?: string;
+      shippingAddress: string;
+      shippedDate: string;
+      storeName: string;
+      items: Array<{
+        name: string;
+        quantity: number;
+      }>;
+    },
+    options?: QueueOptions
+  ): Promise<string> {
+    return this.scheduleJob(
+      EmailJobType.ORDER_SHIPPED,
+      {
+        type: EmailJobType.ORDER_SHIPPED,
+        emailData: {
+          to: [{ email: userEmail, name: userName }],
+          subject: '',
+          html: '',
+          templateId: 'order_shipped',
+          templateData: {
+            userName,
+            orderNumber: orderData.orderNumber,
+            orderId: orderData.orderId,
+            trackingNumber: orderData.trackingNumber,
+            trackingUrl: orderData.trackingUrl,
+            hasTrackingNumber: !!orderData.trackingNumber,
+            estimatedDeliveryDate: orderData.estimatedDeliveryDate,
+            hasEstimatedDelivery: !!orderData.estimatedDeliveryDate,
+            shippingMethod: orderData.shippingMethod,
+            shippingAddress: orderData.shippingAddress,
+            shippedDate: orderData.shippedDate,
+            storeName: orderData.storeName,
+            items: orderData.items,
+            itemCount: orderData.items.length,
+          },
+          priority: EmailPriority.HIGH,
+          tags: ['order', 'shipped'],
+        },
+      },
+      { priority: EmailPriority.HIGH, ...options }
+    );
+  }
+
+  /**
+   * Send order delivered email
+   */
+  async sendOrderDelivered(
+    userEmail: string,
+    userName: string,
+    orderData: {
+      orderId: string;
+      orderNumber: string;
+      deliveredDate: string;
+      shippingAddress: string;
+      reviewUrl: string;
+      supportUrl: string;
+      storeName: string;
+      items: Array<{
+        name: string;
+        quantity: number;
+      }>;
+    },
+    options?: QueueOptions
+  ): Promise<string> {
+    return this.scheduleJob(
+      EmailJobType.ORDER_DELIVERED,
+      {
+        type: EmailJobType.ORDER_DELIVERED,
+        emailData: {
+          to: [{ email: userEmail, name: userName }],
+          subject: '',
+          html: '',
+          templateId: 'order_delivered',
+          templateData: {
+            userName,
+            orderNumber: orderData.orderNumber,
+            orderId: orderData.orderId,
+            deliveredDate: orderData.deliveredDate,
+            shippingAddress: orderData.shippingAddress,
+            reviewUrl: orderData.reviewUrl,
+            supportUrl: orderData.supportUrl,
+            storeName: orderData.storeName,
+            items: orderData.items,
+            itemCount: orderData.items.length,
+            hasMultipleItems: orderData.items.length > 1,
+          },
+          priority: EmailPriority.NORMAL,
+          tags: ['order', 'delivered'],
+        },
+      },
+      { priority: EmailPriority.NORMAL, ...options }
+    );
+  }
+
+  /**
+   * Send order cancelled email
+   */
+  async sendOrderCancelled(
+    userEmail: string,
+    userName: string,
+    orderData: {
+      orderId: string;
+      orderNumber: string;
+      cancelledDate: string;
+      cancellationReason?: string;
+      refundAmount: number;
+      refundMethod?: string;
+      storeName: string;
+      items: Array<{
+        productName: string;
+        sku: string;
+        quantity: number;
+        unitPrice: number;
+        lineTotal: number;
+      }>;
+    },
+    options?: QueueOptions
+  ): Promise<string> {
+    return this.scheduleJob(
+      EmailJobType.ORDER_CANCELLED,
+      {
+        type: EmailJobType.ORDER_CANCELLED,
+        emailData: {
+          to: [{ email: userEmail, name: userName }],
+          subject: '',
+          html: '',
+          templateId: 'order_cancelled',
+          templateData: {
+            userName,
+            orderNumber: orderData.orderNumber,
+            orderId: orderData.orderId,
+            cancelledDate: orderData.cancelledDate,
+            cancellationReason: orderData.cancellationReason,
+            hasCancellationReason: !!orderData.cancellationReason,
+            refundAmount: orderData.refundAmount,
+            refundMethod: orderData.refundMethod || 'Original payment method',
+            storeName: orderData.storeName,
+            items: orderData.items,
+            itemCount: orderData.items.length,
+          },
+          priority: EmailPriority.HIGH,
+          tags: ['order', 'cancelled'],
+        },
+      },
+      { priority: EmailPriority.HIGH, ...options }
+    );
+  }
+
+  /**
+   * Send news notification email
+   */
+  async sendNewsNotification(
+    userEmail: string,
+    userName: string,
+    newsData: {
+      newsId: string;
+      title: string;
+      excerpt: string;
+      content: string;
+      authorName: string;
+      publishedAt: string;
+      newsUrl: string;
+      coverImageUrl?: string;
+      category?: string;
+      storeName: string;
+      unsubscribeUrl: string;
+    },
+    options?: QueueOptions
+  ): Promise<string> {
+    return this.scheduleJob(
+      EmailJobType.NEWS_PUBLISHED,
+      {
+        type: EmailJobType.NEWS_PUBLISHED,
+        emailData: {
+          to: [{ email: userEmail, name: userName }],
+          subject: '',
+          html: '',
+          templateId: 'news_published',
+          templateData: {
+            userName,
+            newsTitle: newsData.title,
+            newsExcerpt: newsData.excerpt,
+            newsContent: newsData.content,
+            authorName: newsData.authorName,
+            publishedAt: newsData.publishedAt,
+            newsUrl: newsData.newsUrl,
+            coverImageUrl: newsData.coverImageUrl,
+            hasCoverImage: !!newsData.coverImageUrl,
+            category: newsData.category,
+            hasCategory: !!newsData.category,
+            storeName: newsData.storeName,
+            unsubscribeUrl: newsData.unsubscribeUrl,
+          },
+          priority: EmailPriority.NORMAL,
+          tags: ['news', 'announcement'],
+        },
+      },
+      { priority: EmailPriority.NORMAL, ...options }
     );
   }
 

@@ -26,14 +26,7 @@ export class GuardUserRepository implements IUserRepository {
     if (!id) return null;
     return this.userRepo.findOne({
       where: { id },
-      relations: [
-        'roles', // user_roles join rows
-        'roles.roleName', // actual Role entity
-        'roles.store', // store scope for the user role (if any)
-        'carts',
-        'orders',
-        'aiLogs',
-      ],
+      relations: ['roles', 'carts', 'orders', 'aiLogs'],
     });
   }
 }

@@ -13,7 +13,9 @@ export class SMTPProvider implements EmailProvider {
   readonly name = 'smtp';
   private readonly logger = new Logger(SMTPProvider.name);
 
-  constructor(private readonly mailerService: MailerService) {}
+  constructor(private readonly mailerService: MailerService) {
+    this.healthCheck().then();
+  }
 
   async send(emailData: EmailData): Promise<EmailSendResult> {
     try {

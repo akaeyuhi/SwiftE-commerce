@@ -44,25 +44,12 @@ export class AuthController {
     @Res() res: Response
   ) {
     const result = await this.authService.register(dto, req);
-    const {
-      accessToken,
-      refreshToken,
-      csrfToken,
-      user,
-      message,
-      requiresVerification,
-    } = result;
+    const { refreshToken, csrfToken } = result;
 
     setRefreshCookie(res, refreshToken);
     setCsrfCookie(res, csrfToken);
 
-    return res.status(201).json({
-      success: true,
-      accessToken,
-      user,
-      message,
-      requiresVerification,
-    });
+    return res.json(result);
   }
 
   @Post('login')
@@ -72,18 +59,12 @@ export class AuthController {
     @Res() res: Response
   ) {
     const result = await this.authService.login(dto, req);
-    const { accessToken, refreshToken, csrfToken, user, pendingConfirmations } =
-      result;
+    const { refreshToken, csrfToken } = result;
 
     setRefreshCookie(res, refreshToken);
     setCsrfCookie(res, csrfToken);
 
-    return res.json({
-      success: true,
-      accessToken,
-      user,
-      pendingConfirmations,
-    });
+    return res.json(result);
   }
 
   @UseGuards(AuthGuard('jwt-refresh'))
@@ -125,7 +106,7 @@ export class AuthController {
   async logout(
     @Req() req: Request,
     @Res() res: Response,
-    @Body() dto: RefreshDto
+    @Body() dto?: RefreshDto
   ) {
     const token = extractRefreshTokenFromReq(req) || dto?.refreshToken;
     if (token) {

@@ -8,15 +8,15 @@ import { BaseService } from 'src/common/abstracts/base.service';
 
 import { User } from 'src/entities/user/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateProfileDto, UpdateUserDto } from './dto/update-user.dto';
 import { UserDto } from './dto/user.dto';
 import { UserMapper } from 'src/modules/user/user.mapper';
 import * as bcrypt from 'bcrypt';
-import { UserRole } from 'src/entities/user/policy/user-role.entity';
+import { StoreRole } from 'src/entities/user/authentication/store-role.entity';
 import { CreateStoreDto } from 'src/modules/store/dto/create-store.dto';
 import { StoreService } from 'src/modules/store/store.service';
 import { StoreDto } from 'src/modules/store/dto/store.dto';
-import { UserRoleService } from 'src/modules/user/user-role/user-role.service';
+import { StoreRoleService } from 'src/modules/store/store-role/store-role.service';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { AdminRoles } from 'src/common/enums/admin.enum';
 
@@ -29,7 +29,7 @@ export class UserService extends BaseService<
 > {
   constructor(
     private readonly userRepo: UserRepository,
-    private readonly userRoleService: UserRoleService,
+    private readonly storeRoleService: StoreRoleService,
     private readonly storeService: StoreService,
     protected readonly mapper: UserMapper
   ) {
@@ -45,9 +45,13 @@ export class UserService extends BaseService<
     return this.mapper.toDto(saved);
   }
 
+  async findUser(id: string): Promise<User | null> {
+    return this.userRepo.findById(id);
+  }
+
   async update(id: string, dto: UpdateUserDto): Promise<UserDto> {
     const user = await this.userRepo.findOneBy({ id });
-    if (!user) throw new NotFoundException('User not found');
+    if (!user) throw new NotFoundException(`User with ${id} not found`);
     if (dto.password) {
       user.passwordHash = await bcrypt.hash(dto.password, 10);
     }
@@ -58,7 +62,7 @@ export class UserService extends BaseService<
 
   async findByEmail(email: string): Promise<UserDto> {
     const user = await this.userRepo.findOneBy({ email });
-    if (!user) throw new NotFoundException('User not found');
+    if (!user) throw new NotFoundException(`User with ${email} not found`);
     return this.mapper.toDto(user);
   }
 
@@ -69,7 +73,15 @@ export class UserService extends BaseService<
   async findOneWithRelations(id: string): Promise<User> {
     const user = await this.userRepo.findOneWithRelations(id);
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException(`User with id ${id} not found`);
+    }
+    return user;
+  }
+
+  async findOneWithRoles(id: string): Promise<User> {
+    const user = await this.userRepo.findOneWithRelations(id);
+    if (!user) {
+      throw new NotFoundException(`User with id ${id} not found`);
     }
     return user;
   }
@@ -79,17 +91,17 @@ export class UserService extends BaseService<
     roleName: StoreRoles,
     storeId: string,
     assignedBy?: string
-  ): Promise<UserRole> {
-    const user = await this.getEntityById(userId);
+  ): Promise<StoreRole> {
+    const user = await this.findOneWithRoles(userId);
     if (!user) throw new NotFoundException('User not found');
 
     const store = await this.storeService.getEntityById(storeId);
     if (!store) throw new NotFoundException('Store not found');
 
-    const exists = await this.userRoleService.findByStoreUser(userId, storeId);
+    const exists = await this.storeRoleService.findByStoreUser(userId, storeId);
     if (exists) throw new BadRequestException('Role already assigned');
 
-    const userRole = await this.userRoleService.assignStoreRole(
+    const userRole = await this.storeRoleService.assignStoreRole(
       userId,
       storeId,
       roleName,
@@ -101,27 +113,32 @@ export class UserService extends BaseService<
 
   async revokeStoreRole(
     userId: string,
-    roleId: string,
+    roleName: StoreRoles,
     storeId?: string
-  ): Promise<void> {
-    await this.userRepo.removeRoleFromUser(userId, roleId, storeId);
+  ): Promise<{ success: true }> {
+    try {
+      await this.userRepo.removeRoleFromUser(userId, roleName, storeId);
+      return { success: true };
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
   }
 
   async createStore(ownerId: string, dto: CreateStoreDto): Promise<StoreDto> {
-    const owner = await this.getEntityById(ownerId);
+    const owner = await this.findOneWithRelations(ownerId);
     if (!owner) throw new NotFoundException('Store owner not found');
 
-    dto.owner = owner;
-
-    const store = await this.storeService.create(dto);
+    const store = await this.storeService.create({ ...dto, ownerId });
 
     await this.assignStoreRole(owner.id, StoreRoles.ADMIN, store.id!);
+
+    await this.userRepo.addStoresToUser(owner, store);
 
     return store;
   }
 
   async getUserStoreRoles(userId: string) {
-    const user = await this.findOneWithRelations(userId);
+    const user = await this.findOneWithRoles(userId);
     return user.roles;
   }
 
@@ -173,14 +190,14 @@ export class UserService extends BaseService<
     storeId: string,
     roleName: StoreRoles
   ): Promise<boolean> {
-    return this.userRoleService.userHasStoreRole(userId, storeId, roleName);
+    return this.storeRoleService.userHasStoreRole(userId, storeId, roleName);
   }
 
   /**
    * Check if user is store admin (delegates to UserRoleService)
    */
   async userIsStoreAdmin(userId: string, storeId: string): Promise<boolean> {
-    return this.userRoleService.userIsStoreAdmin(userId, storeId);
+    return this.storeRoleService.userIsStoreAdmin(userId, storeId);
   }
 
   /**
@@ -195,9 +212,10 @@ export class UserService extends BaseService<
     emailVerifiedAt?: Date;
     storeRoles?: any[];
     createdAt: Date;
+    updatedAt?: Date;
   } | null> {
     const user = await this.getEntityById(userId);
-    if (!user) return null;
+    if (!user) throw new NotFoundException('User not found');
 
     const storeRoles = await this.getUserStoreRoles(userId);
 
@@ -214,6 +232,7 @@ export class UserService extends BaseService<
         roleName: role.roleName,
         assignedAt: role.assignedAt,
       })),
+      updatedAt: user.updatedAt,
       createdAt: user.createdAt,
     };
   }
@@ -223,10 +242,7 @@ export class UserService extends BaseService<
    */
   async updateProfile(
     userId: string,
-    updates: {
-      firstName?: string;
-      lastName?: string;
-    }
+    updates: UpdateProfileDto
   ): Promise<User | null> {
     const user = await this.findOne(userId);
     if (!user) {

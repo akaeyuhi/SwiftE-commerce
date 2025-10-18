@@ -1,0 +1,79 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: predictor-retrain
+  namespace: predictor
+spec:
+  # Run weekly on Sunday at 2 AM
+  schedule: "0 2 * * 0"
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+
+          containers:
+            # Container 1: Export
+            - name: export
+              image: predictor-export:latest
+              command:
+                - sh
+                - -c
+                - |
+                  # Calculate date range (last 90 days)
+                  END_DATE=$(date -u +%Y-%m-%d)
+                  START_DATE=$(date -u -d "90 days ago" +%Y-%m-%d)
+                  
+                  echo "Exporting features from $START_DATE to $END_DATE"
+                  python -m predictor.export_features \
+                    --start "$START_DATE" \
+                    --end "$END_DATE" \
+                    --out /data/features.csv
+
+              envFrom:
+                - configMapRef:
+                    name: predictor-config
+                - secretRef:
+                    name: predictor-secret
+
+              volumeMounts:
+                - name: data
+                  mountPath: /data
+
+            # Container 2: Train (runs after export)
+            - name: train
+              image: predictor-train:latest
+              command:
+                - sh
+                - -c
+                - |
+                  # Wait for features.csv
+                  while [ ! -f /data/features.csv ]; do
+                    echo "Waiting for features.csv..."
+                    sleep 10
+                  done
+                  
+                  echo "Training model..."
+                  python -m predictor.train_model \
+                    --in /data/features.csv \
+                    --model lightgbm \
+                    --out /models/model.bin
+                  
+                  # Trigger rollout restart
+                  echo "Model saved. Triggering deployment restart..."
+
+              volumeMounts:
+                - name: data
+                  mountPath: /data
+                - name: models
+                  mountPath: /models
+
+          volumes:
+            - name: data
+              persistentVolumeClaim:
+                claimName: predictor-data-pvc
+            - name: models
+              persistentVolumeClaim:
+                claimName: predictor-models-pvc

@@ -4,6 +4,8 @@ import {
   IsUUID,
   IsBoolean,
   IsDateString,
+  MinLength,
+  MaxLength,
 } from 'class-validator';
 
 /**
@@ -23,9 +25,13 @@ export class CreateNewsDto {
   authorId?: string;
 
   @IsString()
+  @MinLength(3)
+  @MaxLength(200)
   title: string;
 
   @IsString()
+  @MinLength(10)
+  @MaxLength(10000)
   content: string;
 
   @IsOptional()

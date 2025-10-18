@@ -3,12 +3,16 @@ import { DataSource } from 'typeorm';
 import { BaseRepository } from 'src/common/abstracts/base.repository';
 import { AiLog } from 'src/entities/ai/ai-log.entity';
 import {
-  LogQueryOptions,
+  DailyUsageStats,
+  ErrorLogsFilterOptions,
+  LogDailyUsageFilterOptions,
+  LogFilterOptions,
+  LogTopFeaturesFilterOptions,
+  LogUsageStatsFilterOptions,
   UsageStats,
-} from 'src/common/interfaces/ai/ai-log.interface';
-
+} from 'src/modules/ai/ai-logs/types';
 /**
- * Enhanced AiLogsRepository with advanced querying and statistics
+ * AiLogsRepository with advanced querying and statistics
  */
 @Injectable()
 export class AiLogsRepository extends BaseRepository<AiLog> {
@@ -19,28 +23,18 @@ export class AiLogsRepository extends BaseRepository<AiLog> {
   /**
    * Find logs with comprehensive filtering options
    */
-  async findByFilter(
-    filter: {
-      storeId?: string;
-      userId?: string;
-      feature?: string;
-      dateFrom?: Date;
-      dateTo?: Date;
-      hasDetails?: boolean;
-    },
-    options: LogQueryOptions = {}
-  ): Promise<AiLog[]> {
+  async findByFilter(filter: LogFilterOptions): Promise<AiLog[]> {
     const qb = this.createQueryBuilder('l')
       .leftJoinAndSelect('l.user', 'u')
       .leftJoinAndSelect('l.store', 's')
       .orderBy('l.createdAt', 'DESC');
 
     if (filter.storeId) {
-      qb.andWhere('s.id = :storeId', { storeId: filter.storeId });
+      qb.andWhere('l.storeId = :storeId', { storeId: filter.storeId });
     }
 
     if (filter.userId) {
-      qb.andWhere('u.id = :userId', { userId: filter.userId });
+      qb.andWhere('l.userId = :userId', { userId: filter.userId });
     }
 
     if (filter.feature) {
@@ -63,12 +57,12 @@ export class AiLogsRepository extends BaseRepository<AiLog> {
       }
     }
 
-    if (options.limit) {
-      qb.limit(options.limit);
+    if (filter.limit) {
+      qb.limit(filter.limit);
     }
 
-    if (options.offset) {
-      qb.offset(options.offset);
+    if (filter.offset) {
+      qb.offset(filter.offset);
     }
 
     return qb.getMany();
@@ -78,13 +72,7 @@ export class AiLogsRepository extends BaseRepository<AiLog> {
    * Get comprehensive usage statistics
    */
   async getUsageStats(
-    filters: {
-      storeId?: string;
-      userId?: string;
-      feature?: string;
-      dateFrom?: Date;
-      dateTo?: Date;
-    } = {}
+    filters: LogUsageStatsFilterOptions = {}
   ): Promise<UsageStats> {
     const qb = this.createQueryBuilder('l')
       .leftJoin('l.user', 'u')
@@ -119,12 +107,7 @@ export class AiLogsRepository extends BaseRepository<AiLog> {
    */
   async getTopFeatures(
     limit: number = 10,
-    filters: {
-      storeId?: string;
-      userId?: string;
-      dateFrom?: Date;
-      dateTo?: Date;
-    } = {}
+    filters: LogTopFeaturesFilterOptions = {}
   ): Promise<Array<{ feature: string; count: number; percentage: number }>> {
     const qb = this.createQueryBuilder('l')
       .select(['l.feature', 'COUNT(*) as count'])
@@ -165,20 +148,8 @@ export class AiLogsRepository extends BaseRepository<AiLog> {
    */
   async getDailyUsage(
     days: number = 30,
-    filters: {
-      storeId?: string;
-      userId?: string;
-      feature?: string;
-    } = {}
-  ): Promise<
-    Array<{
-      date: string;
-      count: number;
-      uniqueUsers: number;
-      uniqueStores: number;
-      topFeatures: string[];
-    }>
-  > {
+    filters: LogDailyUsageFilterOptions = {}
+  ): Promise<Array<DailyUsageStats>> {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
@@ -230,13 +201,7 @@ export class AiLogsRepository extends BaseRepository<AiLog> {
    */
   async getErrorLogs(
     limit: number = 100,
-    filters: {
-      storeId?: string;
-      userId?: string;
-      feature?: string;
-      dateFrom?: Date;
-      dateTo?: Date;
-    } = {}
+    filters: ErrorLogsFilterOptions = {}
   ): Promise<AiLog[]> {
     const qb = this.createQueryBuilder('l')
       .leftJoinAndSelect('l.user', 'u')

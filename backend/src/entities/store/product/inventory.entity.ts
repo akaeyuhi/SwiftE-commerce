@@ -5,6 +5,8 @@ import {
   ManyToOne,
   CreateDateColumn,
   UpdateDateColumn,
+  OneToOne,
+  JoinColumn,
 } from 'typeorm';
 import { ProductVariant } from 'src/entities/store/product/variant.entity';
 import { Store } from 'src/entities/store/store.entity';
@@ -23,12 +25,20 @@ export class Inventory implements StoreOwnedEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => ProductVariant, (variant) => variant.inventories, {
+  @Column({ name: 'variant_id', type: 'uuid' })
+  variantId: string;
+
+  @OneToOne(() => ProductVariant, (variant) => variant.inventory, {
     onDelete: 'CASCADE',
   })
+  @JoinColumn({ name: 'variant_id', referencedColumnName: 'id' })
   variant: ProductVariant;
 
+  @Column({ name: 'store_id', type: 'uuid' })
+  storeId: string;
+
   @ManyToOne(() => Store, (store) => store.inventories, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'store_id', referencedColumnName: 'id' })
   store: Store;
 
   @Column({ type: 'int', default: 0 })

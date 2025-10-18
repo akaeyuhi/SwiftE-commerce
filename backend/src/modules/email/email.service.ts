@@ -7,7 +7,7 @@ import {
 import { EmailTemplatesService } from './templates/email-templates.service';
 import { SendGridProvider } from './providers/sendgrid.provider';
 import { SMTPProvider } from './providers/smtp.provider';
-import {EmailJobType} from "src/common/enums/email.enum";
+import { EmailJobType } from 'src/common/enums/email.enum';
 
 @Injectable()
 export class EmailService {

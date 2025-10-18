@@ -4,17 +4,19 @@ import { BaseAnalyticsRepository } from 'src/common/abstracts/analytics/base.ana
 import {
   AnalyticsEvent,
   AnalyticsEventType,
-} from '../entities/analytics-event.entity';
+} from 'src/entities/infrastructure/analytics/analytics-event.entity';
 import { DateRangeOptions } from 'src/common/interfaces/infrastructure/analytics.interface';
 import {
+  EventUserJourney,
   ProductMetrics,
   StoreMetrics,
   TopProductResult,
 } from 'src/modules/analytics/types';
+
 /**
  * AnalyticsEventRepository
  *
- * Enhanced repository for raw analytics events with improved query patterns,
+ * Repository for raw analytics events with improved query patterns,
  * better type safety, and reusable aggregation methods.
  */
 @Injectable()
@@ -39,8 +41,12 @@ export class AnalyticsEventRepository extends BaseAnalyticsRepository<AnalyticsE
   ): Promise<ProductMetrics> {
     const qb = this.createQueryBuilder('e')
       .select([
-        ...this.buildMetricSelections(['views', 'purchases', 'addToCarts']),
-        ...this.buildValueSelections(['purchases']),
+        ...this.buildMetricSelections([
+          AnalyticsEventType.VIEW,
+          AnalyticsEventType.PURCHASE,
+          AnalyticsEventType.ADD_TO_CART,
+        ]),
+        ...this.buildValueSelections([AnalyticsEventType.PURCHASE]),
       ])
       .where('e.productId = :productId', { productId })
       .setParameters({
@@ -58,7 +64,7 @@ export class AnalyticsEventRepository extends BaseAnalyticsRepository<AnalyticsE
       views: parsed.views || 0,
       purchases: parsed.purchases || 0,
       addToCarts: parsed.addToCarts || 0,
-      revenue: parsed.purchases_value || 0,
+      revenue: parsed.purchasesValue || 0,
     };
   }
 
@@ -72,12 +78,12 @@ export class AnalyticsEventRepository extends BaseAnalyticsRepository<AnalyticsE
     const qb = this.createQueryBuilder('e')
       .select([
         ...this.buildMetricSelections([
-          'views',
-          'purchases',
-          'addToCarts',
-          'checkouts',
+          AnalyticsEventType.VIEW,
+          AnalyticsEventType.PURCHASE,
+          AnalyticsEventType.ADD_TO_CART,
+          AnalyticsEventType.CHECKOUT,
         ]),
-        ...this.buildValueSelections(['purchases']),
+        ...this.buildValueSelections([AnalyticsEventType.PURCHASE]),
       ])
       .where('e.storeId = :storeId', { storeId })
       .setParameters({
@@ -97,7 +103,7 @@ export class AnalyticsEventRepository extends BaseAnalyticsRepository<AnalyticsE
       purchases: parsed.purchases || 0,
       addToCarts: parsed.addToCarts || 0,
       checkouts: parsed.checkouts || 0,
-      revenue: parsed.purchases_value || 0,
+      revenue: parsed.purchasesValue || 0,
     };
   }
 
@@ -201,6 +207,89 @@ export class AnalyticsEventRepository extends BaseAnalyticsRepository<AnalyticsE
       eventType: r.eventType,
       count: Number(r.count || 0),
     }));
+  }
+
+  async getRevenueTrends(storeId?: string, from?: string, to?: string) {
+    const query = this.createQueryBuilder('event')
+      .select('DATE(event.createdAt)', 'date')
+      .addSelect('SUM(event.value)', 'revenue')
+      .addSelect('COUNT(*)', 'transactions')
+      .where('event.eventType = :type', { type: 'purchase' })
+      .groupBy('DATE(event.createdAt)')
+      .orderBy('date', 'ASC');
+
+    if (storeId) query.andWhere('event.storeId = :storeId', { storeId });
+    if (from) query.andWhere('event.createdAt >= :from', { from });
+    if (to) query.andWhere('event.createdAt <= :to', { to });
+
+    const results = await query.getRawMany();
+
+    // Transform to camelCase
+    return results.map((row) => ({
+      date: row.date,
+      revenue: parseFloat(row.revenue || '0'),
+      transactions: parseInt(row.transactions || '0'),
+    }));
+  }
+
+  async getFunnelData(
+    storeId?: string,
+    productId?: string,
+    from?: string,
+    to?: string
+  ) {
+    const baseQuery = this.createQueryBuilder('event');
+
+    if (storeId) baseQuery.andWhere('event.storeId = :storeId', { storeId });
+    if (productId)
+      baseQuery.andWhere('event.productId = :productId', { productId });
+    if (from) baseQuery.andWhere('event.createdAt >= :from', { from });
+    if (to) baseQuery.andWhere('event.createdAt <= :to', { to });
+
+    return Promise.all([
+      baseQuery
+        .clone()
+        .andWhere('event.eventType = :type', { type: 'view' })
+        .getCount(),
+      baseQuery
+        .clone()
+        .andWhere('event.eventType = :type', { type: 'addToCart' })
+        .getCount(),
+      baseQuery
+        .clone()
+        .andWhere('event.eventType = :type', { type: 'purchase' })
+        .getCount(),
+    ]);
+  }
+
+  async getEventsForUserJourney(
+    storeId?: string,
+    from?: string,
+    to?: string
+  ): Promise<EventUserJourney[]> {
+    // Build base query
+    const qb = this.createQueryBuilder('event')
+      .select('event.userId', 'userId')
+      .addSelect('event.eventType', 'eventType')
+      .addSelect('event.productId', 'productId')
+      .addSelect('event.createdAt', 'timestamp')
+      .where('event.userId IS NOT NULL');
+
+    if (storeId) {
+      qb.andWhere('event.storeId = :storeId', { storeId });
+    }
+    if (from) {
+      qb.andWhere('event.createdAt >= :from', { from });
+    }
+    if (to) {
+      qb.andWhere('event.createdAt <= :to', { to });
+    }
+
+    qb.orderBy('event.userId', 'ASC')
+      .addOrderBy('event.createdAt', 'ASC')
+      .limit(10000); // Limit for performance
+
+    return await qb.getRawMany();
   }
 
   /**

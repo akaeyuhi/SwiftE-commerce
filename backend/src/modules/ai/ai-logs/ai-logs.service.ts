@@ -5,20 +5,19 @@ import { CreateAiLogDto } from './dto/create-ai-log.dto';
 import { UpdateAiLogDto } from './dto/update-ai-log.dto';
 import { AiLogsRepository } from 'src/modules/ai/ai-logs/ai-logs.repository';
 import {
-  LogQueryOptions,
+  ErrorLogsFilterOptions,
+  HealthCheckReport,
+  LogDailyUsageFilterOptions,
+  LogFilterOptions,
+  LogTopFeaturesFilterOptions,
+  LogUsageStatsFilterOptions,
+  RecordAiLogParams,
   UsageStats,
-} from 'src/common/interfaces/ai/ai-log.interface';
-
-export interface RecordAiLogParams {
-  userId?: string | null;
-  storeId?: string | null;
-  feature: string;
-  prompt?: string | null;
-  details?: Record<string, any> | null;
-}
+  UsageTrend,
+} from 'src/modules/ai/ai-logs/types';
 
 /**
- * Enhanced AiLogsService with comprehensive logging capabilities
+ * AiLogsService with comprehensive logging capabilities
  *
  * Extends BaseService for CRUD operations and adds:
  * - Smart prompt sanitization
@@ -79,11 +78,11 @@ export class AiLogsService extends BaseService<
       };
 
       if (sanitizedParams.userId) {
-        payload.user = { id: sanitizedParams.userId };
+        payload.userId = sanitizedParams.userId;
       }
 
       if (sanitizedParams.storeId) {
-        payload.store = { id: sanitizedParams.storeId };
+        payload.storeId = sanitizedParams.storeId;
       }
 
       const saved = await this.logRepo.createEntity(payload);
@@ -137,31 +136,15 @@ export class AiLogsService extends BaseService<
   /**
    * Enhanced query with comprehensive filtering
    */
-  async findByFilter(
-    filter: {
-      storeId?: string;
-      userId?: string;
-      feature?: string;
-      dateFrom?: Date;
-      dateTo?: Date;
-      hasDetails?: boolean;
-    },
-    options: LogQueryOptions = {}
-  ): Promise<AiLog[]> {
-    return this.logRepo.findByFilter(filter, options);
+  async findByFilter(filters: LogFilterOptions = {}): Promise<AiLog[]> {
+    return this.logRepo.findByFilter(filters);
   }
 
   /**
    * Get comprehensive usage statistics
    */
   async getUsageStats(
-    filters: {
-      storeId?: string;
-      userId?: string;
-      feature?: string;
-      dateFrom?: Date;
-      dateTo?: Date;
-    } = {}
+    filters: LogUsageStatsFilterOptions = {}
   ): Promise<UsageStats> {
     return this.logRepo.getUsageStats(filters);
   }
@@ -171,12 +154,7 @@ export class AiLogsService extends BaseService<
    */
   async getTopFeatures(
     limit: number = 10,
-    filters: {
-      storeId?: string;
-      userId?: string;
-      dateFrom?: Date;
-      dateTo?: Date;
-    } = {}
+    filters: LogTopFeaturesFilterOptions = {}
   ) {
     return this.logRepo.getTopFeatures(limit, filters);
   }
@@ -186,11 +164,7 @@ export class AiLogsService extends BaseService<
    */
   async getDailyUsage(
     days: number = 30,
-    filters: {
-      storeId?: string;
-      userId?: string;
-      feature?: string;
-    } = {}
+    filters: LogDailyUsageFilterOptions = {}
   ) {
     return this.logRepo.getDailyUsage(days, filters);
   }
@@ -200,13 +174,7 @@ export class AiLogsService extends BaseService<
    */
   async getErrorLogs(
     limit: number = 100,
-    filters: {
-      storeId?: string;
-      userId?: string;
-      feature?: string;
-      dateFrom?: Date;
-      dateTo?: Date;
-    } = {}
+    filters: ErrorLogsFilterOptions = {}
   ) {
     return this.logRepo.getErrorLogs(limit, filters);
   }
@@ -220,12 +188,7 @@ export class AiLogsService extends BaseService<
       storeId?: string;
       userId?: string;
     } = {}
-  ): Promise<{
-    trend: 'up' | 'down' | 'stable';
-    changePercentage: number;
-    insights: string[];
-    recommendations: string[];
-  }> {
+  ): Promise<UsageTrend> {
     const endDate = new Date();
     const startDate = new Date(endDate.getTime() - days * 24 * 60 * 60 * 1000);
     const midDate = new Date(
@@ -309,23 +272,14 @@ export class AiLogsService extends BaseService<
   /**
    * Health check for logging service
    */
-  async healthCheck(): Promise<{
-    healthy: boolean;
-    metrics: {
-      recentLogsCount: number;
-      errorRate: number;
-      averageLogSize: number;
-    };
-  }> {
+  async healthCheck(): Promise<HealthCheckReport> {
     try {
       const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-      const recentLogs = await this.findByFilter(
-        {
-          dateFrom: oneDayAgo,
-        },
-        { limit: 1000 }
-      );
+      const recentLogs = await this.findByFilter({
+        dateFrom: oneDayAgo,
+        limit: 1000,
+      });
 
       const errorLogs = await this.getErrorLogs(100, {
         dateFrom: oneDayAgo,
@@ -429,7 +383,16 @@ export class AiLogsService extends BaseService<
   }
 
   private sanitizeObject(obj: any): any {
-    if (typeof obj !== 'object' || obj === null) {
+    // Handle primitives
+    if (obj === null || obj === undefined) {
+      return obj;
+    }
+
+    if (typeof obj === 'string') {
+      return this.sanitizeText(obj);
+    }
+
+    if (typeof obj !== 'object') {
       return obj;
     }
 
@@ -446,13 +409,7 @@ export class AiLogsService extends BaseService<
         continue;
       }
 
-      if (typeof value === 'string') {
-        sanitized[key] = this.sanitizeText(value);
-      } else if (typeof value === 'object') {
-        sanitized[key] = this.sanitizeObject(value);
-      } else {
-        sanitized[key] = value;
-      }
+      sanitized[key] = this.sanitizeObject(value); // Recursive call handles all types now
     }
 
     return sanitized;

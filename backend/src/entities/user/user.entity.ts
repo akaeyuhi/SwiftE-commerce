@@ -5,8 +5,9 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
+  Index,
 } from 'typeorm';
-import { UserRole } from 'src/entities/user/policy/user-role.entity';
+import { StoreRole } from 'src/entities/user/authentication/store-role.entity';
 import { ShoppingCart } from 'src/entities/store/cart/cart.entity';
 import { Order } from 'src/entities/store/product/order.entity';
 import { Review } from 'src/entities/store/review.entity';
@@ -16,8 +17,11 @@ import { BaseEntity } from 'src/common/interfaces/crud/base-entity.interface';
 import { AdminRoles } from 'src/common/enums/admin.enum';
 import { Store } from 'src/entities/store/store.entity';
 import { Like } from 'src/entities/user/like.entity';
+import { Exclude } from 'class-transformer';
 
 @Entity({ name: 'users' })
+@Index(['email'])
+@Index(['isActive', 'createdAt'])
 export class User implements BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -31,7 +35,8 @@ export class User implements BaseEntity {
   @Column({ type: 'varchar', length: 100, nullable: true })
   lastName: string;
 
-  @Column({ type: 'text' })
+  @Column({ type: 'text', select: false })
+  @Exclude()
   passwordHash: string;
 
   @Column({ default: false })
@@ -61,27 +66,27 @@ export class User implements BaseEntity {
 
   // Relations
 
-  @OneToMany(() => Store, (store) => store.owner)
+  @OneToMany(() => Store, (store) => store.owner, { cascade: true })
   ownedStores: Store[];
 
-  @OneToMany(() => UserRole, (ur) => ur.user)
-  roles: UserRole[];
+  @OneToMany(() => StoreRole, (sr) => sr.user, { cascade: true })
+  roles: StoreRole[];
 
-  @OneToMany(() => ShoppingCart, (cart) => cart.user)
+  @OneToMany(() => ShoppingCart, (cart) => cart.user, { cascade: true })
   carts: ShoppingCart[];
 
-  @OneToMany(() => Order, (order) => order.user)
+  @OneToMany(() => Order, (order) => order.user, { cascade: true })
   orders: Order[];
 
-  @OneToMany(() => Review, (review) => review.user)
+  @OneToMany(() => Review, (review) => review.user, { cascade: true })
   reviews: Review[];
 
-  @OneToMany(() => NewsPost, (post) => post.author)
+  @OneToMany(() => NewsPost, (post) => post.author, { cascade: true })
   newsPosts: NewsPost[];
 
-  @OneToMany(() => AiLog, (log) => log.user)
+  @OneToMany(() => AiLog, (log) => log.user, { cascade: true })
   aiLogs: AiLog[];
 
-  @OneToMany(() => Like, (like) => like.user)
+  @OneToMany(() => Like, (like) => like.user, { cascade: true })
   likes: Like[];
 }

@@ -89,9 +89,26 @@ export abstract class BaseQueueService<JobData = any, JobResult = any> {
    * @param jobId - identifier of the job to check
    * @returns Promise resolving to job details or null if not found
    */
-  protected abstract getJobStatus(
-    jobId: string
-  ): Promise<QueueJob<JobData> | null>;
+  protected async getJobStatus(jobId: string) {
+    const job = await this.queue.getJob(jobId);
+    if (!job) return null;
+
+    return {
+      id: job.id.toString(),
+      type: job.name,
+      data: job.data,
+      priority: job.opts.priority || 0,
+      attempts: job.attemptsMade,
+      maxAttempts: job.opts.attempts || 3,
+      delay: job.opts.delay || 0,
+      processedAt: job.processedOn ? new Date(job.processedOn) : undefined,
+      completedAt: job.finishedOn ? new Date(job.finishedOn) : undefined,
+      failedAt: job.failedReason ? new Date() : undefined,
+      error: job.failedReason,
+      progress: job.progress(),
+      state: await job.getState(),
+    };
+  }
 
   /**
    * Remove a job from the queue.

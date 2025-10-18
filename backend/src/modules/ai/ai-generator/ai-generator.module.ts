@@ -7,13 +7,14 @@ import { OpenAiProvider } from 'src/modules/ai/ai-generator/providers/open-ai.pr
 import { HttpModule as NestHttpModule } from '@nestjs/axios';
 import { AiAuditsModule } from 'src/modules/ai/ai-audit/ai-audit.module';
 import { AiLogsModule } from 'src/modules/ai/ai-logs/ai-logs.module';
+import { ConfigModule } from '@nestjs/config';
 
 /**
  * AiModule provider selection:
  * - set env AI_PROVIDER = 'hf' | 'openai'
  */
 @Module({
-  imports: [NestHttpModule, AiAuditsModule, AiLogsModule],
+  imports: [NestHttpModule, AiAuditsModule, AiLogsModule, ConfigModule],
   controllers: [AiGeneratorController],
   providers: [
     HuggingFaceProvider,

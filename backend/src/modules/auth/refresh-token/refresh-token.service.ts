@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { RefreshToken } from 'src/entities/user/policy/refresh-token.entity';
+import { RefreshToken } from 'src/entities/user/authentication/refresh-token.entity';
 import { User } from 'src/entities/user/user.entity';
 import * as crypto from 'crypto';
 import { RefreshTokenRepository } from 'src/modules/auth/refresh-token/refresh-token.repository';
@@ -19,7 +19,17 @@ export class RefreshTokenService {
     ip?: string;
     userAgent?: string;
   }) {
+    const existingToken = await this.findByToken(payload.token);
+
+    if (existingToken) {
+      existingToken.lastUsedAt = new Date();
+      existingToken.ip = payload.ip;
+      existingToken.userAgent = payload.userAgent;
+      return await this.tokenRepository.save(existingToken);
+    }
+
     const tokenHash = this.hashToken(payload.token);
+
     const rt = new RefreshToken();
     rt.tokenHash = tokenHash;
     rt.user = { id: payload.userId } as User;

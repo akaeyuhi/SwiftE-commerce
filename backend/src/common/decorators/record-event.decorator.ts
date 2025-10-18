@@ -1,6 +1,5 @@
-// src/common/decorators/record-event.decorator.ts
 import 'reflect-metadata';
-import { AnalyticsEventType } from 'src/modules/analytics/entities/analytics-event.entity';
+import { AnalyticsEventType } from 'src/entities/infrastructure/analytics/analytics-event.entity';
 
 export const RECORD_EVENT_META = 'record:event:meta';
 export const RECORD_EVENTS_MAP_META = 'record:events:map';

@@ -9,16 +9,44 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { AdminStatsController } from 'src/modules/analytics/controllers/admin-stats.controller';
 import { HttpModule } from '@nestjs/axios';
 import { ConfigModule } from '@nestjs/config';
+import { EventTrackingService } from 'src/modules/analytics/services/event-tracking.service';
+import { QuickStatsService } from 'src/modules/analytics/services/quick-stats.service';
+import { ConversionAnalyticsService } from 'src/modules/analytics/services/conversion-analytics.service';
+import { RatingAnalyticsService } from 'src/modules/analytics/services/rating-analytics.service';
+import { FunnelAnalyticsService } from 'src/modules/analytics/services/funnel-analytics.service';
+import { ComparisonAnalyticsService } from 'src/modules/analytics/services/comparison-analytics.service';
+import { PerformanceAnalyticsService } from 'src/modules/analytics/services/performance-analytics.service';
+import { DataSyncService } from 'src/modules/analytics/services/data-sync.service';
+import { HealthCheckService } from 'src/modules/analytics/services/health-check.service';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { Store } from 'src/entities/store/store.entity';
+import { Product } from 'src/entities/store/product/product.entity';
 
 @Module({
-  imports: [ScheduleModule.forRoot(), ConfigModule, HttpModule],
+  imports: [
+    TypeOrmModule.forFeature([Store, Product]),
+    ScheduleModule.forRoot(),
+    ConfigModule,
+    HttpModule,
+  ],
   providers: [
     AnalyticsService,
+
     AnalyticsEventRepository,
     StoreDailyStatsRepository,
     ProductDailyStatsRepository,
+
+    EventTrackingService,
+    QuickStatsService,
+    ConversionAnalyticsService,
+    RatingAnalyticsService,
+    FunnelAnalyticsService,
+    ComparisonAnalyticsService,
+    PerformanceAnalyticsService,
+    DataSyncService,
+    HealthCheckService,
   ],
-  controllers: [EventsController, AnalyticsController, AdminStatsController],
+  controllers: [AdminStatsController, EventsController, AnalyticsController],
   exports: [
     AnalyticsService,
     StoreDailyStatsRepository,

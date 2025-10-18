@@ -1,4 +1,3 @@
-// src/modules/ai/ai-predictor/ai-predictor.repository.ts
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { BaseRepository } from 'src/common/abstracts/base.repository';
@@ -9,7 +8,7 @@ import {
 } from 'src/common/interfaces/ai/predictor.interface';
 
 /**
- * Enhanced AiPredictorRepository with advanced query methods
+ * AiPredictorRepository with advanced query methods
  */
 @Injectable()
 export class AiPredictorRepository extends BaseRepository<AiPredictorStat> {

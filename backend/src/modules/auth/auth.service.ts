@@ -1,9 +1,9 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
-  BadRequestException,
 } from '@nestjs/common';
 import { UserService } from '../user/user.service';
 import { JwtService } from '@nestjs/jwt';
@@ -13,60 +13,31 @@ import { LoginDto } from './dto/login.dto';
 import { RefreshTokenService } from 'src/modules/auth/refresh-token/refresh-token.service';
 import { ConfirmationService } from './confirmation/confirmation.service';
 import { AdminService } from 'src/modules/admin/admin.service';
-import { UserRoleService } from 'src/modules/user/user-role/user-role.service';
+import { StoreRoleService } from 'src/modules/store/store-role/store-role.service';
 import { Request } from 'express';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { AdminRoles } from 'src/common/enums/admin.enum';
 import { ConfirmationType } from './confirmation/enums/confirmation.enum';
 import { createHash, randomBytes } from 'crypto';
 import { EmailQueueService } from 'src/modules/infrastructure/queues/email-queue/email-queue.service';
-
-export interface JwtPayload {
-  id: string;
-  email: string;
-  sub?: string;
-  isVerified?: boolean;
-}
-
-export interface ConfirmationStatus {
-  user: {
-    id: string;
-    email: string;
-    firstName?: string;
-    lastName?: string;
-    isEmailVerified: boolean;
-    emailVerifiedAt?: Date;
-  };
-  pendingConfirmations: {
-    accountVerification: boolean;
-    roleAssignments: Array<{
-      type: ConfirmationType;
-      metadata?: Record<string, any>;
-      expiresAt: Date;
-      timeRemaining: string;
-    }>;
-  };
-  activeRoles: {
-    siteAdmin: boolean;
-    storeRoles: Array<{
-      storeId: string;
-      storeName?: string;
-      role: string;
-      assignedAt: Date;
-    }>;
-  };
-}
+import {
+  ConfirmationResult,
+  ConfirmationStatus,
+  JwtPayload,
+} from 'src/modules/auth/types';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthService {
   constructor(
+    private configService: ConfigService,
     private userService: UserService,
     private jwtService: JwtService,
     private refreshTokenService: RefreshTokenService,
     private confirmationService: ConfirmationService,
     private emailQueueService: EmailQueueService,
     private adminService: AdminService,
-    private userRoleService: UserRoleService
+    private storeRoleService: StoreRoleService
   ) {}
 
   private async validateUser(
@@ -80,8 +51,13 @@ export class AuthService {
   }
 
   async doesUserExists(checkDto: CreateUserDto | LoginDto): Promise<boolean> {
-    const user = await this.userService.findByEmail(checkDto.email);
-    return !!user;
+    try {
+      await this.userService.findByEmail(checkDto.email);
+      return true;
+    } catch (err) {
+      if (err instanceof NotFoundException) return false;
+      throw err;
+    }
   }
 
   async login(dto: LoginDto, req?: Request) {
@@ -91,6 +67,12 @@ export class AuthService {
 
     if (!(await this.validateUser(dto.email, dto.password, user))) {
       throw new UnauthorizedException('Invalid password or email');
+    }
+
+    if (!user.isActive) {
+      throw new UnauthorizedException(
+        `User ${user.email} is deactivated at ${user.deactivatedAt}`
+      );
     }
 
     const payload: JwtPayload = {
@@ -147,13 +129,25 @@ export class AuthService {
       { delay: 5 * 60 * 1000 }
     );
 
-    const loginResult = await this.login(
-      { email: createUserDto.email, password: createUserDto.password },
-      req
-    );
+    // Build payload for tokens (same shape as login payload)
+    const payload: JwtPayload = {
+      id: user.id,
+      email: user.email,
+      sub: user.id,
+      isVerified: false,
+    };
+
+    const tokens = await this.getTokens(payload, req);
 
     return {
-      ...loginResult,
+      ...tokens, // { accessToken, refreshToken, csrfToken }
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        isEmailVerified: user.isEmailVerified || false,
+      },
       message:
         'Registration successful! Please check your email to verify your account.',
       requiresVerification: true,
@@ -217,7 +211,7 @@ export class AuthService {
     const siteAdmin = await this.adminService.isUserValidAdmin(userId);
 
     // Get store roles
-    const storeRoles = await this.userRoleService.getUserStoreRoles(userId);
+    const storeRoles = await this.storeRoleService.getUserStoreRoles(userId);
     const formattedStoreRoles = storeRoles.map((role) => ({
       storeId: role.store.id,
       storeName: role.store.name,
@@ -415,7 +409,7 @@ export class AuthService {
     }
 
     // Check if user already has a role in this store
-    const existingRole = await this.userRoleService.findByStoreUser(
+    const existingRole = await this.storeRoleService.findByStoreUser(
       targetUserId,
       storeId
     );
@@ -456,7 +450,7 @@ export class AuthService {
     storeId: string,
     revokedByUserId: string
   ): Promise<void> {
-    await this.userRoleService.revokeStoreRole(
+    await this.storeRoleService.revokeStoreRole(
       targetUserId,
       storeId,
       revokedByUserId
@@ -485,12 +479,19 @@ export class AuthService {
     payload: JwtPayload,
     req?: Request
   ): Promise<{ accessToken: string; refreshToken: string; csrfToken: string }> {
-    const accessToken = await this.jwtService.signAsync(payload, {
-      expiresIn: '15m',
-    });
-    const refreshToken = await this.jwtService.signAsync(payload, {
-      expiresIn: '7d',
-    });
+    const [accessToken, refreshToken] = await Promise.all([
+      this.jwtService.signAsync(payload, {
+        secret: this.configService.get<string>('JWT_SECRET'),
+        expiresIn: this.configService.get<string>('JWT_EXPIRES_IN', '15m'),
+      }),
+      this.jwtService.signAsync(payload, {
+        secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
+        expiresIn: this.configService.get<string>(
+          'JWT_REFRESH_EXPIRES_IN',
+          '7d'
+        ),
+      }),
+    ]);
 
     const csrfToken = cryptoRandomHex(16);
 
@@ -519,14 +520,7 @@ export class AuthService {
   async processConfirmation(
     typeParam: string,
     token: string
-  ): Promise<{
-    success: boolean;
-    message: string;
-    type: ConfirmationType;
-    user?: any;
-    activeRoles?: any;
-  }> {
-    // Convert kebab-case type parameter back to ConfirmationType enum
+  ): Promise<ConfirmationResult> {
     const confirmationType = this.parseConfirmationType(typeParam);
 
     if (!confirmationType) {

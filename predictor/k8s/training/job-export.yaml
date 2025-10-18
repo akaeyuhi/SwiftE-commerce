@@ -1,0 +1,85 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: predictor-export
+  namespace: predictor
+  labels:
+    app: predictor
+    component: export
+spec:
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 86400  # Clean up after 24 hours
+  template:
+    metadata:
+      labels:
+        app: predictor
+        component: export
+    spec:
+      restartPolicy: OnFailure
+
+      containers:
+        - name: export
+          image: your-registry.io/predictor-export:latest
+          imagePullPolicy: IfNotPresent
+
+          command:
+            - python
+            - -m
+            - predictor.export_features
+
+          args:
+            - --start
+            - "2025-01-01"
+            - --end
+            - "2025-10-01"
+            - --out
+            - "/data/features.csv"
+            - --batch-size
+            - "100"
+
+          env:
+            # Database connection from ConfigMap
+            - name: PGHOST
+              valueFrom:
+                configMapKeyRef:
+                  name: predictor-config
+                  key: PGHOST
+            - name: PGPORT
+              valueFrom:
+                configMapKeyRef:
+                  name: predictor-config
+                  key: PGPORT
+            - name: PGDATABASE
+              valueFrom:
+                configMapKeyRef:
+                  name: predictor-config
+                  key: PGDATABASE
+
+            # Database credentials from Secret
+            - name: PGUSER
+              valueFrom:
+                secretKeyRef:
+                  name: predictor-secret
+                  key: PGUSER
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: predictor-secret
+                  key: PGPASSWORD
+
+          volumeMounts:
+            - name: data
+              mountPath: /data
+
+          resources:
+            requests:
+              memory: "2Gi"
+              cpu: "1000m"
+            limits:
+              memory: "8Gi"
+              cpu: "4000m"
+
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: predictor-data-pvc

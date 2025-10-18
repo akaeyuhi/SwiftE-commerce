@@ -18,36 +18,44 @@ import {
   PRODUCT_PHOTOS_MAX_COUNT,
   PRODUCT_PHOTO_MAX_SIZE,
   UPLOADS_TMP_DIR,
+  PRODUCT_MAIN_PHOTO_FIELD,
 } from './constants';
 
 /**
  * ProductPhotosInterceptor
  *
- * Class-based interceptor for handling multiple product photo uploads.
- * Extends NestInterceptor to provide proper integration with NestJS.
+ * Interceptor for handling product photo uploads with support for:
+ * - Multiple photos array field
+ * - Single main photo field
  *
  * Features:
- * - Configurable max file count
+ * - Configurable max file count for array
  * - Automatic temp directory creation
  * - File size limits
  * - Image type validation
  * - UUID-based unique filenames
  *
  * @example
- * // Default usage (max 10 files)
+ * // Handle both photos[] and mainPhoto
  * @UseInterceptors(ProductPhotosInterceptor)
  * @Post()
- * async create(@UploadedFiles() photos: Express.Multer.File[]) { ... }
+ * async create(
+ *   @UploadedFiles() files: { photos?: Express.Multer.File[], mainPhoto?: Express.Multer.File[] }
+ * ) {
+ *   const mainPhoto = files.mainPhoto?.[0]; // Single file
+ *   const additionalPhotos = files.photos || []; // Array of files
+ * }
  *
- * // Custom max count
+ * // Custom max count for photos array
  * @UseInterceptors(new ProductPhotosInterceptor(5))
  * @Post()
- * async create(@UploadedFiles() photos: Express.Multer.File[]) { ... }
+ * async create(@UploadedFiles() files) { ... }
  */
 @Injectable()
 export class ProductPhotosInterceptor implements NestInterceptor {
   private readonly multerInstance: multer.Multer;
-  private readonly fieldName: string = PRODUCT_PHOTOS_FIELD;
+  private readonly photosFieldName: string = PRODUCT_PHOTOS_FIELD;
+  private readonly mainPhotoFieldName: string = PRODUCT_MAIN_PHOTO_FIELD;
   private readonly maxCount: number;
 
   constructor(maxCount: number = PRODUCT_PHOTOS_MAX_COUNT) {
@@ -74,7 +82,7 @@ export class ProductPhotosInterceptor implements NestInterceptor {
       }),
       limits: {
         fileSize: PRODUCT_PHOTO_MAX_SIZE,
-        files: this.maxCount,
+        files: this.maxCount + 1, // +1 for mainPhoto
       },
       fileFilter: this.fileFilter.bind(this),
     });
@@ -94,11 +102,15 @@ export class ProductPhotosInterceptor implements NestInterceptor {
   }
 
   /**
-   * Process file upload using multer
+   * Process file upload using multer with multiple fields
    */
   private processUpload(request: Request): Promise<void> {
     return new Promise((resolve, reject) => {
-      const upload = this.multerInstance.array(this.fieldName, this.maxCount);
+      // Configure fields: photos (array) and mainPhoto (single)
+      const upload = this.multerInstance.fields([
+        { name: this.photosFieldName, maxCount: this.maxCount }, // photos[]
+        { name: this.mainPhotoFieldName, maxCount: 1 }, // mainPhoto (single)
+      ]);
 
       upload(request as any, {} as any, (error: any) => {
         if (error) {
@@ -112,10 +124,39 @@ export class ProductPhotosInterceptor implements NestInterceptor {
             );
           }
         } else {
+          // Validate uploaded files
+          this.validateUploadedFiles(request);
           resolve();
         }
       });
     });
+  }
+
+  /**
+   * Validate uploaded files structure
+   */
+  private validateUploadedFiles(request: Request): void {
+    const files = (request as any).files as {
+      [fieldname: string]: Express.Multer.File[];
+    };
+
+    if (!files) {
+      return; // No files uploaded - this is okay, let the route handler validate
+    }
+
+    // Validate photos array count
+    const photos = files[this.photosFieldName];
+    if (photos && photos.length > this.maxCount) {
+      throw new BadRequestException(
+        `Too many photos. Maximum allowed: ${this.maxCount}`
+      );
+    }
+
+    // Validate mainPhoto is single file
+    const mainPhoto = files[this.mainPhotoFieldName];
+    if (mainPhoto && mainPhoto.length > 1) {
+      throw new BadRequestException('Only one main photo is allowed');
+    }
   }
 
   /**
@@ -126,6 +167,19 @@ export class ProductPhotosInterceptor implements NestInterceptor {
     file: Express.Multer.File,
     cb: multer.FileFilterCallback
   ): void {
+    // Validate field name
+    if (
+      file.fieldname !== this.photosFieldName &&
+      file.fieldname !== this.mainPhotoFieldName
+    ) {
+      cb(
+        new BadRequestException(
+          `Invalid field name '${file.fieldname}'. Expected: '${this.photosFieldName}' or '${this.mainPhotoFieldName}'`
+        )
+      );
+      return;
+    }
+
     // Validate file is an image
     if (!file.mimetype || !file.mimetype.startsWith('image/')) {
       cb(
@@ -172,12 +226,12 @@ export class ProductPhotosInterceptor implements NestInterceptor {
 
       case 'LIMIT_FILE_COUNT':
         return new BadRequestException(
-          `Too many files. Maximum allowed: ${this.maxCount}`
+          `Too many files. Maximum allowed: ${this.maxCount} photos + 1 main photo`
         );
 
       case 'LIMIT_UNEXPECTED_FILE':
         return new BadRequestException(
-          `Unexpected field name. Expected: ${this.fieldName}`
+          `Unexpected field name. Expected: '${this.photosFieldName}' (array) or '${this.mainPhotoFieldName}' (single)`
         );
 
       default:

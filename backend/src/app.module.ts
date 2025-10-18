@@ -14,6 +14,8 @@ import { AdminModule } from 'src/modules/admin/admin.module';
 import { QueuesModule } from 'src/modules/infrastructure/queues/queues.module';
 import { InterceptorsModule } from 'src/modules/infrastructure/interceptors/interceptors.module';
 import { AnalyticsReviewsModule } from './modules/analytics-reviews/analytics-reviews.module';
+import { NotificationsModule } from 'src/modules/infrastructure/notifications/notifications.module';
+import { CleanupModule } from 'src/modules/infrastructure/cleanup/cleanup.module';
 
 @Module({
   imports: [
@@ -30,6 +32,8 @@ import { AnalyticsReviewsModule } from './modules/analytics-reviews/analytics-re
     AnalyticsModule,
     AiModule,
     AnalyticsReviewsModule,
+    NotificationsModule,
+    CleanupModule,
   ],
   controllers: [AppController],
   providers: [AppService],

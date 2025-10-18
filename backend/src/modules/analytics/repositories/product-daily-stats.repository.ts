@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { BaseAnalyticsRepository } from 'src/common/abstracts/analytics/base.analytics.repository';
-import { ProductDailyStats } from '../entities/product-daily-stats.entity';
+import { ProductDailyStats } from 'src/entities/infrastructure/analytics/product-daily-stats.entity';
 import { DateRangeOptions } from 'src/common/interfaces/infrastructure/analytics.interface';
 
 @Injectable()
@@ -26,7 +26,7 @@ export class ProductDailyStatsRepository extends BaseAnalyticsRepository<Product
       ])
       .where('p.productId = :productId', { productId });
 
-    this.applyDateRange(qb, options, 'p.date');
+    this.applyDateRange(qb, options, 'date');
 
     const raw = await qb.getRawOne();
     return this.parseAggregationResult(raw);
@@ -73,9 +73,33 @@ export class ProductDailyStatsRepository extends BaseAnalyticsRepository<Product
     const raw = await qb.getRawMany();
 
     return raw.map((r) => ({
-      productId: r.productId,
       ...this.parseAggregationResult(r),
+      productId: r.productId,
     }));
+  }
+
+  async getUnderperformingProducts(
+    storeId: string,
+    from?: string,
+    to?: string
+  ) {
+    const qb = this.createQueryBuilder('stats')
+      .leftJoin('products', 'p', 'p.id = stats.productId')
+      .select('stats.productId', 'id')
+      .addSelect('p.name', 'name')
+      .addSelect('SUM(stats.views)', 'views')
+      .addSelect('SUM(stats.purchases)', 'purchases')
+      .addSelect('SUM(stats.revenue)', 'revenue')
+      .where('p.storeId = :storeId', { storeId })
+      .andWhere('p.deletedAt IS NULL')
+      .groupBy('stats.productId')
+      .addGroupBy('p.name');
+
+    if (from && to) {
+      qb.andWhere('stats.date BETWEEN :from AND :to', { from, to });
+    }
+
+    return await qb.getRawMany();
   }
 
   /**

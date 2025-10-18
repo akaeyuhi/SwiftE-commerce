@@ -1,21 +1,23 @@
 import {
   Controller,
   UseGuards,
-  Post,
   Put,
   Param,
   Body,
   ParseUUIDPipe,
+  Get,
 } from '@nestjs/common';
 import { CartItemService } from 'src/modules/store/cart/cart-item/cart-item.service';
-import { CartItemDto } from 'src/modules/store/cart/cart-item/dto/cart-item.dto';
+import {
+  CartItemDto,
+  UpdateCartItemQuantityDto,
+} from 'src/modules/store/cart/cart-item/dto/cart-item.dto';
 import { BaseController } from 'src/common/abstracts/base.controller';
 import { CartItem } from 'src/entities/store/cart/cart-item.entity';
 import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';
 import { StoreRolesGuard } from 'src/modules/authorization/guards/store-roles.guard';
 import { AccessPolicies } from 'src/modules/authorization/policy/policy.types';
-import { AnalyticsEventType } from 'src/modules/analytics/entities/analytics-event.entity';
-import { RecordEvent } from 'src/common/decorators/record-event.decorator';
+import { AdminGuard } from 'src/modules/authorization/guards/admin.guard';
 
 /**
  * CartItemController
@@ -25,7 +27,7 @@ import { RecordEvent } from 'src/common/decorators/record-event.decorator';
  * Path: /stores/:storeId/:userId/cart/items
  */
 @Controller('stores/:storeId/:userId/cart/:cartId/items')
-@UseGuards(JwtAuthGuard, StoreRolesGuard)
+@UseGuards(JwtAuthGuard, AdminGuard, StoreRolesGuard)
 export class CartItemController extends BaseController<
   CartItem,
   CartItemDto,
@@ -34,11 +36,12 @@ export class CartItemController extends BaseController<
 > {
   static accessPolicies: AccessPolicies = {
     findAll: { requireAuthenticated: true },
-    findOne: { requireAuthenticated: true },
+    findOne: { requireAuthenticated: true, adminRole: undefined },
     create: { requireAuthenticated: true },
-    update: { requireAuthenticated: true },
-    remove: { requireAuthenticated: true },
+    update: { requireAuthenticated: true, adminRole: undefined },
+    remove: { requireAuthenticated: true, adminRole: undefined },
 
+    findAllForCart: { requireAuthenticated: true },
     addOrIncrement: { requireAuthenticated: true },
     updateQuantity: { requireAuthenticated: true },
     listForCart: { requireAuthenticated: true },
@@ -48,31 +51,13 @@ export class CartItemController extends BaseController<
     super(cartItemService);
   }
 
-  /**
-   * Add an item to the user's cart (create or increment).
-   *
-   * Body: { cartId, variantId, quantity }
-   *
-   * @param _storeId - UUID of the store
-   * @param _userId - UUID of the user
-   * @param dto - CartItemDto containing cartId, variantId, quantity
-   * @returns created or updated CartItem
-   */
-  @Post('add')
-  @RecordEvent({
-    eventType: AnalyticsEventType.ADD_TO_CART,
-    productId: 'body.productId',
-    storeId: 'params.storeId',
-    userId: 'params.userId',
-    value: 'body.quantity',
-    when: 'after',
-  })
-  async addOrIncrement(
-    @Param('storeId', new ParseUUIDPipe()) _storeId: string,
+  @Get()
+  async findAllForCart(
+    @Param('storeId') _storeId: string,
     @Param('userId', new ParseUUIDPipe()) _userId: string,
-    @Body() dto: CartItemDto
-  ): Promise<CartItem> {
-    return this.cartItemService.addOrIncrement(dto);
+    @Param('cartId', new ParseUUIDPipe()) cartId: string
+  ): Promise<CartItem[]> {
+    return this.cartItemService.findByCart(cartId);
   }
 
   /**
@@ -89,7 +74,7 @@ export class CartItemController extends BaseController<
     @Param('storeId', new ParseUUIDPipe()) _storeId: string,
     @Param('userId', new ParseUUIDPipe()) _userId: string,
     @Param('itemId', new ParseUUIDPipe()) itemId: string,
-    @Body() dto: CartItemDto
+    @Body() dto: UpdateCartItemQuantityDto
   ): Promise<CartItem> {
     return this.cartItemService.updateQuantity(itemId, dto.quantity ?? 0);
   }

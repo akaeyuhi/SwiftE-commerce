@@ -9,7 +9,7 @@ import { ConfirmationRepository } from './confirmation.repository';
 import { UserService } from 'src/modules/user/user.service';
 import { AdminService } from 'src/modules/admin/admin.service';
 import { ConfirmationType } from './enums/confirmation.enum';
-import { Confirmation } from './entities/confirmation.entity';
+import { Confirmation } from 'src/entities/user/authentication/confirmation.entity';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { AdminRoles } from 'src/common/enums/admin.enum';
 import { EmailQueueService } from 'src/modules/infrastructure/queues/email-queue/email-queue.service';
@@ -36,6 +36,7 @@ export class ConfirmationService {
       userId,
       email,
       token: this.hashToken(token),
+      plainToken: token,
       type: ConfirmationType.ACCOUNT_VERIFICATION,
       expiresAt,
       isUsed: false,
@@ -73,6 +74,7 @@ export class ConfirmationService {
       userId,
       email,
       token: this.hashToken(token),
+      plainToken: token,
       type: confirmationType,
       expiresAt,
       isUsed: false,
@@ -108,10 +110,15 @@ export class ConfirmationService {
     }
 
     if (confirmation.isUsed) {
+      console.error(`used, Confirmation token: ${confirmation}`, confirmation);
       throw new BadRequestException('Confirmation token has already been used');
     }
 
     if (confirmation.expiresAt < new Date()) {
+      console.error(
+        `exprired, Confirmation token: ${confirmation}`,
+        confirmation
+      );
       throw new BadRequestException('Confirmation token has expired');
     }
 

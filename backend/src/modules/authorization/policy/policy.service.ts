@@ -1,19 +1,19 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
-import { PolicyEntry } from 'src/modules/authorization/policy/policy.types';
-import { UserRole } from 'src/entities/user/policy/user-role.entity';
+import {
+  AccessPolicies,
+  PolicyEntry,
+} from 'src/modules/authorization/policy/policy.types';
+import { StoreRole } from 'src/entities/user/authentication/store-role.entity';
 import { DeepPartial } from 'typeorm';
 import { User } from 'src/entities/user/user.entity';
 import { StoreOwnedEntity } from 'src/common/interfaces/crud/store-owned.entity.interface';
 import { UserOwnedEntity } from 'src/common/interfaces/crud/user-owned.entity.interface';
 import { Store } from 'src/entities/store/store.entity';
 import {
-  ADMIN_SERVICE,
   IAdminService,
   IStoreService,
   IUserService,
-  STORE_SERVICE,
-  USER_SERVICE,
 } from 'src/common/contracts/policy.contract';
 
 /**
@@ -28,9 +28,9 @@ import {
 @Injectable()
 export class PolicyService {
   constructor(
-    @Inject(USER_SERVICE) private readonly userService: IUserService,
-    @Inject(ADMIN_SERVICE) private readonly adminService: IAdminService,
-    @Inject(STORE_SERVICE) private readonly storeService: IStoreService
+    @Inject(IUserService) private readonly userService: IUserService,
+    @Inject(IAdminService) private readonly adminService: IAdminService,
+    @Inject(IStoreService) private readonly storeService: IStoreService
   ) {}
 
   /**
@@ -45,7 +45,7 @@ export class PolicyService {
     try {
       const adminCheck = await this.adminService.isUserValidAdmin(user.id);
       const userCheck = await this.userService.isUserSiteAdmin(user.id);
-      return adminCheck === userCheck;
+      return adminCheck && userCheck;
     } catch {
       return false;
     }
@@ -63,10 +63,10 @@ export class PolicyService {
     storeId: string | number,
     requiredRoles: StoreRoles[]
   ): Promise<boolean> {
-    if (!user) return false;
-    const userRoles: UserRole[] | undefined = user.roles as UserRole[];
+    if (!user || !user.id) return false;
+    const userRoles: StoreRole[] | undefined = user.roles as StoreRole[];
 
-    let roles: UserRole[] = [];
+    let roles: StoreRole[] = [];
 
     if (Array.isArray(userRoles) && userRoles.length > 0) {
       roles = userRoles;
@@ -84,8 +84,8 @@ export class PolicyService {
       const hasRoleName = requiredRoles.includes(ur.roleName as StoreRoles);
       const sameStore =
         ur.store === null ||
-        String(ur.store.id) === storeId ||
-        ur.store.id === storeId;
+        String(ur.storeId) === storeId ||
+        ur.storeId === storeId;
 
       const storeCheck = await this.storeService.hasUserStoreRole(ur);
       if (hasRoleName && sameStore && storeCheck) return true;
@@ -107,6 +107,9 @@ export class PolicyService {
     // if no policy defined => allow (guard will pick defaults in the BaseController)
     if (!policy) return true;
 
+    if (!this.isValidUUID(user.id))
+      throw new BadRequestException('UUID is invalid');
+
     if (policy.requireAuthenticated && !user) return false;
 
     if (policy.adminRole) {
@@ -120,6 +123,8 @@ export class PolicyService {
       // we expect storeId in params (common names: id, storeId)
       const storeId =
         params?.storeId ?? params?.id ?? params?.store_id ?? undefined;
+      if (!this.isValidUUID(storeId))
+        throw new BadRequestException('UUID is invalid');
       if (!storeId) return false;
       return await this.userHasStoreRoles(user, storeId, policy.storeRoles);
     }
@@ -142,6 +147,8 @@ export class PolicyService {
   ): string | undefined {
     if (!entity) return undefined;
 
+    if (entity.storeId) return entity.storeId;
+
     if ((entity as StoreOwnedEntity).store) {
       const s = (entity as StoreOwnedEntity).store;
       if (s && typeof s === 'object' && 'id' in s) return s.id;
@@ -160,6 +167,9 @@ export class PolicyService {
     entity?: UserOwnedEntity | any
   ): string | undefined {
     if (!entity) return undefined;
+    if (entity.userId) return entity.userId;
+    if (entity.ownerId) return entity.ownerId;
+    if (entity.authorId) return entity.authorId;
     if (entity.user && (entity.user as any).id) return (entity.user as any).id;
     if (entity.author && (entity.author as any).id)
       return (entity.author as any).id;
@@ -200,7 +210,6 @@ export class PolicyService {
     entity?: StoreOwnedEntity | Store | null
   ): Promise<boolean> {
     if (!user || !user.id) return false;
-
     // site admin has full control
     if (await this.isSiteAdmin(user)) return true;
 
@@ -240,5 +249,44 @@ export class PolicyService {
 
   async isUserActive(userId: string): Promise<boolean> {
     return this.userService.isActive(userId);
+  }
+
+  /**
+   * Get merged policy for a method.
+   * Child controller policies override base controller policies.
+   */
+  getMergedPolicy(
+    controller: any,
+    methodName: string
+  ): PolicyEntry | undefined {
+    // Get child controller's accessPolicies
+    const childPolicies = controller.accessPolicies as AccessPolicies;
+
+    // Get base controller's accessPolicies (from prototype chain)
+    const baseController = Object.getPrototypeOf(controller);
+    const basePolicies = baseController?.accessPolicies as AccessPolicies;
+
+    // Start with base policy
+    let mergedPolicy: PolicyEntry | undefined;
+
+    if (basePolicies && basePolicies[methodName]) {
+      mergedPolicy = { ...basePolicies[methodName] };
+    }
+
+    // Override with child policy
+    if (childPolicies && childPolicies[methodName]) {
+      mergedPolicy = {
+        ...mergedPolicy,
+        ...childPolicies[methodName],
+      };
+    }
+
+    return mergedPolicy;
+  }
+
+  isValidUUID(uuid: string): boolean {
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(uuid);
   }
 }

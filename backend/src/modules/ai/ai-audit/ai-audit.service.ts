@@ -11,24 +11,19 @@ import {
   AuditQueryOptions,
   AuditStats,
 } from 'src/common/interfaces/ai/audit.interface';
-
-export interface StoreEncryptedResponseParams {
-  feature: string;
-  provider?: string | null;
-  model?: string | null;
-  rawResponse: any;
-  userId?: string | null;
-  storeId?: string | null;
-}
-
-export interface DecryptedAuditResponse {
-  audit: AiAudit;
-  decryptedResponse: any;
-  decryptionTime: number;
-}
+import {
+  AuditFilterOptions,
+  AuditStatsFilterOptions,
+  ComplianceReport,
+  DecryptedAuditResponse,
+  IntegrityCheckReport,
+  PreparedResponseData,
+  StoreEncryptedResponseParams,
+  SuspiciousActivityReport,
+} from 'src/modules/ai/ai-audit/types';
 
 /**
- * Enhanced AiAuditService with advanced encryption, monitoring, and compliance features
+ * AiAuditService with encryption, monitoring, and compliance features
  *
  * Provides secure audit trail for AI operations with:
  * - Strong encryption using AES-256-GCM
@@ -92,11 +87,11 @@ export class AiAuditService {
       };
 
       if (params.userId) {
-        payload.user = { id: params.userId };
+        payload.userId = params.userId;
       }
 
       if (params.storeId) {
-        payload.store = { id: params.storeId };
+        payload.storeId = params.storeId;
       }
 
       const saved = await this.auditRepo.createEntity(payload);
@@ -129,7 +124,6 @@ export class AiAuditService {
     const startTime = Date.now();
 
     try {
-      // Security check for decryption attempts
       this.checkDecryptionAttempts(auditId, requesterId);
 
       const audit = await this.auditRepo.findOne({
@@ -141,7 +135,6 @@ export class AiAuditService {
         throw new Error('Audit entry not found');
       }
 
-      // Additional access control checks could go here
       this.validateDecryptionAccess(audit, requesterId);
 
       const decryptedResponse = this.decryptData(audit.encryptedResponse);
@@ -211,15 +204,7 @@ export class AiAuditService {
    * Enhanced query with security filtering
    */
   async findByFilter(
-    filter: {
-      storeId?: string;
-      userId?: string;
-      feature?: string;
-      provider?: string;
-      model?: string;
-      dateFrom?: Date;
-      dateTo?: Date;
-    },
+    filter: AuditFilterOptions,
     options: AuditQueryOptions = {},
     requesterId?: string
   ): Promise<AiAudit[]> {
@@ -233,14 +218,7 @@ export class AiAuditService {
    * Get comprehensive audit statistics
    */
   async getAuditStats(
-    filters: {
-      storeId?: string;
-      userId?: string;
-      feature?: string;
-      provider?: string;
-      dateFrom?: Date;
-      dateTo?: Date;
-    } = {},
+    filters: AuditStatsFilterOptions = {},
     requesterId?: string
   ): Promise<AuditStats> {
     this.validateQueryAccess(filters, requesterId);
@@ -257,14 +235,7 @@ export class AiAuditService {
       unusualProviders?: boolean;
       limit?: number;
     } = {}
-  ): Promise<{
-    suspiciousAudits: AiAudit[];
-    securityMetrics: {
-      totalDecryptionAttempts: number;
-      failedDecryptionAttempts: number;
-      unusualPatterns: Array<{ pattern: string; count: number }>;
-    };
-  }> {
+  ): Promise<SuspiciousActivityReport> {
     const suspiciousAudits = await this.auditRepo.getSuspiciousAudits(options);
 
     const totalDecryptionAttempts = Array.from(
@@ -291,16 +262,9 @@ export class AiAuditService {
   /**
    * Validate encryption integrity across audit entries
    */
-  async validateIntegrity(sampleSize: number = 100): Promise<{
-    overallHealth: number;
-    detailedResults: {
-      totalChecked: number;
-      validEntries: number;
-      corruptedEntries: number;
-      healthPercentage: number;
-    };
-    recommendations: string[];
-  }> {
+  async validateIntegrity(
+    sampleSize: number = 100
+  ): Promise<IntegrityCheckReport> {
     const integrityResults =
       await this.auditRepo.validateEncryptionIntegrity(sampleSize);
 
@@ -340,7 +304,7 @@ export class AiAuditService {
       storeId?: string;
       userId?: string;
     } = {}
-  ): Promise<any> {
+  ): Promise<ComplianceReport> {
     const reportId = `audit-report-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
     const stats = await this.getAuditStats({
@@ -519,7 +483,7 @@ export class AiAuditService {
     }
   }
 
-  private prepareResponseData(rawResponse: any): any {
+  private prepareResponseData(rawResponse: any): PreparedResponseData {
     return {
       data: rawResponse,
       metadata: {
@@ -553,6 +517,8 @@ export class AiAuditService {
       this.logger.warn(`High volume detected for pattern: ${pattern}`);
     }
   }
+
+  //TODO
 
   private validateDecryptionAccess(audit: AiAudit, requesterId?: string): void {
     // Basic access control - extend as needed

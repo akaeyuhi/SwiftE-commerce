@@ -6,11 +6,13 @@ import {
   UpdateDateColumn,
   ManyToOne,
   OneToMany,
+  Index,
+  DeleteDateColumn,
 } from 'typeorm';
 import { User } from 'src/entities/user/user.entity';
 import { Product } from 'src/entities/store/product/product.entity';
 import { Order } from 'src/entities/store/product/order.entity';
-import { UserRole } from 'src/entities/user/policy/user-role.entity';
+import { StoreRole } from 'src/entities/user/authentication/store-role.entity';
 import { ShoppingCart } from 'src/entities/store/cart/cart.entity';
 import { NewsPost } from 'src/entities/store/news-post.entity';
 import { AiLog } from 'src/entities/ai/ai-log.entity';
@@ -18,7 +20,9 @@ import { Inventory } from 'src/entities/store/product/inventory.entity';
 import { Category } from 'src/entities/store/product/category.entity';
 import { UserOwnedEntity } from 'src/common/interfaces/crud/user-owned.entity.interface';
 
-@Entity({ name: 'store' })
+@Entity({ name: 'stores' })
+@Index(['name'])
+@Index(['ownerId', 'createdAt'])
 export class Store implements UserOwnedEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -29,8 +33,24 @@ export class Store implements UserOwnedEntity {
   @Column({ type: 'text' })
   description: string;
 
+  @Column({ name: 'owner_id', type: 'uuid' })
+  ownerId: string;
+
   @ManyToOne(() => User, (user) => user.ownedStores, { onDelete: 'SET NULL' })
   owner: User;
+
+  // Cached/denormalized fields for performance
+  @Column({ type: 'int', default: 0 })
+  productCount: number;
+
+  @Column({ type: 'int', default: 0 })
+  followerCount: number;
+
+  @Column({ type: 'numeric', precision: 12, scale: 2, default: 0 })
+  totalRevenue: number;
+
+  @Column({ type: 'int', default: 0 })
+  orderCount: number;
 
   @CreateDateColumn()
   createdAt: Date;
@@ -38,28 +58,47 @@ export class Store implements UserOwnedEntity {
   @UpdateDateColumn()
   updatedAt: Date;
 
+  @DeleteDateColumn()
+  deletedAt?: Date;
+
   // Relations
-  @OneToMany(() => Product, (product) => product.store)
+  @OneToMany(() => Product, (product) => product.store, {
+    cascade: ['update', 'remove'],
+  })
   products: Product[];
 
-  @OneToMany(() => Inventory, (inventory) => inventory.store)
+  @OneToMany(() => Inventory, (inventory) => inventory.store, {
+    cascade: ['update', 'remove'],
+  })
   inventories: Inventory[];
 
-  @OneToMany(() => Order, (order) => order.store)
+  @OneToMany(() => Order, (order) => order.store, {
+    cascade: ['update', 'remove'],
+  })
   orders: Order[];
 
-  @OneToMany(() => Category, (category) => category.store)
+  @OneToMany(() => Category, (category) => category.store, {
+    cascade: ['update', 'remove'],
+  })
   categories: Category[];
 
-  @OneToMany(() => ShoppingCart, (cart) => cart.store)
+  @OneToMany(() => ShoppingCart, (cart) => cart.store, {
+    cascade: ['update', 'remove'],
+  })
   carts: ShoppingCart[];
 
-  @OneToMany(() => NewsPost, (post) => post.store)
+  @OneToMany(() => NewsPost, (post) => post.store, {
+    cascade: ['update', 'remove'],
+  })
   newsPosts: NewsPost[];
 
-  @OneToMany(() => AiLog, (log) => log.store)
+  @OneToMany(() => AiLog, (log) => log.store, {
+    cascade: ['update', 'remove'],
+  })
   aiLogs: AiLog[];
 
-  @OneToMany(() => UserRole, (userRole) => userRole.store)
-  userRoles: UserRole[];
+  @OneToMany(() => StoreRole, (userRole) => userRole.store, {
+    cascade: ['update', 'remove'],
+  })
+  storeRoles: StoreRole[];
 }
