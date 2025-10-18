@@ -9,14 +9,14 @@ LABEL stage=builder
 WORKDIR /app
 
 # Install build deps (copy package manifests first for layer caching)
-COPY backend/package*.json backend/package-lock*.json ./
+COPY package*.json package-lock*.json ./
 # Use npm ci for reproducible installs (adapt if you use yarn/pnpm)
 RUN npm ci --no-audit --no-fund
 
 # Copy tsconfig / nest config and source files
-COPY backend/tsconfig*.json backend/nest-cli.json ./
-COPY backend/.env.example ./
-COPY backend/src ./src
+COPY tsconfig*.json nest-cli.json ./
+COPY .env* ./
+COPY src ./src
 
 # Build the project (expects "build" script in package.json)
 RUN npm run build
@@ -28,8 +28,8 @@ FROM node:18-alpine AS runtime
 WORKDIR /app
 
 # Install production deps only
-COPY backend/package*.json backend/package-lock*.json ./
-RUN npm ci --production --no-audit --no-fund
+COPY package*.json package-lock*.json ./
+RUN npm ci --no-audit --no-fund
 
 # Copy compiled output from builder
 COPY --from=builder /app/dist ./dist
@@ -38,11 +38,10 @@ COPY --from=builder /app/dist ./dist
 # (add public/.gitkeep) and uncomment the next line:
 # COPY backend/public ./public
 
-ENV NODE_ENV=production
 ENV PORT=3000
 ENV REDIS_HOST=redis
 ENV REDIS_PORT=6379
-ENV DATABASE_HOST=postgres_db
+ENV DATABASE_HOST=localhost
 
 EXPOSE 3000
 

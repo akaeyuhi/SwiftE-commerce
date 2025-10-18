@@ -3,6 +3,7 @@ import { Job } from 'bull';
 import { Injectable, Logger } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
 import {
+  AnalyticsEventType,
   AnalyticsJobData,
   AnalyticsJobPayload,
   AnalyticsJobType,
@@ -65,47 +66,42 @@ export class AnalyticsQueueProcessor {
 
   @Process(AnalyticsJobType.RECORD_BATCH)
   async handleRecordBatch(job: Job<AnalyticsJobData>) {
-    try {
-      const { events, batchId } = job.data;
-      if (!events?.length) {
-        throw new Error('No events in batch to process');
-      }
-
-      await job.progress(25);
-
-      const eventsRepo = await this.getAnalyticsEventRepository();
-
-      const entities = events.map((event) =>
-        eventsRepo.create({
-          storeId: event.storeId,
-          productId: event.productId,
-          userId: event.userId,
-          eventType: event.eventType,
-          value: event.value,
-          meta: event.meta,
-          invokedOn: event.invokedOn || (event.productId ? 'product' : 'store'),
-        })
-      );
-
-      await job.progress(75);
-      await eventsRepo.save(entities);
-      await job.progress(100);
-
-      this.logger.debug(
-        `Job ${job.id}: Processed batch ${batchId} with ${entities.length} events`
-      );
-
-      return {
-        success: true,
-        batchId,
-        processed: entities.length,
-        jobId: job.id,
-        processedAt: new Date().toISOString(),
-      };
-    } catch (error) {
-      this.logger.error(`Batch job ${job.id} failed:`, error);
-      throw error;
+    const { events, batchId } = job.data;
+    if (!events?.length) {
+      throw new Error('No events in batch to process');
     }
+
+    await job.progress(25);
+
+    const eventsRepo = await this.getAnalyticsEventRepository();
+
+    const entities = events.map((event) =>
+      eventsRepo.create({
+        storeId: event.storeId,
+        productId: event.productId,
+        userId: event.userId,
+        eventType: event.eventType,
+        value: event.value,
+        meta: event.meta,
+        invokedOn: event.invokedOn || (event.productId ? 'product' : 'store'),
+      })
+    );
+
+    await job.progress(75);
+    await eventsRepo.save(entities);
+    await job.progress(100);
+
+    this.logger.debug(
+      `Job ${job.id}: Processed batch ${batchId} with ${entities.length} events`
+    );
+
+    return {
+      success: true,
+      batchId,
+      processed: entities.length,
+      jobId: job.id,
+      processedAt: new Date().toISOString(),
+    };
   }
 
   @Process(AnalyticsJobType.AGGREGATE_DAILY)
@@ -136,33 +132,33 @@ export class AnalyticsQueueProcessor {
         .createQueryBuilder('event')
         .select('event.storeId', 'storeId')
         .addSelect(
-          'COUNT(CASE WHEN event.eventType = :view THEN 1 END)',
+          `COUNT(CASE WHEN event.eventType = :view THEN 1 END)`,
           'views'
         )
         .addSelect(
-          'COUNT(CASE WHEN event.eventType = :like THEN 1 END)',
+          `COUNT(CASE WHEN event.eventType = :like THEN 1 END)`,
           'likes'
         )
         .addSelect(
-          'COUNT(CASE WHEN event.eventType = :cart THEN 1 END)',
+          `COUNT(CASE WHEN event.eventType = :cart THEN 1 END)`,
           'addToCarts'
         )
         .addSelect(
-          'COUNT(CASE WHEN event.eventType = :purchase THEN 1 END)',
+          `COUNT(CASE WHEN event.eventType = :purchase THEN 1 END)`,
           'purchases'
         )
         .addSelect(
-          'SUM(CASE WHEN event.eventType = :purchase THEN event.value ELSE 0 END)',
+          `SUM(CASE WHEN event.eventType = :purchase THEN event.value ELSE 0 END)`,
           'revenue'
         )
         .where('DATE(event.createdAt) = :date', { date: dateStr })
         .andWhere('event.storeId IS NOT NULL')
         .groupBy('event.storeId')
         .setParameters({
-          view: 'view',
-          like: 'like',
-          cart: 'add_to_cart',
-          purchase: 'purchase',
+          view: AnalyticsEventType.VIEW,
+          like: AnalyticsEventType.LIKE,
+          cart: AnalyticsEventType.ADD_TO_CART,
+          purchase: AnalyticsEventType.PURCHASE,
         })
         .getRawMany();
 
@@ -213,10 +209,10 @@ export class AnalyticsQueueProcessor {
         .andWhere('event.productId IS NOT NULL')
         .groupBy('event.productId')
         .setParameters({
-          view: 'view',
-          like: 'like',
-          cart: 'add_to_cart',
-          purchase: 'purchase',
+          view: AnalyticsEventType.VIEW,
+          like: AnalyticsEventType.LIKE,
+          cart: AnalyticsEventType.ADD_TO_CART,
+          purchase: AnalyticsEventType.PURCHASE,
         })
         .getRawMany();
 

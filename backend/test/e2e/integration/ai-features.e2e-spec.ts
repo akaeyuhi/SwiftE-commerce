@@ -46,6 +46,8 @@ describe('Integration - AI Features (E2E)', () => {
     regularUser = await authHelper.createAuthenticatedUser();
 
     store = await seeder.seedStore(storeOwner.user);
+
+    await seeder.assignStoreModerator(storeModerator.user.id, store.id);
   });
 
   afterAll(async () => {
@@ -56,7 +58,7 @@ describe('Integration - AI Features (E2E)', () => {
     it('Step 1: Store owner generates product names', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post('/ai/generator/names')
+        .post(`/stores/${store.id}/ai/generator/names`)
         .send({
           storeStyle: 'modern tech',
           seed: 'wireless earbuds',
@@ -77,7 +79,7 @@ describe('Integration - AI Features (E2E)', () => {
       // Check AI logs
       const logsResponse = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .get('/ai/logs')
+        .get(`/stores/${store.id}/ai/logs`)
         .expect(200);
 
       expect(logsResponse.body.data.logs.length).toBeGreaterThan(0);
@@ -92,7 +94,7 @@ describe('Integration - AI Features (E2E)', () => {
       // Generate names
       const namesResponse = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post('/ai/generator/names')
+        .post(`/stores/${store.id}/ai/generator/names`)
         .send({
           storeStyle: 'minimalist',
           seed: 'phone case',
@@ -106,7 +108,7 @@ describe('Integration - AI Features (E2E)', () => {
       // Create product with generated name
       const productResponse = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post('/products')
+        .post(`/stores/${store.id}/products`)
         .send({
           name: generatedName,
           description: 'Product description',
@@ -123,7 +125,7 @@ describe('Integration - AI Features (E2E)', () => {
     it('Step 1: Generate description for new product', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post('/ai/generator/description')
+        .post(`/stores/${store.id}/ai/generator/description`)
         .send({
           name: 'Premium Wireless Headphones',
           productSpec: {
@@ -151,7 +153,7 @@ describe('Integration - AI Features (E2E)', () => {
       // Generate description
       const descResponse = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post('/ai/generator/description')
+        .post(`/stores/${store.id}/ai/generator/description`)
         .send({
           name: 'Smart Watch Pro',
           productSpec: {
@@ -167,7 +169,7 @@ describe('Integration - AI Features (E2E)', () => {
       // Create product
       const productResponse = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post('/products')
+        .post(`/stores/${store.id}/products`)
         .send({
           name: 'Smart Watch Pro',
           description: generatedDesc,
@@ -185,7 +187,7 @@ describe('Integration - AI Features (E2E)', () => {
       for (const tone of tones) {
         const response = await authHelper
           .authenticatedRequest(storeOwner.accessToken)
-          .post('/ai/generator/description')
+          .post(`/stores/${store.id}/ai/generator/description`)
           .send({
             name: 'Gaming Keyboard',
             productSpec: {
@@ -206,7 +208,7 @@ describe('Integration - AI Features (E2E)', () => {
     it('Step 1: Generate product ideas for store', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post('/ai/generator/ideas')
+        .post(`/stores/${store.id}/ai/generator/ideas`)
         .send({
           storeStyle: 'eco-friendly home goods',
           seed: 'sustainable living',
@@ -225,7 +227,7 @@ describe('Integration - AI Features (E2E)', () => {
       // Generate ideas
       const ideasResponse = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post('/ai/generator/ideas')
+        .post(`/stores/${store.id}/ai/generator/ideas`)
         .send({
           storeStyle: 'tech accessories',
           seed: 'productivity',
@@ -242,7 +244,7 @@ describe('Integration - AI Features (E2E)', () => {
       for (const idea of ideas) {
         const productResponse = await authHelper
           .authenticatedRequest(storeOwner.accessToken)
-          .post('/products')
+          .post(`/stores/${store.id}/products`)
           .send({
             name: idea.name || idea,
             description: idea.description || 'AI-generated product',
@@ -262,7 +264,7 @@ describe('Integration - AI Features (E2E)', () => {
     it('should generate custom marketing content', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post('/ai/generator/custom')
+        .post(`/stores/${store.id}/ai/generator/custom`)
         .send({
           prompt:
             'Write a promotional announcement for our new summer collection sale',
@@ -277,7 +279,7 @@ describe('Integration - AI Features (E2E)', () => {
     it('should generate product announcement', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post('/ai/generator/custom')
+        .post(`/stores/${store.id}/ai/generator/custom`)
         .send({
           prompt: `Create a product launch announcement for a new smartwatch with health tracking features`,
           storeId: store.id,
@@ -290,7 +292,7 @@ describe('Integration - AI Features (E2E)', () => {
     it('should generate FAQ content', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post('/ai/generator/custom')
+        .post(`/stores/${store.id}/ai/generator/custom`)
         .send({
           prompt:
             'Generate 5 FAQ questions and answers for an electronics store',
@@ -307,7 +309,7 @@ describe('Integration - AI Features (E2E)', () => {
       // Generate some AI activity
       await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post('/ai/generator/names')
+        .post(`/stores/${store.id}/ai/generator/names`)
         .send({
           storeStyle: 'modern',
           seed: 'test',
@@ -316,7 +318,7 @@ describe('Integration - AI Features (E2E)', () => {
 
       await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post('/ai/generator/description')
+        .post(`/stores/${store.id}/ai/generator/description`)
         .send({
           name: 'Test Product',
           productSpec: {},
@@ -329,7 +331,7 @@ describe('Integration - AI Features (E2E)', () => {
     it('should track AI usage per store', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .get(`/ai/generator/stores/${store.id}/usage`)
+        .get(`/stores/${store.id}/ai/generator/usage`)
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -339,7 +341,7 @@ describe('Integration - AI Features (E2E)', () => {
     it('should get AI usage statistics', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .get('/ai/logs/stats')
+        .get(`/stores/${store.id}/ai/logs/stats`)
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -349,7 +351,7 @@ describe('Integration - AI Features (E2E)', () => {
     it('should get top AI features used', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .get('/ai/logs/features/top')
+        .get(`/stores/${store.id}/ai/logs/features/top`)
         .query({ limit: 5 })
         .expect(200);
 
@@ -361,7 +363,7 @@ describe('Integration - AI Features (E2E)', () => {
     it('should track daily AI usage', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .get('/ai/logs/daily')
+        .get(`/stores/${store.id}/ai/logs/daily`)
         .query({ days: 7 })
         .expect(200);
 
@@ -375,7 +377,7 @@ describe('Integration - AI Features (E2E)', () => {
       // Step 1: Generate product names
       const namesResponse = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post('/ai/generator/names')
+        .post(`/stores/${store.id}/ai/generator/names`)
         .send({
           storeStyle: 'premium tech',
           seed: 'bluetooth speaker',
@@ -389,7 +391,7 @@ describe('Integration - AI Features (E2E)', () => {
       // Step 2: Generate description
       const descResponse = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post('/ai/generator/description')
+        .post(`/stores/${store.id}/ai/generator/description`)
         .send({
           name: productName,
           productSpec: {
@@ -407,7 +409,7 @@ describe('Integration - AI Features (E2E)', () => {
       // Step 3: Create product
       const productResponse = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post('/products')
+        .post(`/stores/${store.id}/products`)
         .send({
           name: productName,
           description: productDescription,
@@ -424,7 +426,7 @@ describe('Integration - AI Features (E2E)', () => {
 
       const logsResponse = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .get('/ai/logs')
+        .get(`/stores/${store.id}/ai/logs`)
         .expect(200);
 
       const productCreationLogs = logsResponse.body.data.logs.filter(
@@ -441,7 +443,7 @@ describe('Integration - AI Features (E2E)', () => {
     it('moderator should access AI features', async () => {
       const response = await authHelper
         .authenticatedRequest(storeModerator.accessToken)
-        .post('/ai/generator/names')
+        .post(`/stores/${store.id}/ai/generator/names`)
         .send({
           storeStyle: 'casual',
           seed: 'test',
@@ -455,7 +457,7 @@ describe('Integration - AI Features (E2E)', () => {
     it('regular user should not access AI features', async () => {
       const response = await authHelper
         .authenticatedRequest(regularUser.accessToken)
-        .post('/ai/generator/names')
+        .post(`/stores/${store.id}/ai/generator/names`)
         .send({
           storeStyle: 'test',
           seed: 'test',
@@ -468,7 +470,7 @@ describe('Integration - AI Features (E2E)', () => {
     it('only store admin can view AI usage stats', async () => {
       const response = await authHelper
         .authenticatedRequest(storeModerator.accessToken)
-        .get(`/ai/generator/stores/${store.id}/usage`);
+        .get(`/stores/${store.id}/ai/generator/stores/${store.id}/usage`);
 
       expect(response.status).toBe(403);
     });
@@ -479,7 +481,7 @@ describe('Integration - AI Features (E2E)', () => {
       // Generate ideas
       const ideasResponse = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post('/ai/generator/ideas')
+        .post(`/stores/${store.id}/ai/generator/ideas`)
         .send({
           storeStyle: 'fitness equipment',
           seed: 'home workout',
@@ -496,7 +498,7 @@ describe('Integration - AI Features (E2E)', () => {
       for (const idea of ideas) {
         const descResponse = await authHelper
           .authenticatedRequest(storeOwner.accessToken)
-          .post('/ai/generator/description')
+          .post(`/stores/${store.id}/ai/generator/description`)
           .send({
             name: idea.name || idea,
             productSpec: {
@@ -520,7 +522,7 @@ describe('Integration - AI Features (E2E)', () => {
       for (const productData of productsData) {
         const response = await authHelper
           .authenticatedRequest(storeOwner.accessToken)
-          .post('/products')
+          .post(`/stores/${store.id}/products`)
           .send({
             ...productData,
             storeId: store.id,
@@ -535,8 +537,7 @@ describe('Integration - AI Features (E2E)', () => {
       // Verify all products created
       const allProducts = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .get('/products')
-        .query({ storeId: store.id })
+        .get(`/stores/${store.id}/products/byStore`)
         .expect(200);
 
       expect(allProducts.body.data.length).toBeGreaterThanOrEqual(3);
@@ -548,7 +549,7 @@ describe('Integration - AI Features (E2E)', () => {
       // Attempt generation with invalid data
       await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .post('/ai/generator/names')
+        .post(`/stores/${store.id}/ai/generator/names`)
         .send({
           storeStyle: '',
           seed: '',
@@ -561,7 +562,7 @@ describe('Integration - AI Features (E2E)', () => {
       // Check error logs
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .get('/ai/logs/errors')
+        .get(`/stores/${store.id}/ai/logs/errors`)
         .expect(200);
 
       expect(response.body.data.errorLogs).toBeDefined();
@@ -572,7 +573,7 @@ describe('Integration - AI Features (E2E)', () => {
     it('should list available AI generation types', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .get('/ai/generator/types')
+        .get(`/stores/${store.id}/ai/generator/types`)
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -584,7 +585,7 @@ describe('Integration - AI Features (E2E)', () => {
     it('should include type configurations', async () => {
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .get('/ai/generator/types')
+        .get(`/stores/${store.id}/ai/generator/types`)
         .expect(200);
 
       const types = response.body.data.types;
@@ -601,7 +602,7 @@ describe('Integration - AI Features (E2E)', () => {
       for (let i = 0; i < 5; i++) {
         await authHelper
           .authenticatedRequest(storeOwner.accessToken)
-          .post('/ai/generator/names')
+          .post(`/stores/${store.id}/ai/generator/names`)
           .send({
             storeStyle: 'test',
             seed: `test-${i}`,
@@ -613,7 +614,7 @@ describe('Integration - AI Features (E2E)', () => {
 
       const response = await authHelper
         .authenticatedRequest(storeOwner.accessToken)
-        .get('/ai/logs/trends')
+        .get(`/stores/${store.id}/ai/logs/trends`)
         .query({ days: 7 })
         .expect(200);
 

@@ -306,7 +306,6 @@ describe('CartItemController', () => {
   });
 
   describe('concurrent operations', () => {
-
     it('should handle concurrent quantity updates', async () => {
       const quantities = [1, 2, 3, 4, 5];
       cartItemService.updateQuantity!.mockImplementation((_, qty) =>
@@ -328,4 +327,4 @@ describe('CartItemController', () => {
       });
     });
   });
-  });
+});

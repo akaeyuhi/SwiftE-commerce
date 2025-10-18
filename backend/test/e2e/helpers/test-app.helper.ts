@@ -12,7 +12,6 @@ import { SubscribersModule } from 'src/database/subscribers/subscribers.module';
 import { TestDatabaseConfiguration } from '../config/test-ormconfig';
 import { AnalyticsReviewsModule } from 'src/modules/analytics-reviews/analytics-reviews.module';
 import { UserModule } from 'src/modules/user/user.module';
-import { getQueueToken } from '@nestjs/bull';
 import * as request from 'supertest';
 import * as cookieParser from 'cookie-parser';
 
@@ -54,42 +53,42 @@ export class TestAppHelper {
       ],
     });
 
-    // Mock all queue providers
-    const queueNames = [
-      'email',
-      'notifications',
-      'analytics',
-      'processing',
-      // Add all your queue names here
-    ];
-
-    // Create mock queue for each queue name
-    queueNames.forEach((queueName) => {
-      moduleBuilder.overrideProvider(getQueueToken(queueName)).useValue({
-        add: jest.fn().mockResolvedValue({ id: 'mock-job-id' }),
-        process: jest.fn(),
-        on: jest.fn(),
-        close: jest.fn().mockResolvedValue(undefined),
-        removeJobs: jest.fn().mockResolvedValue(undefined),
-        clean: jest.fn().mockResolvedValue(undefined),
-        getJob: jest.fn(),
-        getJobs: jest.fn().mockResolvedValue([]),
-        getJobCounts: jest.fn().mockResolvedValue({}),
-      });
-    });
-
-    // Mock email service if it exists
-    moduleBuilder.overrideProvider('EmailService').useValue({
-      sendEmail: jest.fn().mockResolvedValue(true),
-      sendVerificationEmail: jest.fn().mockResolvedValue(true),
-      sendPasswordResetEmail: jest.fn().mockResolvedValue(true),
-    });
-
-    // Mock notification service if it exists
-    moduleBuilder.overrideProvider('NotificationService').useValue({
-      send: jest.fn().mockResolvedValue(true),
-      sendPush: jest.fn().mockResolvedValue(true),
-    });
+    // // Mock all queue providers
+    // const queueNames = [
+    //   'email',
+    //   'notifications',
+    //   'analytics',
+    //   'processing',
+    //   // Add all your queue names here
+    // ];
+    //
+    // // Create mock queue for each queue name
+    // queueNames.forEach((queueName) => {
+    //   moduleBuilder.overrideProvider(getQueueToken(queueName)).useValue({
+    //     add: jest.fn().mockResolvedValue({ id: 'mock-job-id' }),
+    //     process: jest.fn(),
+    //     on: jest.fn(),
+    //     close: jest.fn().mockResolvedValue(undefined),
+    //     removeJobs: jest.fn().mockResolvedValue(undefined),
+    //     clean: jest.fn().mockResolvedValue(undefined),
+    //     getJob: jest.fn(),
+    //     getJobs: jest.fn().mockResolvedValue([]),
+    //     getJobCounts: jest.fn().mockResolvedValue({}),
+    //   });
+    // });
+    //
+    // // Mock email service if it exists
+    // moduleBuilder.overrideProvider('EmailService').useValue({
+    //   sendEmail: jest.fn().mockResolvedValue(true),
+    //   sendVerificationEmail: jest.fn().mockResolvedValue(true),
+    //   sendPasswordResetEmail: jest.fn().mockResolvedValue(true),
+    // });
+    //
+    // // Mock notification service if it exists
+    // moduleBuilder.overrideProvider('NotificationService').useValue({
+    //   send: jest.fn().mockResolvedValue(true),
+    //   sendPush: jest.fn().mockResolvedValue(true),
+    // });
 
     this.module = await moduleBuilder.compile();
 

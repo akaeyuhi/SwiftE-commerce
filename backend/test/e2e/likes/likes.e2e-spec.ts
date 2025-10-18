@@ -147,27 +147,27 @@ describe('Likes (E2E)', () => {
       expect(likes.length).toBe(2);
     });
 
-    // it('should record analytics event for like', async () => {
-    //   await authHelper
-    //     .authenticatedRequest(user1.accessToken)
-    //     .post(`/users/${user1.user.id}/likes/product/${product.id}`)
-    //     .send({ productId: product.id })
-    //     .expect(201);
-    //
-    //   // Verify analytics event was recorded
-    //   const eventRepo = appHelper
-    //     .getDataSource()
-    //     .getRepository('AnalyticsEvent');
-    //   const events = await eventRepo.find({
-    //     where: {
-    //       productId: product.id,
-    //       eventType: 'like',
-    //       userId: user1.user.id,
-    //     },
-    //   });
-    //
-    //   expect(events.length).toBeGreaterThan(0);
-    // });
+    it('should record analytics event for like', async () => {
+      await authHelper
+        .authenticatedRequest(user1.accessToken)
+        .post(`/users/${user1.user.id}/likes/product/${product.id}`)
+        .send({ productId: product.id })
+        .expect(201);
+
+      // Verify analytics event was recorded
+      const eventRepo = appHelper
+        .getDataSource()
+        .getRepository('AnalyticsEvent');
+      const events = await eventRepo.find({
+        where: {
+          productId: product.id,
+          eventType: 'like',
+          userId: user1.user.id,
+        },
+      });
+
+      expect(events.length).toBeGreaterThan(0);
+    });
 
     it('should update product like count', async () => {
       await authHelper

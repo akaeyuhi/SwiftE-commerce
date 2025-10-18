@@ -190,9 +190,14 @@ describe('ProductsController', () => {
       const photos = [{ buffer: Buffer.from('test') } as Express.Multer.File];
       const created = { id: 'p1', name: 'Product' };
 
+      const payload = {
+        photos,
+        mainPhoto: undefined as unknown as Express.Multer.File[],
+      };
+
       service.create!.mockResolvedValue(created as any);
 
-      await controller.createProduct('s1', dto as any, photos);
+      await controller.createProduct('s1', dto as any, payload);
 
       expect(service.create).toHaveBeenCalledWith(
         expect.objectContaining({ name: 'Product', storeId: 's1' }),
@@ -216,17 +221,20 @@ describe('ProductsController', () => {
   describe('addPhotosToProduct', () => {
     it('should throw when no photos uploaded', async () => {
       await expect(
-        controller.addPhotosToProduct('s1', 'p1', [])
+        controller.addPhotosToProduct('s1', 'p1', { photos: [] })
       ).rejects.toThrow(BadRequestException);
     });
 
     it('should add photos to product', async () => {
       const photos = [{ buffer: Buffer.from('test') } as Express.Multer.File];
       const savedPhotos = [{ id: 'ph1' }];
+      const payload = {
+        photos,
+      };
 
       service.addPhotos!.mockResolvedValue(savedPhotos as any);
 
-      await controller.addPhotosToProduct('s1', 'p1', photos);
+      await controller.addPhotosToProduct('s1', 'p1', payload);
 
       expect(service.addPhotos).toHaveBeenCalledWith('p1', 's1', photos);
     });
@@ -241,9 +249,12 @@ describe('ProductsController', () => {
 
     it('should add main photo', async () => {
       const photo = { buffer: Buffer.from('test') } as Express.Multer.File;
+      const payload = {
+        mainPhoto: [photo] as Express.Multer.File[],
+      };
       service.addMainPhoto!.mockResolvedValue([{ id: 'ph1' }] as any);
 
-      await controller.addMainPhotoToProduct('s1', 'p1', photo);
+      await controller.addMainPhotoToProduct('s1', 'p1', payload);
 
       expect(service.addMainPhoto).toHaveBeenCalledWith('p1', 's1', photo);
     });

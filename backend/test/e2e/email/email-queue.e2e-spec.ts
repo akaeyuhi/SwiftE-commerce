@@ -82,6 +82,7 @@ describe('Email - Queue (E2E)', () => {
       const jobId = await emailQueueService.sendLowStockWarning(
         storeOwner.user.email,
         storeOwner.user.firstName,
+        store.name,
         {
           name: 'Product',
           sku: 'SKU-123',

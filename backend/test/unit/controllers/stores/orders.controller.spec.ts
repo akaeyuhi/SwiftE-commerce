@@ -198,6 +198,8 @@ describe('OrdersController', () => {
       ordersService.createOrder!.mockResolvedValue(mockOrder);
 
       const result = await controller.createUserOrder(
+        'u1',
+
         's1',
         createDto,
         req as Request
@@ -219,7 +221,12 @@ describe('OrdersController', () => {
 
       ordersService.createOrder!.mockResolvedValue(mockOrder);
 
-      await controller.createUserOrder('s1', dtoWithoutStore, req as Request);
+      await controller.createUserOrder(
+        'u1',
+        's1',
+        dtoWithoutStore,
+        req as Request
+      );
 
       expect(ordersService.createOrder).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -235,7 +242,12 @@ describe('OrdersController', () => {
 
       ordersService.createOrder!.mockResolvedValue(mockOrder);
 
-      await controller.createUserOrder('s1', dtoWithoutUser, req as Request);
+      await controller.createUserOrder(
+        'u1',
+        's1',
+        dtoWithoutUser,
+        req as Request
+      );
 
       expect(ordersService.createOrder).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -248,7 +260,7 @@ describe('OrdersController', () => {
       const req = {} as Request;
 
       await expect(
-        controller.createUserOrder('s1', createDto, req)
+        controller.createUserOrder('u1', 's1', createDto, req)
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -257,10 +269,10 @@ describe('OrdersController', () => {
       const dtoForOtherUser = { ...createDto, userId: 'u2' };
 
       await expect(
-        controller.createUserOrder('s1', dtoForOtherUser, req as Request)
+        controller.createUserOrder('u1', 's1', dtoForOtherUser, req as Request)
       ).rejects.toThrow(BadRequestException);
       await expect(
-        controller.createUserOrder('s1', dtoForOtherUser, req as Request)
+        controller.createUserOrder('u1', 's1', dtoForOtherUser, req as Request)
       ).rejects.toThrow('Cannot create order for another user');
     });
 
@@ -270,7 +282,12 @@ describe('OrdersController', () => {
 
       ordersService.createOrder!.mockResolvedValue(mockOrder);
 
-      await controller.createUserOrder('s1', dtoForOtherUser, req as Request);
+      await controller.createUserOrder(
+        'u1',
+        's1',
+        dtoForOtherUser,
+        req as Request
+      );
 
       expect(ordersService.createOrder).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -286,7 +303,7 @@ describe('OrdersController', () => {
       );
 
       await expect(
-        controller.createUserOrder('s1', createDto, req as Request)
+        controller.createUserOrder('u1', 's1', createDto, req as Request)
       ).rejects.toThrow(BadRequestException);
     });
   });
@@ -750,6 +767,7 @@ describe('OrdersController', () => {
 
       // Create
       const created = await controller.createUserOrder(
+        'u1',
         's1',
         createDto,
         req as Request
@@ -788,6 +806,7 @@ describe('OrdersController', () => {
 
       // Create
       const created = await controller.createUserOrder(
+        'u1',
         's1',
         createDto,
         req as Request

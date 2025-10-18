@@ -23,9 +23,10 @@ export enum AnalyticsJobType {
 export enum AnalyticsEventType {
   VIEW = 'view',
   LIKE = 'like',
-  ADD_TO_CART = 'add_to_cart',
+  UNLIKE = 'unlike',
+  ADD_TO_CART = 'addToCart',
   PURCHASE = 'purchase',
+  CHECKOUT = 'checkout',
   CLICK = 'click',
-  SEARCH = 'search',
   CUSTOM = 'custom',
 }

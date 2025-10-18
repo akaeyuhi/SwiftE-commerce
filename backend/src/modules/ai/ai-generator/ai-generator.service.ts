@@ -297,13 +297,8 @@ export class AiGeneratorService extends BaseAiService<
         throw new Error(response.error || 'Description generation failed');
       }
 
-      // ✅ Debug log to see what's being returned
-      console.log('AI Response:', JSON.stringify(response.result, null, 2));
-
-      // ✅ Extract the text from the result
       const generatedText = response.result?.result || response.result;
 
-      // ✅ Parse with the updated function
       const parsed = this.parseDescriptionResponse(generatedText, name);
 
       return {

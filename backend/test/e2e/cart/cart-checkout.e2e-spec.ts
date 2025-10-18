@@ -7,6 +7,7 @@ import { ProductsModule } from 'src/modules/products/products.module';
 import { StoreModule } from 'src/modules/store/store.module';
 import { UserModule } from 'src/modules/user/user.module';
 import { AuthModule } from 'src/modules/auth/auth.module';
+import { AnalyticsEventType } from 'src/entities/infrastructure/analytics/analytics-event.entity';
 
 describe('Cart - Items (E2E)', () => {
   let appHelper: TestAppHelper;
@@ -163,32 +164,32 @@ describe('Cart - Items (E2E)', () => {
       expect(items.length).toBe(2);
     });
 
-    // it('should record analytics event', async () => {
-    //   await authHelper
-    //     .authenticatedRequest(customer.accessToken)
-    //     .post(
-    //       `/stores/${store.id}/${customer.user.id}/cart/${cart.id}/add-item`
-    //     )
-    //     .send({
-    //       cartId: cart.id,
-    //       variantId: variants[0].id,
-    //       quantity: 2,
-    //       productId: product.id,
-    //     })
-    //     .expect(201);
-    //
-    //   const eventRepo = appHelper
-    //     .getDataSource()
-    //     .getRepository('AnalyticsEvent');
-    //   const events = await eventRepo.find({
-    //     where: {
-    //       productId: product.id,
-    //       eventType: AnalyticsEventType.ADD_TO_CART,
-    //     },
-    //   });
-    //
-    //   expect(events.length).toBeGreaterThan(0);
-    // });
+    it('should record analytics event', async () => {
+      await authHelper
+        .authenticatedRequest(customer.accessToken)
+        .post(
+          `/stores/${store.id}/${customer.user.id}/cart/${cart.id}/add-item`
+        )
+        .send({
+          cartId: cart.id,
+          variantId: variants[0].id,
+          quantity: 2,
+          productId: product.id,
+        })
+        .expect(201);
+
+      const eventRepo = appHelper
+        .getDataSource()
+        .getRepository('AnalyticsEvent');
+      const events = await eventRepo.find({
+        where: {
+          productId: product.id,
+          eventType: AnalyticsEventType.ADD_TO_CART,
+        },
+      });
+
+      expect(events.length).toBeGreaterThan(0);
+    });
   });
 
   describe('PUT /stores/:storeId/:userId/cart/:cartId/items/:itemId', () => {

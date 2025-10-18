@@ -77,6 +77,7 @@ export class InventoryNotificationService extends BaseNotificationService<
       return await this.emailQueue.sendLowStockWarning(
         payload.recipient,
         payload.recipient,
+        outOfStockData.storeName,
         {
           name: outOfStockData.productName,
           sku: outOfStockData.sku,
@@ -98,6 +99,7 @@ export class InventoryNotificationService extends BaseNotificationService<
       return await this.emailQueue.sendLowStockWarning(
         payload.recipient,
         payload.recipientName || payload.recipient,
+        lowStockData.storeName,
         {
           name: lowStockData.productName,
           sku: lowStockData.sku,

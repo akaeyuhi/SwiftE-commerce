@@ -178,6 +178,9 @@ export class SendLowStockWarningDto {
   @IsString()
   storeOwnerName: string;
 
+  @IsString()
+  storeName: string;
+
   @ValidateNested()
   @Type(() => LowStockWarningProductDataDto)
   productData: LowStockWarningProductDataDto;

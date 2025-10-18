@@ -238,6 +238,7 @@ export class EmailQueueService extends BaseQueueService<EmailJobData> {
   async sendLowStockWarning(
     storeOwnerEmail: string,
     storeOwnerName: string,
+    storeName: string,
     productData: {
       name: string;
       sku: string;
@@ -260,6 +261,7 @@ export class EmailQueueService extends BaseQueueService<EmailJobData> {
           html: '',
           templateId: 'low_stock_warning',
           templateData: {
+            storeName,
             storeOwnerName,
             productName: productData.name,
             productSku: productData.sku,
@@ -335,6 +337,7 @@ export class EmailQueueService extends BaseQueueService<EmailJobData> {
           templateId: 'password_reset',
           templateData: {
             userName,
+            storeName: 'Swift E-Commerce',
             resetUrl,
             expirationMinutes,
           },

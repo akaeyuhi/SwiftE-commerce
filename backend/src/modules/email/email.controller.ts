@@ -127,6 +127,7 @@ export class EmailController {
     const jobId = await this.emailQueueService.sendLowStockWarning(
       dto.storeOwnerEmail,
       dto.storeOwnerName,
+      dto.storeName,
       dto.productData,
       dto.manageInventoryUrl
     );

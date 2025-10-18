@@ -7,7 +7,7 @@ import {
   MockedMethods,
 } from 'test/unit/helpers';
 import { Test, TestingModule } from '@nestjs/testing';
-import {StoreRoles} from "src/common/enums/store-roles.enum";
+import { StoreRoles } from 'src/common/enums/store-roles.enum';
 
 describe('UserRepository', () => {
   let repository: UserRepository;

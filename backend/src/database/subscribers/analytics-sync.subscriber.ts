@@ -53,19 +53,19 @@ export class AnalyticsSyncSubscriber
 
     switch (event.eventType) {
       case AnalyticsEventType.VIEW:
-        updates.viewCount = () => 'view_count + 1';
+        updates.viewCount = () => 'viewCount + 1';
         break;
 
       case AnalyticsEventType.LIKE:
-        updates.likeCount = () => 'like_count + 1';
+        updates.likeCount = () => 'likeCount + 1';
         break;
 
       case AnalyticsEventType.UNLIKE:
-        updates.likeCount = () => 'GREATEST(like_count - 1, 0)';
+        updates.likeCount = () => 'GREATEST(likeCount - 1, 0)';
         break;
 
       case AnalyticsEventType.PURCHASE:
-        updates.totalSales = () => 'total_sales + 1';
+        updates.totalSales = () => 'totalSales + 1';
         break;
     }
 
