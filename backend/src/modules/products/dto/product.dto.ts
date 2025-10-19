@@ -3,6 +3,8 @@ import { Category } from 'src/entities/store/product/category.entity';
 import { ProductVariant } from 'src/entities/store/product/variant.entity';
 import { ProductPhoto } from 'src/entities/store/product/product-photo.entity';
 import { Review } from 'src/entities/store/review.entity';
+import { ApiProperty } from '@nestjs/swagger';
+import { CategoryDto } from 'src/modules/store/categories/dto/category.dto';
 
 /**
  * Full product DTO with all fields and relations
@@ -25,7 +27,11 @@ export class ProductDto {
 
   // Relations (optional, loaded as needed)
   store?: Store;
-  categories?: Category[];
+  @ApiProperty({
+    type: () => [CategoryDto], // Use the DTO with a lazy resolver
+    required: false,
+  })
+  categories?: CategoryDto[]; // Reference the DTO, not the entity
   variants?: ProductVariant[];
   photos?: ProductPhoto[];
   reviews?: Review[];

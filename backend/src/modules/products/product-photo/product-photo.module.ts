@@ -3,9 +3,10 @@ import { ProductPhotoService } from 'src/modules/products/product-photo/product-
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ProductPhoto } from 'src/entities/store/product/product-photo.entity';
 import { ProductPhotoRepository } from 'src/modules/products/product-photo/product-photo.repository';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([ProductPhoto])],
+  imports: [ConfigModule, TypeOrmModule.forFeature([ProductPhoto])],
   providers: [ProductPhotoService, ProductPhotoRepository],
   exports: [ProductPhotoService, ProductPhotoRepository],
 })
