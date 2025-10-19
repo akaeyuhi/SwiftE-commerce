@@ -1,24 +1,43 @@
 import { create } from 'zustand';
-import { devtools, persist } from 'zustand/middleware';
-import { authSlice, type AuthSlice } from './authSlice';
-import { cartSlice, type CartSlice } from './cartSlice';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import { devtools } from 'zustand/middleware';
+import { createAuthSlice, AuthSlice } from './slices/authSlice';
+import { createUISlice, UISlice } from './slices/uiSlice';
+import { createCartSlice, CartSlice } from './slices/cartSlice';
+import {
+  createPreferencesSlice,
+  PreferencesSlice,
+} from './slices/preferencesSlice.ts';
 
-type StoreState = AuthSlice & CartSlice;
+// Combine all slices
+export type AppStore = AuthSlice & UISlice & CartSlice & PreferencesSlice;
 
-export const useStore = create<StoreState>()(
+export const useStore = create<AppStore>()(
   devtools(
     persist(
       (...a) => ({
-        ...authSlice(...a),
-        ...cartSlice(...a),
+        ...createAuthSlice(...a),
+        ...createUISlice(...a),
+        ...createCartSlice(...a),
+        ...createPreferencesSlice(...a),
       }),
       {
         name: 'swiftecommerce-storage',
+        storage: createJSONStorage(() => localStorage),
         partialize: (state) => ({
-          items: state.items, // Only persist cart
+          // Only persist these
+          auth: {
+            isAuthenticated: state.isAuthenticated,
+            user: state.user,
+          },
+          preferences: {
+            theme: state.theme,
+            language: state.language,
+            currency: state.currency,
+          },
         }),
       }
     ),
-    { name: 'SwiftEcommerce Store' }
+    { name: 'AppStore' }
   )
 );
