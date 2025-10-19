@@ -1,5 +1,4 @@
 import { Store } from 'src/entities/store/store.entity';
-import { Category } from 'src/entities/store/product/category.entity';
 import { ProductVariant } from 'src/entities/store/product/variant.entity';
 import { ProductPhoto } from 'src/entities/store/product/product-photo.entity';
 import { Review } from 'src/entities/store/review.entity';
