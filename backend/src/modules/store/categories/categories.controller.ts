@@ -78,7 +78,7 @@ export class CategoriesController extends BaseController<
    * @returns Promise resolving to an array of root Category objects, each containing nested `children`.
    */
   @Get('tree')
-  async getTree(): Promise<Category[]> {
+  async getTree(): Promise<CategoryDto[]> {
     return this.categoriesService.getTree();
   }
 

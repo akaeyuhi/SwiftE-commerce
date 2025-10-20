@@ -4,11 +4,11 @@
  */
 export class ReviewDto {
   id: string;
-  productId: string;
-  userId: string;
+  productId?: string;
+  userId?: string;
   rating: number;
   title: string;
   comment?: string;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
 }

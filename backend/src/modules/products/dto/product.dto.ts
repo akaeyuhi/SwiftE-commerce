@@ -1,9 +1,11 @@
-import { Store } from 'src/entities/store/store.entity';
 import { ProductVariant } from 'src/entities/store/product/variant.entity';
 import { ProductPhoto } from 'src/entities/store/product/product-photo.entity';
 import { Review } from 'src/entities/store/review.entity';
 import { ApiProperty } from '@nestjs/swagger';
 import { CategoryDto } from 'src/modules/store/categories/dto/category.dto';
+import { StoreDto } from 'src/modules/store/dto/store.dto';
+import { VariantDto } from 'src/modules/store/variants/dto/variants.dto';
+import { ReviewDto } from 'src/modules/products/reviews/dto/review.dto';
 
 /**
  * Full product DTO with all fields and relations
@@ -25,12 +27,12 @@ export class ProductDto {
   updatedAt?: Date;
 
   // Relations (optional, loaded as needed)
-  store?: Store;
+  store?: StoreDto;
   @ApiProperty({
-    type: () => [CategoryDto], // Use the DTO with a lazy resolver
+    type: () => [CategoryDto],
     required: false,
   })
-  categories?: CategoryDto[]; // Reference the DTO, not the entity
+  categories?: CategoryDto[];
   variants?: ProductVariant[];
   photos?: ProductPhoto[];
   reviews?: Review[];
@@ -71,43 +73,36 @@ export class ProductDetailDto {
   // Store
   storeId?: string;
   storeName?: string;
+  store?: StoreDto;
 
   // Categories
-  categories: Array<{
-    id: string;
-    name: string;
-  }>;
+  @ApiProperty({
+    type: () => [CategoryDto],
+    required: false,
+  })
+  categories: CategoryDto[];
 
   // Photos
-  mainPhoto?: {
-    id: string;
-    url: string;
-    altText?: string;
-  };
-  photos: Array<{
-    id: string;
-    url: string;
-    altText?: string;
-  }>;
+  @ApiProperty({
+    type: () => ProductPhoto,
+    required: false,
+  })
+  mainPhoto?: ProductPhoto;
+  @ApiProperty({
+    type: () => [ProductPhoto],
+    required: false,
+  })
+  photos: ProductPhoto[];
 
   // Variants with stock info
-  variants: Array<{
-    id: string;
-    sku: string;
-    price: number;
-    attributes?: Record<string, any>;
-    inStock?: boolean;
-    stockQuantity?: number;
-  }>;
+  @ApiProperty({
+    type: () => [VariantDto],
+    required: false,
+  })
+  variants: VariantDto[];
 
   // Recent reviews
-  recentReviews: Array<{
-    id: string;
-    rating: number;
-    comment?: string;
-    userName: string;
-    createdAt: Date;
-  }>;
+  recentReviews: ReviewDto[];
 
   createdAt: Date;
   updatedAt: Date;

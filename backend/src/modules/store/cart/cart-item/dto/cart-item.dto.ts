@@ -8,6 +8,7 @@ import { IsUUID, IsInt, Min, IsOptional } from 'class-validator';
  */
 export class CartItemDto {
   @IsUUID()
+  @IsOptional()
   cartId: string;
 
   @IsUUID()

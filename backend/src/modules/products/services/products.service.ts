@@ -141,7 +141,7 @@ export class ProductsService extends BaseService<
     dto: CreateProductDto,
     photos?: Express.Multer.File[],
     mainPhoto?: Express.Multer.File
-  ): Promise<Product> {
+  ): Promise<ProductDto> {
     const store = await this.storeService.getEntityById(dto.storeId);
     if (!store) throw new NotFoundException('Store not found');
 
@@ -166,7 +166,9 @@ export class ProductsService extends BaseService<
       await this.addPhotos(product.id, store.id, savePhotos);
     }
 
-    return (await this.findProductWithRelations(product.id))!;
+    return this.productsMapper.toDto(
+      (await this.findProductWithRelations(product.id))!
+    );
   }
 
   /**

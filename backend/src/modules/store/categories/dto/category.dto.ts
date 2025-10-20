@@ -6,6 +6,6 @@ export class CategoryDto {
   name: string;
   description?: string;
   parentId?: string | null;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
 }

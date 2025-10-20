@@ -11,6 +11,7 @@ import {
   NotFoundException,
   Req,
   ForbiddenException,
+  Patch,
 } from '@nestjs/common';
 import { CartService } from 'src/modules/store/cart/cart.service';
 import { CreateCartDto } from 'src/modules/store/cart/dto/create-cart.dto';
@@ -189,5 +190,14 @@ export class CartController extends BaseController<
     @Param('userId', new ParseUUIDPipe()) userId: string
   ): Promise<{ userId: string; result: ShoppingCart[] }> {
     return this.cartService.getUserMergedCarts(userId);
+  }
+
+  @Patch('sync')
+  async syncCartData(
+    @Param('storeId', new ParseUUIDPipe()) storeId: string,
+    @Param('userId', new ParseUUIDPipe()) userId: string,
+    @Body() dto: CreateCartDto
+  ) {
+    return this.cartService.syncCart(storeId, userId, dto);
   }
 }

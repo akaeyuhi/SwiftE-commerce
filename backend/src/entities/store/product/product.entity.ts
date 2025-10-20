@@ -17,6 +17,7 @@ import { ProductVariant } from 'src/entities/store/product/variant.entity';
 import { ProductPhoto } from 'src/entities/store/product/product-photo.entity';
 import { Review } from 'src/entities/store/review.entity';
 import { StoreOwnedEntity } from 'src/common/interfaces/crud/store-owned.entity.interface';
+import { ApiProperty } from '@nestjs/swagger';
 
 @Entity({ name: 'products' })
 @Index(['storeId', 'deletedAt'])
@@ -30,6 +31,10 @@ export class Product implements StoreOwnedEntity {
   storeId: string;
 
   @ManyToOne(() => Store, (store) => store.products, { onDelete: 'CASCADE' })
+  @ApiProperty({
+    type: () => Store,
+    required: false,
+  })
   store: Store;
 
   @ManyToMany(() => Category, (category) => category.products, {
@@ -39,6 +44,10 @@ export class Product implements StoreOwnedEntity {
     name: 'product_categories',
     joinColumn: { name: 'product_id', referencedColumnName: 'id' },
     inverseJoinColumn: { name: 'category_id', referencedColumnName: 'id' },
+  })
+  @ApiProperty({
+    type: () => [Category],
+    required: false,
   })
   categories: Category[];
 

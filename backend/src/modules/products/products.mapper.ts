@@ -35,7 +35,12 @@ export class ProductsMapper extends BaseMapper<Product, ProductDto> {
 
       // Relations (only if loaded)
       store: entity.store,
-      categories: entity.categories,
+      categories:
+        entity.categories?.map((c) => ({
+          id: c.id,
+          name: c.name,
+          description: c.description,
+        })) || [],
       variants: entity.variants,
       mainPhotoUrl:
         entity.mainPhotoUrl || entity.photos?.find((p) => p.isMain)?.url,
@@ -106,21 +111,12 @@ export class ProductsMapper extends BaseMapper<Product, ProductDto> {
         entity.categories?.map((c) => ({
           id: c.id,
           name: c.name,
+          description: c.description,
         })) || [],
 
       // Photos
-      mainPhoto: mainPhoto
-        ? {
-            id: mainPhoto.id,
-            url: mainPhoto.url,
-            altText: mainPhoto.altText,
-          }
-        : undefined,
-      photos: additionalPhotos.map((p) => ({
-        id: p.id,
-        url: p.url,
-        altText: p.altText,
-      })),
+      mainPhoto,
+      photos: additionalPhotos,
 
       // Variants
       variants:
@@ -129,8 +125,9 @@ export class ProductsMapper extends BaseMapper<Product, ProductDto> {
           sku: v.sku,
           price: Number(v.price),
           attributes: v.attributes,
-          inStock: v.inventory?.quantity > 0,
-          stockQuantity: v.inventory?.quantity,
+          inventory: {
+            quantity: v.inventory.quantity,
+          },
         })) || [],
 
       // Reviews (summary)
@@ -138,6 +135,7 @@ export class ProductsMapper extends BaseMapper<Product, ProductDto> {
         entity.reviews?.slice(0, 5).map((r) => ({
           id: r.id,
           rating: r.rating,
+          title: r.title,
           comment: r.comment,
           userName: r.user
             ? `${r.user?.firstName} ${r.user?.lastName}`.trim()

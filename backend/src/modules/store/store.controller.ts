@@ -360,7 +360,7 @@ export class StoreController extends BaseController<
   async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateStoreDto
-  ) {
+  ): Promise<StoreDto> {
     return this.storeService.update(id, dto);
   }
 

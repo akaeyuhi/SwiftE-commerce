@@ -37,6 +37,7 @@ import { AccessPolicies } from 'src/modules/authorization/policy/policy.types';
 import { AdminRoles } from 'src/common/enums/admin.enum';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { StoreRole } from 'src/common/decorators/store-role.decorator';
+import { ApiResponse } from '@nestjs/swagger';
 
 /**
  * ProductsController
@@ -269,6 +270,11 @@ export class ProductsController extends BaseController<
   @Post()
   @StoreRole(StoreRoles.ADMIN, StoreRoles.MODERATOR)
   @HttpCode(HttpStatus.CREATED)
+  @ApiResponse({
+    status: 200,
+    description: 'The found record.',
+    type: ProductDto,
+  })
   async createProduct(
     @Param('storeId', ParseUUIDPipe) storeId: string,
     @Body() body: CreateProductDto,
