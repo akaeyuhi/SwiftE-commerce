@@ -1,31 +1,38 @@
-import { StateCreator } from 'zustand';
-import { AppStore } from '@/app/store';
+import { Language, Currency, SliceCreator } from '../types';
 
 export interface PreferencesSlice {
   // State
-  language: string;
-  currency: string;
+  language: Language;
+  currency: Currency;
   itemsPerPage: number;
   defaultView: 'grid' | 'list';
+  notificationsEnabled: boolean;
+  soundEnabled: boolean;
 
   // Actions
-  setLanguage: (language: string) => void;
-  setCurrency: (currency: string) => void;
+  setLanguage: (language: Language) => void;
+  setCurrency: (currency: Currency) => void;
   setItemsPerPage: (items: number) => void;
   setDefaultView: (view: 'grid' | 'list') => void;
+  setNotificationsEnabled: (enabled: boolean) => void;
+  setSoundEnabled: (enabled: boolean) => void;
+  resetPreferences: () => void;
 }
 
-export const createPreferencesSlice: StateCreator<
-  AppStore,
-  [['zustand/devtools', never]],
-  [],
-  PreferencesSlice
-> = (set) => ({
-  // Initial state
-  language: 'en',
-  currency: 'USD',
+const DEFAULT_PREFERENCES = {
+  language: 'en' as Language,
+  currency: 'USD' as Currency,
   itemsPerPage: 20,
-  defaultView: 'grid',
+  defaultView: 'grid' as const,
+  notificationsEnabled: true,
+  soundEnabled: true,
+};
+
+export const createPreferencesSlice: SliceCreator<PreferencesSlice> = (
+  set
+) => ({
+  // Initial state
+  ...DEFAULT_PREFERENCES,
 
   // Actions
   setLanguage: (language) =>
@@ -39,4 +46,16 @@ export const createPreferencesSlice: StateCreator<
 
   setDefaultView: (view) =>
     set({ defaultView: view }, false, 'preferences/setDefaultView'),
+
+  setNotificationsEnabled: (enabled) =>
+    set(
+      { notificationsEnabled: enabled },
+      false,
+      'preferences/setNotificationsEnabled'
+    ),
+
+  setSoundEnabled: (enabled) =>
+    set({ soundEnabled: enabled }, false, 'preferences/setSoundEnabled'),
+
+  resetPreferences: () => set(DEFAULT_PREFERENCES, false, 'preferences/reset'),
 });

@@ -1,7 +1,4 @@
-import { StateCreator } from 'zustand';
-import { AppStore } from '@/app/store';
-
-export type Theme = 'light' | 'dark' | 'system';
+import { Theme, SliceCreator } from '../types';
 
 export interface UISlice {
   // State
@@ -9,34 +6,46 @@ export interface UISlice {
   sidebarOpen: boolean;
   mobileMenuOpen: boolean;
   searchOpen: boolean;
+  commandMenuOpen: boolean;
 
   // Actions
   setTheme: (theme: Theme) => void;
+  toggleTheme: () => void;
   toggleSidebar: () => void;
   setSidebarOpen: (open: boolean) => void;
   toggleMobileMenu: () => void;
   setMobileMenuOpen: (open: boolean) => void;
   toggleSearch: () => void;
   setSearchOpen: (open: boolean) => void;
+  toggleCommandMenu: () => void;
+  setCommandMenuOpen: (open: boolean) => void;
+  closeAll: () => void;
 
   // Computed
   getActualTheme: () => 'light' | 'dark';
 }
 
-export const createUISlice: StateCreator<
-  AppStore,
-  [['zustand/devtools', never]],
-  [],
-  UISlice
-> = (set, get) => ({
+export const createUISlice: SliceCreator<UISlice> = (set, get) => ({
   // Initial state
   theme: 'system',
   sidebarOpen: true,
   mobileMenuOpen: false,
   searchOpen: false,
+  commandMenuOpen: false,
 
   // Actions
   setTheme: (theme) => set({ theme }, false, 'ui/setTheme'),
+
+  toggleTheme: () =>
+    set(
+      (state) => {
+        const current = state.getActualTheme();
+        const newTheme = current === 'light' ? 'dark' : 'light';
+        return { theme: newTheme };
+      },
+      false,
+      'ui/toggleTheme'
+    ),
 
   toggleSidebar: () =>
     set(
@@ -66,6 +75,27 @@ export const createUISlice: StateCreator<
     ),
 
   setSearchOpen: (open) => set({ searchOpen: open }, false, 'ui/setSearchOpen'),
+
+  toggleCommandMenu: () =>
+    set(
+      (state) => ({ commandMenuOpen: !state.commandMenuOpen }),
+      false,
+      'ui/toggleCommandMenu'
+    ),
+
+  setCommandMenuOpen: (open) =>
+    set({ commandMenuOpen: open }, false, 'ui/setCommandMenuOpen'),
+
+  closeAll: () =>
+    set(
+      {
+        mobileMenuOpen: false,
+        searchOpen: false,
+        commandMenuOpen: false,
+      },
+      false,
+      'ui/closeAll'
+    ),
 
   // Computed
   getActualTheme: () => {

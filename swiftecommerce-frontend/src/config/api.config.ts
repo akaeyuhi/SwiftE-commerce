@@ -138,6 +138,7 @@ export const API_ENDPOINTS = {
     REMOVE_CART: '/stores/:storeId/:userId/cart',
     MERGED_CARTS: '/stores/:storeId/:userId/cart/merged',
     ADD_OR_INCREMENT: '/stores/:storeId/:userId/cart/:cartId/add-item',
+    SYNC_ITEMS: '/stores/:storeId/:userId/cart/sync',
   },
 
   // Cart Items

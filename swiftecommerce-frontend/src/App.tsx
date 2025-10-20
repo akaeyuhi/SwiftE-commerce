@@ -1,15 +1,17 @@
-import { ThemeProvider } from '@/lib/theme';
+import { RouterProvider } from 'react-router-dom';
 import { QueryProvider } from './app/providers/QueryProvider';
+import { ThemeProvider } from './lib/theme';
 import { Toaster } from 'sonner';
+import { router } from './app/routes';
+import { PWAUpdatePrompt } from '@/components/PWAUpdatePrompt.tsx';
 
 function App() {
   return (
-    <ThemeProvider defaultTheme="system" storageKey="swiftecommerce-theme">
+    <ThemeProvider defaultTheme="system">
       <QueryProvider>
-        <div className="min-h-screen bg-background">
-          <h1 className="text-4xl font-bold">SwiftE-commerce</h1>
-        </div>
+        <RouterProvider router={router} />
         <Toaster position="top-right" richColors />
+        <PWAUpdatePrompt />
       </QueryProvider>
     </ThemeProvider>
   );

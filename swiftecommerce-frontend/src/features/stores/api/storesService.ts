@@ -31,7 +31,7 @@ export class StoresService extends BaseService {
    * Create new store
    */
   async createStore(userId: string, data: CreateStoreData): Promise<Store> {
-    const url = this.buildUrl(API_ENDPOINTS.USERS.STORES, { id: userId });
+    const url = this.buildUrl(API_ENDPOINTS.USERS.CREATE_STORE, { id: userId });
     return this.client.post<Store>(url, data);
   }
 

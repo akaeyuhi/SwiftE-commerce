@@ -1,13 +1,4 @@
-import { StateCreator } from 'zustand';
-import { AppStore } from '@/app/store';
-
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-  role: 'customer' | 'store_owner' | 'admin';
-  storeId?: string;
-}
+import { User, SliceCreator } from '../types';
 
 export interface AuthSlice {
   // State
@@ -20,18 +11,15 @@ export interface AuthSlice {
   setAccessToken: (token: string | null) => void;
   login: (user: User, token: string) => void;
   logout: () => void;
+  updateUser: (updates: Partial<User>) => void;
 
-  // Selectors
+  // Computed selectors
   isStoreOwner: () => boolean;
   isAdmin: () => boolean;
+  hasStore: () => boolean;
 }
 
-export const createAuthSlice: StateCreator<
-  AppStore,
-  [['zustand/devtools', never]],
-  [],
-  AuthSlice
-> = (set, get) => ({
+export const createAuthSlice: SliceCreator<AuthSlice> = (set, get) => ({
   // Initial state
   user: null,
   isAuthenticated: false,
@@ -66,7 +54,17 @@ export const createAuthSlice: StateCreator<
       'auth/logout'
     ),
 
-  // Selectors
+  updateUser: (updates) =>
+    set(
+      (state) => ({
+        user: state.user ? { ...state.user, ...updates } : null,
+      }),
+      false,
+      'auth/updateUser'
+    ),
+
+  // Computed selectors
   isStoreOwner: () => get().user?.role === 'store_owner',
   isAdmin: () => get().user?.role === 'admin',
+  hasStore: () => !!get().user?.storeId,
 });

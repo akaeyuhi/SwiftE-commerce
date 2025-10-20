@@ -22,7 +22,7 @@
     "allowUnusedLabels": false,
     "allowUnreachableCode": false,
 
-    "types": ["vite/client"],
+    "types": ["vite/client", "vite-plugin-pwa/client"],
 
     "baseUrl": ".",
     "paths": {

@@ -1,43 +1,100 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import { devtools } from 'zustand/middleware';
+import { devtools, persist, createJSONStorage } from 'zustand/middleware';
 import { createAuthSlice, AuthSlice } from './slices/authSlice';
 import { createUISlice, UISlice } from './slices/uiSlice';
 import { createCartSlice, CartSlice } from './slices/cartSlice';
 import {
   createPreferencesSlice,
   PreferencesSlice,
-} from './slices/preferencesSlice.ts';
+} from './slices/preferencesSlice';
 
-// Combine all slices
+/**
+ * Combined store type
+ */
 export type AppStore = AuthSlice & UISlice & CartSlice & PreferencesSlice;
 
+/**
+ * Main application store
+ */
 export const useStore = create<AppStore>()(
   devtools(
     persist(
-      (...a) => ({
-        ...createAuthSlice(...a),
-        ...createUISlice(...a),
-        ...createCartSlice(...a),
-        ...createPreferencesSlice(...a),
+      (set, get, api) => ({
+        ...createAuthSlice(set, get, api),
+        ...createUISlice(set, get, api),
+        ...createCartSlice(set, get, api),
+        ...createPreferencesSlice(set, get, api),
       }),
       {
         name: 'swiftecommerce-storage',
         storage: createJSONStorage(() => localStorage),
         partialize: (state) => ({
-          // Only persist these
-          auth: {
-            isAuthenticated: state.isAuthenticated,
-            user: state.user,
-          },
-          preferences: {
-            theme: state.theme,
-            language: state.language,
-            currency: state.currency,
-          },
+          user: state.user,
+          isAuthenticated: state.isAuthenticated,
+          accessToken: state.accessToken,
+          theme: state.theme,
+          sidebarOpen: state.sidebarOpen,
+          language: state.language,
+          currency: state.currency,
+          itemsPerPage: state.itemsPerPage,
+          defaultView: state.defaultView,
+          notificationsEnabled: state.notificationsEnabled,
+          soundEnabled: state.soundEnabled,
         }),
+        version: 1,
       }
     ),
-    { name: 'AppStore' }
+    { name: 'AppStore', enabled: import.meta.env.DEV }
   )
 );
+
+// Selector hooks
+export const useAuth = () =>
+  useStore((state) => ({
+    user: state.user,
+    isAuthenticated: state.isAuthenticated,
+    accessToken: state.accessToken,
+    login: state.login,
+    logout: state.logout,
+    updateUser: state.updateUser,
+    isStoreOwner: state.isStoreOwner,
+    isAdmin: state.isAdmin,
+  }));
+
+export const useUI = () =>
+  useStore((state) => ({
+    theme: state.theme,
+    sidebarOpen: state.sidebarOpen,
+    mobileMenuOpen: state.mobileMenuOpen,
+    searchOpen: state.searchOpen,
+    setTheme: state.setTheme,
+    toggleTheme: state.toggleTheme,
+    toggleSidebar: state.toggleSidebar,
+    setSidebarOpen: state.setSidebarOpen,
+    toggleMobileMenu: state.toggleMobileMenu,
+    closeAll: state.closeAll,
+    getActualTheme: state.getActualTheme,
+  }));
+
+export const useCart = () =>
+  useStore((state) => ({
+    items: state.items,
+    addItem: state.addItem,
+    removeItem: state.removeItem,
+    updateQuantity: state.updateQuantity,
+    clearCart: state.clearCart,
+    getTotal: state.getTotal,
+    getItemCount: state.getItemCount,
+    hasItem: state.hasItem,
+  }));
+
+export const usePreferences = () =>
+  useStore((state) => ({
+    language: state.language,
+    currency: state.currency,
+    itemsPerPage: state.itemsPerPage,
+    defaultView: state.defaultView,
+    setLanguage: state.setLanguage,
+    setCurrency: state.setCurrency,
+    setDefaultView: state.setDefaultView,
+  }));

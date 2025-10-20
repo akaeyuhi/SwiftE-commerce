@@ -4,7 +4,12 @@ import { Cart } from '../types/cart.types';
 
 export interface AddToCartData {
   variantId: string;
+  cartId?: string;
   quantity: number;
+}
+
+export interface CreateCartData {
+  products: AddToCartData[];
 }
 
 export interface UpdateCartItemData {
@@ -29,10 +34,25 @@ export class CartService extends BaseService {
   async addItem(
     storeId: string,
     userId: string,
-    cartId: string,
     data: AddToCartData
   ): Promise<Cart> {
-    const url = this.buildUrl(API_ENDPOINTS.CART.ADD_ITEM, {
+    const url = this.buildUrl(API_ENDPOINTS.CART.ADD_OR_INCREMENT, {
+      storeId,
+      userId,
+    });
+    return this.client.post<Cart>(url, data);
+  }
+
+  /**
+   * Add item to cart
+   */
+  async syncCart(
+    storeId: string,
+    userId: string,
+    cartId: string,
+    data: CreateCartData
+  ): Promise<Cart> {
+    const url = this.buildUrl(API_ENDPOINTS.CART.SYNC_ITEMS, {
       storeId,
       userId,
       cartId,
@@ -50,7 +70,7 @@ export class CartService extends BaseService {
     itemId: string,
     data: UpdateCartItemData
   ): Promise<Cart> {
-    const url = this.buildUrl(API_ENDPOINTS.CART.UPDATE_ITEM, {
+    const url = this.buildUrl(API_ENDPOINTS.CART_ITEMS.UPDATE, {
       storeId,
       userId,
       cartId,
@@ -68,7 +88,7 @@ export class CartService extends BaseService {
     cartId: string,
     itemId: string
   ): Promise<Cart> {
-    const url = this.buildUrl(API_ENDPOINTS.CART.REMOVE_ITEM, {
+    const url = this.buildUrl(API_ENDPOINTS.CART_ITEMS.DELETE, {
       storeId,
       userId,
       cartId,

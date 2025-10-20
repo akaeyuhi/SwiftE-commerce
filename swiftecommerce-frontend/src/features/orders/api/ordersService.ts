@@ -34,6 +34,17 @@ export class OrdersService extends BaseService {
   }
 
   /**
+   * Get single order
+   */
+  async getByUser(storeId: string, userId: string): Promise<Order[]> {
+    const url = this.buildUrl(API_ENDPOINTS.ORDERS.BY_USER, {
+      storeId,
+      userId,
+    });
+    return this.client.get<Order[]>(url);
+  }
+
+  /**
    * Create new order
    */
   async createOrder(storeId: string, data: CreateOrderData): Promise<Order> {
