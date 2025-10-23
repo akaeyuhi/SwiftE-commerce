@@ -1,11 +1,11 @@
 import { BaseService } from '@/lib/api/BaseService';
 import { API_ENDPOINTS, buildUrl } from '@/config/api.config';
 import { StoreRole } from '@/features/stores/types/store.types.ts';
-import { User } from '@/app/store/types';
 import {
   CreateUserDto,
   UpdateProfileDto,
   UpdateUserDto,
+  User,
 } from '../types/users.types';
 
 export class UsersService extends BaseService {

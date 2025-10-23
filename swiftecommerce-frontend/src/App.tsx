@@ -3,7 +3,7 @@ import { QueryProvider } from './app/providers/QueryProvider';
 import { ThemeProvider } from './lib/theme';
 import { Toaster } from 'sonner';
 import { router } from './app/routes';
-import { PWAUpdatePrompt } from '@/components/PWAUpdatePrompt.tsx';
+import { PWAUpdatePrompt } from '@/shared/components/PWAUpdatePrompt.tsx';
 
 function App() {
   return (

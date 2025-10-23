@@ -1,29 +1,101 @@
-import { useQuery, UseQueryOptions } from '@tanstack/react-query';
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  UseQueryOptions,
+} from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
-import { StoreAnalytics, ConversionMetrics } from '../types/analytics.types';
 import { api } from '@/lib/api';
+import {
+  AnalyticsEvent,
+  CohortAnalysis,
+  ConversionMetrics,
+  FunnelAnalysis,
+  ProductPerformance,
+  UserJourney,
+} from '../types/analytics.types';
+import {
+  AnalyticsParams,
+  TopProductsParams,
+} from '@/features/analytics/api/analyticsService.ts';
+
+// export function useQuickStats(
+//   storeId: string,
+//   options?: Omit<UseQueryOptions<QuickStatsDto>, 'queryKey' | 'queryFn'>
+// ) {
+//   return useQuery({
+//     queryKey: [...queryKeys.analytics.store(storeId), 'quick-stats'],
+//     queryFn: () => api.analytics.getQuickStats(storeId),
+//     enabled: !!storeId,
+//     staleTime: 1 * 60 * 1000,
+//     ...options,
+//   });
+// }
 
 export function useStoreAnalytics(
   storeId: string,
-  params?: any,
-  options?: Omit<UseQueryOptions<StoreAnalytics>, 'queryKey' | 'queryFn'>
+  params?: Record<string, any>,
+  options?: Omit<UseQueryOptions<Record<string, any>>, 'queryKey' | 'queryFn'>
 ) {
   return useQuery({
     queryKey: queryKeys.analytics.store(storeId, params),
     queryFn: () => api.analytics.getStoreAnalytics(storeId, params),
-    staleTime: 5 * 60 * 1000,
+    enabled: !!storeId,
+    staleTime: 2 * 60 * 1000,
     ...options,
   });
 }
 
 export function useConversionMetrics(
   storeId: string,
-  params?: any,
+  params?: Record<string, any>,
   options?: Omit<UseQueryOptions<ConversionMetrics>, 'queryKey' | 'queryFn'>
 ) {
   return useQuery({
     queryKey: queryKeys.analytics.conversion(storeId, params),
     queryFn: () => api.analytics.getStoreConversion(storeId, params),
+    enabled: !!storeId,
+    staleTime: 2 * 60 * 1000,
+    ...options,
+  });
+}
+
+export function useRatingMetrics(
+  storeId: string,
+  options?: Omit<UseQueryOptions<any>, 'queryKey' | 'queryFn'>
+) {
+  return useQuery({
+    queryKey: [...queryKeys.analytics.store(storeId), 'ratings'],
+    queryFn: () => api.analytics.getStoreRatings(storeId),
+    enabled: !!storeId,
+    staleTime: 5 * 60 * 1000,
+    ...options,
+  });
+}
+
+export function useTopProductsByViews(
+  storeId: string,
+  params?: TopProductsParams,
+  options?: Omit<UseQueryOptions<ProductPerformance[]>, 'queryKey' | 'queryFn'>
+) {
+  return useQuery({
+    queryKey: [...queryKeys.analytics.store(storeId), 'top-views', params],
+    queryFn: () => api.analytics.getTopProductsByViews(storeId, params),
+    enabled: !!storeId,
+    staleTime: 5 * 60 * 1000,
+    ...options,
+  });
+}
+
+export function useTopProductsByConversion(
+  storeId: string,
+  params?: TopProductsParams,
+  options?: Omit<UseQueryOptions<ProductPerformance[]>, 'queryKey' | 'queryFn'>
+) {
+  return useQuery({
+    queryKey: [...queryKeys.analytics.store(storeId), 'top-conversion', params],
+    queryFn: () => api.analytics.getTopProductsByConversion(storeId, params),
+    enabled: !!storeId,
     staleTime: 5 * 60 * 1000,
     ...options,
   });
@@ -31,26 +103,91 @@ export function useConversionMetrics(
 
 export function useFunnelAnalysis(
   storeId: string,
-  params?: any,
-  options?: Omit<UseQueryOptions<any>, 'queryKey' | 'queryFn'>
+  params?: Record<string, any>,
+  options?: Omit<UseQueryOptions<FunnelAnalysis>, 'queryKey' | 'queryFn'>
 ) {
   return useQuery({
     queryKey: queryKeys.analytics.funnel(storeId, params),
     queryFn: () => api.analytics.getFunnelAnalysis(storeId, params),
+    enabled: !!storeId,
+    staleTime: 2 * 60 * 1000,
+    ...options,
+  });
+}
+
+export function useRevenueTrends(
+  storeId: string,
+  params?: AnalyticsParams,
+  options?: Omit<UseQueryOptions<any[]>, 'queryKey' | 'queryFn'>
+) {
+  return useQuery({
+    queryKey: queryKeys.analytics.revenueTrends(storeId, params),
+    queryFn: () => api.analytics.getRevenueTrends(storeId, params),
+    enabled: !!storeId,
     staleTime: 5 * 60 * 1000,
     ...options,
   });
 }
 
-export function useTopProducts(
+export function useCohortAnalysis(
   storeId: string,
-  params?: any,
-  options?: Omit<UseQueryOptions<any[]>, 'queryKey' | 'queryFn'>
+  params?: Record<string, any>,
+  options?: Omit<UseQueryOptions<CohortAnalysis>, 'queryKey' | 'queryFn'>
 ) {
   return useQuery({
-    queryKey: [...queryKeys.analytics.store(storeId, params), 'top-products'],
-    queryFn: () => api.analytics.getTopPerformingProducts(storeId, params),
-    staleTime: 5 * 60 * 1000,
+    queryKey: queryKeys.analytics.cohort(storeId, params),
+    queryFn: () => api.analytics.getCohortAnalysis(storeId, params),
+    enabled: !!storeId,
+    staleTime: 10 * 60 * 1000,
     ...options,
   });
+}
+
+export function useUserJourney(
+  storeId: string,
+  params?: AnalyticsParams,
+  options?: Omit<UseQueryOptions<UserJourney>, 'queryKey' | 'queryFn'>
+) {
+  return useQuery({
+    queryKey: [...queryKeys.analytics.store(storeId), 'user-journey', params],
+    queryFn: () => api.analytics.getUserJourney(storeId, params),
+    enabled: !!storeId,
+    staleTime: 2 * 60 * 1000,
+    ...options,
+  });
+}
+
+export function useAnalyticsMutations(storeId: string) {
+  const queryClient = useQueryClient();
+
+  const recordEvent = useMutation({
+    mutationFn: (event: AnalyticsEvent) =>
+      api.analytics.recordEvent(storeId, event),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.analytics.store(storeId),
+      });
+    },
+    onError: (error: any) => {
+      console.error('Failed to record analytics event:', error);
+    },
+  });
+
+  const recordEventsBatch = useMutation({
+    mutationFn: (data: AnalyticsEvent[]) =>
+      api.analytics.recordEventsBatch(storeId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.analytics.store(storeId),
+      });
+    },
+    onError: (error: any) => {
+      console.error('Failed to record analytics events:', error);
+    },
+  });
+
+  return {
+    recordEvent,
+    recordEventsBatch,
+  };
 }

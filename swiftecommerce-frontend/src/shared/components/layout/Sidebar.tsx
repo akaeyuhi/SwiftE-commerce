@@ -2,6 +2,7 @@ import { Link } from '@/shared/components/ui/Link';
 import { useLocation } from 'react-router-dom';
 import { ROUTES } from '@/app/routes/routes';
 import { useUI } from '@/app/store';
+import { cn } from '@/shared/utils/cn';
 import {
   LayoutDashboard,
   ShoppingBag,
@@ -12,7 +13,6 @@ import {
   HelpCircle,
   X,
 } from 'lucide-react';
-import { cn } from '@/utils/cn.ts';
 
 export function Sidebar() {
   const location = useLocation();
@@ -72,20 +72,20 @@ export function Sidebar() {
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white border-r ' +
-            'border-gray-200 transform transition-transform duration-300 ease-in-out',
+          'fixed lg:static inset-y-0 left-0 z-50 w-64 bg-card border-r border-border',
+          'transform transition-transform duration-300 ease-in-out',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         )}
       >
         <div className="h-full flex flex-col">
           {/* Header - Mobile only */}
-          <div className="lg:hidden flex items-center justify-between p-4 border-b">
-            <h2 className="font-semibold">Menu</h2>
+          <div className="lg:hidden flex items-center justify-between p-4 border-b border-border">
+            <h2 className="font-semibold text-foreground">Menu</h2>
             <button
               onClick={() => setSidebarOpen(false)}
-              className="p-2 hover:bg-gray-100 rounded-lg"
+              className="p-2 hover:bg-muted rounded-lg transition-colors"
             >
-              <X className="h-5 w-5" />
+              <X className="h-5 w-5 text-foreground" />
             </button>
           </div>
 
@@ -100,8 +100,8 @@ export function Sidebar() {
                   className={cn(
                     'flex items-center gap-3 px-3 py-2 rounded-lg transition-colors',
                     isActive
-                      ? 'bg-primary text-white'
-                      : 'text-gray-700 hover:bg-gray-100'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                   )}
                 >
                   <item.icon className="h-5 w-5" />
@@ -112,7 +112,7 @@ export function Sidebar() {
           </nav>
 
           {/* Bottom navigation */}
-          <div className="p-4 border-t space-y-1">
+          <div className="p-4 border-t border-border space-y-1">
             {bottomNavigation.map((item) => {
               const isActive = location.pathname === item.href;
               return (
@@ -122,8 +122,8 @@ export function Sidebar() {
                   className={cn(
                     'flex items-center gap-3 px-3 py-2 rounded-lg transition-colors',
                     isActive
-                      ? 'bg-primary text-white'
-                      : 'text-gray-700 hover:bg-gray-100'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                   )}
                 >
                   <item.icon className="h-5 w-5" />

@@ -16,6 +16,17 @@ export default {
         primary: {
           DEFAULT: 'hsl(var(--primary))',
           foreground: 'hsl(var(--primary-foreground))',
+          // Add these for the HomePage gradients
+          50: 'hsl(222, 47%, 95%)',
+          100: 'hsl(222, 47%, 90%)',
+          200: 'hsl(222, 47%, 80%)',
+          300: 'hsl(222, 47%, 70%)',
+          400: 'hsl(222, 47%, 60%)',
+          500: 'hsl(222, 47%, 50%)',
+          600: 'hsl(222, 47%, 40%)',
+          700: 'hsl(222, 47%, 30%)',
+          800: 'hsl(222, 47%, 20%)',
+          900: 'hsl(222, 47%, 11.2%)',
         },
         secondary: {
           DEFAULT: 'hsl(var(--secondary))',
@@ -40,6 +51,27 @@ export default {
         card: {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
+        },
+        // ✅ ADD SEMANTIC COLORS
+        success: {
+          DEFAULT: 'hsl(var(--success))',
+          foreground: 'hsl(var(--success-foreground))',
+          light: 'hsl(142, 76%, 90%)', // Light theme
+        },
+        warning: {
+          DEFAULT: 'hsl(var(--warning))',
+          foreground: 'hsl(var(--warning-foreground))',
+          light: 'hsl(38, 92%, 90%)', // Light theme
+        },
+        error: {
+          DEFAULT: 'hsl(0, 84%, 60%)',
+          foreground: 'hsl(210, 40%, 98%)',
+          light: 'hsl(0, 84%, 90%)', // Light theme
+        },
+        info: {
+          DEFAULT: 'hsl(var(--info))',
+          foreground: 'hsl(var(--info-foreground))',
+          light: 'hsl(199, 89%, 90%)', // Light theme
         },
       },
       borderRadius: {

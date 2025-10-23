@@ -1,21 +1,21 @@
 import { useQuery, UseQueryOptions } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
-import { Order, OrderFilters } from '../types/order.types';
-import { PaginatedResponse } from '@/lib/api/types';
-import { api } from '@/lib/api';
+import { api, PaginatedResponse } from '@/lib/api';
+import { Order } from '@/features/orders/types/order.types.ts';
 
 export function useOrders(
   storeId: string,
-  filters?: OrderFilters,
+  params?: Record<string, any>,
   options?: Omit<
     UseQueryOptions<PaginatedResponse<Order>>,
     'queryKey' | 'queryFn'
   >
 ) {
   return useQuery({
-    queryKey: queryKeys.orders.list(storeId, filters),
-    queryFn: () => api.orders.getOrders(storeId, filters),
-    staleTime: 60 * 1000,
+    queryKey: queryKeys.orders.list(storeId, params),
+    queryFn: () => api.orders.getOrders(storeId, params),
+    enabled: !!storeId,
+    staleTime: 2 * 60 * 1000,
     ...options,
   });
 }
@@ -28,8 +28,8 @@ export function useOrder(
   return useQuery({
     queryKey: queryKeys.orders.detail(storeId, orderId),
     queryFn: () => api.orders.getOrder(storeId, orderId),
-    enabled: !!orderId && !!storeId,
-    staleTime: 30 * 1000,
+    enabled: !!storeId && !!orderId,
+    staleTime: 2 * 60 * 1000,
     ...options,
   });
 }
@@ -42,8 +42,25 @@ export function useUserOrders(
   return useQuery({
     queryKey: queryKeys.orders.byUser(storeId, userId),
     queryFn: () => api.orders.getByUser(storeId, userId),
-    enabled: !!userId && !!storeId,
-    staleTime: 60 * 1000,
+    enabled: !!storeId && !!userId,
+    staleTime: 2 * 60 * 1000,
     ...options,
   });
 }
+
+// export function useOrderInventoryImpact(
+//   storeId: string,
+//   orderId: string,
+//   options?: Omit<UseQueryOptions<InventoryImpactDto[]>, 'queryKey' | 'queryFn'>
+// ) {
+//   return useQuery({
+//     queryKey: [
+//       ...queryKeys.orders.detail(storeId, orderId),
+//       'inventory-impact',
+//     ],
+//     queryFn: () => api.orders.getInventoryImpact(storeId, orderId),
+//     enabled: !!storeId && !!orderId,
+//     staleTime: 60 * 1000,
+//     ...options,
+//   });
+// }

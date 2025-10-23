@@ -1,4 +1,5 @@
 import { Link } from '@/shared/components/ui/Link';
+import { Logo } from '@/shared/components/ui/Logo';
 import { useAuth, useCart } from '@/app/store';
 import { ROUTES } from '@/app/routes/routes';
 import { useNavigate } from '@/shared/hooks/useNavigate';
@@ -7,9 +8,9 @@ import {
   Menu,
   X,
   Search,
-  Store,
   LayoutDashboard,
   LogOut,
+  Store,
 } from 'lucide-react';
 import { useState } from 'react';
 import {
@@ -34,57 +35,72 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-white border-b border-gray-200">
+    <header className="sticky top-0 z-50 bg-background border-b border-border shadow-sm">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
-          <Link to={ROUTES.HOME} className="flex items-center gap-2">
-            <Store className="h-6 w-6 text-primary" />
-            <span className="text-xl font-bold">SwiftE-commerce</span>
+          {/* Logo */}
+          <Link
+            to={ROUTES.HOME}
+            className="hover:opacity-80 transition-opacity"
+          >
+            <Logo size="md" />
           </Link>
 
+          {/* Search bar - Desktop */}
           <div className="hidden md:flex flex-1 max-w-2xl mx-8">
             <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <Search
+                className="absolute left-3 top-1/2 -translate-y-1/2
+              h-5 w-5 text-muted-foreground"
+              />
               <input
                 type="text"
-                placeholder="Search products..."
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg
-                focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                placeholder="Search stores..."
+                className="w-full pl-10 pr-4 py-2 bg-muted border border-input rounded-lg
+                  text-foreground placeholder:text-muted-foreground
+                  focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent
+                  transition-shadow"
               />
             </div>
           </div>
 
+          {/* Right side */}
           <div className="flex items-center gap-4">
+            {/* Cart */}
             <button
               onClick={() => navigate.toCart()}
-              className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="relative p-2 hover:bg-muted rounded-lg transition-colors"
+              aria-label="Shopping cart"
             >
-              <ShoppingCart className="h-6 w-6" />
+              <ShoppingCart className="h-6 w-6 text-foreground" />
               {cartItemCount > 0 && (
                 <span
-                  className="absolute -top-1 -right-1 bg-primary text-white text-xs
-                rounded-full h-5 w-5 flex items-center justify-center"
+                  className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs
+                    rounded-full h-5 w-5 flex items-center justify-center font-semibold"
                 >
                   {cartItemCount}
                 </span>
               )}
             </button>
 
+            {/* User menu - Desktop */}
             {isAuthenticated ? (
               <div className="hidden md:flex items-center">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button
                       className="flex items-center gap-2 px-3 py-2
-                    hover:bg-gray-100 rounded-lg transition-colors"
+                        hover:bg-muted rounded-lg transition-colors"
                     >
                       <div
-                        className="h-8 w-8 bg-primary text-white rounded-full
-                      flex items-center justify-center"
+                        className="h-8 w-8 bg-primary text-primary-foreground rounded-full
+                          flex items-center justify-center font-semibold"
                       >
-                        {user?.name?.toUpperCase() || 'U'}
+                        {user?.firstName?.toUpperCase() || 'U'}
                       </div>
-                      <span className="font-medium">{user?.name}</span>
+                      <span className="font-medium text-foreground">
+                        {user?.firstName}
+                      </span>
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
@@ -92,7 +108,7 @@ export function Header() {
                       <LayoutDashboard className="h-4 w-4 mr-2" />
                       Dashboard
                     </DropdownMenuItem>
-                    {user?.role === 'store_owner' && (
+                    {user?.siteRole === 'SITE_ADMIN' && (
                       <DropdownMenuItem onClick={() => navigate.toStore()}>
                         <Store className="h-4 w-4 mr-2" />
                         My Store
@@ -101,7 +117,7 @@ export function Header() {
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       onClick={handleLogout}
-                      className="text-red-600"
+                      className="text-error focus:text-error"
                     >
                       <LogOut className="h-4 w-4 mr-2" />
                       Logout
@@ -113,101 +129,70 @@ export function Header() {
               <div className="hidden md:flex items-center gap-2">
                 <Link
                   to={ROUTES.LOGIN}
-                  className="px-4 py-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="px-4 py-2 text-foreground hover:bg-muted
+                  rounded-lg transition-colors font-medium"
                 >
                   Login
                 </Link>
                 <Link
                   to={ROUTES.REGISTER}
-                  className="px-4 py-2 bg-primary text-white
-                  rounded-lg hover:bg-primary/90 transition-colors"
+                  className="px-4 py-2 bg-primary text-primary-foreground
+                    rounded-lg hover:bg-primary/90 transition-colors font-medium shadow-sm"
                 >
                   Sign Up
                 </Link>
               </div>
             )}
 
+            {/* Mobile menu button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 hover:bg-gray-100 rounded-lg"
+              className="md:hidden p-2 hover:bg-muted rounded-lg transition-colors"
+              aria-label="Toggle menu"
             >
               {mobileMenuOpen ? (
-                <X className="h-6 w-6" />
+                <X className="h-6 w-6 text-foreground" />
               ) : (
-                <Menu className="h-6 w-6" />
+                <Menu className="h-6 w-6 text-foreground" />
               )}
             </button>
           </div>
         </div>
-
-        <nav className="hidden md:flex items-center gap-6 py-3 border-t">
-          <Link
-            to={ROUTES.PRODUCTS}
-            className="hover:text-primary transition-colors"
-          >
-            All Products
-          </Link>
-          <Link
-            to="/categories/electronics"
-            className="hover:text-primary transition-colors"
-          >
-            Electronics
-          </Link>
-          <Link
-            to="/categories/clothing"
-            className="hover:text-primary transition-colors"
-          >
-            Clothing
-          </Link>
-          <Link
-            to="/categories/home"
-            className="hover:text-primary transition-colors"
-          >
-            Home & Garden
-          </Link>
-          <Link
-            to="/deals"
-            className="hover:text-primary transition-colors text-red-600 font-medium"
-          >
-            Deals
-          </Link>
-        </nav>
       </div>
 
+      {/* Mobile menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t bg-white">
+        <div className="md:hidden border-t border-border bg-background">
           <div className="container mx-auto px-4 py-4 space-y-4">
+            {/* Search - Mobile */}
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <Search
+                className="absolute left-3 top-1/2
+              -translate-y-1/2 h-5 w-5 text-muted-foreground"
+              />
               <input
                 type="text"
-                placeholder="Search products..."
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg"
+                placeholder="Search stores..."
+                className="w-full pl-10 pr-4 py-2 bg-muted border border-input rounded-lg
+                  text-foreground placeholder:text-muted-foreground"
               />
             </div>
-            <div className="space-y-2">
-              <Link
-                to={ROUTES.PRODUCTS}
-                className="block py-2 hover:text-primary transition-colors"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                All Products
-              </Link>
-            </div>
+
+            {/* User actions */}
             {isAuthenticated ? (
-              <div className="space-y-2 pt-4 border-t">
+              <div className="space-y-2 pt-4 border-t border-border">
                 <Link
                   to={ROUTES.DASHBOARD}
-                  className="flex items-center gap-2 py-2"
+                  className="flex items-center gap-2 py-2 text-foreground"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <LayoutDashboard className="h-5 w-5" />
                   Dashboard
                 </Link>
-                {user?.role === 'store_owner' && (
+                {user?.siteRole === 'SITE_ADMIN' && (
                   <Link
                     to={ROUTES.STORE}
-                    className="flex items-center gap-2 py-2"
+                    className="flex items-center gap-2 py-2 text-foreground"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     <Store className="h-5 w-5" />
@@ -219,24 +204,24 @@ export function Header() {
                     handleLogout();
                     setMobileMenuOpen(false);
                   }}
-                  className="flex items-center gap-2 py-2 text-red-600 w-full"
+                  className="flex items-center gap-2 py-2 text-error w-full"
                 >
                   <LogOut className="h-5 w-5" />
                   Logout
                 </button>
               </div>
             ) : (
-              <div className="space-y-2 pt-4 border-t">
+              <div className="space-y-2 pt-4 border-t border-border">
                 <Link
                   to={ROUTES.LOGIN}
-                  className="block py-2 text-center border border-gray-300 rounded-lg"
+                  className="block py-2 text-center border border-border text-foreground rounded-lg"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Login
                 </Link>
                 <Link
                   to={ROUTES.REGISTER}
-                  className="block py-2 text-center bg-primary text-white rounded-lg"
+                  className="block py-2 text-center bg-primary text-primary-foreground rounded-lg"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Sign Up

@@ -13,38 +13,34 @@ export interface ProductVariant {
   updatedAt: Date;
 }
 
-export interface CreateVariantRequest {
+export interface CreateVariantDto {
   name: string;
   sku: string;
   price: number;
-  inventory?: number;
+  inventory?: Inventory;
   attributes?: Record<string, string>;
-  isActive?: boolean;
 }
 
-export interface UpdateVariantRequest {
+export interface UpdateVariantDto {
   name?: string;
   sku?: string;
   price?: number;
   inventory?: number;
   attributes?: Record<string, string>;
-  isActive?: boolean;
 }
 
-export interface SetInventoryRequest {
+export interface SetInventoryDto {
   quantity: number;
-  reason?: string;
 }
 
-export interface AdjustInventoryRequest {
+export interface AdjustInventoryDto {
   adjustment: number;
-  reason?: string;
 }
 
-export interface UpdatePriceRequest {
+export interface UpdatePriceDto {
   price: number;
 }
 
-export interface AddAttributesRequest {
+export interface AddAttributesDto {
   attributes: Record<string, string>;
 }

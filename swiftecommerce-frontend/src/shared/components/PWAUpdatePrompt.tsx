@@ -58,13 +58,15 @@ export function PWAUpdatePrompt() {
         <div className="mt-4 flex gap-2">
           <button
             onClick={handleUpdate}
-            className="flex-1 bg-primary text-primary-foreground px-3 py-2 rounded-md text-sm font-medium hover:bg-primary/90"
+            className="flex-1 bg-primary text-primary-foreground
+            px-3 py-2 rounded-md text-sm font-medium hover:bg-primary/90"
           >
             Update Now
           </button>
           <button
             onClick={handleDismiss}
-            className="px-3 py-2 rounded-md text-sm font-medium border border-border hover:bg-accent"
+            className="px-3 py-2 rounded-md text-sm
+            font-medium border border-border hover:bg-accent"
           >
             Later
           </button>

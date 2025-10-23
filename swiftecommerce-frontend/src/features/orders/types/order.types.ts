@@ -69,3 +69,7 @@ export interface CreateOrderItemDto {
   unitPrice: number;
   quantity: number;
 }
+
+export interface UpdateOrderStatusDto {
+  orderStatus: OrderStatus;
+}

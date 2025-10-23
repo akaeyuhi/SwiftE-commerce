@@ -2,6 +2,7 @@ import { BaseService } from '@/lib/api/BaseService';
 import { API_ENDPOINTS } from '@/config/api.config';
 import {
   CartItem,
+  CartItemDto,
   CreateCartDto,
   ShoppingCart as Cart,
   UpdateCartItemQuantityDto,
@@ -25,7 +26,7 @@ export class CartService extends BaseService {
   async addItem(
     storeId: string,
     userId: string,
-    data: CreateCartDto
+    data: CartItemDto
   ): Promise<Cart> {
     const url = this.buildUrl(API_ENDPOINTS.CART.ADD_OR_INCREMENT, {
       storeId,

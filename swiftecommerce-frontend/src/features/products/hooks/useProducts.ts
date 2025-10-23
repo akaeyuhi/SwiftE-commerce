@@ -1,9 +1,10 @@
 import { useQuery, UseQueryOptions } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
-import { Product, ProductFilters } from '../types/product.types';
+import { Product } from '../types/product.types';
 import { PaginatedResponse } from '@/lib/api/types';
 import { api } from '@/lib/api';
 import { TopProductsParams } from '@/features/products/api/productsService.ts';
+import { ProductFilters } from '@/types/filters.types.ts';
 
 /**
  * Fetch paginated products

@@ -64,7 +64,7 @@ export const createAuthSlice: SliceCreator<AuthSlice> = (set, get) => ({
     ),
 
   // Computed selectors
-  isStoreOwner: () => get().user?.role === 'store_owner',
-  isAdmin: () => get().user?.role === 'admin',
-  hasStore: () => !!get().user?.storeId,
+  isStoreOwner: () => get().user?.siteRole === 'SITE_ADMIN',
+  isAdmin: () => get().user?.siteRole === 'SITE_USER',
+  hasStore: () => !!get().user?.ownedStores?.length,
 });

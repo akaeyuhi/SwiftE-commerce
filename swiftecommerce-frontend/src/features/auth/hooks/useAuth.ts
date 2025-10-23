@@ -1,76 +1,108 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/queryKeys';
 import { toast } from 'sonner';
-import { authApi } from '../api/authApi';
-import type { LoginCredentials, RegisterData } from '../types/auth.types';
+import { api } from '@/lib/api';
 import {
-  setAccessToken,
-  clearTokens,
-  getAccessToken,
-} from '@/lib/auth/tokenManager';
-import { useStore } from '@/app/store';
-import { handleApiError } from '@/lib/api/errorHandler';
+  RegisterDto,
+  LoginDto,
+  RefreshTokenDto,
+  ResetPasswordDto,
+  ChangePasswordDto,
+  VerifyTokenDto,
+} from '@/features/auth/types/auth.types.ts';
 
 export function useAuth() {
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
-  const { setUser, logout: logoutStore } = useStore();
 
-  // Fetch user profile
-  const { data: user, isLoading } = useQuery({
-    queryKey: ['auth', 'profile'],
-    queryFn: authApi.getProfile,
-    retry: false,
-    enabled: !!getAccessToken(),
-  });
-
-  // Login mutation
-  const loginMutation = useMutation({
-    mutationFn: (credentials: LoginCredentials) => authApi.login(credentials),
+  const register = useMutation({
+    mutationFn: (data: RegisterDto) => api.auth.register(data),
     onSuccess: (data) => {
-      setAccessToken(data.accessToken);
-      setUser(data.user);
-      queryClient.setQueryData(['auth', 'profile'], data.user);
-      toast.success('Login successful!');
-      navigate('/dashboard');
+      queryClient.setQueryData(queryKeys.user.profile(), data.user);
+      toast.success('Registration successful');
     },
-    onError: handleApiError,
+    onError: (error: any) => {
+      toast.error(error.message || 'Registration failed');
+    },
   });
 
-  // Register mutation
-  const registerMutation = useMutation({
-    mutationFn: (userData: RegisterData) => authApi.register(userData),
+  const login = useMutation({
+    mutationFn: (data: LoginDto) => api.auth.login(data),
     onSuccess: (data) => {
-      setAccessToken(data.accessToken);
-      setUser(data.user);
-      queryClient.setQueryData(['auth', 'profile'], data.user);
-      toast.success('Registration successful!');
-      navigate('/dashboard');
+      queryClient.setQueryData(queryKeys.user.profile(), data.user);
+      toast.success('Login successful');
     },
-    onError: handleApiError,
+    onError: (error: any) => {
+      toast.error(error.message || 'Login failed');
+    },
   });
 
-  // Logout mutation
-  const logoutMutation = useMutation({
-    mutationFn: authApi.logout,
+  const logout = useMutation({
+    mutationFn: () => api.auth.logout(),
     onSuccess: () => {
-      clearTokens();
-      logoutStore();
       queryClient.clear();
-      navigate('/login');
       toast.success('Logged out successfully');
     },
-    onError: handleApiError,
+    onError: () => {
+      toast.error('Logout failed');
+    },
+  });
+
+  const refreshToken = useMutation({
+    mutationFn: (data?: RefreshTokenDto) => api.auth.refreshToken(data),
+    onSuccess: (data) => {
+      queryClient.setQueryData(queryKeys.user.profile(), data.user);
+    },
+    onError: () => {
+      queryClient.clear();
+      toast.error('Session expired, please login again');
+    },
+  });
+
+  const resetPassword = useMutation({
+    mutationFn: (data: ResetPasswordDto) => api.auth.resetPassword(data),
+    onSuccess: () => {
+      toast.success('Password reset email sent');
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to reset password');
+    },
+  });
+
+  const changePassword = useMutation({
+    mutationFn: (data: ChangePasswordDto) => api.auth.changePassword(data),
+    onSuccess: () => {
+      toast.success('Password changed successfully');
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to change password');
+    },
+  });
+
+  const verifyToken = useMutation({
+    mutationFn: (data: VerifyTokenDto) => api.auth.verifyToken(data),
+    onError: (error: any) => {
+      toast.error(error.message || 'Token verification failed');
+    },
+  });
+
+  const resendVerification = useMutation({
+    mutationFn: (email: string) => api.auth.resendConfirmation(email),
+    onSuccess: () => {
+      toast.success('Verification email sent');
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to send verification email');
+    },
   });
 
   return {
-    user,
-    isLoading,
-    isAuthenticated: !!user,
-    login: loginMutation.mutate,
-    register: registerMutation.mutate,
-    logout: logoutMutation.mutate,
-    isLoggingIn: loginMutation.isPending,
-    isRegistering: registerMutation.isPending,
+    register,
+    login,
+    logout,
+    refreshToken,
+    resetPassword,
+    changePassword,
+    verifyToken,
+    resendVerification,
   };
 }

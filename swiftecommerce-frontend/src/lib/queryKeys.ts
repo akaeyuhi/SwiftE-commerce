@@ -1,5 +1,6 @@
 /**
  * Query Keys Factory
+ * Centralized query key management for all features
  */
 export const queryKeys = {
   products: {
@@ -14,6 +15,10 @@ export const queryKeys = {
       [...queryKeys.products.detail(storeId, productId), 'variants'] as const,
     reviews: (storeId: string, productId: string) =>
       [...queryKeys.products.detail(storeId, productId), 'reviews'] as const,
+    stats: (storeId: string, productId: string) =>
+      [...queryKeys.products.detail(storeId, productId), 'stats'] as const,
+    trending: (storeId: string, params?: Record<string, any>) =>
+      [...queryKeys.products.all, 'trending', storeId, params] as const,
   },
 
   orders: {
@@ -42,6 +47,8 @@ export const queryKeys = {
     all: ['cart'] as const,
     detail: (storeId: string, userId: string) =>
       [...queryKeys.cart.all, storeId, userId] as const,
+    items: (storeId: string, userId: string, cartId: string) =>
+      [...queryKeys.cart.detail(storeId, userId), 'items', cartId] as const,
   },
 
   analytics: {
@@ -64,6 +71,10 @@ export const queryKeys = {
       [...queryKeys.analytics.all, 'conversion', storeId, params] as const,
     funnel: (storeId: string, params?: Record<string, any>) =>
       [...queryKeys.analytics.all, 'funnel', storeId, params] as const,
+    revenueTrends: (storeId: string, params?: Record<string, any>) =>
+      [...queryKeys.analytics.all, 'revenue-trends', storeId, params] as const,
+    cohort: (storeId: string, params?: Record<string, any>) =>
+      [...queryKeys.analytics.all, 'cohort', storeId, params] as const,
   },
 
   reviews: {
@@ -99,16 +110,42 @@ export const queryKeys = {
     list: (filters?: Record<string, any>) =>
       [...queryKeys.stores.lists(), filters] as const,
     detail: (id: string) => [...queryKeys.stores.all, 'detail', id] as const,
+    stats: (id: string) => [...queryKeys.stores.all, 'stats', id] as const,
+    health: (id: string) => [...queryKeys.stores.all, 'health', id] as const,
   },
 
-  ai: {
-    all: ['ai'] as const,
-    predictions: (storeId: string, productId: string) =>
-      [...queryKeys.ai.all, 'predictions', storeId, productId] as const,
-    trending: (storeId: string) =>
-      [...queryKeys.ai.all, 'trending', storeId] as const,
-    logs: (storeId: string, params?: Record<string, any>) =>
-      [...queryKeys.ai.all, 'logs', storeId, params] as const,
+  variants: {
+    all: ['variants'] as const,
+    list: (storeId: string, productId: string) =>
+      [...queryKeys.variants.all, 'list', storeId, productId] as const,
+    detail: (storeId: string, productId: string, variantId: string) =>
+      [
+        ...queryKeys.variants.all,
+        'detail',
+        storeId,
+        productId,
+        variantId,
+      ] as const,
+    bySku: (storeId: string, productId: string, sku: string) =>
+      [...queryKeys.variants.all, 'sku', storeId, productId, sku] as const,
+  },
+
+  likes: {
+    all: ['likes'] as const,
+    user: (userId: string) => [...queryKeys.likes.all, 'user', userId] as const,
+  },
+
+  news: {
+    all: ['news'] as const,
+    list: (storeId: string, filters?: Record<string, any>) =>
+      [...queryKeys.news.all, 'list', storeId, filters] as const,
+    detail: (storeId: string, id: string) =>
+      [...queryKeys.news.all, 'detail', storeId, id] as const,
+  },
+
+  auth: {
+    all: ['auth'] as const,
+    session: () => [...queryKeys.auth.all, 'session'] as const,
   },
 } as const;
 
@@ -117,9 +154,7 @@ export const queryKeys = {
  */
 export const invalidateFeature = {
   products: (storeId?: string) => ({
-    queryKey: storeId
-      ? queryKeys.products.lists() // Invalidate all lists for this store
-      : queryKeys.products.all, // Invalidate everything
+    queryKey: storeId ? queryKeys.products.lists() : queryKeys.products.all,
   }),
 
   orders: (storeId?: string) => ({
@@ -144,5 +179,34 @@ export const invalidateFeature = {
       storeId && productId
         ? queryKeys.reviews.product(storeId, productId)
         : queryKeys.reviews.all,
+  }),
+
+  categories: (storeId?: string) => ({
+    queryKey: storeId
+      ? queryKeys.categories.list(storeId)
+      : queryKeys.categories.all,
+  }),
+
+  stores: () => ({
+    queryKey: queryKeys.stores.lists(),
+  }),
+
+  user: (userId?: string) => ({
+    queryKey: userId ? queryKeys.user.detail(userId) : queryKeys.user.all,
+  }),
+
+  variants: (storeId?: string, productId?: string) => ({
+    queryKey:
+      storeId && productId
+        ? queryKeys.variants.list(storeId, productId)
+        : queryKeys.variants.all,
+  }),
+
+  likes: (userId?: string) => ({
+    queryKey: userId ? queryKeys.likes.user(userId) : queryKeys.likes.all,
+  }),
+
+  news: (storeId?: string) => ({
+    queryKey: storeId ? queryKeys.news.list(storeId) : queryKeys.news.all,
   }),
 };

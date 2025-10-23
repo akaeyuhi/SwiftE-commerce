@@ -54,7 +54,7 @@ export class NewsService extends BaseService {
    */
   async createNewsWithRelations(
     storeId: string,
-    data: CreateNewsDto & { authorId: string }
+    data: CreateNewsDto
   ): Promise<NewsPost> {
     const url = buildUrl(API_ENDPOINTS.NEWS.CREATE_WITH_RELATIONS, { storeId });
     return this.client.post<NewsPost>(url, data);

@@ -3,7 +3,7 @@ import { API_ENDPOINTS, buildUrl } from '@/config/api.config';
 import {
   AuthResponse,
   ChangePasswordDto,
-  LoginDto,
+  LoginDto, RefreshTokenDto,
   RegisterDto,
   ResetPasswordDto,
   VerifyTokenDto,
@@ -31,8 +31,11 @@ export class AuthService extends BaseService {
   /**
    * Refresh access token
    */
-  async refreshToken(): Promise<AuthResponse> {
-    return this.client.post<AuthResponse>(API_ENDPOINTS.AUTH.REFRESH, {});
+  async refreshToken(refreshTokenDto?: RefreshTokenDto): Promise<AuthResponse> {
+    return this.client.post<AuthResponse>(
+      API_ENDPOINTS.AUTH.REFRESH,
+      refreshTokenDto
+    );
   }
 
   /**

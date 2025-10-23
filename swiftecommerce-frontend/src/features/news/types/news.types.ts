@@ -18,6 +18,7 @@ export interface NewsPost {
 export interface CreateNewsDto {
   title: string;
   content: string;
+  authorId?: string;
   isPublished?: boolean;
 }
 
