@@ -12,7 +12,7 @@ import { AuthLayout } from '../layouts/AuthLayout';
 // Auth pages
 import { LoginPage } from '@/features/auth/pages/LoginPage';
 import { RegisterPage } from '@/features/auth/pages/RegisterPage';
-//import { ForgotPasswordPage } from '@/features/auth/pages/ForgotPasswordPage';
+import { ForgotPasswordPage } from '@/features/auth/pages/ForgotPasswordPage';
 //
 // // Product pages
 // import { ProductsPage } from '@/features/products/pages/ProductsPage';
@@ -31,6 +31,7 @@ import { RegisterPage } from '@/features/auth/pages/RegisterPage';
 // import { OrderDetailPage } from '@/features/orders/pages/OrderDetailPage';
 //
 // // Store pages
+
 // import { StoreSettingsPage } from '@/features/store/pages/StoreSettingsPage';
 // import { StoreAnalyticsPage } from '@/features/store/pages/StoreAnalyticsPage';
 // import { StoreProductsPage } from '@/features/store/pages/StoreProductsPage';
@@ -66,10 +67,10 @@ export const router = createBrowserRouter([
             path: ROUTES.REGISTER,
             element: <RegisterPage />,
           },
-          // {
-          //   path: ROUTES.FORGOT_PASSWORD,
-          //   element: <ForgotPasswordPage />,
-          // },
+          {
+            path: ROUTES.FORGOT_PASSWORD,
+            element: <ForgotPasswordPage />,
+          },
         ],
       },
       //
