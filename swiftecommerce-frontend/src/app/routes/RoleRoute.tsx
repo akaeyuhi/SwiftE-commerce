@@ -3,7 +3,7 @@ import { useAuth } from '@/app/store';
 import { ROUTES } from './routes';
 
 interface RoleRouteProps {
-  allowedRoles: Array<'customer' | 'store_owner' | 'admin'>;
+  allowedRoles: Array<"SITE_USER" | "SITE_ADMIN" | "STORE_MODERATOR" | "STORE_ADMIN" >;
   children?: React.ReactNode;
 }
 
@@ -14,7 +14,7 @@ export function RoleRoute({ allowedRoles, children }: RoleRouteProps) {
     return <Navigate to={ROUTES.LOGIN} replace />;
   }
 
-  if (user && !allowedRoles.includes(user.role)) {
+  if (user && !allowedRoles.includes(user.siteRole)) {
     return <Navigate to={ROUTES.UNAUTHORIZED} replace />;
   }
 
