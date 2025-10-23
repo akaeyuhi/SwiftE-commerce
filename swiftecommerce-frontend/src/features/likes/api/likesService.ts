@@ -1,14 +1,14 @@
 import { BaseService } from '@/lib/api/BaseService';
 import { API_ENDPOINTS, buildUrl } from '@/config/api.config';
-import { Like, UserLikes } from '../types/likes.types';
+import { Like } from '../types/likes.types';
 
 export class LikesService extends BaseService {
   /**
    * Get all likes for a user
    */
-  async getUserLikes(userId: string): Promise<UserLikes> {
+  async getUserLikes(userId: string): Promise<Like[]> {
     const url = buildUrl(API_ENDPOINTS.LIKES.LIST, { userId });
-    return this.client.get<UserLikes>(url);
+    return this.client.get<Like[]>(url);
   }
 
   /**
@@ -46,7 +46,7 @@ export class LikesService extends BaseService {
    */
   async hasLikedProduct(userId: string, productId: string): Promise<boolean> {
     const likes = await this.getUserLikes(userId);
-    return likes.products.some((p) => p.product.id === productId);
+    return likes.some((p) => p.product?.id === productId);
   }
 
   /**
@@ -54,7 +54,7 @@ export class LikesService extends BaseService {
    */
   async hasLikedStore(userId: string, storeId: string): Promise<boolean> {
     const likes = await this.getUserLikes(userId);
-    return likes.stores.some((s) => s.store.id === storeId);
+    return likes.some((s) => s.store?.id === storeId);
   }
 }
 

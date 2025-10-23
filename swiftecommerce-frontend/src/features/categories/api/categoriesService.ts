@@ -1,10 +1,7 @@
 import { BaseService } from '@/lib/api/BaseService';
 import { API_ENDPOINTS, buildUrl } from '@/config/api.config';
 import {
-  Category,
-  CreateCategoryRequest,
-  UpdateCategoryRequest,
-  CategoryTree,
+  Category, CreateCategoryDto, UpdateCategoryDto,
 } from '../types/categories.types';
 
 export class CategoriesService extends BaseService {
@@ -19,9 +16,9 @@ export class CategoriesService extends BaseService {
   /**
    * Get category tree
    */
-  async getCategoryTree(storeId: string): Promise<CategoryTree[]> {
+  async getCategoryTree(storeId: string): Promise<Category[]> {
     const url = buildUrl(API_ENDPOINTS.CATEGORIES.TREE, { storeId });
-    return this.client.get<CategoryTree[]>(url);
+    return this.client.get<Category[]>(url);
   }
 
   /**
@@ -40,7 +37,7 @@ export class CategoriesService extends BaseService {
    */
   async createCategory(
     storeId: string,
-    data: CreateCategoryRequest
+    data: CreateCategoryDto
   ): Promise<Category> {
     const url = buildUrl(API_ENDPOINTS.CATEGORIES.CREATE, { storeId });
     return this.client.post<Category>(url, data);
@@ -52,7 +49,7 @@ export class CategoriesService extends BaseService {
   async updateCategory(
     storeId: string,
     categoryId: string,
-    data: UpdateCategoryRequest
+    data: UpdateCategoryDto
   ): Promise<Category> {
     const url = buildUrl(API_ENDPOINTS.CATEGORIES.UPDATE, {
       storeId,

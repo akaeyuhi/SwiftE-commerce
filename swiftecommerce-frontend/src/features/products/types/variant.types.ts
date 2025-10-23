@@ -1,14 +1,16 @@
+import { Product } from '@/features/products/types/product.types.ts';
+import { Inventory } from '@/features/inventory/types/inventory.types.ts';
+
 export interface ProductVariant {
   id: string;
   productId: string;
-  name: string;
+  product: Product;
   sku: string;
   price: number;
-  inventory: number;
-  attributes: Record<string, string>;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
+  attributes?: Record<string, any>;
+  inventory: Inventory;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface CreateVariantRequest {

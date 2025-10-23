@@ -1,7 +1,8 @@
 import { BaseService } from '@/lib/api/BaseService';
 import { API_ENDPOINTS, buildUrl } from '@/config/api.config';
 import { PaginatedResponse } from '@/lib/api/types';
-import { Product, ProductFilters } from '../types/product.types';
+import { Product } from '../types/product.types';
+import { ProductFilters } from '@/types/filters.types.ts';
 
 export interface ProductStats {
   views: number;

@@ -1,0 +1,95 @@
+import {
+  Category,
+  CategoryDto,
+} from '@/features/categories/types/categories.types';
+import {
+  Product,
+  ProductListDto,
+} from '@/features/products/types/product.types';
+import { Inventory } from '@/features/inventory/types/inventory.types.ts';
+import { Order } from '@/features/orders/types/order.types.ts';
+import { NewsPost } from '@/features/news/types/news.types.ts';
+import { AiLog } from '@/features/ai/types/ai-logs.types.ts';
+import { User, UserDto } from '@/features/users/types/users.types.ts';
+import { ShoppingCart } from '@/features/cart/types/cart.types.ts';
+
+export interface Store {
+  id: string;
+  name: string;
+  description: string;
+  ownerId: string;
+  owner: User;
+  productCount: number;
+  followerCount: number;
+  totalRevenue: number;
+  orderCount: number;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt?: Date;
+  products?: Product[];
+  categories?: Category[];
+  inventories?: Inventory[];
+  orders?: Order[];
+  carts?: ShoppingCart[];
+  newsPosts?: NewsPost[];
+  aiLogs?: AiLog[];
+  storeRoles?: StoreRole[];
+}
+
+export interface StoreDto {
+  id?: string;
+  name: string;
+  description: string;
+  ownerId: string;
+  owner?: UserDto;
+  productCount?: number;
+  followerCount?: number;
+  totalRevenue?: number;
+  orderCount?: number;
+  createdAt?: Date;
+  updatedAt?: Date;
+  products?: ProductListDto[];
+  categories?: CategoryDto[];
+}
+
+export interface CreateStoreDto {
+  name: string;
+  description?: string;
+  ownerId: string;
+}
+
+export interface UpdateStoreDto {
+  name?: string;
+  description?: string;
+}
+
+export interface StoreStatsDto {
+  id: string;
+  name: string;
+  productCount: number;
+  followerCount: number;
+  totalRevenue: number;
+  orderCount: number;
+  averageOrderValue?: number;
+}
+
+export interface StoreSearchResultDto extends StoreStatsDto {
+  matchType?: Record<string, any>;
+}
+
+export interface StoreRole {
+  id: string;
+  roleName: 'STORE_ADMIN' | 'STORE_MODERATOR' | 'STORE_GUEST';
+  user: User;
+  userId: string;
+  store: Store;
+  storeId: string;
+  createdAt: Date;
+  updatedAt: Date;
+  isActive: boolean;
+  assignedBy?: string;
+  assignedAt?: Date;
+  revokedBy?: string;
+  revokedAt?: Date;
+  metadata?: Record<string, any>;
+}

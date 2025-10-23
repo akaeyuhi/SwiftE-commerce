@@ -1,13 +1,3 @@
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-  role: 'customer' | 'store_owner' | 'admin';
-  emailVerified: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
 export interface PaginatedResponse<T> {
   data: T[];
   total: number;

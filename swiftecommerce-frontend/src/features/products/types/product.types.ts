@@ -1,31 +1,84 @@
+import { Review } from '@/features/reviews/types/reviews.types.ts';
+import { Store } from '@/features/stores/types/store.types';
+import { Category } from '@/features/categories/types/categories.types.ts';
+import { ProductVariant } from '@/features/products/types/variant.types.ts';
+
 export interface Product {
   id: string;
   storeId: string;
   name: string;
-  description: string;
-  price: number;
-  category: string;
-  images: string[];
+  description?: string;
+  averageRating?: number;
+  reviewCount: number;
+  totalSales: number;
+  likeCount: number;
+  viewCount: number;
+  mainPhotoUrl: string;
   variants: ProductVariant[];
-  createdAt: string;
-  updatedAt: string;
+  photos: ProductPhoto[];
+  reviews: Review[];
+  store?: Store;
+  categories?: Category[];
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt?: Date;
 }
 
-export interface ProductVariant {
+export interface ProductListDto {
   id: string;
-  productId: string;
   name: string;
-  sku: string;
-  price: number;
-  inventory: number;
-  attributes: Record<string, string>;
-}
-
-export interface ProductFilters {
-  category?: string;
+  description?: string;
+  averageRating?: number;
+  reviewCount: number;
+  likeCount: number;
+  viewCount: number;
+  totalSales: number;
+  mainPhotoUrl?: string;
   minPrice?: number;
   maxPrice?: number;
-  search?: string;
-  page?: number;
-  pageSize?: number;
+}
+
+export interface ProductPhoto {
+  id: string;
+  product: Product;
+  url: string;
+  altText?: string;
+  isMain: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Product {
+  id: string;
+  storeId: string;
+  name: string;
+  description?: string;
+  averageRating?: number;
+  reviewCount: number;
+  totalSales: number;
+  likeCount: number;
+  viewCount: number;
+  mainPhotoUrl: string;
+  variants: ProductVariant[];
+  photos: ProductPhoto[];
+  reviews: Review[];
+  store?: Store;
+  categories?: Category[];
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt?: Date;
+}
+
+export interface ProductListDto {
+  id: string;
+  name: string;
+  description?: string;
+  averageRating?: number;
+  reviewCount: number;
+  likeCount: number;
+  viewCount: number;
+  totalSales: number;
+  mainPhotoUrl?: string;
+  minPrice?: number;
+  maxPrice?: number;
 }

@@ -28,12 +28,14 @@ export const API_ENDPOINTS = {
     REVOKE_SITE_ADMIN: '/auth/revoke-site-admin',
     REVOKE_STORE_ROLE: '/auth/revoke-store-role',
     CANCEL_ROLE_ASSIGNMENT: '/auth/cancel-role-assignment',
+    RESET_PASSWORD: '/auth/reset-password',
+    CHANGE_PASSWORD: '/auth/change-password',
+    VERIFY_TOKEN: '/auth/verify-token',
   },
 
-  // Users
   USERS: {
-    CREATE: '/users',
     LIST: '/users',
+    CREATE: '/users',
     FIND_ONE: '/users/:id',
     UPDATE: '/users/:id',
     DELETE: '/users/:id',
@@ -42,7 +44,7 @@ export const API_ENDPOINTS = {
     GET_USER_PROFILE: '/users/:id/profile',
     VERIFY_EMAIL: '/users/:id/verify-email',
     IS_EMAIL_VERIFIED: '/users/:id/email-verified',
-    CHECK_STORE_ROLE: '/users/:id/stores/:storeId/roles/:roleName/check',
+    HAS_STORE_ROLE: '/users/:id/stores/:storeId/roles/:roleName/check',
     IS_STORE_ADMIN: '/users/:id/stores/:storeId/admin/check',
     GET_STORE_ROLES: '/users/:id/store-roles',
     IS_SITE_ADMIN: '/users/:id/site-admin/check',
@@ -50,8 +52,10 @@ export const API_ENDPOINTS = {
     DEACTIVATE: '/users/:id/deactivate',
     REACTIVATE: '/users/:id/reactivate',
     ASSIGN_ROLE: '/users/:id/roles',
-    REVOKE_STORE_ROLE: '/users/:id/roles',
+    REVOKE_ROLE: '/users/:id/roles',
     CREATE_STORE: '/users/:id/stores',
+    CHECK_STORE_ROLE: '/users/:id/stores/:storeId/roles/:roleName/check',
+    REVOKE_STORE_ROLE: '/users/:id/roles',
   },
 
   // Stores
@@ -139,6 +143,8 @@ export const API_ENDPOINTS = {
     MERGED_CARTS: '/stores/:storeId/:userId/cart/merged',
     ADD_OR_INCREMENT: '/stores/:storeId/:userId/cart/:cartId/add-item',
     SYNC_ITEMS: '/stores/:storeId/:userId/cart/sync',
+    ADD_ITEM: '/stores/:storeId/:userId/cart/:cartId/add-item',
+    GET_MERGED: '/stores/:storeId/:userId/cart/merged',
   },
 
   // Cart Items
@@ -149,6 +155,7 @@ export const API_ENDPOINTS = {
     UPDATE: '/stores/:storeId/:userId/cart/:cartId/items/:id',
     UPDATE_QUANTITY: '/stores/:storeId/:userId/cart/:cartId/items/:itemId',
     DELETE: '/stores/:storeId/:userId/cart/:cartId/items/:id',
+    GET_TREE: '/stores/:storeId/categories/tree',
   },
 
   // Orders
@@ -169,6 +176,7 @@ export const API_ENDPOINTS = {
     INVENTORY_IMPACT: '/stores/:storeId/orders/:id/inventory-impact',
     UPDATE_SHIPPING: '/stores/:storeId/orders/:id/shipping',
     MARK_DELIVERED: '/stores/:storeId/orders/:id/delivered',
+    FIND_BY_USER: '/stores/:storeId/orders/user/:userId',
   },
 
   // Categories
@@ -211,6 +219,7 @@ export const API_ENDPOINTS = {
     DELETE: '/stores/:storeId/news/:id',
     PUBLISH: '/stores/:storeId/news/:id/publish',
     UNPUBLISH: '/stores/:storeId/news/:id/unpublish',
+    LIST_BY_STORE: '/stores/:storeId/news/store-all',
   },
 
   // Analytics
@@ -262,6 +271,13 @@ export const API_ENDPOINTS = {
     STATS: '/analytics/stats',
     AGGREGATORS: '/analytics/aggregators',
     AGGREGATOR_SCHEMA: '/analytics/aggregators/:name/schema',
+
+    QUICK_STATS: '/analytics/stores/:storeId/quick-stats',
+    STORE_ANALYTICS: '/analytics/stores/:storeId',
+    CONVERSION: '/analytics/stores/:storeId/conversion',
+    RATINGS: '/analytics/stores/:storeId/ratings',
+    TOP_PERFORMING: '/analytics/stores/top-performing',
+    TOP_BY_REVENUE: '/analytics/stores/top/revenue',
   },
 
   // Admin Stats
@@ -348,6 +364,8 @@ export const API_ENDPOINTS = {
 
 /**
  * Build URL with path parameters
+ * @param template - URL template with :param placeholders
+ * @param params - Object with parameter values
  */
 export function buildUrl(
   template: string,

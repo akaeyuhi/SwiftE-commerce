@@ -1,17 +1,20 @@
 import { BaseService } from '@/lib/api/BaseService';
 import { API_ENDPOINTS, buildUrl } from '@/config/api.config';
 import {
-  LoginCredentials,
-  RegisterData,
   AuthResponse,
-} from '../types/auth.types';
-import { User } from '@/shared/types/common.types';
+  ChangePasswordDto,
+  LoginDto,
+  RegisterDto,
+  ResetPasswordDto,
+  VerifyTokenDto,
+} from '@/features/auth/types/auth.types.ts';
+import { User, UserDto } from '@/features/users/types/users.types';
 
 export class AuthService extends BaseService {
   /**
    * Login user
    */
-  async login(credentials: LoginCredentials): Promise<AuthResponse> {
+  async login(credentials: LoginDto): Promise<AuthResponse> {
     return this.client.post<AuthResponse>(
       API_ENDPOINTS.AUTH.LOGIN,
       credentials
@@ -21,7 +24,7 @@ export class AuthService extends BaseService {
   /**
    * Register new user
    */
-  async register(data: RegisterData): Promise<AuthResponse> {
+  async register(data: RegisterDto): Promise<AuthResponse> {
     return this.client.post<AuthResponse>(API_ENDPOINTS.AUTH.REGISTER, data);
   }
 
@@ -53,8 +56,6 @@ export class AuthService extends BaseService {
     const url = this.buildUrl(API_ENDPOINTS.USERS.UPDATE, { id: userId });
     return this.client.patch<User>(url, data);
   }
-
-  // ... existing AuthService class ...
 
   /**
    * Confirm email/role
@@ -134,6 +135,25 @@ export class AuthService extends BaseService {
     return this.client.post<void>(API_ENDPOINTS.AUTH.CANCEL_ROLE_ASSIGNMENT, {
       assignmentId,
     });
+  }
+
+  async resetPassword(
+    data: ResetPasswordDto
+  ): Promise<{ success: boolean; message: string }> {
+    const url = API_ENDPOINTS.AUTH.RESET_PASSWORD;
+    return this.client.post<{ success: boolean; message: string }>(url, data);
+  }
+
+  async changePassword(data: ChangePasswordDto): Promise<{ success: boolean }> {
+    const url = API_ENDPOINTS.AUTH.CHANGE_PASSWORD;
+    return this.client.post<{ success: boolean }>(url, data);
+  }
+
+  async verifyToken(
+    data: VerifyTokenDto
+  ): Promise<{ valid: boolean; user?: UserDto }> {
+    const url = API_ENDPOINTS.AUTH.VERIFY_TOKEN;
+    return this.client.post<{ valid: boolean; user?: UserDto }>(url, data);
   }
 }
 

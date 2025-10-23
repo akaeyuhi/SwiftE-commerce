@@ -1,39 +1,27 @@
+import { User } from '@/features/users/types/users.types.ts';
+import { Product } from '@/features/products/types/product.types.ts';
+
 export interface Review {
   id: string;
-  productId: string;
   userId: string;
-  storeId: string;
+  user: User;
+  productId: string;
+  product: Product;
   rating: number;
-  title?: string;
-  comment: string;
-  isVerifiedPurchase: boolean;
-  helpfulCount: number;
-  createdAt: string;
-  updatedAt: string;
-  user?: {
-    id: string;
-    name: string;
-  };
+  title: string;
+  comment?: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-export interface CreateReviewRequest {
+export interface CreateReviewDto {
   rating: number;
-  title?: string;
-  comment: string;
-}
-
-export interface UpdateReviewRequest {
-  rating?: number;
-  title?: string;
+  title: string;
   comment?: string;
 }
 
-export interface ReviewFilters {
+export interface UpdateReviewDto {
   rating?: number;
-  minRating?: number;
-  maxRating?: number;
-  verifiedOnly?: boolean;
-  page?: number;
-  pageSize?: number;
-  sortBy?: 'rating' | 'helpful' | 'recent';
+  title?: string;
+  comment?: string;
 }

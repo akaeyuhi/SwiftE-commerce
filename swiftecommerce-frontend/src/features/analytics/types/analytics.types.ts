@@ -97,3 +97,10 @@ export interface AnalyticsEvent {
 export interface BatchEventRequest {
   events: AnalyticsEvent[];
 }
+
+export interface RecordEventDto {
+  eventType: string;
+  productId?: string;
+  userId?: string;
+  metadata?: Record<string, any>;
+}

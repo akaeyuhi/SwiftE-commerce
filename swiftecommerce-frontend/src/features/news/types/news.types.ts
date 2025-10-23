@@ -1,41 +1,28 @@
-export interface NewsArticle {
+import { Store } from '@/features/stores/types/store.types.ts';
+import { User } from '@/features/users/types/users.types.ts';
+
+export interface NewsPost {
   id: string;
+  store: Store;
   storeId: string;
+  author: User;
+  authorId: string;
   title: string;
-  slug: string;
   content: string;
-  excerpt?: string;
-  coverImage?: string;
   isPublished: boolean;
-  publishedAt?: string;
-  viewCount: number;
-  createdAt: string;
-  updatedAt: string;
-  author?: {
-    id: string;
-    name: string;
-  };
+  publishedAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-export interface CreateNewsRequest {
+export interface CreateNewsDto {
   title: string;
   content: string;
-  excerpt?: string;
-  coverImage?: string;
   isPublished?: boolean;
 }
 
-export interface UpdateNewsRequest {
+export interface UpdateNewsDto {
   title?: string;
   content?: string;
-  excerpt?: string;
-  coverImage?: string;
   isPublished?: boolean;
-}
-
-export interface NewsFilters {
-  isPublished?: boolean;
-  page?: number;
-  pageSize?: number;
-  sortBy?: 'recent' | 'popular' | 'title';
 }

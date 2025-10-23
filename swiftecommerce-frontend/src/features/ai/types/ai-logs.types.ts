@@ -1,3 +1,6 @@
+import { Store } from '@/features/stores/types/store.types.ts';
+import { User } from '@/features/users/types/users.types.ts';
+
 export interface AILogEntry {
   id: string;
   storeId: string;
@@ -8,6 +11,18 @@ export interface AILogEntry {
   success: boolean;
   error?: string;
   createdAt: string;
+}
+
+export interface AiLog {
+  id: string;
+  userId: string;
+  user: User;
+  storeId: string;
+  store: Store;
+  feature: string;
+  details?: Record<string, any>;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface UsageStats {

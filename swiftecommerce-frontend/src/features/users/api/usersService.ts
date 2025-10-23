@@ -1,30 +1,18 @@
 import { BaseService } from '@/lib/api/BaseService';
 import { API_ENDPOINTS, buildUrl } from '@/config/api.config';
-import { User } from '@/shared/types/common.types';
-
-export interface CreateUserRequest {
-  email: string;
-  password: string;
-  name: string;
-}
-
-export interface UpdateUserRequest {
-  email?: string;
-  name?: string;
-}
-
-export interface UserStoreRole {
-  storeId: string;
-  storeName: string;
-  role: string;
-  assignedAt: string;
-}
+import { StoreRole } from '@/features/stores/types/store.types.ts';
+import { User } from '@/app/store/types';
+import {
+  CreateUserDto,
+  UpdateProfileDto,
+  UpdateUserDto,
+} from '../types/users.types';
 
 export class UsersService extends BaseService {
   /**
    * Create user
    */
-  async createUser(data: CreateUserRequest): Promise<User> {
+  async createUser(data: CreateUserDto): Promise<User> {
     return this.client.post<User>(API_ENDPOINTS.USERS.CREATE, data);
   }
 
@@ -47,7 +35,7 @@ export class UsersService extends BaseService {
   /**
    * Update user
    */
-  async updateUser(userId: string, data: UpdateUserRequest): Promise<User> {
+  async updateUser(userId: string, data: UpdateUserDto): Promise<User> {
     const url = buildUrl(API_ENDPOINTS.USERS.UPDATE, { id: userId });
     return this.client.patch<User>(url, data);
   }
@@ -70,7 +58,7 @@ export class UsersService extends BaseService {
   /**
    * Update current user profile
    */
-  async updateProfile(data: UpdateUserRequest): Promise<User> {
+  async updateProfile(data: UpdateProfileDto): Promise<User> {
     return this.client.put<User>(API_ENDPOINTS.USERS.UPDATE_PROFILE, data);
   }
 
@@ -128,9 +116,9 @@ export class UsersService extends BaseService {
   /**
    * Get user's store roles
    */
-  async getStoreRoles(userId: string): Promise<UserStoreRole[]> {
+  async getStoreRoles(userId: string): Promise<StoreRole[]> {
     const url = buildUrl(API_ENDPOINTS.USERS.GET_STORE_ROLES, { id: userId });
-    return this.client.get<UserStoreRole[]>(url);
+    return this.client.get<StoreRole[]>(url);
   }
 
   /**

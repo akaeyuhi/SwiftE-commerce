@@ -1,12 +1,7 @@
 import { BaseService } from '@/lib/api/BaseService';
 import { API_ENDPOINTS, buildUrl } from '@/config/api.config';
 import { PaginatedResponse } from '@/lib/api/types';
-import {
-  CreateOrderData,
-  CreateOrderRequest,
-  Order,
-  UpdateOrderStatusData,
-} from '../types/order.types';
+import { CreateOrderDto, Order, UpdateOrderDto } from '../types/order.types';
 
 export class OrdersService extends BaseService {
   /**
@@ -47,7 +42,7 @@ export class OrdersService extends BaseService {
   /**
    * Create new order
    */
-  async createOrder(storeId: string, data: CreateOrderData): Promise<Order> {
+  async createOrder(storeId: string, data: CreateOrderDto): Promise<Order> {
     const url = this.buildUrl(API_ENDPOINTS.ORDERS.CREATE, { storeId });
     return this.client.post<Order>(url, data);
   }
@@ -58,7 +53,7 @@ export class OrdersService extends BaseService {
   async updateOrderStatus(
     storeId: string,
     orderId: string,
-    data: UpdateOrderStatusData
+    data: UpdateOrderDto
   ): Promise<Order> {
     const url = this.buildUrl(API_ENDPOINTS.ORDERS.UPDATE_STATUS, {
       storeId,
@@ -84,7 +79,7 @@ export class OrdersService extends BaseService {
   async createUserOrder(
     storeId: string,
     userId: string,
-    data: CreateOrderRequest
+    data: CreateOrderDto
   ): Promise<Order> {
     const url = buildUrl(API_ENDPOINTS.ORDERS.CREATE_USER_ORDER, {
       storeId,

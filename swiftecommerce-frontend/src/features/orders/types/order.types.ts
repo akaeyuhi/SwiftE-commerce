@@ -1,81 +1,71 @@
-export interface CreateOrderData {
-  items: Array<{
-    variantId: string;
-    quantity: number;
-  }>;
-  shippingAddress: ShippingAddress;
-}
+import { Product } from '@/features/products/types/product.types.ts';
+import { ProductVariant } from '@/features/products/types/variant.types.ts';
+import { Store } from '@/features/stores/types/store.types.ts';
+import { User } from '@sentry/react';
 
-export interface UpdateOrderStatusData {
-  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
-}
-export interface OrderItem {
-  productId: string;
-  variantId: string;
-  name: string;
-  price: number;
-  quantity: number;
-  image?: string;
-  attributes?: Record<string, string>;
-}
-
-export interface ShippingAddress {
-  fullName: string;
-  street: string;
-  city: string;
-  state: string;
-  zipCode: string;
-  country: string;
-  phone?: string;
+export interface Order {
+  id: string;
+  userId: string;
+  user: User;
+  storeId: string;
+  store: Store;
+  status: OrderStatus;
+  totalAmount: number;
+  shipping: OrderInfo;
+  billing?: OrderInfo;
+  items: OrderItem[];
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export type OrderStatus =
   | 'pending'
+  | 'paid'
   | 'processing'
   | 'shipped'
   | 'delivered'
-  | 'cancelled';
+  | 'cancelled'
+  | 'returned'
+  | 'refunded';
 
-export interface Order {
+export interface OrderInfo {
+  firstName?: string;
+  lastName?: string;
+  address?: string;
+  city?: string;
+  postalCode?: string;
+  country?: string;
+  phone?: string;
+}
+
+export interface OrderItem {
   id: string;
-  orderNumber: string;
-  userId: string;
-  storeId: string;
-  items: OrderItem[];
-  subtotal: number;
-  tax: number;
-  shippingCost: number;
-  total: number;
-  status: OrderStatus;
-  shippingAddress: ShippingAddress;
-  paymentMethod?: string;
-  paymentStatus?: 'pending' | 'paid' | 'failed' | 'refunded';
-  notes?: string;
-  trackingNumber?: string;
-  createdAt: string;
-  updatedAt: string;
+  order: Order;
+  product?: Product;
+  variantId?: string;
+  variant?: ProductVariant;
+  productName: string;
+  sku?: string;
+  unitPrice: number;
+  quantity: number;
+  lineTotal: number;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-export interface CreateOrderRequest {
-  items: Array<{
-    variantId: string;
-    quantity: number;
-  }>;
-  shippingAddress: ShippingAddress;
-  paymentMethod?: string;
-  notes?: string;
+export interface CreateOrderDto {
+  items: CreateOrderItemDto[];
+  shipping: OrderInfo;
+  billing?: OrderInfo;
 }
 
-export interface UpdateOrderStatusRequest {
-  status: OrderStatus;
-  trackingNumber?: string;
-  notes?: string;
-}
+export type UpdateOrderDto = Partial<CreateOrderDto>;
 
-export interface OrderFilters {
-  status?: OrderStatus;
-  startDate?: string;
-  endDate?: string;
-  page?: number;
-  pageSize?: number;
+export interface CreateOrderItemDto {
+  variantId: string;
+  productId: string;
+  productName: string;
+  sku?: string;
+  unitPrice: number;
+  quantity: number;
 }

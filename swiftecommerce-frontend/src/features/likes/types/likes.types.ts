@@ -1,30 +1,15 @@
+import { Product } from '@/features/products/types/product.types.ts';
+import { Store } from '@/features/stores/types/store.types.ts';
+import { User } from '@/features/users/types/users.types.ts';
+
 export interface Like {
   id: string;
   userId: string;
+  user: User;
   productId?: string;
+  product?: Product;
   storeId?: string;
-  type: 'product' | 'store';
-  createdAt: string;
-}
-
-export interface UserLikes {
-  products: Array<{
-    id: string;
-    likeId: string;
-    product: {
-      id: string;
-      name: string;
-      price: number;
-      image?: string;
-    };
-  }>;
-  stores: Array<{
-    id: string;
-    likeId: string;
-    store: {
-      id: string;
-      name: string;
-      description?: string;
-    };
-  }>;
+  store?: Store;
+  createdAt: Date;
+  updatedAt: Date;
 }

@@ -1,20 +1,11 @@
 import { BaseService } from '@/lib/api/BaseService';
 import { API_ENDPOINTS } from '@/config/api.config';
-import { Cart } from '../types/cart.types';
-
-export interface AddToCartData {
-  variantId: string;
-  cartId?: string;
-  quantity: number;
-}
-
-export interface CreateCartData {
-  products: AddToCartData[];
-}
-
-export interface UpdateCartItemData {
-  quantity: number;
-}
+import {
+  CartItem,
+  CreateCartDto,
+  ShoppingCart as Cart,
+  UpdateCartItemQuantityDto,
+} from '@/features/cart/types/cart.types.ts';
 
 export class CartService extends BaseService {
   /**
@@ -34,7 +25,7 @@ export class CartService extends BaseService {
   async addItem(
     storeId: string,
     userId: string,
-    data: AddToCartData
+    data: CreateCartDto
   ): Promise<Cart> {
     const url = this.buildUrl(API_ENDPOINTS.CART.ADD_OR_INCREMENT, {
       storeId,
@@ -50,7 +41,7 @@ export class CartService extends BaseService {
     storeId: string,
     userId: string,
     cartId: string,
-    data: CreateCartData
+    data: CreateCartDto
   ): Promise<Cart> {
     const url = this.buildUrl(API_ENDPOINTS.CART.SYNC_ITEMS, {
       storeId,
@@ -68,7 +59,7 @@ export class CartService extends BaseService {
     userId: string,
     cartId: string,
     itemId: string,
-    data: UpdateCartItemData
+    data: UpdateCartItemQuantityDto
   ): Promise<Cart> {
     const url = this.buildUrl(API_ENDPOINTS.CART_ITEMS.UPDATE, {
       storeId,
@@ -108,6 +99,22 @@ export class CartService extends BaseService {
     return this.client.delete<void>(
       `/stores/${storeId}/${userId}/cart/${cartId}`
     );
+  }
+
+  async updateQuantity(
+    storeId: string,
+    userId: string,
+    cartId: string,
+    itemId: string,
+    data: UpdateCartItemQuantityDto
+  ): Promise<CartItem> {
+    const url = this.buildUrl(API_ENDPOINTS.CART_ITEMS.UPDATE_QUANTITY, {
+      storeId,
+      userId,
+      cartId,
+      itemId,
+    });
+    return this.client.put<CartItem>(url, data);
   }
 }
 

@@ -2,11 +2,11 @@ import { BaseService } from '@/lib/api/BaseService';
 import { API_ENDPOINTS, buildUrl } from '@/config/api.config';
 import { PaginatedResponse } from '@/lib/api/types';
 import {
+  CreateReviewDto,
   Review,
-  CreateReviewRequest,
-  UpdateReviewRequest,
-  ReviewFilters,
+  UpdateReviewDto,
 } from '../types/reviews.types';
+import { ReviewFilters } from '@/types/filters.types.ts';
 
 export class ReviewsService extends BaseService {
   /**
@@ -45,9 +45,12 @@ export class ReviewsService extends BaseService {
   async createReview(
     storeId: string,
     productId: string,
-    data: CreateReviewRequest
+    data: CreateReviewDto
   ): Promise<Review> {
-    const url = buildUrl(API_ENDPOINTS.REVIEWS.CREATE, { storeId, productId });
+    const url = buildUrl(API_ENDPOINTS.REVIEWS.CREATE_WITH_RELATIONS, {
+      storeId,
+      productId,
+    });
     return this.client.post<Review>(url, data);
   }
 
@@ -58,7 +61,7 @@ export class ReviewsService extends BaseService {
     storeId: string,
     productId: string,
     userId: string,
-    data: CreateReviewRequest
+    data: CreateReviewDto
   ): Promise<Review> {
     const url = buildUrl(API_ENDPOINTS.REVIEWS.CREATE_WITH_RELATIONS, {
       storeId,
@@ -74,7 +77,7 @@ export class ReviewsService extends BaseService {
     storeId: string,
     productId: string,
     reviewId: string,
-    data: UpdateReviewRequest
+    data: UpdateReviewDto
   ): Promise<Review> {
     const url = buildUrl(API_ENDPOINTS.REVIEWS.UPDATE, {
       storeId,
@@ -98,22 +101,6 @@ export class ReviewsService extends BaseService {
       id: reviewId,
     });
     return this.client.delete<void>(url);
-  }
-
-  /**
-   * Mark review as helpful
-   */
-  async markHelpful(
-    storeId: string,
-    productId: string,
-    reviewId: string
-  ): Promise<Review> {
-    const url = buildUrl(API_ENDPOINTS.REVIEWS.FIND_ONE, {
-      storeId,
-      productId,
-      id: reviewId,
-    });
-    return this.client.post<Review>(`${url}/helpful`);
   }
 }
 

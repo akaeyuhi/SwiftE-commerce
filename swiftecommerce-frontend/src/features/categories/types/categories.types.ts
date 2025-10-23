@@ -1,39 +1,38 @@
+import { Store } from '@/features/stores/types/store.types.ts';
+import { Product } from '@/features/products/types/product.types.ts';
+
 export interface Category {
   id: string;
+  name: string;
+  description?: string;
   storeId: string;
-  name: string;
-  slug: string;
-  description?: string;
+  store?: Store;
   parentId?: string;
-  level: number;
-  path: string;
-  productCount: number;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-  children?: Category[];
   parent?: Category;
+  children?: Category[];
+  products?: Product[];
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-export interface CreateCategoryRequest {
+export interface CategoryDto {
+  id: string;
+  name: string;
+  description?: string;
+  parentId?: string | null;
+  createdAt?: Date;
+  updatedAt?: Date;
+  children?: CategoryDto[];
+}
+
+export interface CreateCategoryDto {
   name: string;
   description?: string;
   parentId?: string;
-  isActive?: boolean;
 }
 
-export interface UpdateCategoryRequest {
+export interface UpdateCategoryDto {
   name?: string;
   description?: string;
   parentId?: string;
-  isActive?: boolean;
-}
-
-export interface CategoryTree {
-  id: string;
-  name: string;
-  slug: string;
-  level: number;
-  productCount: number;
-  children: CategoryTree[];
 }

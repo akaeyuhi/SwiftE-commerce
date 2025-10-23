@@ -2,11 +2,11 @@ import { BaseService } from '@/lib/api/BaseService';
 import { API_ENDPOINTS, buildUrl } from '@/config/api.config';
 import { PaginatedResponse } from '@/lib/api/types';
 import {
-  NewsArticle,
-  CreateNewsRequest,
-  UpdateNewsRequest,
-  NewsFilters,
-} from '../types/news.types';
+  CreateNewsDto,
+  NewsPost,
+  UpdateNewsDto,
+} from '@/features/news/types/news.types.ts';
+import { NewsFilters } from '@/types/filters.types.ts';
 
 export class NewsService extends BaseService {
   /**
@@ -15,44 +15,38 @@ export class NewsService extends BaseService {
   async getNews(
     storeId: string,
     filters?: NewsFilters
-  ): Promise<PaginatedResponse<NewsArticle>> {
+  ): Promise<PaginatedResponse<NewsPost>> {
     const url = buildUrl(API_ENDPOINTS.NEWS.LIST, { storeId });
     const urlWithParams = this.buildQueryUrl(url, filters as any);
     const response = await this.client.get<any>(urlWithParams);
-    return this.handlePaginatedResponse<NewsArticle>(response);
+    return this.handlePaginatedResponse<NewsPost>(response);
   }
 
   /**
    * Get all store news (admin view)
    */
-  async getAllStoreNews(storeId: string): Promise<NewsArticle[]> {
+  async getAllStoreNews(storeId: string): Promise<NewsPost[]> {
     const url = buildUrl(API_ENDPOINTS.NEWS.LIST_ALL, { storeId });
-    return this.client.get<NewsArticle[]>(url);
+    return this.client.get<NewsPost[]>(url);
   }
 
   /**
    * Get single news article
    */
-  async getNewsArticle(
-    storeId: string,
-    articleId: string
-  ): Promise<NewsArticle> {
+  async getNewsPost(storeId: string, articleId: string): Promise<NewsPost> {
     const url = buildUrl(API_ENDPOINTS.NEWS.FIND_ONE, {
       storeId,
       id: articleId,
     });
-    return this.client.get<NewsArticle>(url);
+    return this.client.get<NewsPost>(url);
   }
 
   /**
    * Create news article
    */
-  async createNews(
-    storeId: string,
-    data: CreateNewsRequest
-  ): Promise<NewsArticle> {
+  async createNews(storeId: string, data: CreateNewsDto): Promise<NewsPost> {
     const url = buildUrl(API_ENDPOINTS.NEWS.CREATE, { storeId });
-    return this.client.post<NewsArticle>(url, data);
+    return this.client.post<NewsPost>(url, data);
   }
 
   /**
@@ -60,10 +54,10 @@ export class NewsService extends BaseService {
    */
   async createNewsWithRelations(
     storeId: string,
-    data: CreateNewsRequest & { authorId: string }
-  ): Promise<NewsArticle> {
+    data: CreateNewsDto & { authorId: string }
+  ): Promise<NewsPost> {
     const url = buildUrl(API_ENDPOINTS.NEWS.CREATE_WITH_RELATIONS, { storeId });
-    return this.client.post<NewsArticle>(url, data);
+    return this.client.post<NewsPost>(url, data);
   }
 
   /**
@@ -72,10 +66,10 @@ export class NewsService extends BaseService {
   async updateNews(
     storeId: string,
     articleId: string,
-    data: UpdateNewsRequest
-  ): Promise<NewsArticle> {
+    data: UpdateNewsDto
+  ): Promise<NewsPost> {
     const url = buildUrl(API_ENDPOINTS.NEWS.UPDATE, { storeId, id: articleId });
-    return this.client.patch<NewsArticle>(url, data);
+    return this.client.patch<NewsPost>(url, data);
   }
 
   /**
@@ -89,26 +83,23 @@ export class NewsService extends BaseService {
   /**
    * Publish news article
    */
-  async publishNews(storeId: string, articleId: string): Promise<NewsArticle> {
+  async publishNews(storeId: string, articleId: string): Promise<NewsPost> {
     const url = buildUrl(API_ENDPOINTS.NEWS.PUBLISH, {
       storeId,
       id: articleId,
     });
-    return this.client.post<NewsArticle>(url);
+    return this.client.post<NewsPost>(url);
   }
 
   /**
    * Unpublish news article
    */
-  async unpublishNews(
-    storeId: string,
-    articleId: string
-  ): Promise<NewsArticle> {
+  async unpublishNews(storeId: string, articleId: string): Promise<NewsPost> {
     const url = buildUrl(API_ENDPOINTS.NEWS.UNPUBLISH, {
       storeId,
       id: articleId,
     });
-    return this.client.post<NewsArticle>(url);
+    return this.client.post<NewsPost>(url);
   }
 }
 
