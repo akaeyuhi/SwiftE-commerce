@@ -10,6 +10,8 @@ export interface MockOrder {
     variantSku: string;
     quantity: number;
     price: number;
+    productId: string;
+    variantId: string;
     attributes?: Record<string, string>;
   }>;
   subtotal: number;
@@ -40,6 +42,8 @@ export const mockOrders: MockOrder[] = [
         productName: 'Wireless Headphones Pro',
         variantSku: 'WHP-BLK-001',
         quantity: 1,
+        productId: '1',
+        variantId: '1',
         price: 299.99,
         attributes: { color: 'Matte Black', size: 'Standard' },
       },
@@ -71,6 +75,8 @@ export const mockOrders: MockOrder[] = [
         variantSku: 'SFW-M-BLK-001',
         quantity: 1,
         price: 399.99,
+        productId: '1',
+        variantId: '1',
         attributes: { size: 'Medium (42mm)', color: 'Black' },
       },
     ],

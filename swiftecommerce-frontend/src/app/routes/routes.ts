@@ -52,6 +52,20 @@ export const ROUTES = {
   // Error pages
   NOT_FOUND: '*',
   UNAUTHORIZED: '/unauthorized',
+
+  // Legal pages
+  ABOUT: '/about',
+  CONTACT: '/contact',
+  FAQ: '/faq',
+  SHIPPING: '/shipping',
+  RETURNS: '/returns',
+  PRIVACY: '/privacy',
+  TERMS: '/terms',
+  COOKIES: '/cookies',
+
+  // Track and Wishlist
+  TRACK_ORDER: '/track-order',
+  WISHLIST: '/wishlist',
 } as const;
 
 export const buildRoute = {

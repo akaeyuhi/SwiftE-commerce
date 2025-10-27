@@ -31,7 +31,7 @@ import { TeamManagementPage } from '@/features/stores/pages/TeamManagementPage';
 import { StoreProductsPage } from '@/features/products/pages/StoreProductsPage';
 import { StoreAnalyticsPage } from '@/features/analytics/pages/StoreAnalyticsPage';
 
-// NEW: Store Admin Pages
+// Store Admin Pages
 import { StoreOrdersPage } from '@/features/orders/pages/StoreOrdersPage';
 import { ReviewManagementPage } from '@/features/reviews/pages/ReviewsManagementPage';
 import { NewsManagementPage } from '@/features/news/pages/NewsManagementPage';
@@ -52,14 +52,28 @@ import { CheckoutPage } from '@/features/orders/pages/CheckoutPage';
 
 // Orders
 import { OrdersPage } from '@/features/orders/pages/OrdersPage';
+import { TrackOrderPage } from '@/features/orders/pages/TrackOrderPage.tsx';
+import { OrderDetailPage } from '@/features/orders/pages/OrderDetailPage.tsx';
 
 // User Profile
 import { UserProfilePage } from '@/features/users/pages/UserProfilePage';
+import { WishlistPage } from '@/features/users/pages/WishlistPage.tsx';
+import { DashboardPage } from '@/features/dashboard/pages/DashboardPage.tsx';
+import { DashboardLayout } from '@/app/layouts/DashboardLayout.tsx';
 
 // Error Pages
 import { UnauthorizedPage } from '@/shared/components/feedback/UnathorizedPage';
 import { NotFoundPage } from '@/shared/components/feedback/NotFoundPage';
-import { DashboardPage } from '@/features/dashboard/pages/DashboardPage.tsx';
+
+// Legal pages
+import { CookiePolicyPage } from '@/features/legal/pages/CookiePolicyPage';
+import { PrivacyPolicyPage } from '@/features/legal/pages/PrivacyPolicyPage.tsx';
+import { TermsOfServicePage } from '@/features/legal/pages/TermsOfServicePage.tsx';
+import { ReturnsPage } from '@/features/legal/pages/ReturnsPage.tsx';
+import { ShippingPage } from '@/features/legal/pages/ShippingPage.tsx';
+import { FAQPage } from '@/features/legal/pages/FAQPage.tsx';
+import { ContactPage } from '@/features/legal/pages/ContactPage.tsx';
+import { AboutUsPage } from '@/features/legal/pages/AboutUsPage.tsx';
 
 export const router = createBrowserRouter([
   {
@@ -104,6 +118,43 @@ export const router = createBrowserRouter([
         element: <CartPage />,
       },
 
+      {
+        path: '/about',
+        element: <AboutUsPage />,
+      },
+      {
+        path: '/contact',
+        element: <ContactPage />,
+      },
+      {
+        path: '/faq',
+        element: <FAQPage />,
+      },
+      {
+        path: '/shipping',
+        element: <ShippingPage />,
+      },
+      {
+        path: '/returns',
+        element: <ReturnsPage />,
+      },
+      {
+        path: '/privacy',
+        element: <PrivacyPolicyPage />,
+      },
+      {
+        path: '/terms',
+        element: <TermsOfServicePage />,
+      },
+      {
+        path: '/cookies',
+        element: <CookiePolicyPage />,
+      },
+      {
+        path: '/track',
+        element: <TrackOrderPage />,
+      },
+
       // Auth Routes (Public)
       {
         element: <AuthLayout />,
@@ -133,12 +184,6 @@ export const router = createBrowserRouter([
             element: <CheckoutPage />,
           },
 
-          // Orders
-          {
-            path: ROUTES.ORDERS,
-            element: <OrdersPage />,
-          },
-
           // User Profile
           {
             path: ROUTES.USER_PROFILE,
@@ -153,8 +198,26 @@ export const router = createBrowserRouter([
 
           // Dashboard
           {
-            path: ROUTES.DASHBOARD,
-            element: <DashboardPage />,
+            element: <DashboardLayout />,
+            children: [
+              {
+                path: ROUTES.DASHBOARD,
+                element: <DashboardPage />,
+              },
+              // Orders
+              {
+                path: ROUTES.ORDERS,
+                element: <OrdersPage />,
+              },
+              {
+                path: '/orders/:orderId',
+                element: <OrderDetailPage />,
+              },
+              {
+                path: '/wishlist',
+                element: <WishlistPage />,
+              },
+            ],
           },
 
           // Create Store

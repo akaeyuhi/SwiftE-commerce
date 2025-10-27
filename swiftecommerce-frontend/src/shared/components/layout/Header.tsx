@@ -8,6 +8,7 @@ import { CartDropdown } from '@/shared/components/cart/CartDropdown';
 import { UserMenu } from '@/shared/components/header/UserMenu';
 import { SearchBar as HeaderSearchBar } from '@/shared/components/header/SearchBar';
 import { MobileMenu } from '@/shared/components/header/MobileMenu';
+import { ThemeToggle } from '@/lib/theme/ThemeToggle.tsx';
 
 export function Header() {
   const { isAuthenticated } = useAuth();
@@ -32,6 +33,8 @@ export function Header() {
 
           {/* Right side */}
           <div className="flex items-center gap-4">
+            <ThemeToggle />
+
             <CartDropdown />
 
             {/* User menu - Desktop */}

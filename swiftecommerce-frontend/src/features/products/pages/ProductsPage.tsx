@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/shared/components/ui/Button';
 import { Card, CardContent } from '@/shared/components/ui/Card';
 import { Badge } from '@/shared/components/ui/Badge';
@@ -15,12 +15,15 @@ import { mockProducts } from '@/shared/mocks/products.mock';
 import { mockCategories } from '@/shared/mocks/categories.mock';
 import { Package, Star, SlidersHorizontal, X } from 'lucide-react';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
+import { useSearchParams } from 'react-router-dom';
 
 type SortOption = 'newest' | 'price-asc' | 'price-desc' | 'rating' | 'popular';
 
 export function ProductsPage() {
   const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchParams] = useSearchParams();
+  const urlSearch = searchParams.get('search') || '';
+  const [searchQuery, setSearchQuery] = useState(urlSearch);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [sortBy, setSortBy] = useState<SortOption>('newest');
   const [priceRange, setPriceRange] = useState({ min: 0, max: 10000 });
@@ -79,6 +82,10 @@ export function ProductsPage() {
     priceRange.min > 0 ||
     priceRange.max < 10000 ||
     searchQuery !== '';
+
+  useEffect(() => {
+    setSearchQuery(urlSearch);
+  }, [urlSearch]);
 
   return (
     <div className="min-h-screen bg-background">
