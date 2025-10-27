@@ -3,7 +3,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/shared/components/ui/Button';
 import { Input } from '@/shared/components/forms/Input';
 import { FormField } from '@/shared/components/forms/FormField';
-import { Badge } from '@/shared/components/ui/Badge';
 import {
   Card,
   CardContent,
@@ -19,7 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog.tsx';
+} from '@/shared/components/dialogs/dialog.tsx';
 import {
   Select,
   SelectContent,
@@ -28,25 +27,16 @@ import {
   SelectValue,
 } from '@/shared/components/ui/select';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/shared/components/ui/alert-dialog';
-import {
   assignRoleSchema,
   AssignRoleFormData,
 } from '@/lib/validations/store.schemas';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { UserPlus, Crown, Shield, Eye, X } from 'lucide-react';
+import { UserPlus, Crown, Shield, Eye } from 'lucide-react';
+import { TeamMemberList } from '@/features/stores/components/TeamMemberList.tsx';
+import { RoleInfoCard } from '@/features/stores/components/RoleInfoCard.tsx';
 
-interface TeamMember {
+export interface TeamMember {
   id: string;
   email: string;
   name: string;
@@ -133,34 +123,8 @@ export function TeamManagementPage() {
 
       setTeamMembers(teamMembers.filter((m) => m.id !== memberId));
       toast.success('Team member removed');
-    } catch (error: any) {
-      toast.error('Failed to remove team member');
-    }
-  };
-
-  const getRoleIcon = (role: string) => {
-    switch (role) {
-      case 'STORE_ADMIN':
-        return <Crown className="h-4 w-4" />;
-      case 'STORE_MODERATOR':
-        return <Shield className="h-4 w-4" />;
-      case 'STORE_GUEST':
-        return <Eye className="h-4 w-4" />;
-      default:
-        return null;
-    }
-  };
-
-  const getRoleBadgeVariant = (
-    role: string
-  ): 'default' | 'secondary' | 'outline' => {
-    switch (role) {
-      case 'STORE_ADMIN':
-        return 'default';
-      case 'STORE_MODERATOR':
-        return 'secondary';
-      default:
-        return 'outline';
+    } catch (error) {
+      toast.error(`Failed to remove team member: ${error}`);
     }
   };
 
@@ -293,140 +257,21 @@ export function TeamManagementPage() {
         </Dialog>
       </div>
 
-      {/* Role Information */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Role Permissions</CardTitle>
-          <CardDescription>
-            Understanding team member roles and their access levels
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 border border-border rounded-lg">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="h-8 w-8 bg-primary/10 rounded flex items-center justify-center">
-                  <Crown className="h-4 w-4 text-primary" />
-                </div>
-                <h4 className="font-semibold text-foreground">Admin</h4>
-              </div>
-              <p className="text-sm text-muted-foreground mb-3">
-                Full control over the store
-              </p>
-              <ul className="text-xs text-muted-foreground space-y-1">
-                <li>• Manage all settings</li>
-                <li>• Invite/remove team members</li>
-                <li>• Full product & order management</li>
-              </ul>
-            </div>
+      <RoleInfoCard />
 
-            <div className="p-4 border border-border rounded-lg">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="h-8 w-8 bg-secondary/50 rounded flex items-center justify-center">
-                  <Shield className="h-4 w-4 text-secondary-foreground" />
-                </div>
-                <h4 className="font-semibold text-foreground">Moderator</h4>
-              </div>
-              <p className="text-sm text-muted-foreground mb-3">
-                Manage products and orders
-              </p>
-              <ul className="text-xs text-muted-foreground space-y-1">
-                <li>• Add/edit products</li>
-                <li>• Process orders</li>
-                <li>• View analytics</li>
-              </ul>
-            </div>
-
-            <div className="p-4 border border-border rounded-lg">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="h-8 w-8 bg-muted rounded flex items-center justify-center">
-                  <Eye className="h-4 w-4 text-muted-foreground" />
-                </div>
-                <h4 className="font-semibold text-foreground">Guest</h4>
-              </div>
-              <p className="text-sm text-muted-foreground mb-3">
-                Read-only access
-              </p>
-              <ul className="text-xs text-muted-foreground space-y-1">
-                <li>• View products</li>
-                <li>• View orders</li>
-                <li>• View analytics</li>
-              </ul>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Team Members List */}
       <Card>
         <CardHeader>
           <CardTitle>Team Members ({teamMembers.length})</CardTitle>
           <CardDescription>
-            Manage your store's team members and their roles
+            Manage your store&#39;s team members and their roles
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            {teamMembers.map((member) => (
-              <div
-                key={member.id}
-                className="flex items-center justify-between p-4
-                border border-border rounded-lg hover:bg-muted/50 transition-colors"
-              >
-                <div className="flex items-center gap-4">
-                  <div
-                    className="h-10 w-10 bg-primary/10 rounded-full
-                  flex items-center justify-center"
-                  >
-                    <span className="text-sm font-semibold text-primary">
-                      {member.name.toUpperCase()}
-                    </span>
-                  </div>
-                  <div>
-                    <p className="font-medium text-foreground">{member.name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {member.email}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <Badge variant={getRoleBadgeVariant(member.role)}>
-                    <span className="flex items-center gap-1">
-                      {getRoleIcon(member.role)}
-                      {getRoleLabel(member.role)}
-                    </span>
-                  </Badge>
-
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Remove team member?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          {member.name} will lose access to this store. They
-                          will be notified via email.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => handleRemoveMember(member.id)}
-                          className="bg-error text-error-foreground hover:bg-error/90"
-                        >
-                          Remove
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              </div>
-            ))}
-          </div>
+          <TeamMemberList
+            teamMembers={teamMembers}
+            handleRemoveMember={handleRemoveMember}
+            getRoleLabel={getRoleLabel}
+          />
         </CardContent>
       </Card>
     </div>

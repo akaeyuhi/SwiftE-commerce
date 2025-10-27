@@ -1,0 +1,41 @@
+export const mockStores = [
+  {
+    id: '1',
+    name: 'Tech Haven',
+    description:
+      'Your one-stop shop for the latest tech gadgets and accessories',
+    logoUrl: null,
+    bannerUrl: null,
+    totalProducts: 245,
+    totalOrders: 1250,
+    totalRevenue: 125000,
+    totalSales: 1250,
+    averageRating: 4.8,
+    reviewCount: 342,
+    followersCount: 1523,
+    isActive: true,
+    city: 'San Francisco',
+    country: 'USA',
+    createdAt: '2024-01-15',
+  },
+  {
+    id: '2',
+    name: 'Fashion Hub',
+    description: 'Trendy clothes and accessories for modern lifestyle',
+    logoUrl: null,
+    bannerUrl: null,
+    totalProducts: 567,
+    totalOrders: 3420,
+    totalRevenue: 342000,
+    totalSales: 3420,
+    averageRating: 4.6,
+    reviewCount: 567,
+    followersCount: 3245,
+    isActive: true,
+    city: 'New York',
+    country: 'USA',
+    createdAt: '2024-02-01',
+  },
+];
+
+export type MockStore = typeof mockStores;

@@ -1,65 +1,74 @@
 import { Link } from '@/shared/components/ui/Link';
-import { useLocation } from 'react-router-dom';
-import { ROUTES } from '@/app/routes/routes';
+import { useLocation, useParams } from 'react-router-dom';
 import { useUI } from '@/app/store';
 import { cn } from '@/shared/utils/cn';
 import {
   LayoutDashboard,
   Package,
   ShoppingBag,
-  TrendingUp,
   Settings,
-  FileText,
   Users,
   BarChart3,
   Tag,
   Sparkles,
   X,
+  MessageSquare,
+  Newspaper,
+  Warehouse,
 } from 'lucide-react';
 
 export function StoreSidebar() {
   const location = useLocation();
+  const { storeId } = useParams<{ storeId: string }>();
   const { sidebarOpen, setSidebarOpen } = useUI();
+
+  // Build dynamic routes with storeId
+  const buildPath = (path: string) => `/store/${storeId}${path}`;
 
   const navigation = [
     {
       name: 'Overview',
-      href: ROUTES.STORE,
+      href: buildPath('/overview'),
       icon: LayoutDashboard,
     },
     {
       name: 'Products',
-      href: ROUTES.STORE_PRODUCTS,
+      href: buildPath('/products'),
       icon: Package,
     },
     {
       name: 'Orders',
-      href: ROUTES.STORE_ORDERS,
+      href: buildPath('/orders'),
       icon: ShoppingBag,
     },
     {
       name: 'Analytics',
-      href: ROUTES.STORE_ANALYTICS,
+      href: buildPath('/analytics'),
       icon: BarChart3,
     },
     {
+      name: 'Inventory',
+      href: buildPath('/inventory'),
+      icon: Warehouse,
+    },
+    {
       name: 'Categories',
-      href: '/store/categories',
+      href: buildPath('/categories'),
       icon: Tag,
     },
     {
       name: 'Reviews',
-      href: '/store/reviews',
-      icon: FileText,
+      href: buildPath('/reviews'),
+      icon: MessageSquare,
     },
     {
-      name: 'Customers',
-      href: '/store/customers',
-      icon: Users,
+      name: 'News',
+      href: buildPath('/news/management'),
+      icon: Newspaper,
     },
     {
       name: 'AI Tools',
-      href: '/store/ai',
+      href: buildPath('/ai'),
       icon: Sparkles,
       badge: 'New',
     },
@@ -67,14 +76,14 @@ export function StoreSidebar() {
 
   const bottomNavigation = [
     {
-      name: 'Store Settings',
-      href: ROUTES.STORE_SETTINGS,
-      icon: Settings,
+      name: 'Team',
+      href: buildPath('/team'),
+      icon: Users,
     },
     {
-      name: 'Performance',
-      href: '/store/performance',
-      icon: TrendingUp,
+      name: 'Settings',
+      href: buildPath('/settings'),
+      icon: Settings,
     },
   ];
 
@@ -91,7 +100,7 @@ export function StoreSidebar() {
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed lg:static inset-y-0 left-0 z-50 w-64 bg-card border-r border-border',
+          'fixed lg:static inset-y-0 left-0 z-40 w-64 bg-card border-r border-border',
           'transform transition-transform duration-300 ease-in-out',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         )}

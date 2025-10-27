@@ -4,7 +4,7 @@ import { StoreHeader } from '@/shared/components/layout/StoreHeader';
 
 export function StoreLayout() {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       <StoreHeader />
       <div className="flex">
         <StoreSidebar />
