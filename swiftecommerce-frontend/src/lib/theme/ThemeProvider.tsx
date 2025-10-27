@@ -23,10 +23,8 @@ export function ThemeProvider({
 
   // Initialize theme on mount if not set
   useEffect(() => {
-    if (!theme) {
-      setTheme(defaultTheme);
-    }
-  }, [defaultTheme, setTheme, theme]);
+    setTheme(defaultTheme);
+  }, [defaultTheme, setTheme]);
 
   const value: ThemeContextValue = {
     theme,

@@ -48,7 +48,7 @@ const applyTheme = (theme: Theme): 'light' | 'dark' => {
 export const createUISlice: SliceCreator<UISlice> = (set, get) => ({
   // Initial state
   theme: 'system',
-  actualTheme: 'dark',
+  actualTheme: getActualTheme('system'),
   sidebarOpen: false,
   mobileMenuOpen: false,
   searchOpen: false,
