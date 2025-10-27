@@ -28,7 +28,7 @@ export interface UISlice {
 export const createUISlice: SliceCreator<UISlice> = (set, get) => ({
   // Initial state
   theme: 'system',
-  sidebarOpen: true,
+  sidebarOpen: false,
   mobileMenuOpen: false,
   searchOpen: false,
   commandMenuOpen: false,

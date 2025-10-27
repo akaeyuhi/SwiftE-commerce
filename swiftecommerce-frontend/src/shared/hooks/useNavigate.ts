@@ -1,35 +1,65 @@
-import { useNavigate as useRouterNavigate } from 'react-router-dom';
-import { ROUTES, buildRoute } from '@/app/routes/routes.ts';
+import {
+  NavigateOptions,
+  useNavigate as useRouterNavigate,
+} from 'react-router-dom';
+import { ROUTES, buildRoute } from '@/app/routes/routes';
 
-/**
- * Type-safe navigation hook
- */
 export function useNavigate() {
   const navigate = useRouterNavigate();
 
   return {
-    // Direct navigation
+    // Core
+    to: (path: string, options?: NavigateOptions) => navigate(path, options),
+    back: () => navigate(-1),
+
+    // Public
     toHome: () => navigate(ROUTES.HOME),
     toLogin: () => navigate(ROUTES.LOGIN),
     toRegister: () => navigate(ROUTES.REGISTER),
-    toDashboard: () => navigate(ROUTES.DASHBOARD),
+
+    // Stores
+    toStores: () => navigate(ROUTES.STORES),
+    toStorePublic: (storeId: string) =>
+      navigate(buildRoute.storePublic(storeId)),
+
+    // My Stores
+    toMyStores: () => navigate(ROUTES.MY_STORES),
+    toCreateStore: () => navigate(ROUTES.STORE_CREATE),
+
+    // Store Management (with storeId)
+    toStoreOverview: (storeId: string) =>
+      navigate(buildRoute.storeOverview(storeId)),
+    toStoreSettings: (storeId: string) =>
+      navigate(buildRoute.storeSettings(storeId)),
+    toStoreTeam: (storeId: string) => navigate(buildRoute.storeTeam(storeId)),
+    toStoreAnalytics: (storeId: string) =>
+      navigate(buildRoute.storeAnalytics(storeId)),
+    toStoreProducts: (storeId: string) =>
+      navigate(buildRoute.storeProducts(storeId)),
+    toStoreProductCreate: (storeId: string) =>
+      navigate(buildRoute.storeProductCreate(storeId)),
+    toStoreProductEdit: (storeId: string, productId: string) =>
+      navigate(buildRoute.storeProductEdit(storeId, productId)),
+    toStoreOrders: (storeId: string) =>
+      navigate(buildRoute.storeOrders(storeId)),
+
+    // Products (public)
     toProducts: () => navigate(ROUTES.PRODUCTS),
+    toProduct: (productId: string) =>
+      navigate(buildRoute.productDetail(productId)),
+
+    // Cart & Checkout
     toCart: () => navigate(ROUTES.CART),
     toCheckout: () => navigate(ROUTES.CHECKOUT),
+
+    // Orders
     toOrders: () => navigate(ROUTES.ORDERS),
-    toStore: () => navigate(ROUTES.STORE),
+    toOrder: (orderId: string) => navigate(buildRoute.orderDetail(orderId)),
 
-    // Parametrized navigation
-    toProductDetail: (productId: string) =>
-      navigate(buildRoute.productDetail(productId)),
-    toOrderDetail: (orderId: string) =>
-      navigate(buildRoute.orderDetail(orderId)),
-    toStoreProductEdit: (productId: string) =>
-      navigate(buildRoute.storeProductEdit(productId)),
+    // Dashboard
+    toDashboard: () => navigate(ROUTES.DASHBOARD),
 
-    // Generic navigation
-    to: (path: string) => navigate(path),
-    back: () => navigate(-1),
-    forward: () => navigate(1),
+    // Error
+    toUnauthorized: () => navigate(ROUTES.UNAUTHORIZED),
   };
 }
