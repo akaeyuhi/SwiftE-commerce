@@ -1,6 +1,3 @@
-/**
- * Route paths constants
- */
 export const ROUTES = {
   // Public routes
   HOME: '/',
@@ -8,7 +5,14 @@ export const ROUTES = {
   REGISTER: '/register',
   FORGOT_PASSWORD: '/forgot-password',
 
-  // Product routes
+  // Stores (Public)
+  STORES: '/stores',
+  STORE_PUBLIC: '/stores/:storeId',
+
+  // My Stores (Authenticated)
+  MY_STORES: '/my-stores',
+
+  // Product routes (Public)
   PRODUCTS: '/products',
   PRODUCT_DETAIL: '/products/:productId',
 
@@ -24,14 +28,21 @@ export const ROUTES = {
   ORDERS: '/orders',
   ORDER_DETAIL: '/orders/:orderId',
 
-  // Store Owner routes
-  STORE: '/store',
-  STORE_SETTINGS: '/store/settings',
-  STORE_ANALYTICS: '/store/analytics',
-  STORE_PRODUCTS: '/store/products',
-  STORE_PRODUCTS_CREATE: '/store/products/create',
-  STORE_PRODUCTS_EDIT: '/store/products/:productId/edit',
-  STORE_ORDERS: '/store/orders',
+  // Store Management (requires store access)
+  STORE_CREATE: '/store/create',
+  STORE: '/store/:storeId',
+  STORE_OVERVIEW: '/store/:storeId/overview',
+  STORE_SETTINGS: '/store/:storeId/settings',
+  STORE_TEAM: '/store/:storeId/team',
+  STORE_ANALYTICS: '/store/:storeId/analytics',
+  STORE_PRODUCTS: '/store/:storeId/products',
+  STORE_PRODUCTS_CREATE: '/store/:storeId/products/create',
+  STORE_PRODUCTS_EDIT: '/store/:storeId/products/:productId/edit',
+  STORE_ORDERS: '/store/:storeId/orders',
+  STORE_NEWS: '/store/:storeId/news',
+  STORE_NEWS_MANAGEMENT: '/store/:storeId/news/management',
+
+  USER_PROFILE: '/users/:userId',
 
   // Admin routes
   ADMIN: '/admin',
@@ -43,11 +54,17 @@ export const ROUTES = {
   UNAUTHORIZED: '/unauthorized',
 } as const;
 
-/**
- * Helper to build route paths with params
- */
 export const buildRoute = {
   productDetail: (productId: string) => `/products/${productId}`,
   orderDetail: (orderId: string) => `/orders/${orderId}`,
-  storeProductEdit: (productId: string) => `/store/products/${productId}/edit`,
+  storePublic: (storeId: string) => `/stores/${storeId}`,
+  storeOverview: (storeId: string) => `/store/${storeId}/overview`,
+  storeSettings: (storeId: string) => `/store/${storeId}/settings`,
+  storeTeam: (storeId: string) => `/store/${storeId}/team`,
+  storeAnalytics: (storeId: string) => `/store/${storeId}/analytics`,
+  storeProducts: (storeId: string) => `/store/${storeId}/products`,
+  storeProductCreate: (storeId: string) => `/store/${storeId}/products/create`,
+  storeProductEdit: (storeId: string, productId: string) =>
+    `/store/${storeId}/products/${productId}/edit`,
+  storeOrders: (storeId: string) => `/store/${storeId}/orders`,
 };
