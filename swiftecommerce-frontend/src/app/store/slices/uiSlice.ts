@@ -3,6 +3,7 @@ import { Theme, SliceCreator } from '../types';
 export interface UISlice {
   // State
   theme: Theme;
+  actualTheme: 'light' | 'dark';
   sidebarOpen: boolean;
   mobileMenuOpen: boolean;
   searchOpen: boolean;
@@ -25,27 +26,46 @@ export interface UISlice {
   getActualTheme: () => 'light' | 'dark';
 }
 
+const getActualTheme = (theme: Theme): 'light' | 'dark' => {
+  if (theme === 'system') {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches
+      ? 'dark'
+      : 'light';
+  }
+  return theme;
+};
+
+const applyTheme = (theme: Theme): 'light' | 'dark' => {
+  const root = window.document.documentElement;
+  root.classList.remove('light', 'dark');
+
+  const actualTheme = getActualTheme(theme);
+  root.classList.add(actualTheme);
+
+  return actualTheme;
+};
+
 export const createUISlice: SliceCreator<UISlice> = (set, get) => ({
   // Initial state
   theme: 'system',
+  actualTheme: 'dark',
   sidebarOpen: false,
   mobileMenuOpen: false,
   searchOpen: false,
   commandMenuOpen: false,
 
   // Actions
-  setTheme: (theme) => set({ theme }, false, 'ui/setTheme'),
+  setTheme: (theme) => {
+    const actualTheme = applyTheme(theme);
+    set({ theme, actualTheme }, false, 'ui/setTheme');
+  },
 
-  toggleTheme: () =>
-    set(
-      (state) => {
-        const current = state.getActualTheme();
-        const newTheme = current === 'light' ? 'dark' : 'light';
-        return { theme: newTheme };
-      },
-      false,
-      'ui/toggleTheme'
-    ),
+  toggleTheme: () => {
+    const currentActual = get().actualTheme;
+    const newTheme = currentActual === 'light' ? 'dark' : 'light';
+    const actualTheme = applyTheme(newTheme);
+    set({ theme: newTheme, actualTheme }, false, 'ui/toggleTheme');
+  },
 
   toggleSidebar: () =>
     set(
@@ -98,13 +118,5 @@ export const createUISlice: SliceCreator<UISlice> = (set, get) => ({
     ),
 
   // Computed
-  getActualTheme: () => {
-    const theme = get().theme;
-    if (theme === 'system') {
-      return window.matchMedia('(prefers-color-scheme: dark)').matches
-        ? 'dark'
-        : 'light';
-    }
-    return theme;
-  },
+  getActualTheme: () => get().actualTheme,
 });

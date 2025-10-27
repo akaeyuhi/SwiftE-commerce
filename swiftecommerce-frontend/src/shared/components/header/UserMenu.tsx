@@ -14,7 +14,8 @@ import {
   ShoppingCart,
   Heart,
   Settings,
-  LogOut, LucideLayoutDashboard,
+  LogOut,
+  LucideLayoutDashboard,
 } from 'lucide-react';
 
 export function UserMenu() {
@@ -37,7 +38,7 @@ export function UserMenu() {
             className="h-8 w-8 bg-primary text-primary-foreground rounded-full
               flex items-center justify-center font-semibold"
           >
-            {user?.firstName?.toUpperCase() || 'U'}
+            {user?.firstName?.toUpperCase()[0] || 'U'}
           </div>
           <span className="font-medium text-foreground">{user?.firstName}</span>
         </button>
@@ -46,9 +47,7 @@ export function UserMenu() {
         <DropdownMenuLabel>My Account</DropdownMenuLabel>
         <DropdownMenuSeparator />
 
-        <DropdownMenuItem
-          onClick={() => navigate.to(`/users/${user?.id}`)}
-        >
+        <DropdownMenuItem onClick={() => navigate.to(`/users/${user?.id}`)}>
           <User className="h-4 w-4 mr-2" />
           Profile
         </DropdownMenuItem>

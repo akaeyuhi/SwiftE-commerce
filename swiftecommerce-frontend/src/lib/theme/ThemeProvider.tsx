@@ -1,18 +1,6 @@
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-  ReactNode,
-} from 'react';
-
-type Theme = 'light' | 'dark' | 'system';
-
-interface ThemeProviderProps {
-  children: ReactNode;
-  defaultTheme?: Theme;
-  storageKey?: string;
-}
+import { createContext, useContext, useEffect, ReactNode } from 'react';
+import { useUI } from '@/app/store';
+import { Theme } from '@/app/store/types';
 
 interface ThemeContextValue {
   theme: Theme;
@@ -22,44 +10,28 @@ interface ThemeContextValue {
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
+interface ThemeProviderProps {
+  children: ReactNode;
+  defaultTheme?: Theme;
+}
+
 export function ThemeProvider({
   children,
   defaultTheme = 'system',
-  storageKey = 'swiftecommerce-theme',
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(
-    () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
-  );
+  const { theme, getActualTheme, setTheme } = useUI();
 
-  const [actualTheme, setActualTheme] = useState<'light' | 'dark'>('light');
-
+  // Initialize theme on mount if not set
   useEffect(() => {
-    const root = window.document.documentElement;
-
-    root.classList.remove('light', 'dark');
-
-    if (theme === 'system') {
-      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)')
-        .matches
-        ? 'dark'
-        : 'light';
-
-      root.classList.add(systemTheme);
-      setActualTheme(systemTheme);
-      return;
+    if (!theme) {
+      setTheme(defaultTheme);
     }
+  }, [defaultTheme, setTheme, theme]);
 
-    root.classList.add(theme);
-    setActualTheme(theme);
-  }, [theme]);
-
-  const value = {
+  const value: ThemeContextValue = {
     theme,
-    setTheme: (newTheme: Theme) => {
-      localStorage.setItem(storageKey, newTheme);
-      setTheme(newTheme);
-    },
-    actualTheme,
+    setTheme,
+    actualTheme: getActualTheme(),
   };
 
   return (

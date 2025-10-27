@@ -1,5 +1,5 @@
-import { useTheme } from '@/lib/theme';
 import { cn } from '@/shared/utils/cn';
+import { useUI } from '@/app/store';
 
 interface LogoProps {
   className?: string;
@@ -8,7 +8,7 @@ interface LogoProps {
 }
 
 export function Logo({ className, size = 'md', showText = true }: LogoProps) {
-  const { theme } = useTheme();
+  const { getActualTheme } = useUI();
 
   const sizes = {
     sm: 'h-6 w-6',
@@ -23,9 +23,9 @@ export function Logo({ className, size = 'md', showText = true }: LogoProps) {
   };
 
   const logoSrc =
-    theme === 'dark'
-      ? '/src/assets/images/logo-minimal.svg'
-      : '/src/assets/images/logo-minimal-dark.svg';
+    getActualTheme() === 'dark'
+      ? '/src/assets/images/logo-minimal-dark.svg'
+      : '/src/assets/images/logo-minimal.svg';
 
   return (
     <div className={cn('flex items-center gap-2', className)}>
