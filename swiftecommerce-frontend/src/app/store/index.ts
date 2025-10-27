@@ -79,13 +79,18 @@ export const useUI = () =>
 export const useCart = () =>
   useStore((state) => ({
     items: state.items,
+    isCartOpen: state.isCartOpen,
     addItem: state.addItem,
     removeItem: state.removeItem,
     updateQuantity: state.updateQuantity,
     clearCart: state.clearCart,
-    getTotal: state.getTotal,
-    getItemCount: state.getItemCount,
-    hasItem: state.hasItem,
+    clearStoreCart: state.clearStoreCart,
+    toggleCart: state.toggleCart,
+    setCartOpen: state.setCartOpen,
+    getTotalItems: state.getTotalItems,
+    getTotalPrice: state.getTotalPrice,
+    getStoreItems: state.getStoreItems,
+    getStores: state.getStores,
   }));
 
 export const usePreferences = () =>

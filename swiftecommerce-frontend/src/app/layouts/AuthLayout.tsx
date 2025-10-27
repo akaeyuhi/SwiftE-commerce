@@ -5,7 +5,6 @@ import { ROUTES } from '../routes/routes';
 export function AuthLayout() {
   const { isAuthenticated } = useAuth();
 
-  // If already authenticated, redirect to dashboard
   if (isAuthenticated) {
     return <Navigate to={ROUTES.DASHBOARD} replace />;
   }

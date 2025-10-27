@@ -3,7 +3,6 @@ import react from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
 import typescriptEslint from '@typescript-eslint/eslint-plugin';
 import prettier from 'eslint-plugin-prettier';
-import jsxMaxLen from 'eslint-plugin-jsx-max-len';
 import globals from 'globals';
 import tsParser from '@typescript-eslint/parser';
 import path from 'node:path';
@@ -35,7 +34,6 @@ export default [
             react: fixupPluginRules(react),
             'react-hooks': fixupPluginRules(reactHooks),
             '@typescript-eslint': fixupPluginRules(typescriptEslint),
-            'jsx-max-len': fixupPluginRules(jsxMaxLen),
             prettier: fixupPluginRules(prettier),
         },
 
@@ -66,13 +64,6 @@ export default [
                     "trailingComma": "es5"
                 }
 
-            ],
-            'jsx-max-len/jsx-max-len': [
-                'error',
-                {
-                    lineMaxLength: 200, // Max length for JSX lines
-                    maxAttributesPerLine: 3, // Max attributes per line in multi-line JSX
-                },
             ],
             '@typescript-eslint/interface-name-prefix': 'off',
             '@typescript-eslint/explicit-function-return-type': 'off',

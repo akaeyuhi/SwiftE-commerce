@@ -151,7 +151,6 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* CTA Section - FIXED */}
       <section className="py-16 md:py-24">
         <div className="container mx-auto px-4">
           <div
@@ -166,9 +165,8 @@ export function HomePage() {
               Join thousands of sellers and grow your business with our platform
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              {/* ✅ FIXED: Use background color for contrast */}
               <Link
-                to={ROUTES.REGISTER}
+                to={ROUTES.STORE_CREATE}
                 className="inline-flex items-center justify-center px-8 py-4
                   bg-background text-foreground font-semibold rounded-lg
                   hover:bg-background/90 transition-colors shadow-lg border-2 border-background"

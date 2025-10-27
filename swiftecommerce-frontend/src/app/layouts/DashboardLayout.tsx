@@ -1,10 +1,10 @@
 import { Outlet } from 'react-router-dom';
 import { Sidebar } from '@/shared/components/layout/Sidebar';
-import { DashboardHeader } from '@/components/layout/DashboardHeader.tsx';
+import { DashboardHeader } from '@/shared/components/layout/DashboardHeader.tsx';
 
 export function DashboardLayout() {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       <DashboardHeader />
       <div className="flex">
         <Sidebar />
