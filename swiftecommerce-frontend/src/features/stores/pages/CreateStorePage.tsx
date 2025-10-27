@@ -46,7 +46,7 @@ export function CreateStorePage() {
       console.log('Creating store:', data);
 
       toast.success('Store created successfully!');
-      navigate.toStore();
+      navigate.toStoreOverview('data.storeId');
     } catch (error: any) {
       toast.error(error.message || 'Failed to create store');
     } finally {
