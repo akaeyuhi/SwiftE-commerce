@@ -19,10 +19,15 @@ import {
   CheckCircle2,
   XCircle,
 } from 'lucide-react';
+import { useNavigate } from '@/shared/hooks/useNavigate.ts';
+import { useCart } from '@/app/store';
+import { Order } from '@/features/orders/types/order.types.ts';
 
 export function OrdersPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const navigate = useNavigate();
+  const { addItem } = useCart();
 
   const filteredOrders = mockOrders.filter((order) => {
     const matchesSearch =
@@ -61,6 +66,10 @@ export function OrdersPage() {
       default:
         return 'default';
     }
+  };
+
+  const buyAgainHandler = (order: Order) => {
+    for (const item of order.items) addItem(item as any);
   };
 
   return (
@@ -203,11 +212,19 @@ export function OrdersPage() {
 
                   {/* Actions */}
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigate.toOrder(order.id)}
+                    >
                       View Details
                     </Button>
                     {order.status === 'delivered' && (
-                      <Button variant="outline" size="sm">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => buyAgainHandler(order as any)}
+                      >
                         Buy Again
                       </Button>
                     )}

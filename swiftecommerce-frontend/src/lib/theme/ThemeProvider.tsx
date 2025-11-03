@@ -21,7 +21,6 @@ export function ThemeProvider({
 }: ThemeProviderProps) {
   const { theme, getActualTheme, setTheme } = useUI();
 
-  // Initialize theme on mount if not set
   useEffect(() => {
     setTheme(defaultTheme);
   }, [defaultTheme, setTheme]);
