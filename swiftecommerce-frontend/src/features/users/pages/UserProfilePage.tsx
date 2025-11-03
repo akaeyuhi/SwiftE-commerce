@@ -16,10 +16,12 @@ import {
 } from 'lucide-react';
 import { mockProducts } from '@/shared/mocks/products.mock';
 import { mockStores } from '@/shared/mocks/stores.mock';
+import { useNavigate } from '@/shared/hooks/useNavigate.ts';
 
 export function UserProfilePage() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'liked' | 'stores'>('liked');
+  const navigate = useNavigate();
 
   // Mock liked products (in real app, fetch from API)
   const likedProducts = mockProducts.slice(0, 3);
@@ -88,7 +90,10 @@ export function UserProfilePage() {
               </div>
 
               {/* Actions */}
-              <Button variant="outline">
+              <Button
+                variant="outline"
+                onClick={() => navigate.to(`/users/${user?.id}/edit`)}
+              >
                 <Settings className="h-4 w-4 mr-2" />
                 Edit Profile
               </Button>

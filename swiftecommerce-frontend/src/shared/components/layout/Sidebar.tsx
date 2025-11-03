@@ -1,7 +1,7 @@
 import { Link } from '@/shared/components/ui/Link';
 import { useLocation } from 'react-router-dom';
 import { ROUTES } from '@/app/routes/routes';
-import { useUI } from '@/app/store';
+import { useAuth, useUI } from '@/app/store';
 import { cn } from '@/shared/utils/cn';
 import {
   LayoutDashboard,
@@ -12,11 +12,13 @@ import {
   Settings,
   HelpCircle,
   X,
+  ShieldEllipsis,
 } from 'lucide-react';
 
 export function Sidebar() {
   const location = useLocation();
   const { sidebarOpen, setSidebarOpen } = useUI();
+  const { user } = useAuth();
 
   const navigation = [
     {
@@ -31,12 +33,12 @@ export function Sidebar() {
     },
     {
       name: 'Wishlist',
-      href: '/wishlist',
+      href: ROUTES.WISHLIST,
       icon: Heart,
     },
     {
       name: 'Track Order',
-      href: '/track',
+      href: ROUTES.TRACK_ORDER,
       icon: Package,
     },
     {
@@ -49,7 +51,7 @@ export function Sidebar() {
   const bottomNavigation = [
     {
       name: 'Settings',
-      href: '/settings',
+      href: `/users/${user?.id}/settings`,
       icon: Settings,
     },
     {
@@ -58,6 +60,14 @@ export function Sidebar() {
       icon: HelpCircle,
     },
   ];
+
+  if (user?.siteRole === 'SITE_ADMIN') {
+    bottomNavigation.push({
+      name: 'Admin',
+      href: '/admin/dashboard',
+      icon: ShieldEllipsis,
+    });
+  }
 
   return (
     <>

@@ -21,6 +21,7 @@ export interface User {
   deactivatedAt?: Date;
   createdAt?: Date;
   updatedAt?: Date;
+  avatar?: string;
   siteRole: 'SITE_USER' | 'SITE_ADMIN';
   ownedStores?: Store[];
   roles?: StoreRole[];

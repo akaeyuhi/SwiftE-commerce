@@ -1,5 +1,6 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useParams } from 'react-router-dom';
 import { useNavigate } from '@/shared/hooks/useNavigate';
 import { Button } from '@/shared/components/ui/Button';
 import { Input } from '@/shared/components/forms/Input';
@@ -16,20 +17,17 @@ import {
   createStoreSchema,
   CreateStoreFormData,
 } from '@/lib/validations/store.schemas';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { Store, ArrowLeft, CheckCircle2, Upload, X } from 'lucide-react';
-import { Link } from '@/shared/components/ui/Link';
-import { ROUTES } from '@/app/routes/routes';
+import { Store, ArrowLeft, Upload, X } from 'lucide-react';
 
-// interface ExtendedStoreFormData extends CreateStoreFormData {
-//   bannerFile?: File | null;
-//   logoFile?: File | null;
-//   bannerPreview?: string;
-//   logoPreview?: string;
-// }
+interface StoreEditData extends CreateStoreFormData {
+  bannerUrl?: string;
+  logoUrl?: string;
+}
 
-export function CreateStorePage() {
+export function EditStorePage() {
+  const { storeId } = useParams();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [bannerFile, setBannerFile] = useState<File | null>(null);
@@ -37,13 +35,35 @@ export function CreateStorePage() {
   const [bannerPreview, setBannerPreview] = useState<string | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
 
+  const [storeData, setStoreData] = useState<StoreEditData | null>(null);
+
   const {
     register,
     handleSubmit,
     formState: { errors },
+    reset,
   } = useForm<CreateStoreFormData>({
     resolver: zodResolver(createStoreSchema),
   });
+
+  useEffect(() => {
+    // Mock fetch store data
+    const mockStore: StoreEditData = {
+      name: 'Tech Haven',
+      description: 'Your premium source for technology products',
+      bannerUrl: '/path/to/banner.jpg',
+      logoUrl: '/path/to/logo.jpg',
+    };
+
+    setStoreData(mockStore);
+    setBannerPreview(mockStore.bannerUrl!);
+    setLogoPreview(mockStore.logoUrl!);
+
+    reset({
+      name: mockStore.name,
+      description: mockStore.description,
+    });
+  }, [storeId, reset]);
 
   const handleImageUpload = (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -52,7 +72,6 @@ export function CreateStorePage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file size (max 10MB for banner, 5MB for logo)
     const maxSize = type === 'banner' ? 10 * 1024 * 1024 : 5 * 1024 * 1024;
     if (file.size > maxSize) {
       toast.error(
@@ -61,13 +80,11 @@ export function CreateStorePage() {
       return;
     }
 
-    // Validate file type
     if (!file.type.startsWith('image/')) {
       toast.error('Please upload an image file');
       return;
     }
 
-    // Create preview
     const reader = new FileReader();
     reader.onloadend = () => {
       const preview = reader.result as string;
@@ -93,92 +110,59 @@ export function CreateStorePage() {
   };
 
   const onSubmit = async (data: CreateStoreFormData) => {
-    if (!bannerFile || !logoFile) {
-      toast.error('Please upload both banner and logo images');
-      return;
-    }
-
     setIsLoading(true);
     try {
       const formData = new FormData();
       formData.append('name', data.name);
       formData.append('description', data.description);
-      formData.append('banner', bannerFile);
-      formData.append('logo', logoFile);
+
+      if (bannerFile) {
+        formData.append('banner', bannerFile);
+      }
+      if (logoFile) {
+        formData.append('logo', logoFile);
+      }
 
       // TODO: Replace with actual API call
-      // const response = await storeService.createStore(formData)
+      // const response = await storeService.updateStore(storeId, formData)
 
       // Mock API call
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
-      console.log('Creating store with images:', data);
+      console.log('Updating store:', data);
 
-      toast.success('Store created successfully!');
-      navigate.to(ROUTES.MY_STORES);
+      toast.success('Store updated successfully!');
+      navigate.back();
     } catch (error: any) {
-      toast.error(error.message || 'Failed to create store');
+      toast.error(error.message || 'Failed to update store');
     } finally {
       setIsLoading(false);
     }
   };
+
+  if (!storeData) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 max-w-3xl">
         {/* Header */}
         <div className="mb-8">
-          <Link
-            to={ROUTES.DASHBOARD}
+          <button
+            onClick={() => navigate.back()}
             className="inline-flex items-center gap-2 text-sm
-            text-muted-foreground hover:text-foreground mb-4"
+            text-muted-foreground hover:text-foreground mb-4 transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to Dashboard
-          </Link>
+            Back
+          </button>
           <h1 className="text-3xl font-bold text-foreground mb-2">
-            Create Your Store
+            Edit Store
           </h1>
           <p className="text-muted-foreground">
-            Start selling in just a few steps
+            Update your store information and images
           </p>
-        </div>
-
-        {/* Benefits */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <div className="flex items-start gap-3 p-4 bg-card border border-border rounded-lg">
-            <CheckCircle2 className="h-5 w-5 text-success flex-shrink-0 mt-0.5" />
-            <div>
-              <h3 className="font-semibold text-foreground text-sm mb-1">
-                Easy Setup
-              </h3>
-              <p className="text-xs text-muted-foreground">
-                Get started in minutes with our simple process
-              </p>
-            </div>
-          </div>
-          <div className="flex items-start gap-3 p-4 bg-card border border-border rounded-lg">
-            <CheckCircle2 className="h-5 w-5 text-success flex-shrink-0 mt-0.5" />
-            <div>
-              <h3 className="font-semibold text-foreground text-sm mb-1">
-                No Fees
-              </h3>
-              <p className="text-xs text-muted-foreground">
-                Start selling with zero upfront costs
-              </p>
-            </div>
-          </div>
-          <div className="flex items-start gap-3 p-4 bg-card border border-border rounded-lg">
-            <CheckCircle2 className="h-5 w-5 text-success flex-shrink-0 mt-0.5" />
-            <div>
-              <h3 className="font-semibold text-foreground text-sm mb-1">
-                Full Control
-              </h3>
-              <p className="text-xs text-muted-foreground">
-                Manage your products and orders your way
-              </p>
-            </div>
-          </div>
         </div>
 
         {/* Form */}
@@ -188,7 +172,7 @@ export function CreateStorePage() {
             <CardHeader>
               <CardTitle>Store Images</CardTitle>
               <CardDescription>
-                Add banner and logo for your store
+                Update banner and logo for your store
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -213,6 +197,18 @@ export function CreateStorePage() {
                       >
                         <X className="h-4 w-4 text-foreground" />
                       </button>
+                      <label className="absolute bottom-2 left-2">
+                        <Button type="button" size="sm" variant="secondary">
+                          <Upload className="h-4 w-4 mr-2" />
+                          Change Banner
+                        </Button>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleImageUpload(e, 'banner')}
+                          className="hidden"
+                        />
+                      </label>
                     </div>
                   ) : (
                     <div
@@ -244,7 +240,7 @@ export function CreateStorePage() {
                 <label className="text-sm font-semibold text-foreground mb-3 block">
                   Store Logo
                 </label>
-                <div className="relative">
+                <div className="relative inline-block">
                   {logoPreview ? (
                     <div className="relative inline-block">
                       <img
@@ -255,18 +251,32 @@ export function CreateStorePage() {
                       <button
                         type="button"
                         onClick={() => handleRemoveImage('logo')}
-                        className="absolute top-0 right-0 h-6 w-6 bg-background/80 rounded-full flex
-                        items-center justify-center hover:bg-background transition-colors
-                        translate-x-1 -translate-y-1"
+                        className="absolute top-0 right-0 h-6 w-6
+                        bg-background/80 rounded-full flex items-center
+                        justify-center hover:bg-background
+                        transition-colors translate-x-1 -translate-y-1"
                       >
                         <X className="h-3 w-3 text-foreground" />
                       </button>
+                      <label
+                        className="absolute inset-0 flex items-center
+                        justify-center bg-black/50 rounded-lg opacity-0
+                      hover:opacity-100 transition-opacity cursor-pointer"
+                      >
+                        <Upload className="h-5 w-5 text-white" />
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleImageUpload(e, 'logo')}
+                          className="hidden"
+                        />
+                      </label>
                     </div>
                   ) : (
                     <label
                       className="h-24 w-24 bg-muted rounded-lg flex items-center justify-center
-                    border-2 border-dashed border-border hover:border-primary
-                    transition-colors cursor-pointer"
+                    border-2 border-dashed border-border
+                    hover:border-primary transition-colors cursor-pointer"
                     >
                       <div className="flex flex-col items-center">
                         <Upload className="h-5 w-5 text-muted-foreground" />
@@ -299,22 +309,16 @@ export function CreateStorePage() {
                 </div>
                 <div>
                   <CardTitle>Store Information</CardTitle>
-                  <CardDescription>Tell us about your store</CardDescription>
+                  <CardDescription>Update store details</CardDescription>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
-              <FormField
-                label="Store Name"
-                error={errors.name}
-                required
-                hint="Choose a unique name for your store"
-              >
+              <FormField label="Store Name" error={errors.name} required>
                 <Input
                   {...register('name')}
-                  placeholder="e.g., Tech Haven, Fashion Hub"
+                  placeholder="Store name"
                   error={!!errors.name}
-                  autoFocus
                 />
               </FormField>
 
@@ -322,11 +326,10 @@ export function CreateStorePage() {
                 label="Store Description"
                 error={errors.description}
                 required
-                hint="Tell customers what makes your store special"
               >
                 <Textarea
                   {...register('description')}
-                  placeholder="Describe your store, products, and what makes you unique..."
+                  placeholder="Store description..."
                   rows={5}
                   error={!!errors.description}
                 />
@@ -342,7 +345,7 @@ export function CreateStorePage() {
               size="lg"
               loading={isLoading}
             >
-              Create Store
+              Save Changes
             </Button>
             <Button
               type="button"
@@ -354,19 +357,6 @@ export function CreateStorePage() {
             </Button>
           </div>
         </form>
-
-        {/* Info Box */}
-        <div className="mt-6 bg-muted/50 border border-border rounded-lg p-4">
-          <h4 className="text-sm font-semibold text-foreground mb-2">
-            What happens next?
-          </h4>
-          <ul className="text-sm text-muted-foreground space-y-1">
-            <li>✓ Your store will be created instantly</li>
-            <li>✓ You can start adding products right away</li>
-            <li>✓ Invite team members to help manage your store</li>
-            <li>✓ Customize your store settings anytime</li>
-          </ul>
-        </div>
       </div>
     </div>
   );

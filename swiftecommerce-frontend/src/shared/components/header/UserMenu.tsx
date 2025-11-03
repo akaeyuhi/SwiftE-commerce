@@ -74,7 +74,9 @@ export function UserMenu() {
           My Stores
         </DropdownMenuItem>
 
-        <DropdownMenuItem onClick={() => navigate.to('/settings')}>
+        <DropdownMenuItem
+          onClick={() => navigate.to(`/settings`)}
+        >
           <Settings className="h-4 w-4 mr-2" />
           Settings
         </DropdownMenuItem>

@@ -33,6 +33,7 @@ import { StoreAnalyticsPage } from '@/features/analytics/pages/StoreAnalyticsPag
 
 // Store Admin Pages
 import { StoreOrdersPage } from '@/features/orders/pages/StoreOrdersPage';
+import { EditStorePage } from '@/features/stores/pages/EditStorePage.tsx';
 import { ReviewManagementPage } from '@/features/reviews/pages/ReviewsManagementPage';
 import { NewsManagementPage } from '@/features/news/pages/NewsManagementPage';
 import { CreateNewsPage } from '@/features/news/pages/CreateNewsPage';
@@ -57,6 +58,8 @@ import { OrderDetailPage } from '@/features/orders/pages/OrderDetailPage.tsx';
 
 // User Profile
 import { UserProfilePage } from '@/features/users/pages/UserProfilePage';
+import { UserSettingsPage } from '@/features/users/pages/UserSettingsPage.tsx';
+import { UserEditPage } from '@/features/users/pages/UserEditPage.tsx';
 import { WishlistPage } from '@/features/users/pages/WishlistPage.tsx';
 import { DashboardPage } from '@/features/dashboard/pages/DashboardPage.tsx';
 import { DashboardLayout } from '@/app/layouts/DashboardLayout.tsx';
@@ -75,7 +78,70 @@ import { FAQPage } from '@/features/legal/pages/FAQPage.tsx';
 import { ContactPage } from '@/features/legal/pages/ContactPage.tsx';
 import { AboutUsPage } from '@/features/legal/pages/AboutUsPage.tsx';
 
+// Admin pages
+import { AdminLayout } from '@/app/layouts/AdminLayout.tsx';
+import { AdminDashboardPage } from '@/features/admin/pages/AdminDashboardPage.tsx';
+import { AdminUsersPage } from '@/features/admin/pages/AdminUsersPage.tsx';
+import { AdminStoresPage } from '@/features/admin/pages/AdminStoresPage';
+import { AdminProductsPage } from '@/features/admin/pages/AdminProductsPage.tsx';
+import { AdminReportsPage } from '@/features/admin/pages/AdminReportsPage.tsx';
+import { AdminSettingsPage } from '@/features/admin/pages/AdminSettingsPage.tsx';
+import { AdminLogsPage } from '@/features/admin/pages/AdminLogsPage.tsx';
+import { AdminUserDetailPage } from '@/features/admin/pages/AdminUserDetailPage.tsx';
+import { AdminOrdersPage } from '@/features/admin/pages/AdminOrdersPage.tsx';
+
 export const router = createBrowserRouter([
+  // Admin Routes
+  {
+    path: '/admin',
+    element: (
+      <RoleRoute allowedSiteRoles={['SITE_ADMIN', 'SITE_USER']}>
+        <AdminLayout />
+      </RoleRoute>
+    ),
+    children: [
+      {
+        index: true,
+        element: <Navigate to={ROUTES.ADMIN_DASHBOARD} replace />,
+      },
+      {
+        path: 'dashboard',
+        element: <AdminDashboardPage />,
+      },
+      {
+        path: 'users',
+        element: <AdminUsersPage />,
+      },
+      {
+        path: 'users/:userId',
+        element: <AdminUserDetailPage />,
+      },
+      {
+        path: 'orders',
+        element: <AdminOrdersPage />,
+      },
+      {
+        path: 'stores',
+        element: <AdminStoresPage />,
+      },
+      {
+        path: 'products',
+        element: <AdminProductsPage />,
+      },
+      {
+        path: 'reports',
+        element: <AdminReportsPage />,
+      },
+      {
+        path: 'settings',
+        element: <AdminSettingsPage />,
+      },
+      {
+        path: 'logs',
+        element: <AdminLogsPage />,
+      },
+    ],
+  },
   {
     path: '/',
     element: <RootLayout />,
@@ -119,39 +185,39 @@ export const router = createBrowserRouter([
       },
 
       {
-        path: '/about',
+        path: ROUTES.ABOUT,
         element: <AboutUsPage />,
       },
       {
-        path: '/contact',
+        path: ROUTES.CONTACT,
         element: <ContactPage />,
       },
       {
-        path: '/faq',
+        path: ROUTES.FAQ,
         element: <FAQPage />,
       },
       {
-        path: '/shipping',
+        path: ROUTES.SHIPPING,
         element: <ShippingPage />,
       },
       {
-        path: '/returns',
+        path: ROUTES.RETURNS,
         element: <ReturnsPage />,
       },
       {
-        path: '/privacy',
+        path: ROUTES.PRIVACY,
         element: <PrivacyPolicyPage />,
       },
       {
-        path: '/terms',
+        path: ROUTES.TERMS,
         element: <TermsOfServicePage />,
       },
       {
-        path: '/cookies',
+        path: ROUTES.COOKIES,
         element: <CookiePolicyPage />,
       },
       {
-        path: '/track',
+        path: ROUTES.TRACK_ORDER,
         element: <TrackOrderPage />,
       },
 
@@ -210,12 +276,20 @@ export const router = createBrowserRouter([
                 element: <OrdersPage />,
               },
               {
-                path: '/orders/:orderId',
+                path: ROUTES.ORDER_DETAIL,
                 element: <OrderDetailPage />,
               },
               {
-                path: '/wishlist',
+                path: ROUTES.WISHLIST,
                 element: <WishlistPage />,
+              },
+              {
+                path: ROUTES.USER_SETTINGS,
+                element: <UserSettingsPage />,
+              },
+              {
+                path: ROUTES.USER_EDIT,
+                element: <UserEditPage />,
               },
             ],
           },
@@ -260,6 +334,10 @@ export const router = createBrowserRouter([
                     <StoreSettingsPage />
                   </RoleRoute>
                 ),
+              },
+              {
+                path: 'edit',
+                element: <EditStorePage />,
               },
               {
                 path: 'team',

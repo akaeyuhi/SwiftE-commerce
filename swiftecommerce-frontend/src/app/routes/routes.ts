@@ -30,6 +30,7 @@ export const ROUTES = {
 
   // Store Management (requires store access)
   STORE_CREATE: '/store/create',
+  STORE_EDIT: '/store/edit/:storeId',
   STORE: '/store/:storeId',
   STORE_OVERVIEW: '/store/:storeId/overview',
   STORE_SETTINGS: '/store/:storeId/settings',
@@ -38,16 +39,32 @@ export const ROUTES = {
   STORE_PRODUCTS: '/store/:storeId/products',
   STORE_PRODUCTS_CREATE: '/store/:storeId/products/create',
   STORE_PRODUCTS_EDIT: '/store/:storeId/products/:productId/edit',
+  STORE_REVIEWS: '/store/:storeId/reviews',
+  STORE_INVENTORY: '/store/:storeId/inventory',
+  STORE_CATEGORIES: '/store/:storeId/categories',
   STORE_ORDERS: '/store/:storeId/orders',
   STORE_NEWS: '/store/:storeId/news',
   STORE_NEWS_MANAGEMENT: '/store/:storeId/news/management',
+  STORE_NEWS_CREATE: '/store/:storeId/news/create',
+  STORE_NEWS_EDIT: '/store/:storeId/news/edit',
+  STORE_AI: '/store/:storeId/ai',
 
   USER_PROFILE: '/users/:userId',
+  USER_SETTINGS: '/settings',
+  USER_EDIT: '/users/edit',
 
   // Admin routes
   ADMIN: '/admin',
+  ADMIN_DASHBOARD: '/admin/dashboard',
   ADMIN_USERS: '/admin/users',
+  ADMIN_USER_DETAIL: '/admin/users/:userId',
   ADMIN_STORES: '/admin/stores',
+  ADMIN_STORE_DETAIL: '/admin/stores/:storeId',
+  ADMIN_PRODUCTS: '/admin/products',
+  ADMIN_ORDERS: '/admin/orders',
+  ADMIN_REPORTS: '/admin/reports',
+  ADMIN_SETTINGS: '/admin/settings',
+  ADMIN_LOGS: '/admin/logs',
 
   // Error pages
   NOT_FOUND: '*',
