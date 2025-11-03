@@ -56,71 +56,75 @@ export class StoreRepository extends BaseRepository<Store> {
 
   /**
    * Manually recalculate all cached statistics for a store
-   * Use this for data integrity checks or migrations
+   * REFACTORED: This method now uses a single query with subqueries to avoid N+1 issues.
    */
   async recalculateStats(storeId: string): Promise<void> {
-    const store = await this.findOne({
-      where: { id: storeId },
-    });
+    const stats = await this.manager
+      .createQueryBuilder(Store, 's')
+      .select('s.id')
+      .addSelect(
+        (subQuery) =>
+          subQuery
+            .select('COUNT(p.id)')
+            .from('Product', 'p')
+            .where('p.storeId = :storeId', { storeId })
+            .andWhere('p.deletedAt IS NULL'),
+        'productCount'
+      )
+      .addSelect(
+        (subQuery) =>
+          subQuery
+            .select('COUNT(sf.id)')
+            .from('StoreFollower', 'sf')
+            .where('sf.store.id = :storeId', { storeId }),
+        'followerCount'
+      )
+      .addSelect(
+        (subQuery) =>
+          subQuery
+            .select('COUNT(o.id)')
+            .from('Order', 'o')
+            .where('o.storeId = :storeId', { storeId }),
+        'orderCount'
+      )
+      .addSelect(
+        (subQuery) =>
+          subQuery
+            .select('COALESCE(SUM(o.totalAmount), 0)')
+            .from('Order', 'o')
+            .where('o.storeId = :storeId', { storeId })
+            .andWhere('o.status = :status', { status: OrderStatus.DELIVERED }),
+        'totalRevenue'
+      )
+      .where('s.id = :storeId', { storeId })
+      .getRawOne();
 
-    if (!store) {
+    if (!stats) {
       throw new NotFoundException('Store not found');
     }
 
-    const productCount = await this.manager
-      .getRepository('Product')
-      .createQueryBuilder('p')
-      .where('p.storeId = :storeId', { storeId })
-      .andWhere('p.deletedAt IS NULL')
-      .getCount();
-
-    const followerCount = await this.manager
-      .getRepository('StoreFollower')
-      .count({
-        where: { store: { id: storeId } },
-      });
-
-    // Count orders
-    const orderCount = await this.manager.getRepository('Order').count({
-      where: { storeId },
-    });
-
-    // Calculate total revenue from completed orders
-    const revenueResult = await this.manager
-      .getRepository('Order')
-      .createQueryBuilder('o')
-      .select('COALESCE(SUM(o.totalAmount), 0)', 'total')
-      .where('o.storeId = :storeId', { storeId })
-      .andWhere('o.status = :status', { status: OrderStatus.DELIVERED })
-      .getOne();
-
-    const totalRevenue = parseFloat(revenueResult?.total || '0');
-
-    // Update store with new stats
     await this.update(storeId, {
-      productCount,
-      followerCount,
-      orderCount,
-      totalRevenue,
+      productCount: stats.productCount,
+      followerCount: stats.followerCount,
+      orderCount: stats.orderCount,
+      totalRevenue: parseFloat(stats.totalRevenue || '0'),
     });
   }
 
   /**
    * Recalculate stats for all stores (admin operation)
+   * REFACTORED: This now uses a more efficient single query to update all stores at once.
+   * This is a complex query and should be used with caution.
    */
   async recalculateAllStats(): Promise<void> {
-    // Get all stores
-    const stores = await this.find({
-      select: ['id'],
-    });
-
-    // Process in batches to avoid memory issues with large datasets
-    const batchSize = 50;
-    for (let i = 0; i < stores.length; i += batchSize) {
-      const batch = stores.slice(i, i + batchSize);
-
-      await Promise.all(batch.map((store) => this.recalculateStats(store.id)));
-    }
+    await this.manager.query(`
+      UPDATE store s
+      SET
+        "productCount" = (SELECT COUNT(p.id) FROM product p WHERE p."storeId" = s.id AND p."deletedAt" IS NULL),
+        "followerCount" = (SELECT COUNT(sf.id) FROM store_follower sf WHERE sf."storeId" = s.id),
+        "orderCount" = (SELECT COUNT(o.id) FROM "order" o WHERE o."storeId" = s.id),
+        "totalRevenue" = (SELECT COALESCE(SUM(o."totalAmount"), 0) FROM "order" o WHERE o."storeId" = s.id AND o.status = 'DELIVERED')
+    `);
   }
 
   async searchStoreByName(

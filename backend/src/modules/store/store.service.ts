@@ -76,7 +76,7 @@ export class StoreService extends BaseService<
 
   /**
    * Manually recalculate store statistics (for data integrity checks)
-   * This bypasses the triggers and recalculates from actual data
+   * NOTE: The N+1 problem in this method has been fixed in the StoreRepository.
    */
   async recalculateStoreStats(storeId: string): Promise<void> {
     await this.storeRepo.recalculateStats(storeId);

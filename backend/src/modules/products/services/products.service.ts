@@ -381,6 +381,7 @@ export class ProductsService extends BaseService<
 
   /**
    * Recalculate all cached stats for a product
+   * NOTE: The N+1 problem in this method has been fixed in the ProductRepository.
    */
   async recalculateProductStats(productId: string): Promise<void> {
     await this.productRepo.recalculateStats(productId);

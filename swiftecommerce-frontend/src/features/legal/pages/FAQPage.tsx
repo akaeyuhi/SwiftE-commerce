@@ -24,7 +24,7 @@ export function FAQPage() {
       question: 'Can I cancel my order?',
       answer:
         'Orders can be cancelled within 24 hours of placement if they ' +
-        'haven\'t been shipped yet. Contact the seller directly or use the cancel button on your order page.',
+        `haven't been shipped yet. Contact the seller directly or use the cancel button on your order page.`,
     },
     {
       category: 'Shipping',

@@ -3,7 +3,8 @@ import { API_ENDPOINTS, buildUrl } from '@/config/api.config';
 import {
   AuthResponse,
   ChangePasswordDto,
-  LoginDto, RefreshTokenDto,
+  LoginDto,
+  RefreshTokenDto,
   RegisterDto,
   ResetPasswordDto,
   VerifyTokenDto,

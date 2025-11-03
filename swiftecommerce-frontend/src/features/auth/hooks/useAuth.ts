@@ -11,7 +11,7 @@ import {
   VerifyTokenDto,
 } from '@/features/auth/types/auth.types.ts';
 
-export function useAuth() {
+export const useAuth = () => {
   const queryClient = useQueryClient();
 
   const register = useMutation({
@@ -105,4 +105,4 @@ export function useAuth() {
     verifyToken,
     resendVerification,
   };
-}
+};

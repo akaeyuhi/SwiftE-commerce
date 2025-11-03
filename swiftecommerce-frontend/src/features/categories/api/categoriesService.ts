@@ -1,7 +1,9 @@
 import { BaseService } from '@/lib/api/BaseService';
 import { API_ENDPOINTS, buildUrl } from '@/config/api.config';
 import {
-  Category, CreateCategoryDto, UpdateCategoryDto,
+  Category,
+  CreateCategoryDto,
+  UpdateCategoryDto,
 } from '../types/categories.types';
 
 export class CategoriesService extends BaseService {

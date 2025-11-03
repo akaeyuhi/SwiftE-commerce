@@ -5,16 +5,12 @@ import { Toaster } from 'sonner';
 import { router } from './app/routes';
 import { PWAUpdatePrompt } from '@/shared/components/PWAUpdatePrompt.tsx';
 
-function App() {
-  return (
-    <ThemeProvider defaultTheme="system">
-      <QueryProvider>
-        <RouterProvider router={router} />
-        <Toaster position="top-right" richColors />
-        <PWAUpdatePrompt />
-      </QueryProvider>
-    </ThemeProvider>
-  );
-}
-
-export default App;
+export const App = () => (
+  <ThemeProvider defaultTheme="system">
+    <QueryProvider>
+      <RouterProvider router={router} />
+      <Toaster position="top-right" richColors />
+      <PWAUpdatePrompt />
+    </QueryProvider>
+  </ThemeProvider>
+);
