@@ -5,9 +5,13 @@ import { Badge } from '@/shared/components/ui/Badge';
 import { useNavigate } from '@/shared/hooks/useNavigate';
 import { MockProduct } from '@/shared/mocks/products.mock';
 import { useCart } from '@/app/store';
+import {
+  Product,
+  ProductListDto,
+} from '@/features/products/types/product.types.ts';
 
 interface ProductPublicCardProps {
-  product: MockProduct;
+  product: MockProduct | Product | ProductListDto;
 }
 
 export const ProductPublicCard: React.FC<ProductPublicCardProps> = ({

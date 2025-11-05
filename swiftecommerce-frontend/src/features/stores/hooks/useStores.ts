@@ -2,8 +2,8 @@ import { useQuery, UseQueryOptions } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
 import {
   StoreDto,
-  StoreStatsDto,
   StoreSearchResultDto,
+  StoreStatsDto,
 } from '@/features/stores/types/store.types.ts';
 import { api } from '@/lib/api';
 import { StoreHealthDto } from '@/features/stores/api/storesService.ts';
@@ -134,7 +134,28 @@ export function useStoreHealth(
     queryKey: queryKeys.stores.health(storeId),
     queryFn: () => api.stores.getHealth(storeId),
     enabled: !!storeId,
-    staleTime: 1 * 60 * 1000,
+    staleTime: 60 * 1000,
+    ...options,
+  });
+}
+
+/**
+ * Fetch top products by sales
+ */
+export function useTopProducts(
+  storeId: string,
+  limit: number = 4,
+  options?: Omit<UseQueryOptions<any[]>, 'queryKey' | 'queryFn'>
+) {
+  return useQuery({
+    queryKey: queryKeys.products.topBySales(storeId, limit),
+    queryFn: async () =>
+      await api.products.getTopBySales(storeId, {
+        limit,
+      }),
+    enabled: !!storeId,
+    staleTime: 3 * 60 * 1000, // 3 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
     ...options,
   });
 }

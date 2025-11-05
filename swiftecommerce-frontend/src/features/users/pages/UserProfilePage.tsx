@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/shared/components/ui/Button';
 import { Card, CardContent } from '@/shared/components/ui/Card';
 import { Badge } from '@/shared/components/ui/Badge';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { StatsGrid } from '@/shared/components/ui/StatsGrid';
-import { useAuth, useCart } from '@/app/store';
+import { useAuth, useCart, useWishlist } from '@/app/store'; // Add useWishlist
 import {
   User,
   Heart,
@@ -28,9 +28,29 @@ export function UserProfilePage() {
   const navigate = useNavigate();
   const { addItem } = useCart();
 
-  // Mock liked products (in real app, fetch from API)
-  const likedProducts = mockProducts.slice(0, 3);
-  const followedStores = mockStores;
+  const {
+    likedProductIds,
+    followedStoreIds,
+    addToWishlist,
+    removeFromWishlist,
+    isInWishlist,
+    followStore,
+    unfollowStore,
+    isFollowingStore,
+  } = useWishlist();
+
+  // Filter products based on liked IDs
+  const likedProducts = useMemo(
+    () =>
+      mockProducts.filter((product) => likedProductIds.includes(product.id)),
+    [likedProductIds]
+  );
+
+  // Filter stores based on followed IDs
+  const followedStores = useMemo(
+    () => mockStores.filter((store) => followedStoreIds.includes(store.id)),
+    [followedStoreIds]
+  );
 
   const stats = [
     {
@@ -68,12 +88,24 @@ export function UserProfilePage() {
     toast.success('Added to cart!');
   };
 
-  const handleAddToFavorite = async (product: Product) => {
-    // TODO
+  const handleToggleFavorite = async (productId: string) => {
+    if (isInWishlist(productId)) {
+      removeFromWishlist(productId);
+      toast.success('Removed from favorites');
+    } else {
+      addToWishlist(productId);
+      toast.success('Added to favorites');
+    }
   };
 
-  const handleRemoveFromFavorite = async (product: Product) => {
-    // TODO
+  const handleToggleFollowStore = async (storeId: string) => {
+    if (isFollowingStore(storeId)) {
+      unfollowStore(storeId);
+      toast.success('Unfollowed store');
+    } else {
+      followStore(storeId);
+      toast.success('Following store');
+    }
   };
 
   return (
@@ -85,8 +117,8 @@ export function UserProfilePage() {
             <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
               {/* Avatar */}
               <div
-                className="h-24 w-24 rounded-full bg-primary/10
-              flex items-center justify-center flex-shrink-0"
+                className="h-24 w-24 rounded-full bg-primary/10 flex
+              items-center justify-center flex-shrink-0"
               >
                 <User className="h-12 w-12 text-primary" />
               </div>
@@ -204,8 +236,18 @@ export function UserProfilePage() {
                             <ShoppingCart className="h-4 w-4 mr-2" />
                             Add to Cart
                           </Button>
-                          <Button variant="outline" size="sm">
-                            <Heart className="h-4 w-4 fill-error text-error" />
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleToggleFavorite(product.id)}
+                          >
+                            <Heart
+                              className={`h-4 w-4 ${
+                                isInWishlist(product.id)
+                                  ? 'fill-error text-error'
+                                  : ''
+                              }`}
+                            />
                           </Button>
                         </div>
                       </div>
@@ -238,8 +280,8 @@ export function UserProfilePage() {
                     <CardContent className="p-6">
                       <div className="flex items-start gap-4 mb-4">
                         <div
-                          className="h-16 w-16 bg-primary/10 rounded-lg
-                        flex items-center justify-center flex-shrink-0"
+                          className="h-16 w-16 bg-primary/10 rounded-lg flex
+                        items-center justify-center flex-shrink-0"
                         >
                           <Store className="h-8 w-8 text-primary" />
                         </div>
@@ -290,8 +332,18 @@ export function UserProfilePage() {
                         >
                           Visit Store
                         </Button>
-                        <Button variant="outline" size="sm">
-                          <Heart className="h-4 w-4 fill-error text-error" />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleToggleFollowStore(store.id)}
+                        >
+                          <Heart
+                            className={`h-4 w-4 ${
+                              isFollowingStore(store.id)
+                                ? 'fill-error text-error'
+                                : ''
+                            }`}
+                          />
                         </Button>
                       </div>
                     </CardContent>

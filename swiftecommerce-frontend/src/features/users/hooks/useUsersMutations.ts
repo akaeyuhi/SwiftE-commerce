@@ -56,13 +56,8 @@ export function useUserMutations() {
   });
 
   const revokeRole = useMutation({
-    mutationFn: ({
-      userId,
-      roleData,
-    }: {
-      userId: string;
-      roleData: { storeId: string; roleName: string };
-    }) => api.users.revokeStoreRole(userId, roleData.storeId),
+    mutationFn: ({ userId, storeId }: { userId: string; storeId: string }) =>
+      api.users.revokeStoreRole(userId, storeId),
     onSuccess: (_, { userId }) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.user.roles(userId) });
       toast.success('Role revoked successfully');

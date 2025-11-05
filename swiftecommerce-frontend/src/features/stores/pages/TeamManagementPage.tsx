@@ -35,6 +35,11 @@ import { toast } from 'sonner';
 import { UserPlus, Crown, Shield, Eye } from 'lucide-react';
 import { TeamMemberList } from '@/features/stores/components/TeamMemberList.tsx';
 import { RoleInfoCard } from '@/features/stores/components/RoleInfoCard.tsx';
+import { useParams } from 'react-router-dom';
+import { useStore } from '@/features/stores/hooks/useStores.ts';
+import { StoreRole } from '@/features/stores/types/store.types.ts';
+import { useUserMutations } from '@/features/users/hooks/useUsersMutations.ts';
+import { api } from '@/lib/api';
 
 export interface TeamMember {
   id: string;
@@ -45,29 +50,46 @@ export interface TeamMember {
   assignedAt: string;
 }
 
+const mapUserRoleToMember = (role: StoreRole): TeamMember => ({
+  id: role.userId,
+  email: role.user.email,
+  name: role.user.firstName + ' ' + role.user.lastName,
+  role: role.roleName,
+  isActive: role.isActive,
+  assignedAt: role.assignedAt.toLocaleDateString(),
+});
+
 export function TeamManagementPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const { storeId } = useParams<{ storeId: string }>();
+
+  const { assignRole, revokeRole } = useUserMutations();
+
+  const { data: store } = useStore(storeId!);
+
+  const members = store?.roles?.map(mapUserRoleToMember);
 
   // Mock team data
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([
-    {
-      id: '1',
-      email: 'john@example.com',
-      name: 'John Doe',
-      role: 'STORE_ADMIN',
-      isActive: true,
-      assignedAt: '2024-01-15',
-    },
-    {
-      id: '2',
-      email: 'jane@example.com',
-      name: 'Jane Smith',
-      role: 'STORE_MODERATOR',
-      isActive: true,
-      assignedAt: '2024-02-20',
-    },
-  ]);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>(
+    members ?? [
+      {
+        id: '1',
+        email: 'john@example.com',
+        name: 'John Doe',
+        role: 'STORE_ADMIN',
+        isActive: true,
+        assignedAt: '2024-01-15',
+      },
+      {
+        id: '2',
+        email: 'jane@example.com',
+        name: 'Jane Smith',
+        role: 'STORE_MODERATOR',
+        isActive: true,
+        assignedAt: '2024-02-20',
+      },
+    ]
+  );
 
   const {
     register,
@@ -83,46 +105,60 @@ export function TeamManagementPage() {
   const selectedRole = watch('role');
 
   const onSubmit = async (data: AssignRoleFormData) => {
-    setIsLoading(true);
     try {
-      // TODO: Replace with actual API call
-      // await storeService.assignRole(data)
+      const checkUser = await api.users.getUserByEmail(data.email);
+      if (!checkUser) {
+        toast.error(`User with email ${data.email} doesn't exist!`);
+        return;
+      }
 
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      console.log('Assigning role:', data);
-
-      // Mock adding team member
       const newMember: TeamMember = {
-        id: String(teamMembers.length + 1),
+        id: checkUser.id,
         email: data.email,
-        name: data.firstName + data.lastName,
+        name: checkUser.firstName + checkUser.lastName,
         role: data.role,
         isActive: true,
         assignedAt: new Date().toISOString(),
       };
 
-      setTeamMembers([...teamMembers, newMember]);
-
-      toast.success('Team member invited successfully!');
-      setIsDialogOpen(false);
-      reset();
+      await assignRole.mutateAsync(
+        {
+          userId: newMember.id,
+          roleData: {
+            storeId: store?.id as string,
+            roleName: data.role,
+          },
+        },
+        {
+          onSuccess: () => {
+            console.log('Assigning role:', data);
+            toast.success('Team member invited successfully!');
+            setTeamMembers([...teamMembers, newMember]);
+            setIsDialogOpen(false);
+            reset();
+          },
+        }
+      );
     } catch (error: any) {
       toast.error(error.message || 'Failed to invite team member');
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const handleRemoveMember = async (memberId: string) => {
     try {
-      // TODO: Replace with actual API call
-      // await storeService.removeTeamMember(memberId)
-
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
       setTeamMembers(teamMembers.filter((m) => m.id !== memberId));
-      toast.success('Team member removed');
+      await revokeRole.mutateAsync(
+        {
+          userId: memberId,
+          storeId: store?.id as string,
+        },
+        {
+          onSuccess: () => {
+            toast.success('Team member removed');
+            setIsDialogOpen(false);
+          },
+        }
+      );
     } catch (error) {
       toast.error(`Failed to remove team member: ${error}`);
     }
@@ -244,11 +280,14 @@ export function TeamManagementPage() {
                   type="button"
                   variant="outline"
                   onClick={() => setIsDialogOpen(false)}
-                  disabled={isLoading}
+                  disabled={assignRole.isPending || revokeRole.isPending}
                 >
                   Cancel
                 </Button>
-                <Button type="submit" loading={isLoading}>
+                <Button
+                  type="submit"
+                  loading={assignRole.isPending || revokeRole.isPending}
+                >
                   Send Invitation
                 </Button>
               </DialogFooter>

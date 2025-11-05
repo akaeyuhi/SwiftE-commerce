@@ -1,45 +1,37 @@
-import { useDropzone } from 'react-dropzone';
 import { useState } from 'react';
 import { Button } from '@/shared/components/ui/Button.tsx';
 import { useUploadAvatar } from '@/features/users/hooks/useUploadAvatar.ts';
+import { ImageUpload } from '@/shared/components/forms/ImageUpload';
+import { useAuth } from '@/app/store';
 
 export const AvatarUpload = () => {
-  const [avatar, setAvatar] = useState<File | undefined>();
+  const { user } = useAuth();
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
 
   const { mutate: uploadAvatar, isPending } = useUploadAvatar();
 
-  const onDrop = (acceptedFiles: File[]) => {
-    setAvatar(acceptedFiles[0]);
-  };
-
-  const { getRootProps, getInputProps } = useDropzone({
-    onDrop,
-    accept: { 'image/*': ['.jpeg', '.png', '.webp'] },
-    maxFiles: 1,
-  });
-
   const handleSubmit = () => {
-    if (avatar) {
-      uploadAvatar(avatar);
+    if (avatarFile) {
+      uploadAvatar(avatarFile);
     }
   };
 
   return (
-    <div>
-      <div
-        {...getRootProps({ className: 'dropzone' })}
-        className="border-2 border-dashed
-        border-gray-300 rounded-md p-4 text-center cursor-pointer mb-4"
+    <div className="flex flex-col items-center gap-4">
+      <ImageUpload
+        label="Avatar"
+        onFileSelect={setAvatarFile}
+        maxSizeMb={2}
+        aspectRatio="square"
+        initialImageUrl={user?.avatar || null}
+        className="w-32 h-32"
+      />
+      <Button
+        onClick={handleSubmit}
+        disabled={isPending || !avatarFile}
+        className="mt-8"
       >
-        <input {...getInputProps()} />
-        {avatar ? (
-          <p>{avatar.name}</p>
-        ) : (
-          <p>Drag &#39;n&#39; drop an avatar here, or click to select one</p>
-        )}
-      </div>
-      <Button onClick={handleSubmit} disabled={isPending || !avatar}>
-        {isPending ? 'Uploading...' : 'Upload Avatar'}
+        {isPending ? 'Uploading...' : 'Save Avatar'}
       </Button>
     </div>
   );

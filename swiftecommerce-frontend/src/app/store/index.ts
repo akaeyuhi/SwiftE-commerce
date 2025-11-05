@@ -7,11 +7,19 @@ import {
   createPreferencesSlice,
   PreferencesSlice,
 } from './slices/preferencesSlice';
+import {
+  createWishlistSlice,
+  WishlistSlice,
+} from '@/app/store/slices/wishlistSlice.ts';
 
 /**
  * Combined store type
  */
-export type AppStore = AuthSlice & UISlice & CartSlice & PreferencesSlice;
+export type AppStore = AuthSlice &
+  UISlice &
+  CartSlice &
+  PreferencesSlice &
+  WishlistSlice;
 
 /**
  * Main application store
@@ -24,6 +32,7 @@ export const useStore = create<AppStore>()(
         ...createUISlice(set, get, api),
         ...createCartSlice(set, get, api),
         ...createPreferencesSlice(set, get, api),
+        ...createWishlistSlice(set, get, api),
       }),
       {
         name: 'swiftecommerce-storage',
@@ -118,4 +127,19 @@ export const usePreferences = () =>
     setLanguage: state.setLanguage,
     setCurrency: state.setCurrency,
     setDefaultView: state.setDefaultView,
+  }));
+
+export const useWishlist = () =>
+  useStore((state) => ({
+    likedProductIds: state.likedProductIds,
+    followedStoreIds: state.followedStoreIds,
+    addToWishlist: state.addToWishlist,
+    removeFromWishlist: state.removeFromWishlist,
+    isInWishlist: state.isInWishlist,
+    clearWishlist: state.clearWishlist,
+    followStore: state.followStore,
+    unfollowStore: state.unfollowStore,
+    isFollowingStore: state.isFollowingStore,
+    getWishlistCount: state.getWishlistCount,
+    getFollowedStoresCount: state.getFollowedStoresCount,
   }));

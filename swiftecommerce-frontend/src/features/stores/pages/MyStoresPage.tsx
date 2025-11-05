@@ -14,16 +14,17 @@ import {
   Crown,
   Shield,
 } from 'lucide-react';
+import { useUser } from '@/features/users/hooks/useUsers.ts';
 
 export function MyStoresPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user: savedUser } = useAuth();
 
-  // Mock data - in production, fetch from API
+  const { data: user } = useUser(savedUser!.id);
+
   const ownedStores = user?.ownedStores || [];
   const storeRoles = user?.roles?.filter((role) => role.isActive) || [];
 
-  // Combine owned stores and stores where user has a role
   const allStores = [
     ...ownedStores.map((store) => ({
       ...store,

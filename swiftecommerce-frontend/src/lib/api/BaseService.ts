@@ -29,8 +29,7 @@ export abstract class BaseService {
     if (!params) return path;
 
     const queryParams = Object.entries(params)
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      .filter(([_, value]) => value !== undefined && value !== null)
+      .filter(([, value]) => value !== undefined && value !== null)
       .reduce((acc, [key, value]) => {
         acc[key] = String(value);
         return acc;

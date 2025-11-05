@@ -37,23 +37,23 @@ import {
 } from '@/lib/validations/product.schemas';
 import { useState } from 'react';
 import {
-  Upload,
-  X,
   Plus,
   Trash2,
   Tag,
   Layers,
   Package,
   AlertTriangle,
+  X,
 } from 'lucide-react';
 import { Textarea } from '@/shared/components/forms/Textarea.tsx';
+import { MultiImageUpload } from '@/shared/components/forms/MultiImageUpload.tsx';
 
 interface ProductFormProps {
   defaultValues?: Partial<ProductFormData>;
-  onSubmit: (data: ProductFormData) => Promise<void>;
+  onSubmit: (data: ProductFormData, newImages: File[]) => Promise<void>;
   isLoading: boolean;
   isEdit?: boolean;
-  existingImages?: string[];
+  existingImageUrls?: string[];
   onRemoveExistingImage?: (index: number) => void;
 }
 
@@ -62,10 +62,10 @@ export function ProductForm({
   onSubmit,
   isLoading,
   isEdit = false,
-  existingImages = [],
+  existingImageUrls = [],
   onRemoveExistingImage,
 }: ProductFormProps) {
-  const [images, setImages] = useState<File[]>([]);
+  const [newImages, setNewImages] = useState<File[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>(
     defaultValues?.categoryIds || []
   );
@@ -116,15 +116,6 @@ export function ProductForm({
 
   const variants = watch('variants');
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    setImages([...images, ...files]);
-  };
-
-  const removeImage = (index: number) => {
-    setImages(images.filter((_, i) => i !== index));
-  };
-
   const toggleCategory = (categoryId: string) => {
     const newCategories = selectedCategories.includes(categoryId)
       ? selectedCategories.filter((id) => id !== categoryId)
@@ -172,7 +163,10 @@ export function ProductForm({
     variants.reduce((sum, v) => sum + (v.quantity || 0), 0);
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <form
+      onSubmit={handleSubmit((data) => onSubmit(data, newImages))}
+      className="space-y-6"
+    >
       {/* Out of Stock Warning */}
       {isEdit && getTotalStock() === 0 && (
         <Card className="border-warning bg-warning/5">
@@ -483,100 +477,14 @@ export function ProductForm({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {(existingImages.length > 0 || images.length > 0) && (
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                {/* Existing images */}
-                {existingImages.map((imageUrl, index) => (
-                  <div
-                    key={`existing-${index}`}
-                    className="relative group aspect-square"
-                  >
-                    <img
-                      src={imageUrl}
-                      alt={`Product ${index + 1}`}
-                      className="w-full h-full object-cover rounded-lg border border-border"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => onRemoveExistingImage?.(index)}
-                      className="absolute -top-2 -right-2 h-6 w-6 bg-error text-error-foreground
-                        rounded-full flex items-center justify-center
-                        opacity-0 group-hover:opacity-100
-                        transition-opacity"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-                ))}
-
-                {/* New images */}
-                {images.map((image, index) => (
-                  <div
-                    key={`new-${index}`}
-                    className="relative group aspect-square"
-                  >
-                    <img
-                      src={URL.createObjectURL(image)}
-                      alt={`New ${index + 1}`}
-                      className="w-full h-full object-cover rounded-lg border border-border"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeImage(index)}
-                      className="absolute -top-2 -right-2 h-6 w-6 bg-error text-error-foreground
-                        rounded-full flex items-center justify-center
-                        opacity-0 group-hover:opacity-100
-                        transition-opacity"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                    {index === 0 && existingImages.length === 0 && (
-                      <div
-                        className="absolute bottom-2 left-2 px-2 py-1
-                      bg-primary text-primary-foreground text-xs rounded"
-                      >
-                        Main
-                      </div>
-                    )}
-                    {isEdit && (
-                      <div
-                        className="absolute bottom-2 left-2 px-2 py-1
-                      bg-success text-success-foreground text-xs rounded"
-                      >
-                        New
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {existingImages.length + images.length < 10 && (
-              <label className="block">
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handleImageUpload}
-                  className="hidden"
-                />
-                <div
-                  className="border-2 border-dashed border-border rounded-lg p-8
-                text-center cursor-pointer hover:bg-muted/50 transition-colors"
-                >
-                  <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-sm font-medium text-foreground mb-1">
-                    Click to upload images
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    PNG, JPG up to 5MB (
-                    {10 - existingImages.length - images.length} remaining)
-                  </p>
-                </div>
-              </label>
-            )}
-          </div>
+          <MultiImageUpload
+            label="Product Images"
+            onFilesSelect={setNewImages}
+            maxSizeMb={5}
+            maxFiles={10}
+            existingImageUrls={existingImageUrls}
+            onRemoveExistingImage={onRemoveExistingImage}
+          />
         </CardContent>
       </Card>
 

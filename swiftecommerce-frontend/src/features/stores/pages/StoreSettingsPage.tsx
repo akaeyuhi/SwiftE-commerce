@@ -15,23 +15,38 @@ import {
   updateStoreSchema,
   UpdateStoreFormData,
 } from '@/lib/validations/store.schemas';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 import { Store, Save, AlertTriangle } from 'lucide-react';
 import { DeleteStoreDialog } from '@/features/stores/components/DeleteStoreDialog.tsx';
+import { ImageUpload } from '@/shared/components/forms/ImageUpload.tsx';
+import { useStore } from '@/features/stores/hooks/useStores.ts';
+import { useParams } from 'react-router-dom';
+import { useNavigate } from '@/shared/hooks/useNavigate.ts';
+import { useStoreMutations } from '@/features/stores/hooks/useStoreMutations.ts';
+import { useUploadStoreFiles } from '@/features/stores/hooks/useUploadStoreFiles.ts';
 
 export function StoreSettingsPage() {
-  const [isLoading, setIsLoading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const params = useParams();
+  const navigate = useNavigate();
 
-  // Mock store data
-  const currentStore = {
-    id: '1',
-    name: 'Tech Haven',
-    description:
-      'Your one-stop shop for the latest tech gadgets and accessories',
-    createdAt: '2024-01-15',
-  };
+  const { data: currentStore } = useStore(params.storeId!);
+
+  const { updateStore } = useStoreMutations();
+
+  // // Mock store data
+  // const currentStore = {
+  //   id: '1',
+  //   name: 'Tech Haven',
+  //   description:
+  //     'Your one-stop shop for the latest tech gadgets and accessories',
+  //   createdAt: '2024-01-15',
+  //   bannerUrl: '',
+  //   logoUrl: '',
+  // };
 
   const {
     register,
@@ -40,44 +55,76 @@ export function StoreSettingsPage() {
   } = useForm<UpdateStoreFormData>({
     resolver: zodResolver(updateStoreSchema),
     defaultValues: {
-      name: currentStore.name,
-      description: currentStore.description,
+      name: currentStore?.name,
+      description: currentStore?.description,
     },
   });
 
+  const imageUpload = useUploadStoreFiles(currentStore!.id);
+  const { deleteStore } = useStoreMutations();
+
+  const onBannerUpload = useCallback(
+    (file: File | null) => {
+      setBannerFile(file);
+    },
+    [setBannerFile]
+  );
+
+  const onLogoUpload = useCallback(
+    (file: File | null) => {
+      setLogoFile(file);
+    },
+    [setLogoFile]
+  );
+
   const onSubmit = async (data: UpdateStoreFormData) => {
-    setIsLoading(true);
-    try {
-      // TODO: Replace with actual API call
-      // await storeService.updateStore(currentStore.id, data)
-
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      console.log('Updating store:', data);
-
-      toast.success('Store updated successfully!');
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to update store');
-    } finally {
-      setIsLoading(false);
+    if (!currentStore || !data) {
+      return;
     }
+    await updateStore.mutateAsync(
+      {
+        id: currentStore.id,
+        data: { ...data },
+      },
+      {
+        onSuccess: () => {
+          toast.success('Store updated successfully!');
+          console.log('Updating store', data);
+          navigate.toStoreOverview(currentStore.id);
+        },
+      }
+    );
   };
 
   const handleDeleteStore = async () => {
     setIsDeleting(true);
-    try {
-      // TODO: Replace with actual API call
-      // await storeService.deleteStore(currentStore.id)
+    await deleteStore.mutateAsync(currentStore!.id, {
+      onSuccess: () => {
+        toast.success('Store deleted successfully');
+        setIsDeleting(false);
+        navigate.toMyStores();
+      },
+      onError: () => setIsDeleting(false),
+    });
+  };
 
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      toast.success('Store deleted successfully');
-      // Redirect to dashboard or home
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to delete store');
-    } finally {
-      setIsDeleting(false);
+  const handleUpload = async () => {
+    if (!bannerFile || !logoFile) {
+      toast.error('No banner or logo file found!');
+      return;
     }
+
+    await imageUpload.mutateAsync(
+      {
+        logo: logoFile,
+        banner: bannerFile,
+      },
+      {
+        onSuccess: () => {
+          toast.success('Updated images successfully!');
+        },
+      }
+    );
   };
 
   return (
@@ -125,16 +172,15 @@ export function StoreSettingsPage() {
                 error={!!errors.description}
               />
             </FormField>
-
             <div className="flex items-center justify-between pt-4">
               <p className="text-sm text-muted-foreground">
                 Store created on{' '}
-                {new Date(currentStore.createdAt).toLocaleDateString()}
+                {new Date(currentStore?.createdAt ?? 0).toLocaleDateString()}
               </p>
               <Button
                 type="submit"
-                disabled={!isDirty || isLoading}
-                loading={isLoading}
+                disabled={!isDirty || updateStore.isPending}
+                loading={updateStore.isPending}
               >
                 <Save className="h-4 w-4 mr-2" />
                 Save Changes
@@ -142,6 +188,37 @@ export function StoreSettingsPage() {
             </div>
           </form>
         </CardContent>
+      </Card>
+
+      {/* Store Images Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Store Images</CardTitle>
+          <CardDescription>Edit banner and logo for your store</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <ImageUpload
+            onFileSelect={onLogoUpload}
+            label="Logo"
+            aspectRatio="square"
+            className="w-64 h-64 mb-16"
+            initialImageUrl={currentStore?.logoUrl}
+          />
+          <ImageUpload
+            onFileSelect={onBannerUpload}
+            label="Banner"
+            className="w-96"
+            initialImageUrl={currentStore?.bannerUrl}
+          />
+        </CardContent>
+        <Button
+          onClick={handleUpload}
+          disabled={!isDirty || imageUpload.isPending}
+          loading={imageUpload.isPending}
+        >
+          <Save className="h-4 w-4 mr-2" />
+          Upload new images
+        </Button>
       </Card>
 
       {/* Store Stats */}

@@ -89,14 +89,18 @@ import { AdminLogsPage } from '@/features/admin/pages/AdminLogsPage.tsx';
 import { AdminUserDetailPage } from '@/features/admin/pages/AdminUserDetailPage.tsx';
 import { AdminOrdersPage } from '@/features/admin/pages/AdminOrdersPage.tsx';
 
+import { ErrorBoundary } from '@/shared/components/errors/ErrorBoundary.tsx';
+
 export const router = createBrowserRouter([
   // Admin Routes
   {
     path: '/admin',
     element: (
-      <RoleRoute allowedSiteRoles={['SITE_ADMIN', 'SITE_USER']}>
-        <AdminLayout />
-      </RoleRoute>
+      <ErrorBoundary title="Admin page error">
+        <RoleRoute allowedSiteRoles={['SITE_ADMIN', 'SITE_USER']}>
+          <AdminLayout />
+        </RoleRoute>
+      </ErrorBoundary>
     ),
     children: [
       {
@@ -143,7 +147,11 @@ export const router = createBrowserRouter([
   },
   {
     path: '/',
-    element: <RootLayout />,
+    element: (
+      <ErrorBoundary>
+        <RootLayout />
+      </ErrorBoundary>
+    ),
     children: [
       // Home
       {
@@ -311,7 +319,9 @@ export const router = createBrowserRouter([
                   'STORE_GUEST',
                 ]}
               >
-                <StoreLayout />
+                <ErrorBoundary title="Store Error">
+                  <StoreLayout />
+                </ErrorBoundary>
               </RoleRoute>
             ),
             children: [

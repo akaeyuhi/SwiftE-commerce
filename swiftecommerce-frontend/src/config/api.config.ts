@@ -35,6 +35,7 @@ export const API_ENDPOINTS = {
 
   USERS: {
     LIST: '/users',
+    FIND_BY_EMAIL: '/users/:email',
     CREATE: '/users',
     FIND_ONE: '/users/:id',
     UPDATE: '/users/:id',
@@ -65,6 +66,9 @@ export const API_ENDPOINTS = {
     FIND_ONE: '/stores/:id',
     UPDATE: '/stores/:id',
     DELETE: '/stores/:id',
+    OVERVIEW: '/stores/:id/overview',
+    UPLOAD: '/stores/:id/upload-files',
+    RECENT_ORDERS: '/stores/:id/recent-orders',
     SOFT_DELETE: '/stores/:id/soft',
     SEARCH: '/stores/search',
     ADVANCED_SEARCH: '/stores/advanced-search',
@@ -83,6 +87,7 @@ export const API_ENDPOINTS = {
   PRODUCTS: {
     LIST: '/stores/:storeId/products',
     LIST_BY_STORE: '/stores/:storeId/products/byStore',
+    LIST_ALL: '/stores/:storeId/products/all',
     CREATE: '/stores/:storeId/products',
     FIND_ONE: '/stores/:storeId/products/:id',
     FIND_DETAILED: '/stores/:storeId/products/:id/detailed',

@@ -64,31 +64,6 @@ export function UserSettingsPage() {
     }
   };
 
-  const handleDownloadAvatar = async () => {
-    try {
-      if (!user?.avatar) {
-        toast.error('No avatar to download');
-        return;
-      }
-
-      const response = await fetch(user.avatar);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const element = document.createElement('a');
-      element.setAttribute('href', url);
-      element.setAttribute('download', `avatar-${user.id}.jpg`);
-      element.style.display = 'none';
-      document.body.appendChild(element);
-      element.click();
-      document.body.removeChild(element);
-      window.URL.revokeObjectURL(url);
-
-      toast.success('Avatar downloaded');
-    } catch (error) {
-      toast.error(`Failed to download avatar: ${error}`);
-    }
-  };
-
   const handleDeleteAccount = () => {
     if (isDeletingAccount) {
       toast.success('Account deletion initiated');
@@ -140,37 +115,10 @@ export function UserSettingsPage() {
               <CardContent className="space-y-6">
                 {/* Avatar Section */}
                 <div className="flex items-start gap-6">
-                  <div
-                    className="h-24 w-24 bg-muted rounded-lg
-                  flex items-center justify-center flex-shrink-0"
-                  >
-                    {user?.avatar ? (
-                      <img
-                        src={user.avatar}
-                        alt="Avatar"
-                        className="h-full w-full object-cover rounded-lg"
-                      />
-                    ) : (
-                      <UserIcon className="h-12 w-12 text-muted-foreground" />
-                    )}
-                  </div>
                   <div className="flex-1">
                     <div className="flex gap-2">
                       <AvatarUpload />
-                      {user?.avatar && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handleDownloadAvatar}
-                        >
-                          <Download className="h-4 w-4 mr-2" />
-                          Download
-                        </Button>
-                      )}
                     </div>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      JPG, PNG or GIF. Max size 2MB.
-                    </p>
                   </div>
                 </div>
 

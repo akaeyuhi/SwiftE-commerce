@@ -8,6 +8,8 @@ export const queryKeys = {
     lists: () => [...queryKeys.products.all, 'list'] as const,
     list: (storeId: string, filters?: Record<string, any>) =>
       [...queryKeys.products.lists(), storeId, filters] as const,
+    listAll: (filters?: Record<string, any>) =>
+      [...queryKeys.products.lists(), filters] as const,
     details: () => [...queryKeys.products.all, 'detail'] as const,
     detail: (storeId: string, id: string) =>
       [...queryKeys.products.details(), storeId, id] as const,
@@ -19,6 +21,8 @@ export const queryKeys = {
       [...queryKeys.products.detail(storeId, productId), 'stats'] as const,
     trending: (storeId: string, params?: Record<string, any>) =>
       [...queryKeys.products.all, 'trending', storeId, params] as const,
+    topBySales: (storeId: string, limit?: number) =>
+      [...queryKeys.stores.all, 'top-sales-products', storeId, limit] as const,
   },
 
   orders: {
@@ -110,6 +114,10 @@ export const queryKeys = {
     list: (filters?: Record<string, any>) =>
       [...queryKeys.stores.lists(), filters] as const,
     detail: (id: string) => [...queryKeys.stores.all, 'detail', id] as const,
+    overview: (storeId: string) =>
+      [...queryKeys.stores.all, 'overview', storeId] as const,
+    recentOrders: (storeId: string, limit?: number) =>
+      [...queryKeys.stores.all, 'recent-orders', storeId, limit] as const,
     stats: (id: string) => [...queryKeys.stores.all, 'stats', id] as const,
     health: (id: string) => [...queryKeys.stores.all, 'health', id] as const,
   },

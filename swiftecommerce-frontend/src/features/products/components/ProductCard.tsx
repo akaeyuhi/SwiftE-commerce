@@ -14,7 +14,7 @@ interface ProductVariant {
 interface ProductCardProps {
   id: string;
   name: string;
-  description: string;
+  description?: string;
   categories: Array<{ id: string; name: string }>;
   variants: ProductVariant[];
   mainPhotoUrl?: string | null;

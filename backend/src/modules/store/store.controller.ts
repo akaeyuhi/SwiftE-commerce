@@ -118,20 +118,14 @@ export class StoreController extends BaseController<
     @Query('sortBy')
     sortBy?: 'followers' | 'revenue' | 'products' | 'recent'
   ): Promise<StoreSearchResultDto[]> {
-    try {
-      if (!query || query.trim().length === 0) {
-        throw new BadRequestException('Search query is required');
-      }
-
-      const maxLimit = limit ? Math.min(parseInt(limit), 50) : 20;
-      return await this.storeService.searchStoresByName(query, maxLimit, {
-        sortBy,
-      });
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to search stores: ${error.message}`
-      );
+    if (!query || query.trim().length === 0) {
+      throw new BadRequestException('Search query is required');
     }
+
+    const maxLimit = limit ? Math.min(parseInt(limit), 50) : 20;
+    return await this.storeService.searchStoresByName(query, maxLimit, {
+      sortBy,
+    });
   }
 
   /**

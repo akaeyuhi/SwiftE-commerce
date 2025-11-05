@@ -101,7 +101,7 @@ export function EditProductPage() {
         onSubmit={handleSubmit}
         isLoading={isLoading}
         isEdit
-        existingImages={existingImages}
+        existingImageUrls={existingImages}
         onRemoveExistingImage={handleRemoveExistingImage}
       />
 

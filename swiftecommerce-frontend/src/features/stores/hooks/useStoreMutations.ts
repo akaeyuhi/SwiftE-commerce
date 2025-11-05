@@ -11,7 +11,8 @@ export function useStoreMutations() {
   const queryClient = useQueryClient();
 
   const createStore = useMutation({
-    mutationFn: (data: CreateStoreDto) => api.stores.create(data),
+    mutationFn: (data: CreateStoreDto) =>
+      api.users.createStore(data.ownerId, data),
     onSuccess: () => {
       queryClient.invalidateQueries(invalidateFeature.stores());
       toast.success('Store created successfully');

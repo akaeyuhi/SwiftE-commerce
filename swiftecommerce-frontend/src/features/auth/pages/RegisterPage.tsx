@@ -11,16 +11,16 @@ import {
   registerSchema,
   RegisterFormData,
 } from '@/lib/validations/auth.schemas';
-import { useAuth } from '@/app/store';
 import { useNavigate } from '@/shared/hooks/useNavigate';
-import { useState } from 'react';
-import { toast } from 'sonner';
 import { CheckCircle2 } from 'lucide-react';
+import { useAuthMutations } from '../hooks/useAuthMutations';
+import { useAuth } from '@/app/store';
+import { toast } from 'sonner';
 
 export function RegisterPage() {
+  const { register: registerMutation } = useAuthMutations();
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(false);
 
   const {
     register,
@@ -58,37 +58,27 @@ export function RegisterPage() {
   const passwordStrength = getPasswordStrength(password);
 
   const onSubmit = async (data: RegisterFormData) => {
-    setIsLoading(true);
-    try {
-      // TODO: Replace with actual API call
-      // const response = await authService.register(data)
-      // login(response.user, response.token)
-
-      // Mock registration
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      login(
-        {
-          id: '1',
-          email: data.email,
-          firstName: data.firstName,
-          lastName: data.lastName,
-          isEmailVerified: false,
-          isActive: true,
-          siteRole: 'SITE_USER',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-        'mock-token'
-      );
-
-      toast.success('Account created successfully! Please verify your email.');
-      navigate.toDashboard();
-    } catch (error: any) {
-      toast.error(error.message || 'Registration failed. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
+    registerMutation.mutate(data, {
+      onSuccess: () => {
+        navigate.toDashboard();
+      },
+    });
+    login(
+      {
+        id: '1',
+        email: data.email,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        isEmailVerified: false,
+        isActive: true,
+        siteRole: 'SITE_ADMIN',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      'mock-token'
+    );
+    toast.success('Account created successfully! Please verify your email.');
+    navigate.toDashboard();
   };
 
   return (
@@ -218,7 +208,7 @@ export function RegisterPage() {
               type="submit"
               className="w-full"
               size="lg"
-              loading={isLoading}
+              loading={registerMutation.isPending}
             >
               Create Account
             </Button>

@@ -16,26 +16,21 @@ import {
   createStoreSchema,
   CreateStoreFormData,
 } from '@/lib/validations/store.schemas';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
-import { Store, ArrowLeft, CheckCircle2, Upload, X } from 'lucide-react';
+import { Store, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { Link } from '@/shared/components/ui/Link';
 import { ROUTES } from '@/app/routes/routes';
-
-// interface ExtendedStoreFormData extends CreateStoreFormData {
-//   bannerFile?: File | null;
-//   logoFile?: File | null;
-//   bannerPreview?: string;
-//   logoPreview?: string;
-// }
+import { ImageUpload } from '@/shared/components/forms/ImageUpload.tsx';
+import { useStoreMutations } from '@/features/stores/hooks/useStoreMutations.ts';
+import { useAuth } from '@/app/store';
 
 export function CreateStorePage() {
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(false);
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [bannerPreview, setBannerPreview] = useState<string | null>(null);
-  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const { createStore } = useStoreMutations();
+  const { user } = useAuth();
 
   const {
     register,
@@ -45,82 +40,39 @@ export function CreateStorePage() {
     resolver: zodResolver(createStoreSchema),
   });
 
-  const handleImageUpload = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    type: 'banner' | 'logo'
-  ) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const onBannerUpload = useCallback(
+    (file: File | null) => {
+      setBannerFile(file);
+    },
+    [setBannerFile]
+  );
 
-    // Validate file size (max 10MB for banner, 5MB for logo)
-    const maxSize = type === 'banner' ? 10 * 1024 * 1024 : 5 * 1024 * 1024;
-    if (file.size > maxSize) {
-      toast.error(
-        `File size must be less than ${type === 'banner' ? '10MB' : '5MB'}`
-      );
-      return;
-    }
-
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please upload an image file');
-      return;
-    }
-
-    // Create preview
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const preview = reader.result as string;
-      if (type === 'banner') {
-        setBannerFile(file);
-        setBannerPreview(preview);
-      } else {
-        setLogoFile(file);
-        setLogoPreview(preview);
-      }
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleRemoveImage = (type: 'banner' | 'logo') => {
-    if (type === 'banner') {
-      setBannerFile(null);
-      setBannerPreview(null);
-    } else {
-      setLogoFile(null);
-      setLogoPreview(null);
-    }
-  };
+  const onLogoUpload = useCallback(
+    (file: File | null) => {
+      setLogoFile(file);
+    },
+    [setLogoFile]
+  );
 
   const onSubmit = async (data: CreateStoreFormData) => {
     if (!bannerFile || !logoFile) {
       toast.error('Please upload both banner and logo images');
       return;
     }
+    const formData = new FormData();
+    formData.append('banner', bannerFile);
+    formData.append('logo', logoFile);
 
-    setIsLoading(true);
-    try {
-      const formData = new FormData();
-      formData.append('name', data.name);
-      formData.append('description', data.description);
-      formData.append('banner', bannerFile);
-      formData.append('logo', logoFile);
-
-      // TODO: Replace with actual API call
-      // const response = await storeService.createStore(formData)
-
-      // Mock API call
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      console.log('Creating store with images:', data);
-
-      toast.success('Store created successfully!');
-      navigate.to(ROUTES.MY_STORES);
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to create store');
-    } finally {
-      setIsLoading(false);
-    }
+    await createStore.mutateAsync(
+      { ...data, ...formData, ownerId: user!.id },
+      {
+        onSuccess: () => {
+          toast.success('Store created successfully!');
+          console.log('Creating store with images:', data);
+          navigate.toMyStores();
+        },
+      }
+    );
   };
 
   return (
@@ -192,98 +144,17 @@ export function CreateStorePage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Banner Upload */}
-              <div>
-                <label className="text-sm font-semibold text-foreground mb-3 block">
-                  Store Banner
-                </label>
-                <div className="relative">
-                  {bannerPreview ? (
-                    <div className="relative">
-                      <img
-                        src={bannerPreview}
-                        alt="Banner Preview"
-                        className="w-full h-48 object-cover rounded-lg"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveImage('banner')}
-                        className="absolute top-2 right-2 h-8 w-8 bg-background/80 rounded-full
-                        flex items-center justify-center hover:bg-background transition-colors"
-                      >
-                        <X className="h-4 w-4 text-foreground" />
-                      </button>
-                    </div>
-                  ) : (
-                    <div
-                      className="w-full h-48 bg-muted rounded-lg flex items-center justify-center
-                    border-2 border-dashed border-border hover:border-primary transition-colors"
-                    >
-                      <label className="flex flex-col items-center cursor-pointer">
-                        <Upload className="h-8 w-8 text-muted-foreground mb-2" />
-                        <span className="text-sm font-medium text-foreground">
-                          Click to upload banner
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          1920 x 400px recommended. Max 10MB
-                        </span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => handleImageUpload(e, 'banner')}
-                          className="hidden"
-                        />
-                      </label>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Logo Upload */}
-              <div>
-                <label className="text-sm font-semibold text-foreground mb-3 block">
-                  Store Logo
-                </label>
-                <div className="relative">
-                  {logoPreview ? (
-                    <div className="relative inline-block">
-                      <img
-                        src={logoPreview}
-                        alt="Logo Preview"
-                        className="h-24 w-24 object-cover rounded-lg"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveImage('logo')}
-                        className="absolute top-0 right-0 h-6 w-6 bg-background/80 rounded-full flex
-                        items-center justify-center hover:bg-background transition-colors
-                        translate-x-1 -translate-y-1"
-                      >
-                        <X className="h-3 w-3 text-foreground" />
-                      </button>
-                    </div>
-                  ) : (
-                    <label
-                      className="h-24 w-24 bg-muted rounded-lg flex items-center justify-center
-                    border-2 border-dashed border-border hover:border-primary
-                    transition-colors cursor-pointer"
-                    >
-                      <div className="flex flex-col items-center">
-                        <Upload className="h-5 w-5 text-muted-foreground" />
-                      </div>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => handleImageUpload(e, 'logo')}
-                        className="hidden"
-                      />
-                    </label>
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground mt-2">
-                  Square image. Max 5MB
-                </p>
-              </div>
+              <ImageUpload
+                onFileSelect={onLogoUpload}
+                label="Logo"
+                aspectRatio="square"
+                className="w-64 h-64 mb-16"
+              />
+              <ImageUpload
+                onFileSelect={onBannerUpload}
+                label="Banner"
+                className="w-full"
+              />
             </CardContent>
           </Card>
 
@@ -340,7 +211,7 @@ export function CreateStorePage() {
               type="submit"
               className="flex-1"
               size="lg"
-              loading={isLoading}
+              loading={createStore.isPending}
             >
               Create Store
             </Button>
@@ -348,7 +219,7 @@ export function CreateStorePage() {
               type="button"
               variant="outline"
               onClick={() => navigate.back()}
-              disabled={isLoading}
+              disabled={createStore.isPending}
             >
               Cancel
             </Button>

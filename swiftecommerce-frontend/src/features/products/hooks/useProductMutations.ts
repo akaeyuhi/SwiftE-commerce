@@ -42,5 +42,40 @@ export function useProductMutations(storeId: string) {
     onError: () => toast.error('Failed to delete product'),
   });
 
-  return { createProduct, updateProduct, deleteProduct };
+  const uploadPhotos = useMutation({
+    mutationFn: ({ productId, files }: { productId: string; files: File[] }) =>
+      api.products.uploadPhotos(storeId, productId, files),
+    onSuccess: (_, { productId }) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.products.detail(storeId, productId),
+      });
+      toast.success('Photos uploaded successfully');
+    },
+    onError: () => toast.error('Failed to upload photos'),
+  });
+
+  const deletePhoto = useMutation({
+    mutationFn: ({
+      productId,
+      photoId,
+    }: {
+      productId: string;
+      photoId: string;
+    }) => api.products.deletePhoto(storeId, productId, photoId),
+    onSuccess: (_, { productId }) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.products.detail(storeId, productId),
+      });
+      toast.success('Photo deleted successfully');
+    },
+    onError: () => toast.error('Failed to delete photo'),
+  });
+
+  return {
+    createProduct,
+    updateProduct,
+    deleteProduct,
+    uploadPhotos,
+    deletePhoto,
+  };
 }

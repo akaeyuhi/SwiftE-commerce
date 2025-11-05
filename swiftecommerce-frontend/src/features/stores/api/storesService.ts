@@ -1,13 +1,15 @@
 import { BaseService } from '@/lib/api/BaseService';
-import { API_ENDPOINTS, buildUrl } from '@/config/api.config';
+import { API_ENDPOINTS } from '@/config/api.config';
 import { StoreFilters } from '@/shared/types/filters.types';
 import {
   CreateStoreDto,
   StoreDto,
+  StoreOverviewDto,
   StoreSearchResultDto,
   StoreStatsDto,
   UpdateStoreDto,
 } from '../types/store.types';
+import { Order } from '@/features/orders/types/order.types.ts';
 
 export interface StoreHealthDto {
   isHealthy: boolean;
@@ -27,22 +29,22 @@ export class StoreService extends BaseService {
   }
 
   async findOne(id: string): Promise<StoreDto> {
-    const url = buildUrl(API_ENDPOINTS.STORES.FIND_ONE, { id });
+    const url = this.buildUrl(API_ENDPOINTS.STORES.FIND_ONE, { id });
     return this.client.get<StoreDto>(url);
   }
 
   async update(id: string, data: UpdateStoreDto): Promise<StoreDto> {
-    const url = buildUrl(API_ENDPOINTS.STORES.UPDATE, { id });
+    const url = this.buildUrl(API_ENDPOINTS.STORES.UPDATE, { id });
     return this.client.patch<StoreDto>(url, data);
   }
 
   async delete(id: string): Promise<void> {
-    const url = buildUrl(API_ENDPOINTS.STORES.DELETE, { id });
+    const url = this.buildUrl(API_ENDPOINTS.STORES.DELETE, { id });
     return this.client.delete<void>(url);
   }
 
   async softDelete(id: string): Promise<StoreDto> {
-    const url = buildUrl(API_ENDPOINTS.STORES.SOFT_DELETE, { id });
+    const url = this.buildUrl(API_ENDPOINTS.STORES.SOFT_DELETE, { id });
     return this.client.delete<StoreDto>(url);
   }
 
@@ -72,12 +74,12 @@ export class StoreService extends BaseService {
   }
 
   async getStats(id: string): Promise<StoreStatsDto> {
-    const url = buildUrl(API_ENDPOINTS.STORES.STATS, { id });
+    const url = this.buildUrl(API_ENDPOINTS.STORES.STATS, { id });
     return this.client.get<StoreStatsDto>(url);
   }
 
   async getQuickStats(id: string): Promise<StoreStatsDto> {
-    const url = buildUrl(API_ENDPOINTS.STORES.QUICK_STATS, { id });
+    const url = this.buildUrl(API_ENDPOINTS.STORES.QUICK_STATS, { id });
     return this.client.get<StoreStatsDto>(url);
   }
 
@@ -110,7 +112,9 @@ export class StoreService extends BaseService {
   }
 
   async recalculateStats(id: string): Promise<StoreStatsDto> {
-    const url = buildUrl(API_ENDPOINTS.STORES.RECALCULATE_STATS, { id });
+    const url = this.buildUrl(API_ENDPOINTS.STORES.RECALCULATE_STATS, {
+      id,
+    });
     return this.client.post<StoreStatsDto>(url);
   }
 
@@ -120,7 +124,7 @@ export class StoreService extends BaseService {
   }
 
   async getHealth(id: string): Promise<StoreHealthDto> {
-    const url = buildUrl(API_ENDPOINTS.STORES.HEALTH, { id });
+    const url = this.buildUrl(API_ENDPOINTS.STORES.HEALTH, { id });
     return this.client.get<StoreHealthDto>(url);
   }
 
@@ -135,17 +139,27 @@ export class StoreService extends BaseService {
     if (files.banner) {
       formData.append('banner', files.banner);
     }
-    const { data } = await this.client.post(
-      `/stores/${storeId}/upload-files`,
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      }
-    );
+
+    const url = this.buildUrl(API_ENDPOINTS.STORES.UPLOAD, { id: storeId });
+
+    const { data } = await this.client.post(url, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
 
     return data;
+  }
+
+  async getOverview(id: string): Promise<StoreOverviewDto> {
+    const url = this.buildUrl(API_ENDPOINTS.STORES.OVERVIEW, { id });
+    return this.client.get(url);
+  }
+
+  async getRecentOrders(id: string, limit = 5): Promise<Order[]> {
+    const idUrl = this.buildUrl(API_ENDPOINTS.STORES.RECENT_ORDERS, { id });
+    const url = this.buildQueryUrl(idUrl, { limit });
+    return this.client.get(url);
   }
 }
 

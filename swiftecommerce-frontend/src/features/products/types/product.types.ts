@@ -1,6 +1,8 @@
 import { Review } from '@/features/reviews/types/reviews.types.ts';
 import { Store } from '@/features/stores/types/store.types';
-import { Category } from '@/features/categories/types/categories.types.ts';
+import {
+  Category,
+} from '@/features/categories/types/categories.types.ts';
 import { ProductVariant } from '@/features/products/types/variant.types.ts';
 
 export interface Product {
@@ -36,6 +38,8 @@ export interface ProductListDto {
   mainPhotoUrl?: string;
   minPrice?: number;
   maxPrice?: number;
+  categories: Category[];
+  variants: ProductVariant[];
 }
 
 export interface ProductPhoto {

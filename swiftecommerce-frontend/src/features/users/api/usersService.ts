@@ -16,6 +16,13 @@ export class UsersService extends BaseService {
     return this.client.post<User>(API_ENDPOINTS.USERS.CREATE, data);
   }
 
+  async getUserByEmail(email: string): Promise<User> {
+    const url = this.buildQueryUrl(API_ENDPOINTS.USERS.FIND_BY_EMAIL, {
+      email,
+    });
+    return this.client.get<User>(url);
+  }
+
   /**
    * Get all users
    */

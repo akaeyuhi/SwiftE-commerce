@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/shared/components/ui/Card';
 import { Store as StoreIcon } from 'lucide-react';
 import { StoreFilters } from '../components/StoreFilters';
 import { StoresGrid } from '@/features/stores/components/StoresGrid.tsx';
-import { mockStores as stores } from '@/shared/mocks/stores.mock.ts';
+import { useStores } from '@/features/stores/hooks/useStores.ts';
 
 export interface Store {
   id: string;
@@ -24,6 +24,15 @@ export function StoresPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('popular');
 
+  const { data: stores } = useStores({
+    sortBy,
+    search: searchQuery,
+  });
+
+  if (!stores) {
+    return;
+  }
+
   const filteredStores = stores
     .filter(
       (store) =>
@@ -33,13 +42,13 @@ export function StoresPage() {
     .sort((a, b) => {
       switch (sortBy) {
         case 'popular':
-          return b.followersCount - a.followersCount;
-        case 'rating':
-          return (b.averageRating || 0) - (a.averageRating || 0);
-        case 'sales':
-          return b.totalSales - a.totalSales;
+          return b.followerCount - a.followerCount;
+        case 'orders':
+          return (b.orderCount || 0) - (a.orderCount || 0);
+        case 'revenue':
+          return b.totalRevenue - a.totalRevenue;
         case 'products':
-          return b.totalProducts - a.totalProducts;
+          return b.productCount - a.productCount;
         default:
           return 0;
       }
@@ -78,7 +87,7 @@ export function StoresPage() {
           <Card>
             <CardContent className="p-6 text-center">
               <p className="text-3xl font-bold text-success mb-1">
-                {stores.reduce((sum, s) => sum + s.totalProducts, 0)}
+                {stores.reduce((sum, s) => sum + s.productCount, 0)}
               </p>
               <p className="text-sm text-muted-foreground">Total Products</p>
             </CardContent>
@@ -86,20 +95,20 @@ export function StoresPage() {
           <Card>
             <CardContent className="p-6 text-center">
               <p className="text-3xl font-bold text-info mb-1">
-                {stores.reduce((sum, s) => sum + s.totalSales, 0)}
+                {stores.reduce((sum, s) => sum + s.totalRevenue, 0)}
               </p>
-              <p className="text-sm text-muted-foreground">Total Sales</p>
+              <p className="text-sm text-muted-foreground">Total revenue</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-6 text-center">
               <p className="text-3xl font-bold text-warning mb-1">
                 {(
-                  stores.reduce((sum, s) => sum + (s.averageRating || 0), 0) /
+                  stores.reduce((sum, s) => sum + (s.orderCount || 0), 0) /
                   stores.length
                 ).toFixed(1)}
               </p>
-              <p className="text-sm text-muted-foreground">Avg Rating</p>
+              <p className="text-sm text-muted-foreground">Total orders</p>
             </CardContent>
           </Card>
         </div>

@@ -11,11 +11,12 @@ import {
   ForgotPasswordFormData,
 } from '@/lib/validations/auth.schemas';
 import { useState } from 'react';
-import { toast } from 'sonner';
 import { ArrowLeft, Mail } from 'lucide-react';
+import { useAuthMutations } from '../hooks/useAuthMutations';
+import { toast } from 'sonner';
 
 export function ForgotPasswordPage() {
-  const [isLoading, setIsLoading] = useState(false);
+  const { resetPassword } = useAuthMutations();
   const [emailSent, setEmailSent] = useState(false);
 
   const {
@@ -28,22 +29,13 @@ export function ForgotPasswordPage() {
   });
 
   const onSubmit = async (data: ForgotPasswordFormData) => {
-    setIsLoading(true);
-    try {
-      // TODO: Replace with actual API call
-      // await authService.forgotPassword(data)
-
-      console.log(data);
-
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      setEmailSent(true);
-      toast.success('Password reset email sent!');
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to send reset email.');
-    } finally {
-      setIsLoading(false);
-    }
+    resetPassword.mutate(data, {
+      onSuccess: () => {
+        setEmailSent(true);
+      },
+    });
+    console.log(data);
+    toast.success('Password reset email sent!');
   };
 
   if (emailSent) {
@@ -142,7 +134,7 @@ export function ForgotPasswordPage() {
               type="submit"
               className="w-full"
               size="lg"
-              loading={isLoading}
+              loading={resetPassword.isPending}
             >
               Send Reset Link
             </Button>

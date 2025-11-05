@@ -4,7 +4,22 @@ import { Product } from '../types/product.types';
 import { PaginatedResponse } from '@/lib/api/types';
 import { api } from '@/lib/api';
 import { TopProductsParams } from '@/features/products/api/productsService.ts';
-import { ProductFilters } from '@/types/filters.types.ts';
+import { ProductFilters } from '@/shared/types/filters.types.ts';
+
+export function useAllProducts(
+  filters?: ProductFilters,
+  options?: Omit<
+    UseQueryOptions<PaginatedResponse<Product>>,
+    'queryKey' | 'queryFn'
+  >
+) {
+  return useQuery({
+    queryKey: queryKeys.products.listAll(filters),
+    queryFn: () => api.products.getAllProducts(filters),
+    staleTime: 2 * 60 * 1000,
+    ...options,
+  });
+}
 
 /**
  * Fetch paginated products

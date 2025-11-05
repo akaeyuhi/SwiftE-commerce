@@ -8,7 +8,7 @@ interface StatItem {
   color?: string;
   bgColor?: string;
   change?: string;
-  trend?: 'up' | 'down';
+  trend?: 'up' | 'down' | 'neutral';
 }
 
 interface StatsGridProps {

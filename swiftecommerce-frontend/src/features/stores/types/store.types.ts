@@ -37,24 +37,29 @@ export interface Store {
 }
 
 export interface StoreDto {
-  id?: string;
+  id: string;
   name: string;
   description: string;
   ownerId: string;
   owner?: UserDto;
-  productCount?: number;
-  followerCount?: number;
-  totalRevenue?: number;
-  orderCount?: number;
-  createdAt?: Date;
-  updatedAt?: Date;
+  productCount: number;
+  followerCount: number;
+  totalRevenue: number;
+  orderCount: number;
+  createdAt: Date;
+  city: string;
+  country: string;
+  updatedAt: Date;
   products?: ProductListDto[];
   categories?: CategoryDto[];
+  roles?: StoreRole[];
+  logoUrl: string;
+  bannerUrl: string;
 }
 
 export interface CreateStoreDto {
   name: string;
-  description?: string;
+  description: string;
   ownerId: string;
 }
 
@@ -88,8 +93,31 @@ export interface StoreRole {
   updatedAt: Date;
   isActive: boolean;
   assignedBy?: string;
-  assignedAt?: Date;
+  assignedAt: Date;
   revokedBy?: string;
   revokedAt?: Date;
   metadata?: Record<string, any>;
+}
+
+export interface StoreOverviewDto {
+  stats: {
+    totalRevenue: number;
+    productCount: number;
+    orderCount: number;
+    conversionRate: number;
+  };
+  recentOrders: Array<{
+    id: string;
+    customerName: string;
+    productName: string;
+    amount: number;
+    status: 'completed' | 'processing' | 'pending' | 'cancelled';
+    createdAt: Date;
+  }>;
+  topProducts: Array<{
+    id: string;
+    name: string;
+    salesCount: number;
+    revenue: number;
+  }>;
 }

@@ -2,7 +2,7 @@ import { BaseService } from '@/lib/api/BaseService';
 import { API_ENDPOINTS, buildUrl } from '@/config/api.config';
 import { PaginatedResponse } from '@/lib/api/types';
 import { Product } from '../types/product.types';
-import { ProductFilters } from '@/types/filters.types.ts';
+import { ProductFilters } from '@/shared/types/filters.types.ts';
 
 export interface ProductStats {
   views: number;
@@ -26,6 +26,17 @@ export interface TopProductsParams {
 }
 
 export class ProductsService extends BaseService {
+  async getAllProducts(
+    filters?: ProductFilters
+  ): Promise<PaginatedResponse<Product>> {
+    const urlWithParams = this.buildQueryUrl(
+      API_ENDPOINTS.PRODUCTS.LIST_ALL,
+      filters
+    );
+    const response = await this.client.get<any>(urlWithParams);
+    return this.handlePaginatedResponse<Product>(response);
+  }
+
   /**
    * Get all products for a store
    */

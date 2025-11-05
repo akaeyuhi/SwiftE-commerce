@@ -7,16 +7,16 @@ import { PasswordInput } from '@/shared/components/forms/PasswordInput';
 import { FormField } from '@/shared/components/forms/FormField';
 import { ROUTES } from '@/app/routes/routes';
 import { loginSchema, LoginFormData } from '@/lib/validations/auth.schemas';
-import { useAuth } from '@/app/store';
 import { useNavigate } from '@/shared/hooks/useNavigate';
-import { useState } from 'react';
-import { toast } from 'sonner';
 import { Button } from '@/shared/components/ui/Button.tsx';
+import { useAuthMutations } from '../hooks/useAuthMutations';
+import { useAuth } from '@/app/store';
+import { toast } from 'sonner';
 
 export function LoginPage() {
-  const { login } = useAuth();
+  const { login } = useAuthMutations();
+  const { login: storeLogin } = useAuth();
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(false);
 
   const {
     register,
@@ -27,37 +27,27 @@ export function LoginPage() {
   });
 
   const onSubmit = async (data: LoginFormData) => {
-    setIsLoading(true);
-    try {
-      // TODO: Replace with actual API call
-      // const response = await authService.login(data)
-      // login(response.user, response.token)
-
-      // Mock login for now
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      login(
-        {
-          id: '1',
-          email: data.email,
-          firstName: 'John',
-          lastName: 'Doe',
-          isEmailVerified: true,
-          isActive: true,
-          siteRole: 'SITE_ADMIN',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-        'mock-token'
-      );
-
-      toast.success('Login successful!');
-      navigate.toDashboard();
-    } catch (error: any) {
-      toast.error(error.message || 'Login failed. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
+    login.mutate(data, {
+      onSuccess: () => {
+        navigate.toDashboard();
+      },
+    });
+    storeLogin(
+      {
+        id: '1',
+        email: data.email,
+        firstName: 'John',
+        lastName: 'Doe',
+        isEmailVerified: true,
+        isActive: true,
+        siteRole: 'SITE_ADMIN',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      'mock-token'
+    );
+    toast.success('Login successful!');
+    navigate.toDashboard();
   };
 
   return (
@@ -122,7 +112,7 @@ export function LoginPage() {
               type="submit"
               className="w-full"
               size="lg"
-              loading={isLoading}
+              loading={login.isPending}
             >
               Sign In
             </Button>
