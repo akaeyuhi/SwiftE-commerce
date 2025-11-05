@@ -12,6 +12,7 @@ import { OrdersModule } from 'src/modules/store/orders/orders.module';
 import { CategoriesModule } from 'src/modules/store/categories/categories.module';
 import { VariantsModule } from 'src/modules/store/variants/variants.module';
 import { StoreRoleModule } from 'src/modules/store/store-role/store-role.module';
+import { StoreFileService } from 'src/modules/store/store-file/store-file.service';
 
 @Module({
   imports: [
@@ -25,7 +26,7 @@ import { StoreRoleModule } from 'src/modules/store/store-role/store-role.module'
     OrdersModule,
   ],
   controllers: [StoreController],
-  providers: [StoreService, StoreRepository, StoreMapper],
+  providers: [StoreService, StoreRepository, StoreMapper, StoreFileService],
   exports: [StoreService],
 })
 export class StoreModule {}

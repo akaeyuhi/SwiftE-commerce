@@ -18,7 +18,10 @@ export function Link({
   };
 
   return (
-    <RouterLink className={cn(variants[variant], className)} {...props}>
+    <RouterLink
+      className={cn(variants[variant], className, 'hover:no-underline')}
+      {...props}
+    >
       {children}
     </RouterLink>
   );

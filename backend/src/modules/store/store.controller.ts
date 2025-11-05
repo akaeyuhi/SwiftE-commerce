@@ -11,6 +11,7 @@ import {
   Post,
   Put,
   Query,
+  UploadedFiles,
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';
@@ -33,6 +34,7 @@ import { StoreRole } from 'src/common/decorators/store-role.decorator';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { AdvancedStoreSearchDto } from 'src/modules/store/dto/advanced-store-search.dto';
 import { AccessPolicies } from 'src/modules/authorization/policy/policy.types';
+import { UploadStoreFiles } from 'src/common/decorators/upload-store-files.decorator';
 
 /**
  * StoreController
@@ -69,6 +71,19 @@ export class StoreController extends BaseController<
 
   constructor(private readonly storeService: StoreService) {
     super(storeService);
+  }
+
+  @Post(':id/upload-files')
+  @UploadStoreFiles()
+  @StoreRole(StoreRoles.ADMIN)
+  async uploadFiles(
+    @Param('id', ParseUUIDPipe) id: string,
+    @UploadedFiles()
+    files: { logo?: Express.Multer.File[]; banner?: Express.Multer.File[] }
+  ): Promise<StoreDto> {
+    const logoFile = files.logo ? files.logo[0] : undefined;
+    const bannerFile = files.banner ? files.banner[0] : undefined;
+    return this.storeService.uploadFiles(id, logoFile, bannerFile);
   }
 
   // ===============================

@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/shared/components/ui/Card';
 import { Badge } from '@/shared/components/ui/Badge';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { StatsGrid } from '@/shared/components/ui/StatsGrid';
-import { useAuth } from '@/app/store';
+import { useAuth, useCart } from '@/app/store';
 import {
   User,
   Heart,
@@ -17,11 +17,16 @@ import {
 import { mockProducts } from '@/shared/mocks/products.mock';
 import { mockStores } from '@/shared/mocks/stores.mock';
 import { useNavigate } from '@/shared/hooks/useNavigate.ts';
+import { buildRoute } from '@/app/routes/routes.ts';
+import { Link } from '@/shared/components/ui/Link.tsx';
+import { Product } from '@/features/products/types/product.types.ts';
+import { toast } from 'sonner';
 
 export function UserProfilePage() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'liked' | 'stores'>('liked');
   const navigate = useNavigate();
+  const { addItem } = useCart();
 
   // Mock liked products (in real app, fetch from API)
   const likedProducts = mockProducts.slice(0, 3);
@@ -58,6 +63,19 @@ export function UserProfilePage() {
     },
   ];
 
+  const handleAddToCart = async (product: Product) => {
+    addItem(product as any);
+    toast.success('Added to cart!');
+  };
+
+  const handleAddToFavorite = async (product: Product) => {
+    // TODO
+  };
+
+  const handleRemoveFromFavorite = async (product: Product) => {
+    // TODO
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 max-w-6xl">
@@ -92,10 +110,10 @@ export function UserProfilePage() {
               {/* Actions */}
               <Button
                 variant="outline"
-                onClick={() => navigate.to(`/users/${user?.id}/edit`)}
+                onClick={() => navigate.to(`/settings`)}
               >
                 <Settings className="h-4 w-4 mr-2" />
-                Edit Profile
+                Profile settings
               </Button>
             </div>
           </CardContent>
@@ -144,14 +162,19 @@ export function UserProfilePage() {
                   >
                     <CardContent className="p-0">
                       {/* Image */}
-                      <div className="aspect-square bg-muted flex items-center justify-center">
-                        <Package className="h-12 w-12 text-muted-foreground" />
-                      </div>
+                      <Link to={buildRoute.productDetail(product.id)}>
+                        <div className="aspect-square bg-muted flex items-center justify-center">
+                          <Package className="h-12 w-12 text-muted-foreground" />
+                        </div>
+                      </Link>
 
                       <div className="p-4">
-                        <h3 className="font-semibold text-foreground mb-2">
-                          {product.name}
-                        </h3>
+                        <Link to={buildRoute.productDetail(product.id)}>
+                          <h3 className="font-semibold text-foreground mb-2">
+                            {product.name}
+                          </h3>
+                        </Link>
+
                         <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
                           {product.description}
                         </p>
@@ -173,7 +196,11 @@ export function UserProfilePage() {
                         </div>
 
                         <div className="flex gap-2">
-                          <Button size="sm" className="flex-1">
+                          <Button
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => handleAddToCart(product as any)}
+                          >
                             <ShoppingCart className="h-4 w-4 mr-2" />
                             Add to Cart
                           </Button>
@@ -217,9 +244,11 @@ export function UserProfilePage() {
                           <Store className="h-8 w-8 text-primary" />
                         </div>
                         <div className="flex-1">
-                          <h3 className="font-semibold text-foreground mb-1">
-                            {store.name}
-                          </h3>
+                          <Link to={buildRoute.storePublic(store.id)}>
+                            <h3 className="font-semibold text-foreground mb-1">
+                              {store.name}
+                            </h3>
+                          </Link>
                           <p className="text-sm text-muted-foreground line-clamp-2">
                             {store.description}
                           </p>
@@ -254,7 +283,11 @@ export function UserProfilePage() {
                       </div>
 
                       <div className="flex gap-2">
-                        <Button size="sm" className="flex-1">
+                        <Button
+                          size="sm"
+                          className="flex-1"
+                          onClick={() => navigate.toStorePublic(store.id)}
+                        >
                           Visit Store
                         </Button>
                         <Button variant="outline" size="sm">

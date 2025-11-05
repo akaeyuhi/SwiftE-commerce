@@ -22,6 +22,7 @@ import {
 import { useNavigate } from '@/shared/hooks/useNavigate.ts';
 import { useCart } from '@/app/store';
 import { Order } from '@/features/orders/types/order.types.ts';
+import { toast } from 'sonner';
 
 export function OrdersPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -70,6 +71,7 @@ export function OrdersPage() {
 
   const buyAgainHandler = (order: Order) => {
     for (const item of order.items) addItem(item as any);
+    toast.success('Added items to cart!');
   };
 
   return (

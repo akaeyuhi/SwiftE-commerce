@@ -34,6 +34,12 @@ export class Store implements UserOwnedEntity {
   @Column({ type: 'text' })
   description: string;
 
+  @Column({ nullable: true })
+  logoUrl?: string;
+
+  @Column({ nullable: true })
+  bannerUrl?: string;
+
   @Column({ name: 'owner_id', type: 'uuid' })
   ownerId: string;
 

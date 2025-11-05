@@ -8,11 +8,12 @@ import { mockProducts } from '@/shared/mocks/products.mock';
 import { Heart, ShoppingCart, X, Package, Star } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCart } from '@/app/store';
+import { buildRoute } from '@/app/routes/routes';
+import { Link } from '@/shared/components/ui/Link';
 
 export function WishlistPage() {
   const navigate = useNavigate();
   const { addItem } = useCart();
-  // Mock wishlist items (first 3 products)
   const [wishlistItems, setWishlistItems] = useState(mockProducts.slice(0, 3));
 
   const removeFromWishlist = (productId: string) => {
@@ -72,22 +73,24 @@ export function WishlistPage() {
                     <X className="h-4 w-4" />
                   </button>
                   <CardContent className="p-0">
-                    <div
-                      className="aspect-square bg-muted flex
+                    <Link to={buildRoute.productDetail(product.id)}>
+                      <div
+                        className="aspect-square bg-muted flex
                       items-center justify-center cursor-pointer"
-                      onClick={() => navigate.toProduct(product.id)}
-                    >
-                      <Package className="h-12 w-12 text-muted-foreground" />
-                    </div>
+                      >
+                        <Package className="h-12 w-12 text-muted-foreground" />
+                      </div>
+                    </Link>
 
                     <div className="p-4">
-                      <h3
-                        className="font-semibold text-foreground mb-2
+                      <Link to={buildRoute.productDetail(product.id)}>
+                        <h3
+                          className="font-semibold text-foreground mb-2
                         line-clamp-2 cursor-pointer hover:text-primary"
-                        onClick={() => navigate.toProduct(product.id)}
-                      >
-                        {product.name}
-                      </h3>
+                        >
+                          {product.name}
+                        </h3>
+                      </Link>
 
                       <div className="flex items-center gap-2 mb-3">
                         <div className="flex items-center gap-1">

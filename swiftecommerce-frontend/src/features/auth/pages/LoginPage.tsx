@@ -44,7 +44,7 @@ export function LoginPage() {
           lastName: 'Doe',
           isEmailVerified: true,
           isActive: true,
-          siteRole: 'SITE_USER',
+          siteRole: 'SITE_ADMIN',
           createdAt: new Date(),
           updatedAt: new Date(),
         },

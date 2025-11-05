@@ -11,6 +11,7 @@ import {
   BadRequestException,
   ParseUUIDPipe,
   ParseEnumPipe,
+  UploadedFile, UploadedFiles,
 } from '@nestjs/common';
 import { UserService } from 'src/modules/user/user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -28,6 +29,8 @@ import { RoleDto } from 'src/modules/user/dto/role.dto';
 import { AdminRole } from 'src/common/decorators/admin-role.decorator';
 import { AdminRoles } from 'src/common/enums/admin.enum';
 import { Request } from 'express';
+import { UploadAvatar } from 'src/common/decorators/upload-avatar.decorator';
+import { UploadStoreFiles } from 'src/common/decorators/upload-store-files.decorator';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard, StoreRolesGuard, AdminGuard)
@@ -39,6 +42,22 @@ export class UserController extends BaseController<
 > {
   constructor(private readonly userService: UserService) {
     super(userService);
+  }
+
+  @Post('profile/avatar')
+  @UploadAvatar()
+  async uploadAvatar(
+    @Req() req: Request,
+    @UploadedFile() file: Express.Multer.File
+  ): Promise<UserDto> {
+    const userId = (req.user as any)?.id;
+    if (!userId) {
+      throw new BadRequestException('User ID not found');
+    }
+    if (!file) {
+      throw new BadRequestException('Avatar file not provided');
+    }
+    return this.userService.uploadAvatar(userId, file);
   }
 
   @Post()
@@ -207,10 +226,15 @@ export class UserController extends BaseController<
   }
 
   @Post(':id/stores')
+  @UploadStoreFiles()
   async createStore(
     @Param('id', new ParseUUIDPipe()) userId: string,
-    @Body() dto: CreateStoreDto
+    @Body() dto: CreateStoreDto,
+    @UploadedFiles()
+    files: { logo?: Express.Multer.File[]; banner?: Express.Multer.File[] }
   ) {
-    return this.userService.createStore(userId, dto);
+    const logoFile = files.logo ? files.logo[0] : undefined;
+    const bannerFile = files.banner ? files.banner[0] : undefined;
+    return this.userService.createStore(userId, dto, logoFile, bannerFile);
   }
 }

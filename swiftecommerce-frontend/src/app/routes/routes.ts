@@ -30,7 +30,6 @@ export const ROUTES = {
 
   // Store Management (requires store access)
   STORE_CREATE: '/store/create',
-  STORE_EDIT: '/store/edit/:storeId',
   STORE: '/store/:storeId',
   STORE_OVERVIEW: '/store/:storeId/overview',
   STORE_SETTINGS: '/store/:storeId/settings',

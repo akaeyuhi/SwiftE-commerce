@@ -20,6 +20,7 @@ export interface MockProduct {
   id: string;
   name: string;
   description: string;
+  storeId: string;
   categories: MockCategory[];
   variants: MockVariant[];
   mainPhotoUrl: string | null;
@@ -72,11 +73,13 @@ export const mockProducts: MockProduct[] = [
     reviewCount: 342,
     totalSales: 1256,
     likeCount: 834,
+    storeId: '1',
     viewCount: 5234,
     createdAt: '2024-01-15',
   },
   {
     id: '2',
+    storeId: '1',
     name: 'Smart Fitness Watch Ultra',
     description:
       'Advanced fitness tracker with heart rate monitor, GPS, sleep ' +
@@ -125,6 +128,7 @@ export const mockProducts: MockProduct[] = [
   },
   {
     id: '3',
+    storeId: '1',
     name: 'Mechanical Gaming Keyboard RGB',
     description:
       'Professional gaming keyboard with Cherry MX switches, ' +
@@ -174,6 +178,7 @@ export const mockProducts: MockProduct[] = [
   },
   {
     id: '4',
+    storeId: '1',
     name: 'USB-C Fast Charging Cable',
     description:
       'Durable braided USB-C cable with 100W fast charging support ' +
@@ -222,6 +227,7 @@ export const mockProducts: MockProduct[] = [
   },
   {
     id: '5',
+    storeId: '1',
     name: 'Ergonomic Laptop Stand',
     description:
       'Adjustable aluminum laptop stand with heat dissipation design. ' +
@@ -256,6 +262,7 @@ export const mockProducts: MockProduct[] = [
   },
   {
     id: '6',
+    storeId: '1',
     name: 'Wireless Mouse Pro',
     description:
       'Precision wireless mouse with ergonomic design, 7 programmable buttons, ' +

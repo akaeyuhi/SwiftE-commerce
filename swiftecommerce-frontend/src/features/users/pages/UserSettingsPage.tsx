@@ -25,6 +25,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { AvatarUpload } from '../components/AvatarUpload';
 
 export function UserSettingsPage() {
   const { user, logout } = useAuth();
@@ -155,10 +156,7 @@ export function UserSettingsPage() {
                   </div>
                   <div className="flex-1">
                     <div className="flex gap-2">
-                      <Button variant="outline" size="sm">
-                        <Edit className="h-4 w-4 mr-2" />
-                        Upload Avatar
-                      </Button>
+                      <AvatarUpload />
                       {user?.avatar && (
                         <Button
                           variant="outline"
@@ -171,7 +169,7 @@ export function UserSettingsPage() {
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground mt-2">
-                      JPG, PNG or GIF. Max size 5MB.
+                      JPG, PNG or GIF. Max size 2MB.
                     </p>
                   </div>
                 </div>

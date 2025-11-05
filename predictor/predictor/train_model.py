@@ -113,128 +113,6 @@ class ModelTrainer:
 
         return XTrain, XVal, yTrain, yVal
 
-    def trainLightGBM(
-        self,
-        XTrain: np.ndarray,
-        yTrain: np.ndarray,
-        XVal: np.ndarray,
-        yVal: np.ndarray
-    ):
-        """Train LightGBM model"""
-        if not HAS_LIGHTGBM:
-            raise RuntimeError("LightGBM not installed")
-
-        logger.info("Training LightGBM model...")
-
-        trainData = lgb.Dataset(XTrain, label=yTrain)
-        valData = lgb.Dataset(XVal, label=yVal, reference=trainData)
-
-        callbacks = [
-            lgb.early_stopping(stopping_rounds=self.config.lgbEarlyStopping),
-            lgb.log_evaluation(period=50)
-        ]
-
-        self.model = lgb.train(
-            self.config.lgbParams,
-            trainData,
-            num_boost_round=self.config.lgbNumRounds,
-            valid_sets=[trainData, valData],
-            valid_names=['train', 'valid'],
-            callbacks=callbacks
-        )
-
-        logger.info(f"Best iteration: {self.model.best_iteration}")
-        logger.info(f"Best score: {self.model.best_score}")
-
-        return self.model
-
-    def trainKeras(
-            self,
-            XTrain: np.ndarray,
-            yTrain: np.ndarray,
-            XVal: np.ndarray,
-            yVal: np.ndarray
-    ):
-        """Train Keras neural network"""
-        if not HAS_TENSORFLOW:
-            raise RuntimeError("TensorFlow not installed")
-
-        logger.info("Training Keras model...")
-
-        # Scale features
-        self.scaler = StandardScaler()
-        XTrainScaled = self.scaler.fit_transform(XTrain)
-        XValScaled = self.scaler.transform(XVal)
-
-        # Build model
-        self.model = self._buildKerasModel(XTrainScaled.shape[1])
-
-        # Callbacks
-        callbacks = [
-            keras.callbacks.EarlyStopping(
-                monitor='val_loss',
-                patience=10,
-                restore_best_weights=True
-            ),
-            keras.callbacks.ReduceLROnPlateau(
-                monitor='val_loss',
-                factor=0.5,
-                patience=5,
-                min_lr=1e-6
-            )
-        ]
-
-        # Train
-        history = self.model.fit(
-            XTrainScaled, yTrain,
-            validation_data=(XValScaled, yVal),
-            epochs=self.config.kerasEpochs,
-            batch_size=self.config.kerasBatchSize,
-            callbacks=callbacks,
-            verbose=1
-        )
-
-        logger.info("Training completed")
-
-        return self.model, self.scaler  # Changed from returning history
-
-    def _buildKerasModel(self, inputDim: int):
-        """Build Keras neural network architecture"""
-        model = keras.Sequential()
-
-        # Input layer
-        model.add(keras.layers.Dense(
-            self.config.kerasHiddenLayers[0],
-            input_dim=inputDim,
-            activation='relu'
-        ))
-        model.add(keras.layers.BatchNormalization())
-        model.add(keras.layers.Dropout(self.config.kerasDropout))
-
-        # Hidden layers
-        for units in self.config.kerasHiddenLayers[1:]:
-            model.add(keras.layers.Dense(units, activation='relu'))
-            model.add(keras.layers.BatchNormalization())
-            model.add(keras.layers.Dropout(self.config.kerasDropout))
-
-        # Output layer
-        model.add(keras.layers.Dense(1, activation='sigmoid'))
-
-        # Compile
-        model.compile(
-            optimizer=keras.optimizers.Adam(learning_rate=0.001),
-            loss='binary_crossentropy',
-            metrics=[
-                keras.metrics.AUC(name='auc'),
-                keras.metrics.Precision(name='precision'),
-                keras.metrics.Recall(name='recall')
-            ]
-        )
-
-        model.summary(print_fn=logger.info)
-
-        return model
-
     def evaluate(
         self,
         X: np.ndarray,
@@ -306,6 +184,119 @@ class ModelTrainer:
         logger.info(f"Model saved successfully")
 
 
+def train_lightgbm_model(trainer, XTrain, yTrain, XVal, yVal):
+    """Train LightGBM model"""
+    if not HAS_LIGHTGBM:
+        raise RuntimeError("LightGBM not installed")
+
+    logger.info("Training LightGBM model...")
+
+    trainData = lgb.Dataset(XTrain, label=yTrain)
+    valData = lgb.Dataset(XVal, label=yVal, reference=trainData)
+
+    callbacks = [
+        lgb.early_stopping(stopping_rounds=trainer.config.lgbEarlyStopping),
+        lgb.log_evaluation(period=50)
+    ]
+
+    trainer.model = lgb.train(
+        trainer.config.lgbParams,
+        trainData,
+        num_boost_round=trainer.config.lgbNumRounds,
+        valid_sets=[trainData, valData],
+        valid_names=['train', 'valid'],
+        callbacks=callbacks
+    )
+
+    logger.info(f"Best iteration: {trainer.model.best_iteration}")
+    logger.info(f"Best score: {trainer.model.best_score}")
+
+    return trainer.model
+
+
+def train_tensorflow_model(trainer, XTrain, yTrain, XVal, yVal):
+    """Train Keras neural network"""
+    if not HAS_TENSORFLOW:
+        raise RuntimeError("TensorFlow not installed")
+
+    logger.info("Training Keras model...")
+
+    # Scale features
+    trainer.scaler = StandardScaler()
+    XTrainScaled = trainer.scaler.fit_transform(XTrain)
+    XValScaled = trainer.scaler.transform(XVal)
+
+    # Build model
+    trainer.model = _buildKerasModel(XTrainScaled.shape[1], trainer.config)
+
+    # Callbacks
+    callbacks = [
+        keras.callbacks.EarlyStopping(
+            monitor='val_loss',
+            patience=10,
+            restore_best_weights=True
+        ),
+        keras.callbacks.ReduceLROnPlateau(
+            monitor='val_loss',
+            factor=0.5,
+            patience=5,
+            min_lr=1e-6
+        )
+    ]
+
+    # Train
+    history = trainer.model.fit(
+        XTrainScaled, yTrain,
+        validation_data=(XValScaled, yVal),
+        epochs=trainer.config.kerasEpochs,
+        batch_size=trainer.config.kerasBatchSize,
+        callbacks=callbacks,
+        verbose=1
+    )
+
+    logger.info("Training completed")
+
+    return trainer.model, trainer.scaler
+
+
+def _buildKerasModel(inputDim: int, config):
+    """Build Keras neural network architecture"""
+    model = keras.Sequential()
+
+    # Input layer
+    model.add(keras.layers.Dense(
+        config.kerasHiddenLayers[0],
+        input_dim=inputDim,
+        activation='relu'
+    ))
+    model.add(keras.layers.BatchNormalization())
+    model.add(keras.layers.Dropout(config.kerasDropout))
+
+    # Hidden layers
+    for units in config.kerasHiddenLayers[1:]:
+        model.add(keras.layers.Dense(units, activation='relu'))
+        model.add(keras.layers.BatchNormalization())
+        model.add(keras.layers.Dropout(config.kerasDropout))
+
+    # Output layer
+    model.add(keras.layers.Dense(1, activation='sigmoid'))
+
+    # Compile
+    model.compile(
+        optimizer=keras.optimizers.Adam(learning_rate=0.001),
+        loss='binary_crossentropy',
+        metrics=[
+            keras.metrics.AUC(name='auc'),
+            keras.metrics.Precision(name='precision'),
+            keras.metrics.Recall(name='recall')
+        ]
+    )
+
+    model.summary(print_fn=logger.info)
+
+    return model
+
+
 def main():
     """CLI entry point"""
     parser = argparse.ArgumentParser(
@@ -319,7 +310,7 @@ def main():
     )
     parser.add_argument(
         '--model',
-        choices=['lightgbm', 'keras'],
+        choices=['lightgbm', 'tensorflow'],
         default='lightgbm',
         help='Model type'
     )
@@ -348,9 +339,11 @@ def main():
 
     # Train model
     if args.model == 'lightgbm':
-        trainer.trainLightGBM(XTrain, yTrain, XVal, yVal)
+        train_lightgbm_model(trainer, XTrain, yTrain, XVal, yVal)
+    elif args.model == 'tensorflow':
+        train_tensorflow_model(trainer, XTrain, yTrain, XVal, yVal)
     else:
-        trainer.trainKeras(XTrain, yTrain, XVal, yVal)
+        raise ValueError(f"Unsupported model type: {args.model}")
 
     # Evaluate
     trainer.evaluate(XVal, yVal, args.model)

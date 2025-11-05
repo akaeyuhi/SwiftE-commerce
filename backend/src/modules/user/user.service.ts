@@ -19,6 +19,7 @@ import { StoreDto } from 'src/modules/store/dto/store.dto';
 import { StoreRoleService } from 'src/modules/store/store-role/store-role.service';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { AdminRoles } from 'src/common/enums/admin.enum';
+import { AvatarService } from './avatar/avatar.service';
 
 @Injectable()
 export class UserService extends BaseService<
@@ -31,9 +32,25 @@ export class UserService extends BaseService<
     private readonly userRepo: UserRepository,
     private readonly storeRoleService: StoreRoleService,
     private readonly storeService: StoreService,
-    protected readonly mapper: UserMapper
+    protected readonly mapper: UserMapper,
+    private readonly avatarService: AvatarService
   ) {
     super(userRepo, mapper);
+  }
+
+  async uploadAvatar(
+    userId: string,
+    avatarFile: Express.Multer.File
+  ): Promise<UserDto> {
+    const user = await this.userRepo.findById(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    user.avatarUrl = await this.avatarService.saveFile(avatarFile, userId);
+
+    const updatedUser = await this.userRepo.save(user);
+    return this.mapper.toDto(updatedUser);
   }
 
   async create(dto: CreateUserDto): Promise<UserDto> {
@@ -124,11 +141,21 @@ export class UserService extends BaseService<
     }
   }
 
-  async createStore(ownerId: string, dto: CreateStoreDto): Promise<StoreDto> {
+  async createStore(
+    ownerId: string,
+    dto: CreateStoreDto,
+    logoFile?: Express.Multer.File,
+    bannerFile?: Express.Multer.File
+  ): Promise<StoreDto> {
     const owner = await this.findOneWithRelations(ownerId);
     if (!owner) throw new NotFoundException('Store owner not found');
 
-    const store = await this.storeService.create({ ...dto, ownerId });
+    const store = await this.storeService.create({
+      ...dto,
+      ownerId,
+      logoFile,
+      bannerFile,
+    });
 
     await this.assignStoreRole(owner.id, StoreRoles.ADMIN, store.id!);
 

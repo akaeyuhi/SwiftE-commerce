@@ -10,6 +10,7 @@ import { UserRepository } from 'src/modules/user/user.repository';
 import { StoreRoleModule } from 'src/modules/store/store-role/store-role.module';
 import { StoreModule } from 'src/modules/store/store.module';
 import { LikesModule } from './likes/likes/likes.module';
+import { AvatarService } from 'src/modules/user/avatar/avatar.service';
 
 @Module({
   imports: [
@@ -18,7 +19,7 @@ import { LikesModule } from './likes/likes/likes.module';
     StoreModule,
     LikesModule,
   ],
-  providers: [UserRepository, UserService, UserMapper],
+  providers: [UserRepository, UserService, UserMapper, AvatarService],
   controllers: [UserController],
   exports: [UserService],
 })

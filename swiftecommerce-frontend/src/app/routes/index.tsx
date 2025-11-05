@@ -33,7 +33,6 @@ import { StoreAnalyticsPage } from '@/features/analytics/pages/StoreAnalyticsPag
 
 // Store Admin Pages
 import { StoreOrdersPage } from '@/features/orders/pages/StoreOrdersPage';
-import { EditStorePage } from '@/features/stores/pages/EditStorePage.tsx';
 import { ReviewManagementPage } from '@/features/reviews/pages/ReviewsManagementPage';
 import { NewsManagementPage } from '@/features/news/pages/NewsManagementPage';
 import { CreateNewsPage } from '@/features/news/pages/CreateNewsPage';
@@ -334,10 +333,6 @@ export const router = createBrowserRouter([
                     <StoreSettingsPage />
                   </RoleRoute>
                 ),
-              },
-              {
-                path: 'edit',
-                element: <EditStorePage />,
               },
               {
                 path: 'team',

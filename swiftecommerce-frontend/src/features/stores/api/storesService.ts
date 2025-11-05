@@ -123,6 +123,30 @@ export class StoreService extends BaseService {
     const url = buildUrl(API_ENDPOINTS.STORES.HEALTH, { id });
     return this.client.get<StoreHealthDto>(url);
   }
+
+  async uploadStoreFiles(
+    storeId: string,
+    files: { logo?: File; banner?: File }
+  ) {
+    const formData = new FormData();
+    if (files.logo) {
+      formData.append('logo', files.logo);
+    }
+    if (files.banner) {
+      formData.append('banner', files.banner);
+    }
+    const { data } = await this.client.post(
+      `/stores/${storeId}/upload-files`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+
+    return data;
+  }
 }
 
 export const storeService = new StoreService();

@@ -49,7 +49,6 @@ export const useStore = create<AppStore>()(
   )
 );
 
-// ✅ Listen for system theme changes
 if (typeof window !== 'undefined') {
   window
     .matchMedia('(prefers-color-scheme: dark)')

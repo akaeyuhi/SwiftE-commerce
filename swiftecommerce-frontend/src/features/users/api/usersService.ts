@@ -183,6 +183,19 @@ export class UsersService extends BaseService {
     const url = buildUrl(API_ENDPOINTS.USERS.CREATE_STORE, { id: userId });
     return this.client.post(url, data);
   }
+
+  async uploadAvatar(file: File) {
+    const formData = new FormData();
+    formData.append('avatar', file);
+
+    const { data } = await this.client.post('/users/profile/avatar', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+
+    return data;
+  }
 }
 
 export const usersService = new UsersService();

@@ -35,6 +35,9 @@ export class User implements BaseEntity {
   @Column({ type: 'varchar', length: 100, nullable: true })
   lastName: string;
 
+  @Column({ nullable: true })
+  avatarUrl?: string;
+
   @Column({ type: 'text', select: false })
   @Exclude()
   passwordHash: string;
