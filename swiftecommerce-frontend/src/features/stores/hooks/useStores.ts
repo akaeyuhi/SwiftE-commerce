@@ -6,8 +6,8 @@ import {
   StoreSearchResultDto,
 } from '@/features/stores/types/store.types.ts';
 import { api } from '@/lib/api';
-import { StoreFilters } from '@/types/filters.types.ts';
 import { StoreHealthDto } from '@/features/stores/api/storesService.ts';
+import { StoreFilters } from '@/shared/types/filters.types.ts';
 
 export function useStores(
   filters?: StoreFilters,
