@@ -33,6 +33,7 @@ import { StoreAnalyticsPage } from '@/features/analytics/pages/StoreAnalyticsPag
 
 // Store Admin Pages
 import { StoreOrdersPage } from '@/features/orders/pages/StoreOrdersPage';
+import { StoreOrderDetailPage } from '@/features/orders/pages/StoreOrderDetailPage';
 import { ReviewManagementPage } from '@/features/reviews/pages/ReviewsManagementPage';
 import { NewsManagementPage } from '@/features/news/pages/NewsManagementPage';
 import { CreateNewsPage } from '@/features/news/pages/CreateNewsPage';
@@ -394,6 +395,10 @@ export const router = createBrowserRouter([
               {
                 path: 'orders',
                 element: <StoreOrdersPage />,
+              },
+              {
+                path: 'orders/:orderId',
+                element: <StoreOrderDetailPage />,
               },
 
               // Reviews Management

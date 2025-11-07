@@ -26,7 +26,7 @@ export const ROUTES = {
 
   // Orders (authenticated)
   ORDERS: '/orders',
-  ORDER_DETAIL: '/orders/:orderId',
+  ORDER_DETAIL: '/orders/:storeId/:orderId',
 
   // Store Management (requires store access)
   STORE_CREATE: '/store/create',
@@ -42,6 +42,7 @@ export const ROUTES = {
   STORE_INVENTORY: '/store/:storeId/inventory',
   STORE_CATEGORIES: '/store/:storeId/categories',
   STORE_ORDERS: '/store/:storeId/orders',
+  STORE_ORDER_DETAIL: '/store/:storeId/orders/:orderId',
   STORE_NEWS: '/store/:storeId/news',
   STORE_NEWS_MANAGEMENT: '/store/:storeId/news/management',
   STORE_NEWS_CREATE: '/store/:storeId/news/create',
@@ -86,7 +87,8 @@ export const ROUTES = {
 
 export const buildRoute = {
   productDetail: (productId: string) => `/products/${productId}`,
-  orderDetail: (orderId: string) => `/orders/${orderId}`,
+  orderDetail: (storeId: string, orderId: string) =>
+    `/orders/${storeId}/${orderId}`,
   storePublic: (storeId: string) => `/stores/${storeId}`,
   storeOverview: (storeId: string) => `/store/${storeId}/overview`,
   storeSettings: (storeId: string) => `/store/${storeId}/settings`,
@@ -97,4 +99,6 @@ export const buildRoute = {
   storeProductEdit: (storeId: string, productId: string) =>
     `/store/${storeId}/products/${productId}/edit`,
   storeOrders: (storeId: string) => `/store/${storeId}/orders`,
+  storeOrderDetail: (storeId: string, orderId: string) =>
+    `/store/${storeId}/orders/${orderId}`,
 };

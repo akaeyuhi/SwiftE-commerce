@@ -42,6 +42,8 @@ export function useNavigate() {
       navigate(buildRoute.storeProductEdit(storeId, productId)),
     toStoreOrders: (storeId: string) =>
       navigate(buildRoute.storeOrders(storeId)),
+    toStoreOrder: (storeId: string, orderId: string) =>
+      navigate(buildRoute.storeOrderDetail(storeId, orderId)),
 
     // Products (public)
     toProducts: () => navigate(ROUTES.PRODUCTS),
@@ -54,7 +56,8 @@ export function useNavigate() {
 
     // Orders
     toOrders: () => navigate(ROUTES.ORDERS),
-    toOrder: (orderId: string) => navigate(buildRoute.orderDetail(orderId)),
+    toOrder: (storeId: string, orderId: string) =>
+      navigate(buildRoute.orderDetail(storeId, orderId)),
 
     // Dashboard
     toDashboard: () => navigate(ROUTES.DASHBOARD),
