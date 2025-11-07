@@ -1,14 +1,14 @@
 import { SearchBar } from '@/shared/components/ui/SearchBar';
 import { Button } from '@/shared/components/ui/Button';
 import { Card, CardContent } from '@/shared/components/ui/Card';
-import { MockCategory } from '@/shared/mocks/categories.mock.ts';
+import { CategoryDto } from '@/features/categories/types/categories.types.ts';
 
 interface ProductFiltersProps {
   searchQuery: string;
   onSearchChange: (value: string) => void;
-  categories: MockCategory[];
-  selectedCategory: MockCategory | 'all';
-  onCategoryChange: (category: MockCategory) => void;
+  categories: CategoryDto[];
+  selectedCategory: CategoryDto | 'all';
+  onCategoryChange: (category: CategoryDto) => void;
 }
 
 export function ProductFilters({

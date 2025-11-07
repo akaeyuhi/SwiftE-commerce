@@ -26,4 +26,10 @@ export class CreateProductDto {
   @IsOptional()
   @IsUUID()
   categoryId?: string;
+
+  @IsOptional()
+  files: {
+    photos: Express.Multer.File[];
+    mainPhoto: Express.Multer.File[];
+  };
 }

@@ -40,7 +40,7 @@ export function AboutUsPage() {
             </h2>
             <p className="text-foreground mb-4">
               We are a leading multi-vendor marketplace connecting buyers with
-              trusted sellers worldwide. Since our founding, we've been
+              trusted sellers worldwide. Since our founding, we&#39;ve been
               committed to providing a secure, efficient, and user-friendly
               platform for e-commerce.
             </p>

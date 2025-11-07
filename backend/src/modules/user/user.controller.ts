@@ -11,7 +11,8 @@ import {
   BadRequestException,
   ParseUUIDPipe,
   ParseEnumPipe,
-  UploadedFile, UploadedFiles,
+  UploadedFile,
+  UploadedFiles,
 } from '@nestjs/common';
 import { UserService } from 'src/modules/user/user.service';
 import { CreateUserDto } from './dto/create-user.dto';

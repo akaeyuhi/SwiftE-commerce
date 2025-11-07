@@ -138,7 +138,7 @@ export class ProductsService extends BaseService<
    * @throws NotFoundException when specified store does not exist
    */
   async create(
-    dto: CreateProductDto,
+    dto: CreateProductRequestDto,
     photos?: Express.Multer.File[],
     mainPhoto?: Express.Multer.File
   ): Promise<ProductDto> {
@@ -485,6 +485,45 @@ export class ProductsService extends BaseService<
       throw new NotFoundException(`Product with id ${id} not found`);
     }
     await this.productRepo.softDelete(id);
+  }
+
+  async findRelatedProducts(
+    productId: string,
+    limit: number = 10
+  ): Promise<ProductListDto[]> {
+    const product = await this.productRepo.findOne({
+      where: { id: productId },
+      relations: ['categories'],
+    });
+
+    if (!product || !product.categories || product.categories.length === 0) {
+      return [];
+    }
+
+    const categoryIds = product.categories.map((c) => c.id);
+
+    const relatedProducts = await this.productRepo
+      .createQueryBuilder('p')
+      .leftJoinAndSelect('p.categories', 'c')
+      .where('c.id IN (:...categoryIds)', { categoryIds })
+      .andWhere('p.id != :productId', { productId })
+      .take(limit)
+      .getMany();
+
+    return this.productsMapper.toListDtos(relatedProducts);
+  }
+
+  async findAllByStoreWithFilters(
+    storeId: string,
+    filters: ProductSearchOptions
+  ): Promise<ProductListDto[]> {
+    return await this.productSearchRepo.searchProducts(
+      storeId,
+      filters.query || '',
+      filters.limit || 20,
+      (filters.query || '').trim().toLowerCase().split(/\s+/),
+      filters
+    );
   }
 
   /**

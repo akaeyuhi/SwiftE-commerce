@@ -6,8 +6,10 @@ import { Textarea } from '@/shared/components/forms/Textarea';
 import { FormField } from '@/shared/components/forms/FormField';
 import { Star } from 'lucide-react';
 import { useState } from 'react';
+import { Input } from '@/shared/components/forms/Input.tsx';
 
 const reviewSchema = z.object({
+  title: z.string().min(5, 'Title must be at least 5 characters'),
   rating: z.number().min(1, 'Please select a rating').max(5),
   content: z.string().min(10, 'Review must be at least 10 characters'),
 });
@@ -78,6 +80,14 @@ export function ReviewForm({
             </span>
           )}
         </div>
+      </FormField>
+
+      <FormField label="Title" error={errors.content} required>
+        <Input
+          {...register('title')}
+          placeholder="Share your experience with this product..."
+          error={!!errors.title}
+        />
       </FormField>
 
       <FormField label="Your Review" error={errors.content} required>

@@ -72,7 +72,7 @@ export function useStoreSearch(
     queryKey: [...queryKeys.stores.all, 'search', query, filters],
     queryFn: () => api.stores.search(query, filters),
     enabled: query.length > 0,
-    staleTime: 1 * 60 * 1000,
+    staleTime: 60 * 1000,
     ...options,
   });
 }
@@ -85,7 +85,7 @@ export function useStoreAutocomplete(
     queryKey: [...queryKeys.stores.all, 'autocomplete', query],
     queryFn: () => api.stores.autocomplete(query),
     enabled: query.length > 0,
-    staleTime: 1 * 60 * 1000,
+    staleTime: 60 * 1000,
     ...options,
   });
 }

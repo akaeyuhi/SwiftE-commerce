@@ -46,10 +46,40 @@ export class AdminController extends BaseController<
     checkAdminStatus: { adminRole: AdminRoles.ADMIN },
     getAdminStats: { adminRole: AdminRoles.ADMIN },
     searchAdmins: { adminRole: AdminRoles.ADMIN },
+    getDashboardStats: { adminRole: AdminRoles.ADMIN },
+    getRecentActivities: { adminRole: AdminRoles.ADMIN },
+    getPendingActions: { adminRole: AdminRoles.ADMIN },
   };
 
   constructor(private readonly adminService: AdminService) {
     super(adminService);
+  }
+
+  @Get('dashboard-stats')
+  async getDashboardStats() {
+    const result = await this.adminService.getDashboardStats();
+    return {
+      success: true,
+      data: result,
+    };
+  }
+
+  @Get('recent-activities')
+  async getRecentActivities() {
+    const result = await this.adminService.getRecentActivities();
+    return {
+      success: true,
+      data: result,
+    };
+  }
+
+  @Get('pending-actions')
+  async getPendingActions() {
+    const result = await this.adminService.getPendingActions();
+    return {
+      success: true,
+      data: result,
+    };
   }
 
   /**

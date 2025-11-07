@@ -12,6 +12,9 @@ import { CreateAdminDto } from 'src/modules/admin/dto/create-admin.dto';
 import { UpdateAdminDto } from 'src/modules/admin/dto/update-admin.dto';
 import { AdminStats, FormattedAdmin } from 'src/modules/admin/types';
 import { IUserService } from 'src/common/contracts/admin.contract';
+import { StoreService } from 'src/modules/store/store.service';
+import { OrdersService } from 'src/modules/store/orders/orders.service';
+import { UserService } from 'src/modules/user/user.service';
 
 @Injectable()
 export class AdminService extends BaseService<
@@ -21,9 +24,70 @@ export class AdminService extends BaseService<
 > {
   constructor(
     private readonly adminRepo: AdminRepository,
-    @Inject(IUserService) private readonly userService: IUserService
+    @Inject(IUserService) private readonly userService: IUserService,
+    private readonly storeService: StoreService,
+    private readonly ordersService: OrdersService,
+    private readonly usersService: UserService
   ) {
     super(adminRepo);
+  }
+
+  async getDashboardStats() {
+    const totalUsers = await this.usersService.count();
+    const activeStores = await this.storeService.count({ where: { isActive: true } });
+    const totalOrders = await this.ordersService.count();
+    const totalRevenue = await this.ordersService.getTotalRevenue();
+
+    return {
+      totalUsers,
+      activeStores,
+      totalOrders,
+      totalRevenue,
+    };
+  }
+
+  async getRecentActivities() {
+    // Mock implementation
+    return [
+      {
+        id: '1',
+        type: 'user',
+        message: 'New user registered: john.doe@example.com',
+        time: '5 minutes ago',
+        status: 'info',
+      },
+      {
+        id: '2',
+        type: 'store',
+        message: 'Store \"Tech Haven\" submitted for approval',
+        time: '15 minutes ago',
+        status: 'warning',
+      },
+      {
+        id: '3',
+        type: 'order',
+        message: 'High-value order placed: $5,432.00',
+        time: '1 hour ago',
+        status: 'success',
+      },
+      {
+        id: '4',
+        type: 'report',
+        message: 'User reported suspicious activity',
+        time: '2 hours ago',
+        status: 'error',
+      },
+    ];
+  }
+
+  async getPendingActions() {
+    const pendingStores = await this.storeService.count({ where: { status: 'pending' } });
+    const unverifiedUsers = await this.usersService.count({ where: { isEmailVerified: false } });
+
+    return {
+      storeApprovals: pendingStores,
+      userVerifications: unverifiedUsers,
+    };
   }
 
   async findByUserId(userId: string): Promise<Admin | null> {

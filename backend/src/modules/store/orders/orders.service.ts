@@ -241,6 +241,15 @@ export class OrdersService extends BaseService<
     }
   }
 
+  async getTotalRevenue(): Promise<number> {
+    const { totalRevenue } = await this.orderRepo
+      .createQueryBuilder('order')
+      .select('SUM(order.totalAmount)', 'totalRevenue')
+      .where('order.status = :status', { status: OrderStatus.DELIVERED })
+      .getRawOne();
+    return totalRevenue;
+  }
+
   /**
    * Find orders for a user (includes items & store).
    * @param userId

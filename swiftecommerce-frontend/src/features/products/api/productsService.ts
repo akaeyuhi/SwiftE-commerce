@@ -92,10 +92,27 @@ export class ProductsService extends BaseService {
    */
   async createProduct(
     storeId: string,
-    data: Partial<Product>
+    data: Partial<Product> & { images?: File[] }
   ): Promise<Product> {
     const url = buildUrl(API_ENDPOINTS.PRODUCTS.CREATE, { storeId });
-    return this.client.post<Product>(url, data);
+    if (data.images && data.images.length > 0) {
+      const formData = new FormData();
+      Object.entries(data).forEach(([key, value]) => {
+        if (key !== 'images') {
+          formData.append(key, value as string);
+        }
+      });
+      data.images.forEach((file) => {
+        formData.append('photos', file);
+      });
+      return this.client.post<Product>(url, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+    } else {
+      return this.client.post<Product>(url, data);
+    }
   }
 
   /**
@@ -104,13 +121,30 @@ export class ProductsService extends BaseService {
   async updateProduct(
     storeId: string,
     productId: string,
-    data: Partial<Product>
+    data: Partial<Product> & { images?: File[] }
   ): Promise<Product> {
     const url = buildUrl(API_ENDPOINTS.PRODUCTS.UPDATE, {
       storeId,
       id: productId,
     });
-    return this.client.patch<Product>(url, data);
+    if (data.images && data.images.length > 0) {
+      const formData = new FormData();
+      Object.entries(data).forEach(([key, value]) => {
+        if (key !== 'images') {
+          formData.append(key, value as string);
+        }
+      });
+      data.images.forEach((file) => {
+        formData.append('photos', file);
+      });
+      return this.client.patch<Product>(url, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+    } else {
+      return this.client.patch<Product>(url, data);
+    }
   }
 
   /**

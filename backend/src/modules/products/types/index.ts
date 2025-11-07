@@ -4,6 +4,8 @@ export interface ProductSearchOptions {
   maxPrice?: number;
   minRating?: number;
   categoryId?: string;
+  query?: string;
+  limit?: number;
 }
 
 export interface AdvancedSearchOptions {

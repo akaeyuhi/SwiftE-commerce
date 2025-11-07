@@ -2,6 +2,7 @@ import { Badge } from '@/shared/components/ui/Badge';
 import { Button } from '@/shared/components/ui/Button';
 import { Card, CardContent } from '@/shared/components/ui/Card';
 import { Edit, Package, Tag, Trash2 } from 'lucide-react';
+import { CategoryDto } from '@/features/categories/types/categories.types.ts';
 
 interface ProductVariant {
   id: string;
@@ -15,7 +16,7 @@ interface ProductCardProps {
   id: string;
   name: string;
   description?: string;
-  categories: Array<{ id: string; name: string }>;
+  categories?: CategoryDto[];
   variants: ProductVariant[];
   mainPhotoUrl?: string | null;
   totalSales: number;
@@ -78,7 +79,7 @@ export function ProductCard({
               {description}
             </p>
             <div className="flex flex-wrap gap-1">
-              {categories.map((category) => (
+              {categories?.map((category) => (
                 <Badge key={category.id} variant="outline" className="text-xs">
                   <Tag className="h-3 w-3 mr-1" />
                   {category.name}
