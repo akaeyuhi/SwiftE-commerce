@@ -1,4 +1,4 @@
-import { ProductPublicCard } from '@/features/products/components/ProductPublicCard';
+import { ProductPublicCard } from '@/features/products/components/card/ProductPublicCard';
 import { ProductListDto } from '@/features/products/types/product.types';
 import { Card, CardContent } from '@/shared/components/ui/Card';
 import { Package } from 'lucide-react';

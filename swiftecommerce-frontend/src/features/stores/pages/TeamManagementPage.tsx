@@ -3,19 +3,20 @@ import { useParams } from 'react-router-dom';
 import { useStore } from '@/features/stores/hooks/useStores.ts';
 import { useUserMutations } from '@/features/users/hooks/useUsersMutations.ts';
 import { toast } from 'sonner';
-import { TeamMemberList } from '@/features/stores/components/TeamMemberList.tsx';
-import { RoleInfoCard } from '@/features/stores/components/RoleInfoCard.tsx';
-import { TeamManagementHeader } from '../components/TeamManagementHeader';
-import { InviteMemberDialog } from '../components/InviteMemberDialog';
+import { TeamMemberList } from '@/features/stores/components/grid-list/TeamMemberList.tsx';
+import { RoleInfoCard } from '@/features/stores/components/card/RoleInfoCard.tsx';
+import { TeamManagementHeader } from '../components/header/TeamManagementHeader';
+import { InviteMemberDialog } from '../components/dialog/InviteMemberDialog';
 import { ErrorBoundary } from '@/shared/components/errors/ErrorBoundary';
 import { QueryLoader } from '@/shared/components/loaders/QueryLoader';
 import { StoreRole } from '../types/store.types';
+import { StoreRoles } from '@/lib/enums/store-roles.enum.ts';
 
 export interface TeamMember {
   id: string;
   email: string;
   name: string;
-  role: 'STORE_ADMIN' | 'STORE_MODERATOR' | 'STORE_GUEST';
+  role: StoreRoles;
   isActive: boolean;
   assignedAt: string;
 }
@@ -58,11 +59,11 @@ export function TeamManagementPage() {
 
   const getRoleLabel = (role: string) => {
     switch (role) {
-      case 'STORE_ADMIN':
+      case StoreRoles.ADMIN:
         return 'Admin';
-      case 'STORE_MODERATOR':
+      case StoreRoles.MODERATOR:
         return 'Moderator';
-      case 'STORE_GUEST':
+      case StoreRoles.GUEST:
         return 'Guest';
       default:
         return role;

@@ -1,8 +1,8 @@
 import { useAuth } from '@/app/store';
 import { useUser } from '@/features/users/hooks/useUsers.ts';
-import { MyStoresHeader } from '../components/MyStoresHeader';
-import { MyStoresStats } from '../components/MyStoresStats';
-import { StoreList } from '../components/StoreList';
+import { MyStoresHeader } from '../components/header/MyStoresHeader';
+import { MyStoresStats } from '../components/stats/MyStoresStats';
+import { StoreList } from '../components/grid-list/StoreList';
 import { ErrorBoundary } from '@/shared/components/errors/ErrorBoundary';
 import { QueryLoader } from '@/shared/components/loaders/QueryLoader';
 import { Store } from '@/features/stores/types/store.types.ts';

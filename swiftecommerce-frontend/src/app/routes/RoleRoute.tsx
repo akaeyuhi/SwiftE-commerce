@@ -2,10 +2,12 @@ import { Navigate, Outlet, useParams } from 'react-router-dom';
 import { useAuth } from '@/app/store';
 import { ROUTES } from './routes';
 import { ReactNode, useMemo } from 'react';
+import { StoreRoles } from '@/lib/enums/store-roles.enum.ts';
+import { AdminRoles } from '@/lib/enums/site-roles.enum.ts';
 
 interface RoleRouteProps {
-  allowedSiteRoles?: Array<'SITE_USER' | 'SITE_ADMIN'>;
-  allowedStoreRoles?: Array<'STORE_ADMIN' | 'STORE_MODERATOR' | 'STORE_GUEST'>;
+  allowedSiteRoles?: Array<AdminRoles>;
+  allowedStoreRoles?: Array<StoreRoles>;
   requireStoreAccess?: boolean;
   children?: ReactNode;
 }
@@ -76,10 +78,10 @@ export function useStoreAccess(storeId: string) {
       hasAccess: isOwner || !!storeRole,
       role: storeRole?.roleName || null,
       isOwner: isOwner || false,
-      isAdmin: storeRole?.roleName === 'STORE_ADMIN' || isOwner,
+      isAdmin: storeRole?.roleName === StoreRoles.ADMIN || isOwner,
       isModerator:
-        storeRole?.roleName === 'STORE_MODERATOR' ||
-        storeRole?.roleName === 'STORE_ADMIN' ||
+        storeRole?.roleName === StoreRoles.MODERATOR ||
+        storeRole?.roleName === StoreRoles.ADMIN ||
         isOwner,
     };
   }, [user, storeId]);

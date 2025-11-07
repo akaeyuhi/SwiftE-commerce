@@ -1,8 +1,8 @@
 import { useNavigate } from '@/shared/hooks/useNavigate';
-import { CreateStoreHeader } from '../components/CreateStoreHeader';
-import { StoreBenefits } from '../components/StoreBenefits';
-import { CreateStoreForm } from '../components/CreateStoreForm';
-import { NextStepsInfo } from '../components/NextStepsInfo';
+import { CreateStoreHeader } from '../components/header/CreateStoreHeader';
+import { StoreBenefits } from '../components/misc/StoreBenefits';
+import { CreateStoreForm } from '../components/form/CreateStoreForm';
+import { NextStepsInfo } from '../components/misc/NextStepsInfo';
 import { ErrorBoundary } from '@/shared/components/errors/ErrorBoundary';
 
 export function CreateStorePage() {

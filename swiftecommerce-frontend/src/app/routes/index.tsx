@@ -90,6 +90,8 @@ import { AdminUserDetailPage } from '@/features/admin/pages/AdminUserDetailPage.
 import { AdminOrdersPage } from '@/features/admin/pages/AdminOrdersPage.tsx';
 
 import { ErrorBoundary } from '@/shared/components/errors/ErrorBoundary.tsx';
+import { AdminRoles } from '@/lib/enums/site-roles.enum.ts';
+import { StoreRoles } from '@/lib/enums/store-roles.enum.ts';
 
 export const router = createBrowserRouter([
   // Admin Routes
@@ -97,7 +99,7 @@ export const router = createBrowserRouter([
     path: '/admin',
     element: (
       <ErrorBoundary title="Admin page error">
-        <RoleRoute allowedSiteRoles={['SITE_ADMIN', 'SITE_USER']}>
+        <RoleRoute allowedSiteRoles={[AdminRoles.ADMIN, AdminRoles.USER]}>
           <AdminLayout />
         </RoleRoute>
       </ErrorBoundary>
@@ -314,9 +316,9 @@ export const router = createBrowserRouter([
               <RoleRoute
                 requireStoreAccess
                 allowedStoreRoles={[
-                  'STORE_ADMIN',
-                  'STORE_MODERATOR',
-                  'STORE_GUEST',
+                  StoreRoles.ADMIN,
+                  StoreRoles.MODERATOR,
+                  StoreRoles.GUEST,
                 ]}
               >
                 <ErrorBoundary title="Store Error">
@@ -338,7 +340,7 @@ export const router = createBrowserRouter([
                 element: (
                   <RoleRoute
                     requireStoreAccess
-                    allowedStoreRoles={['STORE_ADMIN']}
+                    allowedStoreRoles={[StoreRoles.ADMIN]}
                   >
                     <StoreSettingsPage />
                   </RoleRoute>
@@ -349,7 +351,7 @@ export const router = createBrowserRouter([
                 element: (
                   <RoleRoute
                     requireStoreAccess
-                    allowedStoreRoles={['STORE_ADMIN']}
+                    allowedStoreRoles={[StoreRoles.ADMIN]}
                   >
                     <TeamManagementPage />
                   </RoleRoute>
@@ -370,7 +372,7 @@ export const router = createBrowserRouter([
                 element: (
                   <RoleRoute
                     requireStoreAccess
-                    allowedStoreRoles={['STORE_ADMIN', 'STORE_MODERATOR']}
+                    allowedStoreRoles={[StoreRoles.ADMIN, StoreRoles.MODERATOR]}
                   >
                     <CreateProductPage />
                   </RoleRoute>
@@ -381,7 +383,7 @@ export const router = createBrowserRouter([
                 element: (
                   <RoleRoute
                     requireStoreAccess
-                    allowedStoreRoles={['STORE_ADMIN', 'STORE_MODERATOR']}
+                    allowedStoreRoles={[StoreRoles.ADMIN, StoreRoles.MODERATOR]}
                   >
                     <EditProductPage />
                   </RoleRoute>
@@ -410,7 +412,7 @@ export const router = createBrowserRouter([
                 element: (
                   <RoleRoute
                     requireStoreAccess
-                    allowedStoreRoles={['STORE_ADMIN', 'STORE_MODERATOR']}
+                    allowedStoreRoles={[StoreRoles.ADMIN, StoreRoles.MODERATOR]}
                   >
                     <CreateNewsPage />
                   </RoleRoute>
@@ -421,7 +423,7 @@ export const router = createBrowserRouter([
                 element: (
                   <RoleRoute
                     requireStoreAccess
-                    allowedStoreRoles={['STORE_ADMIN', 'STORE_MODERATOR']}
+                    allowedStoreRoles={[StoreRoles.ADMIN, StoreRoles.MODERATOR]}
                   >
                     <EditNewsPage />
                   </RoleRoute>

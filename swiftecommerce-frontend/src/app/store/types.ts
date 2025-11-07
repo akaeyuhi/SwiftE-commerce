@@ -6,6 +6,7 @@ import { Review } from '@/features/reviews/types/reviews.types.ts';
 import { NewsPost } from '@/features/news/types/news.types.ts';
 import { AiLog } from '@/features/ai/types/ai-logs.types.ts';
 import { Like } from '@/features/likes/types/likes.types.ts';
+import { AdminRoles } from '@/lib/enums/site-roles.enum.ts';
 
 /**
  * User type
@@ -22,7 +23,7 @@ export interface User {
   createdAt?: Date;
   updatedAt?: Date;
   avatar?: string;
-  siteRole: 'SITE_USER' | 'SITE_ADMIN';
+  siteRole: AdminRoles;
   ownedStores?: Store[];
   roles?: StoreRole[];
   carts?: ShoppingCart[];

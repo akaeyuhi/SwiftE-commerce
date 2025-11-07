@@ -2,9 +2,7 @@ import { Card, CardContent } from '@/shared/components/ui/Card';
 import { Badge } from '@/shared/components/ui/Badge';
 import { Button } from '@/shared/components/ui/Button';
 import { useNavigate } from '@/shared/hooks/useNavigate';
-import { Store } from '../pages/MyStoresPage';
 import {
-  Crown,
   Eye,
   Package,
   Settings,
@@ -13,6 +11,10 @@ import {
   Users,
   BarChart3,
 } from 'lucide-react';
+import { Store } from '@/features/stores/types/store.types.ts';
+import { useAuth } from '@/app/store';
+import { useUserStoreRoles } from '@/features/users/hooks/useUsers.ts';
+import { StoreRoles } from '@/lib/enums/store-roles.enum.ts';
 
 interface StoreCardProps {
   store: Store;
@@ -20,14 +22,18 @@ interface StoreCardProps {
 
 export function StoreCard({ store }: StoreCardProps) {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { data: userRoles } = useUserStoreRoles(user!.id);
+
+  const storeRole = userRoles?.find(
+    (role) => role.storeId === store.id
+  )?.roleName;
 
   const getRoleIcon = (role: string) => {
     switch (role) {
-      case 'OWNER':
-        return <Crown className="h-4 w-4" />;
-      case 'STORE_ADMIN':
+      case StoreRoles.ADMIN:
         return <Shield className="h-4 w-4" />;
-      case 'STORE_MODERATOR':
+      case StoreRoles.MODERATOR:
         return <Users className="h-4 w-4" />;
       default:
         return <Eye className="h-4 w-4" />;
@@ -36,11 +42,9 @@ export function StoreCard({ store }: StoreCardProps) {
 
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
-      case 'OWNER':
+      case StoreRoles.ADMIN:
         return 'default';
-      case 'STORE_ADMIN':
-        return 'default';
-      case 'STORE_MODERATOR':
+      case StoreRoles.MODERATOR:
         return 'secondary';
       default:
         return 'outline';
@@ -60,10 +64,10 @@ export function StoreCard({ store }: StoreCardProps) {
         >
           <StoreIcon className="h-10 w-10 text-primary/40" />
           <div className="absolute top-3 right-3 flex gap-2">
-            <Badge variant={getRoleBadgeVariant(store.role) as any}>
+            <Badge variant={getRoleBadgeVariant(storeRole!) as any}>
               <span className="flex items-center gap-1">
-                {getRoleIcon(store.role)}
-                {store.role}
+                {getRoleIcon(storeRole!)}
+                {storeRole}
               </span>
             </Badge>
           </div>
@@ -119,7 +123,7 @@ export function StoreCard({ store }: StoreCardProps) {
               <Package className="h-4 w-4 mr-2" />
               Products
             </Button>
-            {(store.role === 'OWNER' || store.role === 'STORE_ADMIN') && (
+            {storeRole === StoreRoles.ADMIN && (
               <Button
                 variant="outline"
                 size="sm"

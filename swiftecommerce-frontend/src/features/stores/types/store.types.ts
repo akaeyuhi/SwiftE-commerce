@@ -12,6 +12,7 @@ import { NewsPost } from '@/features/news/types/news.types.ts';
 import { AiLog } from '@/features/ai/types/ai-logs.types.ts';
 import { User, UserDto } from '@/features/users/types/users.types.ts';
 import { ShoppingCart } from '@/features/cart/types/cart.types.ts';
+import { StoreRoles } from '@/lib/enums/store-roles.enum.ts';
 
 export interface Store {
   id: string;
@@ -84,7 +85,7 @@ export interface StoreSearchResultDto extends StoreStatsDto {
 
 export interface StoreRole {
   id: string;
-  roleName: 'STORE_ADMIN' | 'STORE_MODERATOR' | 'STORE_GUEST';
+  roleName: StoreRoles;
   user: User;
   userId: string;
   store: Store;

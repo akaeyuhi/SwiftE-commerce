@@ -2,11 +2,11 @@ import { useParams } from 'react-router-dom';
 import { useStore } from '@/features/stores/hooks/useStores.ts';
 import { ErrorBoundary } from '@/shared/components/errors/ErrorBoundary';
 import { QueryLoader } from '@/shared/components/loaders/QueryLoader';
-import { StoreSettingsHeader } from '../components/StoreSettingsHeader';
-import { StoreInfoForm } from '../components/StoreInfoForm';
-import { StoreImagesForm } from '../components/StoreImagesForm';
-import { StoreStats } from '../components/StoreStats';
-import { DangerZone } from '../components/DangerZone';
+import { StoreSettingsHeader } from '../components/header/StoreSettingsHeader';
+import { StoreInfoForm } from '../components/form/StoreInfoForm';
+import { StoreImagesForm } from '../components/form/StoreImagesForm';
+import { StoreStats } from '../components/stats/StoreStats';
+import { DangerZone } from '../components/misc/DangerZone';
 
 export function StoreSettingsPage() {
   const params = useParams();

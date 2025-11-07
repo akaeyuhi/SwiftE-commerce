@@ -2,12 +2,12 @@ import { useParams } from 'react-router-dom';
 import { ErrorBoundary } from '@/shared/components/errors/ErrorBoundary';
 import { QueryLoader } from '@/shared/components/loaders/QueryLoader';
 import { useStoreOverview } from '../hooks/useStoreOverview';
-import { StoreOverviewHeader } from '../components/StoreOverviewHeader';
-import { StoreStatsGrid } from '../components/StoreStatsGrid';
-import { RecentOrders } from '../components/RecentOrders';
-import { TopProducts } from '../components/TopProducts';
-import { QuickActions } from '../components/QuickActions';
-import { StoreHealth } from '../components/StoreHealth';
+import { StoreOverviewHeader } from '../components/header/StoreOverviewHeader';
+import { StoreStatsGrid } from '../components/stats/StoreStatsGrid';
+import { RecentOrders } from '../components/stats/RecentOrders';
+import { TopProducts } from '../components/stats/TopProducts';
+import { QuickActions } from '../components/misc/QuickActions';
+import { StoreHealth } from '../components/stats/StoreHealth';
 import { useNavigate } from '@/shared/hooks/useNavigate.ts';
 import { ROUTES } from '@/app/routes/routes.ts';
 

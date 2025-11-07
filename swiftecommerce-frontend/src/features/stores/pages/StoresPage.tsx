@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { StoreFilters } from '../components/StoreFilters';
-import { StoresGrid } from '@/features/stores/components/StoresGrid.tsx';
+import { StoreFilters } from '../components/filter/StoreFilters';
+import { StoresGrid } from '@/features/stores/components/grid-list/StoresGrid.tsx';
 import { useStores } from '@/features/stores/hooks/useStores.ts';
 import { ErrorBoundary } from '@/shared/components/errors/ErrorBoundary';
 import { QueryLoader } from '@/shared/components/loaders/QueryLoader';
-import { StoresPageHeader } from '../components/StoresPageHeader';
-import { StoresStats } from '../components/StoresStats';
+import { StoresPageHeader } from '../components/header/StoresPageHeader';
+import { StoresStats } from '../components/stats/StoresStats';
 
 export function StoresPage() {
   const [searchQuery, setSearchQuery] = useState('');

@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from '@/shared/components/ui/Card';
 import { AlertTriangle } from 'lucide-react';
-import { DeleteStoreDialog } from '@/features/stores/components/DeleteStoreDialog.tsx';
+import { DeleteStoreDialog } from '@/features/stores/components/dialog/DeleteStoreDialog.tsx';
 import { useStoreMutations } from '@/features/stores/hooks/useStoreMutations.ts';
 import { useNavigate } from '@/shared/hooks/useNavigate.ts';
 

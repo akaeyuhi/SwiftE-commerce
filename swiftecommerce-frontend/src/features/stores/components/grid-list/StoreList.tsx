@@ -1,5 +1,5 @@
-import { Store } from '../pages/MyStoresPage';
-import { StoreCard } from './StoreCard';
+import { StoreCard } from '../card/StoreCard';
+import { Store } from '@/features/stores/types/store.types.ts';
 
 interface StoreListProps {
   stores: Store[];

@@ -1,7 +1,7 @@
 import { TeamMember } from '@/features/stores/pages/TeamManagementPage.tsx';
 import { Badge } from '@/shared/components/ui/Badge';
 import React from 'react';
-import { DeleteMemberDialog } from '@/features/stores/components/DeleteMemberDialog.tsx';
+import { DeleteMemberDialog } from '@/features/stores/components/dialog/DeleteMemberDialog.tsx';
 import { Crown, Eye, Shield } from 'lucide-react';
 
 interface TeamMemberListProps {
