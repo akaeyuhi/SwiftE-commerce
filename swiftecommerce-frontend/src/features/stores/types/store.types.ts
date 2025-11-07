@@ -27,6 +27,8 @@ export interface Store {
   createdAt: Date;
   updatedAt: Date;
   deletedAt?: Date;
+  logoUrl?: string;
+  bannerUrl?: string;
   products?: Product[];
   categories?: Category[];
   inventories?: Inventory[];

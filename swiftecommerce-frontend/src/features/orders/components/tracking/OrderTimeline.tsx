@@ -31,14 +31,14 @@ export function OrderTimeline({ order }: OrderTimelineProps) {
     {
       status: 'shipped',
       label: 'Shipped',
-      date: null, // TODO: Get from order.shipping.shippedAt
+      date: order.shipping.shippedAt,
       icon: Truck,
       isComplete: ['shipped', 'delivered'].includes(order.status),
     },
     {
       status: 'delivered',
       label: 'Delivered',
-      date: null, // TODO: Get from order.shipping.deliveredAt
+      date: order.shipping.deliveredAt,
       icon: CheckCircle2,
       isComplete: order.status === 'delivered',
     },

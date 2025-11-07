@@ -51,7 +51,6 @@ export const ROUTES = {
 
   USER_PROFILE: '/users/:userId',
   USER_SETTINGS: '/settings',
-  USER_EDIT: '/users/edit',
 
   // Admin routes
   ADMIN: '/admin',

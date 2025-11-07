@@ -59,7 +59,6 @@ import { OrderDetailPage } from '@/features/orders/pages/OrderDetailPage.tsx';
 // User Profile
 import { UserProfilePage } from '@/features/users/pages/UserProfilePage';
 import { UserSettingsPage } from '@/features/users/pages/UserSettingsPage.tsx';
-import { UserEditPage } from '@/features/users/pages/UserEditPage.tsx';
 import { WishlistPage } from '@/features/users/pages/WishlistPage.tsx';
 import { DashboardPage } from '@/features/dashboard/pages/DashboardPage.tsx';
 import { DashboardLayout } from '@/app/layouts/DashboardLayout.tsx';
@@ -296,10 +295,6 @@ export const router = createBrowserRouter([
               {
                 path: ROUTES.USER_SETTINGS,
                 element: <UserSettingsPage />,
-              },
-              {
-                path: ROUTES.USER_EDIT,
-                element: <UserEditPage />,
               },
             ],
           },

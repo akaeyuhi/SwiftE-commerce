@@ -36,6 +36,8 @@ export interface OrderInfo {
   postalCode?: string;
   country?: string;
   phone?: string;
+  shippedAt?: Date;
+  deliveredAt?: Date;
 }
 
 export interface OrderItem {

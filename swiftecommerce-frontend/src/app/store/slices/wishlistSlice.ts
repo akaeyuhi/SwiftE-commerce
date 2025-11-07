@@ -6,6 +6,7 @@ export interface WishlistSlice {
   followedStoreIds: string[];
 
   // Actions
+  setInitialState: (likes: { productId?: string; storeId?: string }[]) => void;
   addToWishlist: (productId: string) => void;
   removeFromWishlist: (productId: string) => void;
   isInWishlist: (productId: string) => boolean;
@@ -23,6 +24,23 @@ export interface WishlistSlice {
 export const createWishlistSlice: SliceCreator<WishlistSlice> = (set, get) => ({
   likedProductIds: [],
   followedStoreIds: [],
+
+  setInitialState: (likes) => {
+    const productIds = new Set<string>();
+    const storeIds = new Set<string>();
+    likes.forEach((like) => {
+      if (like.productId) productIds.add(like.productId);
+      if (like.storeId) storeIds.add(like.storeId);
+    });
+    set(
+      {
+        likedProductIds: Array.from(productIds),
+        followedStoreIds: Array.from(storeIds),
+      },
+      false,
+      'wishlist/setInitialState'
+    );
+  },
 
   // Product wishlist actions
   addToWishlist: (productId) => {

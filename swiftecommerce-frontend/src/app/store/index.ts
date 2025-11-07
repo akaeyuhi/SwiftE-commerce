@@ -133,6 +133,7 @@ export const useWishlist = () =>
   useStore((state) => ({
     likedProductIds: state.likedProductIds,
     followedStoreIds: state.followedStoreIds,
+    setInitialState: state.setInitialState,
     addToWishlist: state.addToWishlist,
     removeFromWishlist: state.removeFromWishlist,
     isInWishlist: state.isInWishlist,
