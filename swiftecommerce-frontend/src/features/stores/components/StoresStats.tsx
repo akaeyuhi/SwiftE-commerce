@@ -1,5 +1,5 @@
 import { Card, CardContent } from '@/shared/components/ui/Card';
-import { Store } from '../pages/StoresPage';
+import { Store } from '@/features/stores/types/store.types.ts';
 
 interface StoresStatsProps {
   stores: Store[];
@@ -8,7 +8,8 @@ interface StoresStatsProps {
 export function StoresStats({ stores }: StoresStatsProps) {
   const totalProducts = stores.reduce((sum, s) => sum + s.productCount, 0);
   const totalRevenue = stores.reduce((sum, s) => sum + s.totalRevenue, 0);
-  const averageOrders = stores.reduce((sum, s) => sum + (s.orderCount || 0), 0) / stores.length;
+  const averageOrders =
+    stores.reduce((sum, s) => sum + (s.orderCount || 0), 0) / stores.length;
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
