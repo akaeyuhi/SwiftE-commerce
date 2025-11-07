@@ -13,6 +13,7 @@ import {
   ParseEnumPipe,
   UploadedFile,
   UploadedFiles,
+  Query,
 } from '@nestjs/common';
 import { UserService } from 'src/modules/user/user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -32,6 +33,10 @@ import { AdminRoles } from 'src/common/enums/admin.enum';
 import { Request } from 'express';
 import { UploadAvatar } from 'src/common/decorators/upload-avatar.decorator';
 import { UploadStoreFiles } from 'src/common/decorators/upload-store-files.decorator';
+import { Pagination } from 'src/common/decorators/pagination.decorator';
+import { PaginationDto } from 'src/common/dtos/pagination.dto';
+import { PaginatedResponse } from 'src/common/decorators/paginated-response.decorator';
+import { Order } from 'src/entities/store/product/order.entity';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard, StoreRolesGuard, AdminGuard)
@@ -49,7 +54,7 @@ export class UserController extends BaseController<
   @UploadAvatar()
   async uploadAvatar(
     @Req() req: Request,
-    @UploadedFile() file: Express.Multer.File
+    @UploadedFile() file: Express.Multer.File,
   ): Promise<UserDto> {
     const userId = (req.user as any)?.id;
     if (!userId) {
@@ -81,7 +86,23 @@ export class UserController extends BaseController<
   @Get('profile/stats')
   async getUserStats(@Req() req: Request) {
     const userId = (req.user as any)?.id;
+    if (!userId) {
+      throw new BadRequestException('User ID not found');
+    }
     return this.userService.getUserStats(userId);
+  }
+
+  @Get('profile/orders')
+  @PaginatedResponse(Order)
+  async getProfileOrders(
+    @Req() req: Request,
+    @Pagination() pagination: PaginationDto,
+  ) {
+    const userId = (req.user as any)?.id;
+    if (!userId) {
+      throw new BadRequestException('User ID not found');
+    }
+    return this.userService.getOrdersForUser(userId, pagination);
   }
 
   /**

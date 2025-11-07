@@ -8,6 +8,8 @@ import {
   User,
   UserStats,
 } from '../types/users.types';
+import { PaginatedResponse } from '@/lib/api/types';
+import { Order } from '@/features/orders/types/order.types';
 
 export class UsersService extends BaseService {
   /**
@@ -65,6 +67,15 @@ export class UsersService extends BaseService {
 
   async getProfileStats(): Promise<UserStats> {
     return this.client.get<UserStats>(API_ENDPOINTS.USERS.PROFILE_STATS);
+  }
+
+  async getProfileOrders(params?: {
+    page?: number;
+    pageSize?: number;
+  }): Promise<PaginatedResponse<Order>> {
+    const url = this.buildQueryUrl(API_ENDPOINTS.USERS.PROFILE_ORDERS, params);
+    const response = await this.client.get<any>(url);
+    return this.handlePaginatedResponse<Order>(response);
   }
 
   /**

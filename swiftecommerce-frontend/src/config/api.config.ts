@@ -42,6 +42,7 @@ export const API_ENDPOINTS = {
     DELETE: '/users/:id',
     PROFILE: '/users/profile',
     PROFILE_STATS: '/users/profile/stats',
+    PROFILE_ORDERS: '/users/profile/orders',
     UPDATE_PROFILE: '/users/profile',
     GET_USER_PROFILE: '/users/:id/profile',
     VERIFY_EMAIL: '/users/:id/verify-email',

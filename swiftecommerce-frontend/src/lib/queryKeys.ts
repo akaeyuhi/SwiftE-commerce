@@ -28,6 +28,8 @@ export const queryKeys = {
   orders: {
     all: ['orders'] as const,
     lists: () => [...queryKeys.orders.all, 'list'] as const,
+    my: (filters?: Record<string, any>) =>
+      [...queryKeys.orders.lists(), 'my', filters] as const,
     list: (storeId: string, filters?: Record<string, any>) =>
       [...queryKeys.orders.lists(), storeId, filters] as const,
     details: () => [...queryKeys.orders.all, 'detail'] as const,

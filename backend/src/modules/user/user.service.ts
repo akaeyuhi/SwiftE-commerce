@@ -317,6 +317,20 @@ export class UserService extends BaseService<
     return this.getEntityById(userId);
   }
 
+  async getOrdersForUser(
+    userId: string,
+    pagination: any,
+  ): Promise<[Order[], number]> {
+    const { skip, take, ...where } = pagination;
+    return this.orderRepository.findAndCount({
+      where: { userId, ...where },
+      relations: ['store', 'items'],
+      skip,
+      take,
+      order: { createdAt: 'DESC' },
+    });
+  }
+
   /**
    * Soft delete user account
    */

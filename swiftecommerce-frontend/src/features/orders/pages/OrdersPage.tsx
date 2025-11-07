@@ -1,37 +1,34 @@
-import { useState } from 'react';
+import { useMemo } from 'react';
 import { useAuth } from '@/app/store';
-import { useUserOrders } from '../hooks/useOrders';
+import { useMyOrders } from '../hooks/useOrders';
 import { QueryLoader } from '@/shared/components/loaders/QueryLoader';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { UserOrderListItem } from '../components/list/UserOrderListItem';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/shared/components/ui/select';
 import { ShoppingCart } from 'lucide-react';
 import { Card } from '@/shared/components/ui/Card';
+import { useInfiniteScroll } from '@/shared/hooks/useInfiniteScroll';
+import { Order } from '../types/order.types';
 
 export function OrdersPage() {
   const { user } = useAuth();
-  const [selectedStoreId, setSelectedStoreId] = useState<string | undefined>(
-    user?.ownedStores?.[0]?.id
-  );
 
-  // API Limitation Workaround:
-  // The current `useUserOrders` hook requires a `storeId` to fetch orders.
-  // A better approach would be a backend endpoint like `GET /user/orders`
-  // that returns all orders for the authenticated user across all stores.
-  // As a workaround, we allow the user to select a store to view orders from.
   const {
-    data: orders,
-    isLoading,
+    data,
     error,
-    refetch,
-  } = useUserOrders(selectedStoreId!, user!.id, {
-    enabled: !!selectedStoreId && !!user,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+  } = useMyOrders({
+    enabled: !!user,
+  });
+
+  const orders = useMemo(() => data, [data]);
+
+  const lastOrderRef = useInfiniteScroll({
+    isLoading: isFetchingNextPage,
+    hasNextPage,
+    callback: fetchNextPage,
   });
 
   return (
@@ -42,51 +39,33 @@ export function OrdersPage() {
           <p className="text-muted-foreground">Track and manage your orders</p>
         </div>
 
-        {user?.ownedStores && user.ownedStores.length > 0 ? (
-          <Card className="mb-6 p-6">
-            <div className="flex items-center gap-4">
-              <p className="text-sm font-medium">Viewing orders for store:</p>
-              <Select
-                value={selectedStoreId}
-                onValueChange={setSelectedStoreId}
-              >
-                <SelectTrigger className="w-full md:w-64">
-                  <SelectValue placeholder="Select a store" />
-                </SelectTrigger>
-                <SelectContent>
-                  {user.ownedStores.map((store) => (
-                    <SelectItem key={store.id} value={store.id}>
-                      {store.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </Card>
-        ) : (
-          // TODO: This case needs to be handled. If a user is just a customer
-          // and not a store owner, we cannot fetch their orders with the current API.
-          <EmptyState
-            icon={ShoppingCart}
-            title="No stores found"
-            description="We can't display your orders right
-            now because the API requires a store context."
-          />
-        )}
-
-        <QueryLoader isLoading={isLoading} error={error} refetch={refetch}>
+        <QueryLoader isLoading={isLoading} error={error as Error}>
           {orders && orders.length > 0 ? (
             <div className="space-y-4">
-              {orders.map((order) => (
-                <UserOrderListItem key={order.id} order={order} />
+              {orders.map((order: Order, index: number) => (
+                <UserOrderListItem
+                  key={order.id}
+                  order={order}
+                  ref={index === orders.length - 1 ? lastOrderRef : null}
+                />
               ))}
+              {isFetchingNextPage && (
+                <div className="flex justify-center">
+                  <p>Loading more orders...</p>
+                </div>
+              )}
+              {!hasNextPage && orders.length > 0 && (
+                <p className="text-center text-muted-foreground mt-4">
+                  You&#39;ve reached the end of your order history.
+                </p>
+              )}
             </div>
           ) : (
             <Card>
               <EmptyState
                 icon={ShoppingCart}
                 title="No orders found"
-                description="You haven't placed any orders in this store yet."
+                description="You haven't placed any orders yet."
               />
             </Card>
           )}

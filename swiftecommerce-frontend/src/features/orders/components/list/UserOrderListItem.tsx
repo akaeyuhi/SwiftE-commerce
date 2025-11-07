@@ -4,16 +4,20 @@ import { OrderStatusBadge } from '../common/OrderStatusBadge';
 import { Order } from '../../types/order.types';
 import { useNavigate } from '@/shared/hooks/useNavigate';
 import { Package } from 'lucide-react';
+import React from 'react';
 
 interface UserOrderListItemProps {
   order: Order;
 }
 
-export function UserOrderListItem({ order }: UserOrderListItemProps) {
+export const UserOrderListItem = React.forwardRef<
+  HTMLDivElement,
+  UserOrderListItemProps
+>(({ order }, ref) => {
   const navigate = useNavigate();
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
+    <Card className="hover:shadow-md transition-shadow" ref={ref}>
       <CardContent className="p-6">
         <div
           className="flex flex-col md:flex-row md:items-center
@@ -74,4 +78,4 @@ export function UserOrderListItem({ order }: UserOrderListItemProps) {
       </CardContent>
     </Card>
   );
-}
+});
