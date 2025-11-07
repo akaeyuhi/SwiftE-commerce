@@ -1,4 +1,10 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/shared/components/ui/Card';
 import { useStoreHealth } from '../hooks/useStores';
 import { SkeletonLoader } from '@/shared/components/loaders/SkeletonLoader';
 
@@ -7,7 +13,9 @@ interface StoreHealthProps {
 }
 
 export function StoreHealth({ storeId }: StoreHealthProps) {
-  const { data: storeHealth, isLoading: healthLoading } = useStoreHealth(storeId!);
+  const { data: storeHealth, isLoading: healthLoading } = useStoreHealth(
+    storeId!
+  );
 
   return (
     <Card>

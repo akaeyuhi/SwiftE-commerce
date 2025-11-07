@@ -1,8 +1,13 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/shared/components/ui/Card';
 import { Link } from '@/shared/components/ui/Link';
 import { ROUTES } from '@/app/routes/routes';
 import { useRecentOrders } from '../hooks/useStoreOverview';
-import { QueryLoader } from '@/shared/components/loaders/QueryLoader';
 import { ErrorState } from '@/shared/components/errors/ErrorState';
 import { SkeletonLoader } from '@/shared/components/loaders/SkeletonLoader';
 import { Badge } from '@/shared/components/ui/Badge';
@@ -13,7 +18,11 @@ interface RecentOrdersProps {
 }
 
 export function RecentOrders({ storeId }: RecentOrdersProps) {
-  const { data: recentOrders = [], isLoading, error } = useRecentOrders(storeId, 3);
+  const {
+    data: recentOrders = [],
+    isLoading,
+    error,
+  } = useRecentOrders(storeId, 3);
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, any> = {

@@ -15,11 +15,6 @@ export function StoreOverviewPage() {
   const { storeId } = useParams<{ storeId: string }>();
   const navigate = useNavigate();
 
-  if (!storeId) {
-    navigate.to(ROUTES.NOT_FOUND);
-    return null;
-  }
-
   const {
     data: overviewData,
     isLoading: overviewLoading,
@@ -27,6 +22,11 @@ export function StoreOverviewPage() {
     refetch: refetchOverview,
     isFetching: overviewFetching,
   } = useStoreOverview(storeId!);
+
+  if (!storeId) {
+    navigate.to(ROUTES.NOT_FOUND);
+    return null;
+  }
 
   return (
     <ErrorBoundary title="Store Overview Error">
