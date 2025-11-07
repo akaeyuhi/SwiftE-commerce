@@ -6,7 +6,6 @@ import { ErrorBoundary } from '@/shared/components/errors/ErrorBoundary';
 import { QueryLoader } from '@/shared/components/loaders/QueryLoader';
 import { StoresPageHeader } from '../components/StoresPageHeader';
 import { StoresStats } from '../components/StoresStats';
-import { StoreDto } from '@/features/stores/types/store.types.ts';
 
 export function StoresPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -41,8 +40,8 @@ export function StoresPage() {
                   setSortBy={setSortBy}
                   sortBy={sortBy}
                 />
-                <StoresStats stores={stores as StoreDto[]} />
-                <StoresGrid stores={stores as StoreDto[]} />
+                <StoresStats stores={stores} />
+                <StoresGrid stores={stores} />
               </>
             )}
           </QueryLoader>

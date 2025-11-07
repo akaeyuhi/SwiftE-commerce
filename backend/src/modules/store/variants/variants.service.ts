@@ -291,4 +291,23 @@ export class VariantsService extends BaseService<
       },
     });
   }
+
+  async createMultiple(dtos: CreateVariantDto[]): Promise<ProductVariant[]> {
+    const created = [] as ProductVariant[];
+    for (const dto of dtos) {
+      const variant = await this.create(dto);
+      created.push(variant);
+    }
+    return created;
+  }
+
+  async updateMultiple(dtos: UpdateVariantDto[]): Promise<ProductVariant[]> {
+    const updated = [] as ProductVariant[];
+    for (const dto of dtos) {
+      if (!dto.variantId) continue;
+      const variant = await this.update(dto.variantId, dto);
+      updated.push(variant);
+    }
+    return updated;
+  }
 }

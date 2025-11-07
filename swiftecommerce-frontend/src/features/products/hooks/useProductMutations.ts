@@ -1,8 +1,11 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys, invalidateFeature } from '@/lib/queryKeys';
-import { Product } from '../types/product.types';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
+import {
+  CreateProductDto,
+  UpdateProductDto,
+} from '@/features/products/types/dto.types.ts';
 
 const imagesToFormData = (data: any) => {
   const formData = new FormData();
@@ -22,7 +25,7 @@ export function useProductMutations(storeId: string) {
   const queryClient = useQueryClient();
 
   const createProduct = useMutation({
-    mutationFn: (data: Partial<Product> & { images?: File[] }) => {
+    mutationFn: (data: CreateProductDto) => {
       const formData = imagesToFormData(data);
       return api.products.createProduct(storeId, formData as any);
     },
@@ -36,13 +39,7 @@ export function useProductMutations(storeId: string) {
   });
 
   const updateProduct = useMutation({
-    mutationFn: ({
-      id,
-      data,
-    }: {
-      id: string;
-      data: Partial<Product> & { images?: File[] };
-    }) => {
+    mutationFn: ({ id, data }: { id: string; data: UpdateProductDto }) => {
       const formData = imagesToFormData(data);
       return api.products.updateProduct(storeId, id, formData as any);
     },

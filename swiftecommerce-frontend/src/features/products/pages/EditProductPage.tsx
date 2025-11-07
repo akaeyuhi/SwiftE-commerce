@@ -4,12 +4,16 @@ import { Link } from '@/shared/components/ui/Link';
 import { ROUTES } from '@/app/routes/routes';
 import { useNavigate } from '@/shared/hooks/useNavigate';
 import { ArrowLeft } from 'lucide-react';
-import { ProductForm } from '../components/ProductForm';
+import { ProductForm } from '../components/form/ProductForm';
 import { ProductFormData } from '@/lib/validations/product.schemas';
 import { useProduct } from '../hooks/useProducts';
 import { useProductMutations } from '../hooks/useProductMutations';
 import { ErrorBoundary } from '@/shared/components/errors/ErrorBoundary';
 import { QueryLoader } from '@/shared/components/loaders/QueryLoader';
+import { useStore } from '@/features/stores/hooks/useStores.ts';
+import { useVariantMutations } from '../hooks/useVariants';
+import { useState } from 'react';
+import { UpdateProductDto } from '../types/dto.types';
 
 export function EditProductPage() {
   const { storeId, productId } = useParams<{
@@ -23,11 +27,41 @@ export function EditProductPage() {
     error,
     refetch,
   } = useProduct(storeId!, productId!);
+  const { data: store } = useStore(storeId!);
   const { updateProduct } = useProductMutations(storeId!);
+  const { deleteVariant } = useVariantMutations(storeId!, productId!);
+  const [deletedVariantIds, setDeletedVariantIds] = useState<string[]>([]);
+
+  const handleRemoveVariant = (variantId: string) => {
+    setDeletedVariantIds((prev) => [...prev, variantId]);
+  };
 
   const handleSubmit = async (data: ProductFormData, newImages: File[]) => {
+    const mainPhoto = newImages.length > 0 ? newImages[0] : undefined;
+    const otherPhotos = newImages.length > 1 ? newImages.slice(1) : [];
+
+    const createVariants = data.variants
+      .filter((v) => !v.id)
+      .map((v) => ({ ...v, initialQuantity: v.quantity }));
+
+    const updateVariants = data.variants
+      .filter((v) => v.id)
+      .map((v) => ({ ...v, variantId: v.id! }));
+
+    for (const variantId of deletedVariantIds) {
+      await deleteVariant.mutateAsync(variantId);
+    }
+
+    const dto: UpdateProductDto = {
+      ...data,
+      variants: createVariants,
+      updateVariants,
+      mainPhoto,
+      photos: otherPhotos,
+    };
+
     await updateProduct.mutateAsync(
-      { id: productId!, data: { ...data, images: newImages } },
+      { id: productId!, data: dto },
       {
         onSuccess: () => {
           navigate.toStoreProducts(storeId!);
@@ -42,6 +76,7 @@ export function EditProductPage() {
         description: product.description,
         categoryIds: product.categories?.map((c) => c.id) || [],
         variants: product.variants.map((v) => ({
+          id: v.id,
           sku: v.sku,
           price: v.price,
           quantity: v.inventory.quantity,
@@ -53,12 +88,11 @@ export function EditProductPage() {
   return (
     <ErrorBoundary title="Edit Product Error">
       <div className="space-y-6 max-w-5xl">
-        {/* Header */}
         <div>
           <Link
             to={ROUTES.STORE_PRODUCTS.replace(':storeId', storeId!)}
             className="inline-flex items-center gap-2 text-sm
-          text-muted-foreground hover:text-foreground mb-4"
+            text-muted-foreground hover:text-foreground mb-4"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Products
@@ -77,18 +111,19 @@ export function EditProductPage() {
           refetch={refetch}
           loadingMessage="Loading product data..."
         >
-          {product && (
+          {product && store && (
             <ProductForm
+              availableCategories={store.categories!}
               onSubmit={handleSubmit}
-              isLoading={updateProduct.isPending}
+              isLoading={updateProduct.isPending || deleteVariant.isPending}
               defaultValues={defaultValues}
               isEdit
               existingImageUrls={product.photos?.map((p) => p.url) || []}
+              onRemoveVariant={handleRemoveVariant}
             />
           )}
         </QueryLoader>
 
-        {/* Cancel Button */}
         <div className="flex justify-end">
           <Button
             type="button"

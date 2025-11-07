@@ -4,7 +4,7 @@ import { ProductVariant } from '@/features/products/types/variant.types.ts';
 
 interface ProductDetailsProps {
   product: Product;
-  selectedVariant: ProductVariant | null;
+  selectedVariant?: ProductVariant;
 }
 
 export function ProductDetails({

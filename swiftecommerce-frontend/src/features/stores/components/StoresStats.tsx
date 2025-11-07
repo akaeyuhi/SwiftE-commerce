@@ -1,8 +1,8 @@
 import { Card, CardContent } from '@/shared/components/ui/Card';
-import { Store } from '@/features/stores/types/store.types.ts';
+import { StoreDto } from '@/features/stores/types/store.types.ts';
 
 interface StoresStatsProps {
-  stores: Store[];
+  stores: StoreDto[];
 }
 
 export function StoresStats({ stores }: StoresStatsProps) {

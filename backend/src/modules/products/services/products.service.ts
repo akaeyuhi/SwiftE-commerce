@@ -25,6 +25,10 @@ import {
   ProductSearchOptions,
 } from 'src/modules/products/types';
 import { ProductSearchRepository } from 'src/modules/products/repositories/product-search.repository';
+import { VariantsService } from 'src/modules/store/variants/variants.service';
+import { CreateVariantDto } from 'src/modules/store/variants/dto/create-variant.dto';
+import { ProductVariant } from 'src/entities/store/product/variant.entity';
+import { UpdateVariantDto } from 'src/modules/store/variants/dto/update-variant.dto';
 
 /**
  * ProductsService
@@ -57,6 +61,7 @@ export class ProductsService extends BaseService<
     private readonly categoriesService: CategoriesService,
     private readonly photoService: ProductPhotoService,
     private readonly productsMapper: ProductsMapper,
+    private readonly variantsService: VariantsService,
     @Inject(IStoreService) private readonly storeService: IStoreService
   ) {
     super(productRepo, productsMapper);
@@ -138,7 +143,7 @@ export class ProductsService extends BaseService<
    * @throws NotFoundException when specified store does not exist
    */
   async create(
-    dto: CreateProductRequestDto,
+    dto: CreateProductDto,
     photos?: Express.Multer.File[],
     mainPhoto?: Express.Multer.File
   ): Promise<ProductDto> {
@@ -150,6 +155,10 @@ export class ProductsService extends BaseService<
       description: dto.description,
       storeId: store.id,
     });
+
+    if (dto.variants && dto.variants.length) {
+      await this.attachVariantsToProduct(product, dto.variants);
+    }
 
     if (dto.categoryIds && dto.categoryIds.length > 1) {
       await this.attachMultipleCategories(product.id, dto.categoryIds);
@@ -165,6 +174,34 @@ export class ProductsService extends BaseService<
       await this.addMainPhoto(product.id, store.id, [firstPhoto]);
       await this.addPhotos(product.id, store.id, savePhotos);
     }
+
+    return this.productsMapper.toDto(
+      (await this.findProductWithRelations(product.id))!
+    );
+  }
+
+  async update(id: string, dto: UpdateProductDto): Promise<ProductDto> {
+    const product = await this.findProductWithRelations(id);
+    if (!product)
+      throw new NotFoundException(`Product with id ${id} not found`);
+
+    if (dto.variants && dto.variants.length) {
+      await this.variantsService.createMultiple(dto.variants);
+    }
+    if (dto.updateVariants && dto.updateVariants.length) {
+      await this.variantsService.updateMultiple(dto.updateVariants);
+    }
+
+    if (dto.categoryIds && dto.categoryIds.length > 1) {
+      await this.attachMultipleCategories(product.id, dto.categoryIds);
+    } else if (dto.categoryIds?.length === 1 || dto.categoryId) {
+      await this.attachCategoryToProduct(
+        product.id,
+        dto.categoryIds?.pop() ?? dto.categoryId!
+      );
+    }
+
+    await super.update(id, dto);
 
     return this.productsMapper.toDto(
       (await this.findProductWithRelations(product.id))!
@@ -543,5 +580,26 @@ export class ProductsService extends BaseService<
     product.categories =
       product.categories?.filter((c) => c.id !== categoryId) || [];
     await this.productRepo.save(product);
+  }
+
+  async attachVariantsToProduct(
+    product: Product,
+    dtos: CreateVariantDto[]
+  ): Promise<ProductVariant[]> {
+    for (const dto of dtos) {
+      if (!dto.productId) {
+        dto.productId = product.id;
+      }
+    }
+    return this.variantsService.createMultiple(dtos);
+  }
+
+  async updateMultiple(
+    productId: string,
+    dtos: UpdateVariantDto[]
+  ): Promise<ProductVariant[]> {
+    const product = await this.findProductWithRelations(productId);
+    if (!product) throw new NotFoundException('Product not found');
+    return this.variantsService.updateMultiple(dtos);
   }
 }

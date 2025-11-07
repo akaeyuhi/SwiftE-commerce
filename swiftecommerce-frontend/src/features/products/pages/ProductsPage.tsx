@@ -3,9 +3,9 @@ import { useSearchParams } from 'react-router-dom';
 import { useAllProducts } from '../hooks/useProducts';
 import { ErrorBoundary } from '@/shared/components/errors/ErrorBoundary';
 import { QueryLoader } from '@/shared/components/loaders/QueryLoader';
-import { ProductsPageHeader } from '../components/ProductsPageHeader';
-import { ProductFiltersSidebar } from '../components/ProductFiltersSidebar';
-import { ProductGrid } from '../components/ProductGrid';
+import { ProductsPageHeader } from '../components/header/ProductsPageHeader';
+import { ProductFiltersSidebar } from '../components/filter/ProductFiltersSidebar';
+import { ProductGrid } from '../components/grid/ProductGrid';
 import { Button } from '@/shared/components/ui/Button';
 import { SlidersHorizontal } from 'lucide-react';
 

@@ -2,11 +2,11 @@ import { useParams } from 'react-router-dom';
 import { useProduct } from '../hooks/useProducts';
 import { ErrorBoundary } from '@/shared/components/errors/ErrorBoundary';
 import { QueryLoader } from '@/shared/components/loaders/QueryLoader';
-import { ProductImageGallery } from '../components/ProductImageGallery';
-import { ProductInfo } from '../components/ProductInfo';
-import { ProductDescription } from '../components/ProductDescription';
-import { ProductDetails } from '../components/ProductDetails';
-import { CustomerReviews } from '../components/CustomerReviews';
+import { ProductImageGallery } from '../components/details/ProductImageGallery';
+import { ProductInfo } from '../components/details/ProductInfo';
+import { ProductDescription } from '../components/details/ProductDescription';
+import { ProductDetails } from '../components/details/ProductDetails';
+import { CustomerReviews } from '../components/details/CustomerReviews';
 import { Button } from '@/shared/components/ui/Button';
 import { useNavigate } from '@/shared/hooks/useNavigate';
 
@@ -33,7 +33,7 @@ export function ProductDetailPage() {
             refetch={refetch}
             loadingMessage="Loading product details..."
           >
-            {product ? (
+            {product && product.variants ? (
               <>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
                   <ProductImageGallery images={product.photos || []} />

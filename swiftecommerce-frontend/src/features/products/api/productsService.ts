@@ -3,6 +3,10 @@ import { API_ENDPOINTS, buildUrl } from '@/config/api.config';
 import { PaginatedResponse } from '@/lib/api/types';
 import { Product } from '../types/product.types';
 import { ProductFilters } from '@/shared/types/filters.types.ts';
+import {
+  CreateProductDto,
+  UpdateProductDto,
+} from '@/features/products/types/dto.types.ts';
 
 export interface ProductStats {
   views: number;
@@ -24,6 +28,24 @@ export interface TopProductsParams {
   limit?: number;
   period?: 'day' | 'week' | 'month' | 'year';
 }
+
+const mapDtoToFormData = (data: Partial<CreateProductDto>) => {
+  const formData = new FormData();
+  if (data.photos && data.photos.length > 0) {
+    Object.entries(data).forEach(([key, value]) => {
+      if (key !== 'photos') {
+        formData.append(key, value as string);
+      }
+    });
+    data.photos.forEach((file) => {
+      formData.append('photos', file);
+    });
+  }
+  if (data.mainPhoto) {
+    formData.append('mainPhoto', data.mainPhoto);
+    return formData;
+  }
+};
 
 export class ProductsService extends BaseService {
   async getAllProducts(
@@ -92,19 +114,11 @@ export class ProductsService extends BaseService {
    */
   async createProduct(
     storeId: string,
-    data: Partial<Product> & { images?: File[] }
+    data: CreateProductDto
   ): Promise<Product> {
     const url = buildUrl(API_ENDPOINTS.PRODUCTS.CREATE, { storeId });
-    if (data.images && data.images.length > 0) {
-      const formData = new FormData();
-      Object.entries(data).forEach(([key, value]) => {
-        if (key !== 'images') {
-          formData.append(key, value as string);
-        }
-      });
-      data.images.forEach((file) => {
-        formData.append('photos', file);
-      });
+    if (data.photos || data.mainPhoto) {
+      const formData = mapDtoToFormData(data);
       return this.client.post<Product>(url, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -121,29 +135,21 @@ export class ProductsService extends BaseService {
   async updateProduct(
     storeId: string,
     productId: string,
-    data: Partial<Product> & { images?: File[] }
+    data: UpdateProductDto
   ): Promise<Product> {
     const url = buildUrl(API_ENDPOINTS.PRODUCTS.UPDATE, {
       storeId,
       id: productId,
     });
-    if (data.images && data.images.length > 0) {
-      const formData = new FormData();
-      Object.entries(data).forEach(([key, value]) => {
-        if (key !== 'images') {
-          formData.append(key, value as string);
-        }
-      });
-      data.images.forEach((file) => {
-        formData.append('photos', file);
-      });
-      return this.client.patch<Product>(url, formData, {
+    if (data.photos || data.mainPhoto) {
+      const formData = mapDtoToFormData(data);
+      return this.client.post<Product>(url, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
     } else {
-      return this.client.patch<Product>(url, data);
+      return this.client.post<Product>(url, data);
     }
   }
 

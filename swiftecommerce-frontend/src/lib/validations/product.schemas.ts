@@ -14,6 +14,7 @@ export const variantSchema = z.object({
     .number()
     .int('Quantity must be a whole number')
     .min(0, 'Quantity cannot be negative'),
+  id: z.string().uuid().optional(),
 });
 
 export const productSchema = z.object({
@@ -38,7 +39,8 @@ export const categorySchema = z.object({
     .min(2, 'Category name must be at least 2 characters')
     .max(255, 'Category name must be less than 255 characters'),
   description: z.string().optional(),
-  parentId: z.string().optional(),
+  parentId: z.string().uuid().optional(),
+  id: z.string().uuid().optional(),
 });
 
 export type VariantFormData = z.infer<typeof variantSchema>;

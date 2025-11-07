@@ -1,4 +1,4 @@
-import { ProductPublicCard } from './ProductPublicCard';
+import { ProductPublicCard } from '../card/ProductPublicCard';
 import { Product } from '../types/product.types';
 import { Card } from '@/shared/components/ui/Card';
 import { Package } from 'lucide-react';
