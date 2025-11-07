@@ -1,7 +1,7 @@
 import { useQuery, UseQueryOptions } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
 import { api } from '@/lib/api';
-import { User } from '@/features/users/types/users.types.ts';
+import { User, UserStats } from '@/features/users/types/users.types.ts';
 import { StoreRole } from '@/features/stores/types/store.types.ts';
 
 export function useUserProfile(
@@ -10,6 +10,17 @@ export function useUserProfile(
   return useQuery({
     queryKey: queryKeys.user.profile(),
     queryFn: () => api.users.getProfile(),
+    staleTime: 5 * 60 * 1000,
+    ...options,
+  });
+}
+
+export function useUserProfileStats(
+  options?: Omit<UseQueryOptions<UserStats>, 'queryKey' | 'queryFn'>
+) {
+  return useQuery({
+    queryKey: queryKeys.user.profileStats(),
+    queryFn: () => api.users.getProfileStats(),
     staleTime: 5 * 60 * 1000,
     ...options,
   });

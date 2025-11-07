@@ -6,6 +6,7 @@ import {
   UpdateProfileDto,
   UpdateUserDto,
   User,
+  UserStats,
 } from '../types/users.types';
 
 export class UsersService extends BaseService {
@@ -60,6 +61,10 @@ export class UsersService extends BaseService {
    */
   async getProfile(): Promise<User> {
     return this.client.get<User>(API_ENDPOINTS.USERS.PROFILE);
+  }
+
+  async getProfileStats(): Promise<UserStats> {
+    return this.client.get<UserStats>(API_ENDPOINTS.USERS.PROFILE_STATS);
   }
 
   /**

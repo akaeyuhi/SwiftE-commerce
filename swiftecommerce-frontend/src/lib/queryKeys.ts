@@ -100,6 +100,7 @@ export const queryKeys = {
   user: {
     all: ['user'] as const,
     profile: () => [...queryKeys.user.all, 'profile'] as const,
+    profileStats: () => [...queryKeys.user.profile(), 'stats'] as const,
     detail: (userId: string) =>
       [...queryKeys.user.all, 'detail', userId] as const,
     roles: (userId: string) =>

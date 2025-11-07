@@ -78,6 +78,12 @@ export class UserController extends BaseController<
     return this.userService.getProfile(userId);
   }
 
+  @Get('profile/stats')
+  async getUserStats(@Req() req: Request) {
+    const userId = (req.user as any)?.id;
+    return this.userService.getUserStats(userId);
+  }
+
   /**
    * Update current user's profile
    */
