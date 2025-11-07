@@ -1,4 +1,10 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/shared/components/ui/Card';
 import { Link } from '@/shared/components/ui/Link';
 import { ROUTES } from '@/app/routes/routes';
 import { Package, ShoppingCart, TrendingUp } from 'lucide-react';

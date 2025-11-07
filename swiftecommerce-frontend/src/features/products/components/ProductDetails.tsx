@@ -1,6 +1,6 @@
 import { Card, CardContent } from '@/shared/components/ui/Card';
 import { Product } from '../types/product.types';
-import {ProductVariant} from "@/features/products/types/variant.types.ts";
+import { ProductVariant } from '@/features/products/types/variant.types.ts';
 
 interface ProductDetailsProps {
   product: Product;
