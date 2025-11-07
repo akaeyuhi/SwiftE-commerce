@@ -1,6 +1,12 @@
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/shared/components/ui/Card';
 import { ImageUpload } from '@/shared/components/forms/ImageUpload.tsx';
 import { Button } from '@/shared/components/ui/Button';
 import { Save } from 'lucide-react';

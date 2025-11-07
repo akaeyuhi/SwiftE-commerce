@@ -60,9 +60,7 @@ export function StoreInfoForm({ store }: StoreInfoFormProps) {
     <Card>
       <CardHeader>
         <div className="flex items-center gap-3">
-          <div
-            className="h-10 w-10 bg-primary/10 rounded-lg flex items-center justify-center"
-          >
+          <div className="h-10 w-10 bg-primary/10 rounded-lg flex items-center justify-center">
             <Store className="h-5 w-5 text-primary" />
           </div>
           <div>

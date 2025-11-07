@@ -8,9 +8,7 @@ export function MyStoresHeader() {
   return (
     <div className="flex items-center justify-between mb-8">
       <div>
-        <h1 className="text-3xl font-bold text-foreground mb-2">
-          My Stores
-        </h1>
+        <h1 className="text-3xl font-bold text-foreground mb-2">My Stores</h1>
         <p className="text-muted-foreground">
           Manage your stores and team access
         </p>

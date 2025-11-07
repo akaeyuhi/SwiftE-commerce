@@ -34,7 +34,12 @@ interface InviteMemberDialogProps {
   onSuccess: () => void;
 }
 
-export function InviteMemberDialog({ storeId, open, onOpenChange, onSuccess }: InviteMemberDialogProps) {
+export function InviteMemberDialog({
+  storeId,
+  open,
+  onOpenChange,
+  onSuccess,
+}: InviteMemberDialogProps) {
   const { assignRole } = useUserMutations();
 
   const {
@@ -62,7 +67,7 @@ export function InviteMemberDialog({ storeId, open, onOpenChange, onSuccess }: I
         {
           userId: checkUser.id,
           roleData: {
-            storeId: storeId,
+            storeId,
             roleName: data.role,
           },
         },
@@ -181,10 +186,7 @@ export function InviteMemberDialog({ storeId, open, onOpenChange, onSuccess }: I
             >
               Cancel
             </Button>
-            <Button
-              type="submit"
-              loading={assignRole.isPending}
-            >
+            <Button type="submit" loading={assignRole.isPending}>
               Send Invitation
             </Button>
           </DialogFooter>

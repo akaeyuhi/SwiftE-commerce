@@ -1,6 +1,12 @@
 import { Card, CardContent } from '@/shared/components/ui/Card';
 import { Input } from '@/shared/components/forms/Input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/components/ui/select';
 import { Search } from 'lucide-react';
 import { Button } from '@/shared/components/ui/Button';
 import { CategoryDto } from '../../categories/types/categories.types';
@@ -15,7 +21,15 @@ interface ProductFiltersProps {
   categories: CategoryDto[];
 }
 
-export function ProductFilters({ searchQuery, setSearchQuery, selectedCategory, setSelectedCategory, sortBy, setSortBy, categories }: ProductFiltersProps) {
+export function ProductFilters({
+  searchQuery,
+  setSearchQuery,
+  selectedCategory,
+  setSelectedCategory,
+  sortBy,
+  setSortBy,
+  categories,
+}: ProductFiltersProps) {
   return (
     <Card className="mb-6">
       <CardContent className="p-6">
@@ -39,12 +53,8 @@ export function ProductFilters({ searchQuery, setSearchQuery, selectedCategory, 
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="popular">Popular</SelectItem>
-                <SelectItem value="price-low">
-                  Price: Low to High
-                </SelectItem>
-                <SelectItem value="price-high">
-                  Price: High to Low
-                </SelectItem>
+                <SelectItem value="price-low">Price: Low to High</SelectItem>
+                <SelectItem value="price-high">Price: High to Low</SelectItem>
                 <SelectItem value="rating">Highest Rated</SelectItem>
               </SelectContent>
             </Select>

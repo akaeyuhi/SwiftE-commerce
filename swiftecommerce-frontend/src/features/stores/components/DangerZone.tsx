@@ -1,6 +1,12 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/shared/components/ui/Card';
 import { AlertTriangle } from 'lucide-react';
 import { DeleteStoreDialog } from '@/features/stores/components/DeleteStoreDialog.tsx';
 import { useStoreMutations } from '@/features/stores/hooks/useStoreMutations.ts';

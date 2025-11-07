@@ -1,8 +1,18 @@
 import { Card, CardContent } from '@/shared/components/ui/Card';
 import { Button } from '@/shared/components/ui/Button';
-import { Store as StoreIcon, MapPin, Heart, Share2, Star, Package } from 'lucide-react';
+import {
+  Store as StoreIcon,
+  MapPin,
+  Heart,
+  Share2,
+  Star,
+  Package,
+} from 'lucide-react';
 import { StoreDto } from '../types/store.types';
-import { formatCurrency, formatLargeNumber } from '@/shared/utils/statsCalculators';
+import {
+  formatCurrency,
+  formatLargeNumber,
+} from '@/shared/utils/statsCalculators';
 
 interface StorePublicHeaderProps {
   store: StoreDto;

@@ -16,9 +16,7 @@ export function CreateStoreHeader() {
       <h1 className="text-3xl font-bold text-foreground mb-2">
         Create Your Store
       </h1>
-      <p className="text-muted-foreground">
-        Start selling in just a few steps
-      </p>
+      <p className="text-muted-foreground">Start selling in just a few steps</p>
     </div>
   );
 }

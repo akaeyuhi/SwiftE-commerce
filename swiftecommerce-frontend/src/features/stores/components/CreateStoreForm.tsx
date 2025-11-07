@@ -82,9 +82,7 @@ export function CreateStoreForm({ onSuccess }: CreateStoreFormProps) {
       <Card>
         <CardHeader>
           <CardTitle>Store Images</CardTitle>
-          <CardDescription>
-            Add banner and logo for your store
-          </CardDescription>
+          <CardDescription>Add banner and logo for your store</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <ImageUpload

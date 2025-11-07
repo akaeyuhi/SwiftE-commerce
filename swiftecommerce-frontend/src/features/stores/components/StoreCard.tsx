@@ -3,7 +3,16 @@ import { Badge } from '@/shared/components/ui/Badge';
 import { Button } from '@/shared/components/ui/Button';
 import { useNavigate } from '@/shared/hooks/useNavigate';
 import { Store } from '../pages/MyStoresPage';
-import { Crown, Eye, Package, Settings, Shield, Store as StoreIcon, Users, BarChart3 } from 'lucide-react';
+import {
+  Crown,
+  Eye,
+  Package,
+  Settings,
+  Shield,
+  Store as StoreIcon,
+  Users,
+  BarChart3,
+} from 'lucide-react';
 
 interface StoreCardProps {
   store: Store;
@@ -74,9 +83,7 @@ export function StoreCard({ store }: StoreCardProps) {
               <p className="text-2xl font-bold text-foreground">
                 {store.productCount || 0}
               </p>
-              <p className="text-xs text-muted-foreground">
-                Products
-              </p>
+              <p className="text-xs text-muted-foreground">Products</p>
             </div>
             <div className="text-center">
               <p className="text-2xl font-bold text-foreground">
@@ -112,8 +119,7 @@ export function StoreCard({ store }: StoreCardProps) {
               <Package className="h-4 w-4 mr-2" />
               Products
             </Button>
-            {(store.role === 'OWNER' ||
-              store.role === 'STORE_ADMIN') && (
+            {(store.role === 'OWNER' || store.role === 'STORE_ADMIN') && (
               <Button
                 variant="outline"
                 size="sm"

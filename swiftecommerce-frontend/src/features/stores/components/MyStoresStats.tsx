@@ -6,7 +6,10 @@ interface MyStoresStatsProps {
   teamMemberStoresCount: number;
 }
 
-export function MyStoresStats({ ownedStoresCount, teamMemberStoresCount }: MyStoresStatsProps) {
+export function MyStoresStats({
+  ownedStoresCount,
+  teamMemberStoresCount,
+}: MyStoresStatsProps) {
   const totalAccess = ownedStoresCount + teamMemberStoresCount;
 
   return (

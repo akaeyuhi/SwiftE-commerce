@@ -1,4 +1,10 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/shared/components/ui/Card';
 import { Link } from '@/shared/components/ui/Link';
 import { ROUTES } from '@/app/routes/routes';
 import { useTopProducts } from '../hooks/useStores';
@@ -11,7 +17,11 @@ interface TopProductsProps {
 }
 
 export function TopProducts({ storeId }: TopProductsProps) {
-  const { data: topProducts = [], isLoading, error } = useTopProducts(storeId, 4);
+  const {
+    data: topProducts = [],
+    isLoading,
+    error,
+  } = useTopProducts(storeId, 4);
 
   return (
     <Card>
