@@ -30,9 +30,7 @@ export function StoresStats({ stores }: StoresStatsProps) {
       </Card>
       <Card>
         <CardContent className="p-6 text-center">
-          <p className="text-3xl font-bold text-info mb-1">
-            {totalRevenue}
-          </p>
+          <p className="text-3xl font-bold text-info mb-1">{totalRevenue}</p>
           <p className="text-sm text-muted-foreground">Total revenue</p>
         </CardContent>
       </Card>
