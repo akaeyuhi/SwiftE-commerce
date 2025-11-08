@@ -53,7 +53,7 @@ export class UserController extends BaseController<
   @UploadAvatar()
   async uploadAvatar(
     @Req() req: Request,
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile() file: Express.Multer.File
   ): Promise<UserDto> {
     const userId = (req.user as any)?.id;
     if (!userId) {

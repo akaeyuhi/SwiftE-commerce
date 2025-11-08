@@ -6,7 +6,8 @@ import {
   Get,
   HttpCode,
   HttpStatus,
-  Param, ParseFilePipe,
+  Param,
+  ParseFilePipe,
   ParseUUIDPipe,
   Post,
   Query,
@@ -38,6 +39,9 @@ import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { StoreRole } from 'src/common/decorators/store-role.decorator';
 import { ApiResponse } from '@nestjs/swagger';
 import { ProductSearchOptions } from 'src/modules/products/types';
+import { Pagination } from 'src/common/decorators/pagination.decorator';
+import { PaginationDto } from 'src/common/dtos/pagination.dto';
+import { PaginatedResponse } from 'src/common/decorators/paginated-response.decorator';
 
 /**
  * ProductsController
@@ -145,10 +149,6 @@ export class ProductsController extends BaseController<
    *   "offset": 0
    * }
    */
-import { Pagination } from 'src/common/decorators/pagination.decorator';
-import { PaginationDto } from 'src/common/dtos/pagination.dto';
-import { PaginatedResponse } from 'src/common/decorators/paginated-response.decorator';
-
   @Post('advanced-search')
   @HttpCode(HttpStatus.OK)
   @StoreRole(StoreRoles.ADMIN, StoreRoles.MODERATOR)
@@ -156,7 +156,7 @@ import { PaginatedResponse } from 'src/common/decorators/paginated-response.deco
   async advancedSearch(
     @Param('storeId', new ParseUUIDPipe()) storeId: string,
     @Body() searchDto: AdvancedSearchDto,
-    @Pagination() pagination: PaginationDto,
+    @Pagination() pagination: PaginationDto
   ): Promise<[ProductListDto[], number]> {
     return this.productsService.paginate(pagination, {
       storeId,
