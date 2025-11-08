@@ -5,11 +5,12 @@ import {
 } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
 import { VariantsRepository } from 'src/modules/store/variants/variants.repository';
-import { BaseService } from 'src/common/abstracts/base.service';
+import { PaginationParams } from 'src/common/decorators/pagination.decorator';
 import { ProductVariant } from 'src/entities/store/product/variant.entity';
 import { CreateVariantDto } from 'src/modules/store/variants/dto/create-variant.dto';
 import { UpdateVariantDto } from 'src/modules/store/variants/dto/update-variant.dto';
 import { InventoryService } from 'src/modules/store/inventory/inventory.service';
+import { BaseService } from 'src/common/abstracts/base.service';
 
 /**
  * VariantsService
@@ -182,9 +183,15 @@ export class VariantsService extends BaseService<
    * @param productId - product id
    * @returns ProductVariant[]
    */
-  async listByProduct(productId: string): Promise<ProductVariant[]> {
-    return this.variantRepo.find({
+  async listByProduct(
+    productId: string,
+    pagination?: PaginationParams
+  ): Promise<[ProductVariant[], number]> {
+    const { limit = 10, offset = 0 } = pagination || {};
+    return this.variantRepo.findAndCount({
       where: { productId },
+      take: limit,
+      skip: offset,
     });
   }
 

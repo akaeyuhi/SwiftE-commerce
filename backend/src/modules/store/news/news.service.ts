@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { BaseService } from 'src/common/abstracts/base.service';
+import { PaginationParams } from 'src/common/decorators/pagination.decorator';
 import { NewsPost } from 'src/entities/store/news-post.entity';
 import { CreateNewsDto } from './dto/create-news.dto';
 import { UpdateNewsDto } from './dto/update-news.dto';
@@ -34,17 +35,21 @@ export class NewsService extends BaseService<
    */
   async findAllByStore(
     storeId: string,
-    onlyPublished = false
-  ): Promise<NewsPost[]> {
+    onlyPublished = false,
+    pagination?: PaginationParams
+  ): Promise<[NewsPost[], number]> {
+    const { limit = 10, offset = 0 } = pagination || {};
     const where: any = { storeId };
     if (onlyPublished) {
       where.isPublished = true;
     }
 
-    return this.newsRepo.find({
+    return this.newsRepo.findAndCount({
       where,
       relations: ['author', 'store'],
       order: { publishedAt: 'DESC', createdAt: 'DESC' },
+      take: limit,
+      skip: offset,
     });
   }
 

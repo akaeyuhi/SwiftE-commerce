@@ -19,6 +19,11 @@ import { StoreRolesGuard } from 'src/modules/authorization/guards/store-roles.gu
 import { NewsPostDto } from 'src/modules/store/news/dto/news.dto';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { AccessPolicies } from 'src/modules/authorization/policy/policy.types';
+import {
+  Pagination,
+  PaginationParams,
+} from 'src/common/decorators/pagination.decorator';
+import { PaginatedResponse } from 'src/common/decorators/paginated-response.decorator';
 import { Request } from 'express';
 
 /**
@@ -81,14 +86,17 @@ export class NewsController extends BaseController<
    * at controller level if desired (not included here to keep API minimal).
    *
    * @param storeId - store id (UUID)
+   * @param pagination
    */
   @Get('store-all')
+  @PaginatedResponse(NewsPost)
   async findAllByStore(
-    @Param('storeId', new ParseUUIDPipe()) storeId: string
-  ): Promise<NewsPost[]> {
+    @Param('storeId', new ParseUUIDPipe()) storeId: string,
+    @Pagination() pagination: PaginationParams
+  ): Promise<[NewsPost[], number]> {
     // default: return all posts (including unpublished). If you want only published,
     // add a query param and pass `onlyPublished` to service.
-    return this.newsService.findAllByStore(storeId, false);
+    return this.newsService.findAllByStore(storeId, false, pagination);
   }
 
   /**

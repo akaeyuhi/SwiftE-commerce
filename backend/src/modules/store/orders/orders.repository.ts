@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { BaseRepository } from 'src/common/abstracts/base.repository';
+import { PaginationParams } from 'src/common/decorators/pagination.decorator';
 import { Order } from 'src/entities/store/product/order.entity';
 
 /**
@@ -18,22 +19,34 @@ export class OrdersRepository extends BaseRepository<Order> {
   /**
    * Convenience: find orders for a user (with store and items).
    */
-  async findByUser(userId: string): Promise<Order[]> {
-    return this.find({
+  async findByUser(
+    userId: string,
+    pagination?: PaginationParams
+  ): Promise<[Order[], number]> {
+    const { limit = 10, offset = 0 } = pagination || {};
+    return this.findAndCount({
       where: { userId },
       relations: ['store', 'items', 'items.variant', 'items.product'],
       order: { createdAt: 'DESC' },
+      take: limit,
+      skip: offset,
     });
   }
 
   /**
    * Convenience: find orders for a store (with items and user).
    */
-  async findByStore(storeId: string): Promise<Order[]> {
-    return this.find({
+  async findByStore(
+    storeId: string,
+    pagination?: PaginationParams
+  ): Promise<[Order[], number]> {
+    const { limit = 10, offset = 0 } = pagination || {};
+    return this.findAndCount({
       where: { storeId },
       relations: ['user', 'items', 'items.variant', 'items.product'],
       order: { createdAt: 'DESC' },
+      take: limit,
+      skip: offset,
     });
   }
 

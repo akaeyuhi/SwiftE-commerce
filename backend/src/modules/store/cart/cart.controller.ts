@@ -30,6 +30,10 @@ import { CartItemDto } from 'src/modules/store/cart/cart-item/dto/cart-item.dto'
 import { CartItem } from 'src/entities/store/cart/cart-item.entity';
 import { EntityOwnerGuard } from 'src/modules/authorization/guards/entity-owner.guard';
 import { EntityOwner } from 'src/common/decorators/entity-owner.decorator';
+import {
+  Pagination,
+  PaginationParams,
+} from 'src/common/decorators/pagination.decorator';
 
 /**
  * CartController
@@ -187,9 +191,25 @@ export class CartController extends BaseController<
   @Get('merged')
   async getUserMergedCarts(
     @Param('storeId', new ParseUUIDPipe()) _storeId: string,
-    @Param('userId', new ParseUUIDPipe()) userId: string
-  ): Promise<{ userId: string; result: ShoppingCart[] }> {
-    return this.cartService.getUserMergedCarts(userId);
+    @Param('userId', new ParseUUIDPipe()) userId: string,
+    @Pagination() pagination: PaginationParams
+  ): Promise<{
+    userId: string;
+    data: ShoppingCart[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
+    const {
+      result: [data, total],
+    } = await this.cartService.getUserMergedCarts(userId, pagination);
+    return {
+      userId,
+      data,
+      total,
+      page: pagination.page,
+      limit: pagination.limit,
+    };
   }
 
   @Patch('sync')

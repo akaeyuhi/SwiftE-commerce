@@ -16,6 +16,10 @@ import { StoreRolesGuard } from 'src/modules/authorization/guards/store-roles.gu
 import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';
 import { EntityOwnerGuard } from 'src/modules/authorization/guards/entity-owner.guard';
 import { AdminRoles } from 'src/common/enums/admin.enum';
+import {
+  Pagination,
+  PaginationParams,
+} from 'src/common/decorators/pagination.decorator';
 
 /**
  * Abstract base HTTP controller providing standard CRUD endpoints.
@@ -124,7 +128,10 @@ export abstract class BaseController<
    * @returns Promise resolving to the list of entities or transfer objects.
    */
   @Get()
-  findAll(): Promise<Entity[] | TransferDto[]> {
+  findAll(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    @Pagination() _pagination?: PaginationParams
+  ): Promise<Entity[] | TransferDto[] | [Entity[], number]> {
     return this.service.findAll();
   }
 

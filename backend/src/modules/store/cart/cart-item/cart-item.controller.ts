@@ -17,6 +17,11 @@ import { CartItem } from 'src/entities/store/cart/cart-item.entity';
 import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';
 import { StoreRolesGuard } from 'src/modules/authorization/guards/store-roles.guard';
 import { AccessPolicies } from 'src/modules/authorization/policy/policy.types';
+import {
+  Pagination,
+  PaginationParams,
+} from 'src/common/decorators/pagination.decorator';
+import { PaginatedResponse } from 'src/common/decorators/paginated-response.decorator';
 import { AdminGuard } from 'src/modules/authorization/guards/admin.guard';
 
 /**
@@ -51,13 +56,15 @@ export class CartItemController extends BaseController<
     super(cartItemService);
   }
 
-  @Get()
+  @Get('/paginated')
+  @PaginatedResponse(CartItem)
   async findAllForCart(
     @Param('storeId') _storeId: string,
     @Param('userId', new ParseUUIDPipe()) _userId: string,
-    @Param('cartId', new ParseUUIDPipe()) cartId: string
-  ): Promise<CartItem[]> {
-    return this.cartItemService.findByCart(cartId);
+    @Param('cartId', new ParseUUIDPipe()) cartId: string,
+    @Pagination() pagination: PaginationParams
+  ): Promise<[CartItem[], number]> {
+    return this.cartItemService.findByCartPaginated(cartId, pagination);
   }
 
   /**

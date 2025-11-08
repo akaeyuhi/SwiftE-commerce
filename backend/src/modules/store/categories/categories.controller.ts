@@ -18,6 +18,11 @@ import { StoreRolesGuard } from 'src/modules/authorization/guards/store-roles.gu
 import { CategoryDto } from 'src/modules/store/categories/dto/category.dto';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { AccessPolicies } from 'src/modules/authorization/policy/policy.types';
+import {
+  Pagination,
+  PaginationParams,
+} from 'src/common/decorators/pagination.decorator';
+import { PaginatedResponse } from 'src/common/decorators/paginated-response.decorator';
 
 /**
  * CategoriesController
@@ -68,6 +73,14 @@ export class CategoriesController extends BaseController<
 
   constructor(private readonly categoriesService: CategoriesService) {
     super(categoriesService);
+  }
+
+  @Get()
+  @PaginatedResponse(Category)
+  async findAll(
+    @Pagination() pagination: PaginationParams
+  ): Promise<[Category[], number]> {
+    return this.categoriesService.paginate(pagination);
   }
 
   /**

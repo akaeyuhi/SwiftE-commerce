@@ -6,7 +6,8 @@ import {
 } from '@nestjs/common';
 import { CreateOrderDto } from 'src/modules/store/orders/dto/create-order.dto';
 import { UpdateOrderDto } from 'src/modules/store/orders/dto/update-order.dto';
-import { BaseService } from 'src/common/abstracts/base.service';
+
+import { PaginationParams } from 'src/common/decorators/pagination.decorator';
 import { Order } from 'src/entities/store/product/order.entity';
 import { OrdersRepository } from 'src/modules/store/orders/orders.repository';
 import { OrderItemRepository } from 'src/modules/store/orders/order-item/order-item.repository';
@@ -27,6 +28,7 @@ import {
 import { OrderInfo } from 'src/common/embeddables/order-info.embeddable';
 import { UpdateShippingInfoDto } from 'src/modules/store/orders/dto/update-shipping-info.dto';
 import { domainEventFactory } from 'src/common/events/helper';
+import { BaseService } from 'src/common/abstracts/base.service';
 
 /**
  * OrdersService
@@ -254,16 +256,22 @@ export class OrdersService extends BaseService<
    * Find orders for a user (includes items & store).
    * @param userId
    */
-  async findByUser(userId: string): Promise<Order[]> {
-    return this.orderRepo.findByUser(userId);
+  async findByUser(
+    userId: string,
+    pagination?: PaginationParams
+  ): Promise<[Order[], number]> {
+    return this.orderRepo.findByUser(userId, pagination);
   }
 
   /**
    * Find orders for a store (includes items & user).
    * @param storeId
    */
-  async findByStore(storeId: string): Promise<Order[]> {
-    return this.orderRepo.findByStore(storeId);
+  async findByStore(
+    storeId: string,
+    pagination?: PaginationParams
+  ): Promise<[Order[], number]> {
+    return this.orderRepo.findByStore(storeId, pagination);
   }
 
   /**

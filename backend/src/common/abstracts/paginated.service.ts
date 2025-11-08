@@ -50,6 +50,7 @@ export abstract class PaginatedService<
   CreateDto = Partial<Entity>,
   UpdateDto = Partial<Entity>,
   TransferDto = Entity,
+  PaginatedDto = Entity | TransferDto,
 > extends BaseService<Entity, CreateDto, UpdateDto, TransferDto> {
   /**
    * Execute a paginated query over the entity set.
@@ -65,6 +66,6 @@ export abstract class PaginatedService<
    */
   abstract paginate(
     pagination: PaginationDto,
-    filter?: Record<string, any>,
-  ): Promise<[TransferDto[], number]>;
+    filter?: Record<string, any>
+  ): Promise<[PaginatedDto[], number]>;
 }

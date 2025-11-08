@@ -5,7 +5,8 @@ import {
 } from '@nestjs/common';
 import { CreateStoreDto } from './dto/create-store.dto';
 import { UpdateStoreDto } from './dto/update-store.dto';
-import { BaseService } from 'src/common/abstracts/base.service';
+import { PaginationParams } from 'src/common/decorators/pagination.decorator';
+import { AdvancedStoreSearchDto } from './dto/advanced-store-search.dto';
 import { Store } from 'src/entities/store/store.entity';
 import { StoreRepository } from 'src/modules/store/store.repository';
 import {
@@ -18,13 +19,15 @@ import { StoreMapper } from 'src/modules/store/store.mapper';
 import { StoreRole } from 'src/entities/user/authentication/store-role.entity';
 import { StoreSearchOptions } from 'src/modules/store/types';
 import { StoreFileService } from './store-file/store-file.service';
+import { PaginatedService } from 'src/common/abstracts/paginated.service';
 
 @Injectable()
-export class StoreService extends BaseService<
+export class StoreService extends PaginatedService<
   Store,
   CreateStoreDto,
   UpdateStoreDto,
-  StoreDto
+  StoreDto,
+  StoreSearchResultDto
 > {
   constructor(
     private readonly storeRepo: StoreRepository,
@@ -32,6 +35,25 @@ export class StoreService extends BaseService<
     private readonly storeFileService: StoreFileService
   ) {
     super(storeRepo, mapper);
+  }
+
+  async paginate(
+    options: PaginationParams,
+    searchDto?: AdvancedStoreSearchDto
+  ): Promise<[StoreSearchResultDto[], number]> {
+    const { limit, offset } = options;
+    const { stores, total } = await this.storeRepo.advancedStoreSearch({
+      ...searchDto,
+      limit,
+      offset,
+    });
+
+    const storeDtos = stores.map((store) => ({
+      ...this.mapper.toListDto(store),
+      matchType: 'none' as const,
+    }));
+
+    return [storeDtos, total];
   }
 
   async uploadFiles(

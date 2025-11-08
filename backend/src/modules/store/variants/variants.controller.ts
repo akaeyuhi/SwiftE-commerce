@@ -32,6 +32,11 @@ import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';
 import { StoreRolesGuard } from 'src/modules/authorization/guards/store-roles.guard';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { AccessPolicies } from 'src/modules/authorization/policy/policy.types';
+import {
+  Pagination,
+  PaginationParams,
+} from 'src/common/decorators/pagination.decorator';
+import { PaginatedResponse } from 'src/common/decorators/paginated-response.decorator';
 
 /**
  * VariantsController
@@ -107,11 +112,13 @@ export class VariantsController extends BaseController<
     description: 'List of product variants',
     type: () => [ProductVariant],
   })
+  @PaginatedResponse(ProductVariant)
   async findAllProductVariants(
     @Param('storeId', new ParseUUIDPipe()) storeId: string,
-    @Param('productId', new ParseUUIDPipe()) productId: string
-  ): Promise<ProductVariant[]> {
-    return this.variantsService.listByProduct(productId);
+    @Param('productId', new ParseUUIDPipe()) productId: string,
+    @Pagination() pagination: PaginationParams
+  ): Promise<[ProductVariant[], number]> {
+    return this.variantsService.listByProduct(productId, pagination);
   }
 
   /**
