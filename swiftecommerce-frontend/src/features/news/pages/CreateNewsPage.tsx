@@ -1,43 +1,32 @@
-import { useState } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
 import { Button } from '@/shared/components/ui/Button';
 import { Link } from '@/shared/components/ui/Link';
 import { useNavigate } from '@/shared/hooks/useNavigate';
-import { ArrowLeft, Sparkles } from 'lucide-react';
-import { toast } from 'sonner';
+import { ArrowLeft } from 'lucide-react';
 import { NewsForm, NewsFormData } from '../components/NewsForm';
-import { Badge } from '@/shared/components/ui/Badge';
+import { useNewsMutations } from '../hooks/useNews';
 
 export function CreateNewsPage() {
   const { storeId } = useParams<{ storeId: string }>();
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(false);
+  const { createPost } = useNewsMutations(storeId!);
   const location = useLocation();
   const aiGeneratedData = location.state?.aiGenerated;
   const defaultValues = aiGeneratedData
     ? {
         title: aiGeneratedData.title || '',
-        excerpt: aiGeneratedData.excerpt || '',
         content: aiGeneratedData.content || '',
         tags: aiGeneratedData.tags || [],
       }
     : undefined;
 
-  const handleSubmit = async (data: NewsFormData) => {
-    setIsLoading(true);
-    try {
-      // TODO: API call
-      // await newsService.createNews(storeId!, data)
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+  const handleSubmit = async (data: NewsFormData, newImages: File[]) => {
+    await createPost.mutateAsync({ ...data, photos: [...newImages] });
+    navigate.to(`/store/${storeId}/news/management`);
+  };
 
-      console.log('Creating news:', data);
-      toast.success('News published successfully!');
-      navigate.to(`/store/${storeId}/news`);
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to publish news');
-    } finally {
-      setIsLoading(false);
-    }
+  const onGenerate = () => {
+    console.log('generate');
   };
 
   return (
@@ -52,12 +41,6 @@ export function CreateNewsPage() {
           <ArrowLeft className="h-4 w-4" />
           Back to News
         </Link>
-        {aiGeneratedData && (
-          <Badge variant="success" className="mb-4">
-            <Sparkles className="h-3 w-3 mr-1" />
-            AI Generated Content
-          </Badge>
-        )}
         <h1 className="text-3xl font-bold text-foreground mb-2">
           Create News Post
         </h1>
@@ -69,8 +52,9 @@ export function CreateNewsPage() {
       {/* Form */}
       <NewsForm
         onSubmit={handleSubmit}
-        isLoading={isLoading}
+        isLoading={createPost.isPending}
         defaultValues={defaultValues}
+        onGenerate={onGenerate}
       />
 
       {/* Cancel */}
@@ -78,8 +62,8 @@ export function CreateNewsPage() {
         <Button
           type="button"
           variant="outline"
-          onClick={() => navigate.to(`/store/${storeId}/news`)}
-          disabled={isLoading}
+          onClick={() => navigate.to(`/store/${storeId}/news/management`)}
+          disabled={createPost.isPending}
         >
           Cancel
         </Button>

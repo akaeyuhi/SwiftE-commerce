@@ -7,6 +7,7 @@ import {
   Post,
   Put,
   Req,
+  UploadedFiles,
   UseGuards,
 } from '@nestjs/common';
 import { NewsService } from 'src/modules/store/news/news.service';
@@ -25,6 +26,7 @@ import {
 } from 'src/common/decorators/pagination.decorator';
 import { PaginatedResponse } from 'src/common/decorators/paginated-response.decorator';
 import { Request } from 'express';
+import { UploadNewsFiles } from 'src/common/decorators/upload-news-files.decorator';
 
 /**
  * NewsController
@@ -104,14 +106,31 @@ export class NewsController extends BaseController<
    * Author is taken from the authenticated request (req.user.id) when available.
    */
   @Post('/create')
+  @UploadNewsFiles()
   async createWithRelations(
     @Param('storeId', new ParseUUIDPipe()) storeId: string,
     @Body() dto: CreateNewsDto,
-    @Req() req: Request
+    @Req() req: Request,
+    @UploadedFiles()
+    files: { mainPhoto?: Express.Multer.File[]; photos?: Express.Multer.File[] }
   ): Promise<NewsPost | NewsPostDto> {
     const authorId = (req as any).user?.id;
-    const enriched = { ...dto, storeId };
+    const mainPhoto = files.mainPhoto?.[0];
+    const photos = files.photos;
+    const enriched = { ...dto, storeId, mainPhoto, photos };
     return this.newsService.createWithRelations(enriched, authorId);
+  }
+
+  @Post(':id/upload-files')
+  @UploadNewsFiles()
+  async uploadFiles(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @UploadedFiles()
+    files: { mainPhoto?: Express.Multer.File[]; photos?: Express.Multer.File[] }
+  ): Promise<NewsPost> {
+    const mainPhoto = files.mainPhoto?.[0];
+    const photos = files.photos;
+    return this.newsService.uploadFiles(id, mainPhoto, photos);
   }
 
   /**

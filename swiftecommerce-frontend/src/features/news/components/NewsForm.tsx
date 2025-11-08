@@ -11,13 +11,13 @@ import {
   CardTitle,
 } from '@/shared/components/ui/Card';
 import { Badge } from '@/shared/components/ui/Badge';
-import { Upload, X } from 'lucide-react';
+import { Wand2, X } from 'lucide-react';
 import { useState } from 'react';
 import { Textarea } from '@/shared/components/forms/Textarea.tsx';
+import { MultiImageUpload } from '@/shared/components/forms/MultiImageUpload.tsx';
 
 const newsSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters'),
-  excerpt: z.string().min(10, 'Excerpt must be at least 10 characters'),
   content: z.string().min(50, 'Content must be at least 50 characters'),
   tags: z.array(z.string()).min(1, 'At least one tag is required'),
 });
@@ -26,11 +26,12 @@ export type NewsFormData = z.infer<typeof newsSchema>;
 
 interface NewsFormProps {
   defaultValues?: Partial<NewsFormData>;
-  onSubmit: (data: NewsFormData) => Promise<void>;
+  onSubmit: (data: NewsFormData, newImages: File[]) => Promise<void>;
   isLoading: boolean;
   isEdit?: boolean;
-  existingImage?: string;
-  onRemoveImage?: () => void;
+  existingImageUrls?: string[];
+  onRemoveExistingImage?: (index: number) => void;
+  onGenerate?: () => void;
 }
 
 export function NewsForm({
@@ -38,10 +39,11 @@ export function NewsForm({
   onSubmit,
   isLoading,
   isEdit = false,
-  existingImage,
-  onRemoveImage,
+  existingImageUrls = [],
+  onRemoveExistingImage,
+  onGenerate,
 }: NewsFormProps) {
-  const [image, setImage] = useState<File | null>(null);
+  const [newImages, setNewImages] = useState<File[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [tags, setTags] = useState<string[]>(defaultValues?.tags || []);
 
@@ -54,23 +56,10 @@ export function NewsForm({
     resolver: zodResolver(newsSchema),
     defaultValues: defaultValues || {
       title: '',
-      excerpt: '',
       content: '',
       tags: [],
     },
   });
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setImage(file);
-    }
-  };
-
-  const removeImage = () => {
-    setImage(null);
-    onRemoveImage?.();
-  };
 
   const addTag = () => {
     if (tagInput.trim() && !tags.includes(tagInput.trim())) {
@@ -88,7 +77,7 @@ export function NewsForm({
   };
 
   const handleFormSubmit = async (data: NewsFormData) => {
-    await onSubmit({ ...data, tags });
+    await onSubmit({ ...data, tags }, newImages);
   };
 
   return (
@@ -107,15 +96,6 @@ export function NewsForm({
             />
           </FormField>
 
-          <FormField label="Excerpt" error={errors.excerpt} required>
-            <Textarea
-              {...register('excerpt')}
-              placeholder="Brief summary of the news..."
-              rows={2}
-              error={!!errors.excerpt}
-            />
-          </FormField>
-
           <FormField label="Content" error={errors.content} required>
             <Textarea
               {...register('content')}
@@ -124,6 +104,17 @@ export function NewsForm({
               error={!!errors.content}
             />
           </FormField>
+          {onGenerate && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onGenerate}
+            >
+              <Wand2 className="h-4 w-4 mr-2" />
+              Generate with AI
+            </Button>
+          )}
         </CardContent>
       </Card>
 
@@ -138,7 +129,7 @@ export function NewsForm({
               value={tagInput}
               onChange={(e) => setTagInput(e.target.value)}
               placeholder="Add a tag..."
-              onKeyPress={(e) =>
+              onKeyDown={(e) =>
                 e.key === 'Enter' && (e.preventDefault(), addTag())
               }
             />
@@ -172,61 +163,17 @@ export function NewsForm({
       {/* Featured Image */}
       <Card>
         <CardHeader>
-          <CardTitle>Featured Image (Optional)</CardTitle>
+          <CardTitle>Images</CardTitle>
         </CardHeader>
         <CardContent>
-          {(existingImage || image) && (
-            <div className="mb-4">
-              <div className="relative group aspect-video bg-muted rounded-lg overflow-hidden">
-                {image ? (
-                  <img
-                    src={URL.createObjectURL(image)}
-                    alt="Preview"
-                    className="w-full h-full object-cover"
-                  />
-                ) : existingImage ? (
-                  <img
-                    src={existingImage}
-                    alt="Current"
-                    className="w-full h-full object-cover"
-                  />
-                ) : null}
-                <button
-                  type="button"
-                  onClick={removeImage}
-                  className="absolute top-2 right-2 h-8 w-8 bg-error
-                  text-error-foreground rounded-full flex items-center
-                  justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          )}
-
-          {!existingImage && !image && (
-            <label className="block">
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-                className="hidden"
-              />
-              <div
-                className="border-2 border-dashed
-              border-border rounded-lg p-8 text-center cursor-pointer
-              hover:bg-muted/50 transition-colors"
-              >
-                <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                <p className="text-sm font-medium text-foreground mb-1">
-                  Click to upload image
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  PNG, JPG up to 5MB
-                </p>
-              </div>
-            </label>
-          )}
+          <MultiImageUpload
+            label="News Images"
+            onFilesSelect={setNewImages}
+            maxSizeMb={5}
+            maxFiles={10}
+            existingImageUrls={existingImageUrls}
+            onRemoveExistingImage={onRemoveExistingImage}
+          />
         </CardContent>
       </Card>
 

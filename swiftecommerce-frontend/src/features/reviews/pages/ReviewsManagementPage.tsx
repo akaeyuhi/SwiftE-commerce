@@ -13,22 +13,43 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/shared/components/ui/select';
-import { mockReviews } from '@/shared/mocks/reviews.mock';
 import { MessageSquare, Star, TrendingUp, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
+import { useProducts } from '@/features/products/hooks/useProducts';
+import { useReviews } from '../hooks/useReviews';
+import { QueryLoader } from '@/shared/components/loaders/QueryLoader';
+import { Product } from '@/features/products/types/product.types';
 
 export function ReviewManagementPage() {
   const { storeId } = useParams<{ storeId: string }>();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterRating, setFilterRating] = useState('all');
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(
+    null
+  );
 
-  // Filter reviews for this store
-  const storeReviews = mockReviews.filter((r) => r.storeId === storeId);
+  const {
+    data: productsData,
+    isLoading: productsLoading,
+    error: productsError,
+  } = useProducts(storeId!);
+  const products = productsData?.data || [];
 
-  const filteredReviews = storeReviews.filter((review) => {
+  const {
+    data: reviewsData,
+    isLoading: reviewsLoading,
+    error: reviewsError,
+  } = useReviews(storeId!, selectedProductId!, {
+    enabled: !!selectedProductId,
+  });
+  const reviews = reviewsData?.data || [];
+
+  const filteredReviews = reviews.filter((review) => {
     const matchesSearch =
-      review.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      review.author.name.toLowerCase().includes(searchQuery.toLowerCase());
+      review.comment?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      `${review.user.firstName} ${review.user.lastName}`
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase());
 
     const matchesRating =
       filterRating === 'all' || review.rating === parseInt(filterRating);
@@ -39,28 +60,30 @@ export function ReviewManagementPage() {
   const stats = [
     {
       title: 'Total Reviews',
-      value: storeReviews.length,
+      value: reviews.length,
       icon: MessageSquare,
       color: 'text-primary',
       bgColor: 'bg-primary/10',
     },
     {
       title: 'Average Rating',
-      value: '4.7',
+      value: (
+        reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length || 0
+      ).toFixed(1),
       icon: Star,
       color: 'text-warning',
       bgColor: 'bg-warning/10',
     },
     {
       title: 'Response Rate',
-      value: '95%',
+      value: 'N/A',
       icon: TrendingUp,
       color: 'text-success',
       bgColor: 'bg-success/10',
     },
     {
       title: 'Pending',
-      value: storeReviews.filter((r) => r.rating <= 3).length,
+      value: reviews.filter((r) => r.rating <= 3).length,
       icon: AlertTriangle,
       color: 'text-error',
       bgColor: 'bg-error/10',
@@ -85,6 +108,23 @@ export function ReviewManagementPage() {
       {/* Filters */}
       <Card className="p-6">
         <div className="flex flex-col md:flex-row gap-4">
+          <QueryLoader isLoading={productsLoading} error={productsError}>
+            <Select
+              onValueChange={setSelectedProductId}
+              defaultValue={selectedProductId || undefined}
+            >
+              <SelectTrigger className="w-full md:w-64">
+                <SelectValue placeholder="Select a product" />
+              </SelectTrigger>
+              <SelectContent>
+                {products.map((product: Product) => (
+                  <SelectItem key={product.id} value={product.id}>
+                    {product.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </QueryLoader>
           <SearchBar
             placeholder="Search reviews..."
             value={searchQuery}
@@ -107,36 +147,50 @@ export function ReviewManagementPage() {
       </Card>
 
       {/* Reviews */}
-      {filteredReviews.length === 0 ? (
-        <Card>
-          <EmptyState
-            icon={MessageSquare}
-            title="No reviews found"
-            description="Try adjusting your filters"
-          />
-        </Card>
-      ) : (
-        <div className="space-y-4">
-          {filteredReviews.map((review) => (
-            <Card key={review.id} className="p-6">
-              <div className="mb-4">
-                <p className="text-sm font-medium text-foreground mb-1">
-                  Product: {review.productName}
-                </p>
-              </div>
-              <ReviewCard
-                {...review}
-                onMarkHelpful={() => toast.success('Marked as helpful')}
-              />
-              <div className="mt-4 pt-4 border-t border-border">
-                <Button variant="outline" size="sm">
-                  Respond to Review
-                </Button>
-              </div>
-            </Card>
-          ))}
-        </div>
-      )}
+      <QueryLoader isLoading={reviewsLoading} error={reviewsError}>
+        {filteredReviews.length === 0 ? (
+          <Card>
+            <EmptyState
+              icon={MessageSquare}
+              title="No reviews found"
+              description={
+                selectedProductId
+                  ? 'This product has no reviews yet.'
+                  : 'Select a product to see reviews.'
+              }
+            />
+          </Card>
+        ) : (
+          <div className="space-y-4">
+            {filteredReviews.map((review) => (
+              <Card key={review.id} className="p-6">
+                <div className="mb-4">
+                  <p className="text-sm font-medium text-foreground mb-1">
+                    Product: {review.product.name}
+                  </p>
+                </div>
+                <ReviewCard
+                  id={review.id}
+                  author={{
+                    name: `${review.user.firstName} ${review.user.lastName}`,
+                  }}
+                  rating={review.rating}
+                  date={review.createdAt.toString()}
+                  content={review.comment || ''}
+                  helpfulCount={0}
+                  verified={true}
+                  onMarkHelpful={() => toast.success('Marked as helpful')}
+                />
+                <div className="mt-4 pt-4 border-t border-border">
+                  <Button variant="outline" size="sm">
+                    Respond to Review
+                  </Button>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+      </QueryLoader>
     </div>
   );
 }

@@ -25,7 +25,8 @@ export class StoreService extends BaseService {
 
   async create(data: CreateStoreDto): Promise<StoreDto> {
     const url = API_ENDPOINTS.STORES.CREATE;
-    return this.client.post<StoreDto>(url, data);
+    const { formData, headers } = this.mapToFormData(data);
+    return this.client.post<StoreDto>(url, formData, { headers });
   }
 
   async findOne(id: string): Promise<StoreDto> {
@@ -35,7 +36,8 @@ export class StoreService extends BaseService {
 
   async update(id: string, data: UpdateStoreDto): Promise<StoreDto> {
     const url = this.buildUrl(API_ENDPOINTS.STORES.UPDATE, { id });
-    return this.client.patch<StoreDto>(url, data);
+    const { formData, headers } = this.mapToFormData(data);
+    return this.client.patch<StoreDto>(url, formData, { headers });
   }
 
   async delete(id: string): Promise<void> {
@@ -132,20 +134,12 @@ export class StoreService extends BaseService {
     storeId: string,
     files: { logo?: File; banner?: File }
   ) {
-    const formData = new FormData();
-    if (files.logo) {
-      formData.append('logo', files.logo);
-    }
-    if (files.banner) {
-      formData.append('banner', files.banner);
-    }
+    const { formData, headers } = this.mapToFormData(files);
 
     const url = this.buildUrl(API_ENDPOINTS.STORES.UPLOAD, { id: storeId });
 
     const { data } = await this.client.post(url, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+      headers,
     });
 
     return data;

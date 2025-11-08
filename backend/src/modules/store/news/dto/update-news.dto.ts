@@ -1,6 +1,12 @@
 import { PartialType } from '@nestjs/mapped-types';
 import { CreateNewsDto } from 'src/modules/store/news/dto/create-news.dto';
-import { IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import {
+  IsArray,
+  IsOptional,
+  IsString,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 
 export class UpdateNewsDto extends PartialType(CreateNewsDto) {
   @IsOptional()
@@ -14,4 +20,9 @@ export class UpdateNewsDto extends PartialType(CreateNewsDto) {
   @MinLength(10)
   @MaxLength(10000)
   content?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  tags?: string[];
 }

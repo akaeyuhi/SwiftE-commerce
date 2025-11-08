@@ -64,11 +64,15 @@ export interface CreateStoreDto {
   name: string;
   description: string;
   ownerId: string;
+  logo?: File;
+  banner?: File;
 }
 
 export interface UpdateStoreDto {
   name?: string;
   description?: string;
+  logo?: File;
+  banner?: File;
 }
 
 export interface StoreStatsDto {

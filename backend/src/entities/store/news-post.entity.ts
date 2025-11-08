@@ -36,6 +36,15 @@ export class NewsPost implements UserOwnedEntity, StoreOwnedEntity {
   @Column({ type: 'text' })
   content: string;
 
+  @Column('simple-array', { default: [] })
+  tags: string[];
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  mainPhotoUrl?: string;
+
+  @Column('simple-array', { default: [] })
+  photoUrls: string[];
+
   @Column({ type: 'boolean', default: false })
   isPublished: boolean;
 

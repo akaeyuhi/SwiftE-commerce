@@ -1,59 +1,33 @@
-import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Button } from '@/shared/components/ui/Button';
 import { Link } from '@/shared/components/ui/Link';
 import { useNavigate } from '@/shared/hooks/useNavigate';
 import { ArrowLeft } from 'lucide-react';
-import { toast } from 'sonner';
 import { NewsForm, NewsFormData } from '../components/NewsForm';
-import { mockNews } from '@/shared/mocks/news.mock';
+import { useNewsMutations, useNewsPost } from '../hooks/useNews';
+import { QueryLoader } from '@/shared/components/loaders/QueryLoader';
 
 export function EditNewsPage() {
   const { storeId, newsId } = useParams<{ storeId: string; newsId: string }>();
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(false);
-  const [existingImage, setExistingImage] = useState<string | undefined>(
-    undefined
-  );
+  const {
+    data: newsPost,
+    isLoading,
+    error,
+    refetch,
+  } = useNewsPost(storeId!, newsId!);
+  const { updatePost } = useNewsMutations(storeId!);
 
-  // Find news post
-  const newsPost = mockNews.find((n) => n.id === newsId);
-
-  if (!newsPost) {
-    return (
-      <div className="text-center py-12">
-        <h2 className="text-2xl font-bold text-foreground mb-4">
-          News post not found
-        </h2>
-        <Button onClick={() => navigate.to(`/store/${storeId}/news`)}>
-          Back to News
-        </Button>
-      </div>
-    );
-  }
-
-  const handleSubmit = async (data: NewsFormData) => {
-    setIsLoading(true);
-    try {
-      // TODO: API call
-      // await newsService.updateNews(storeId!, newsId!, data)
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      console.log('Updating news:', data);
-      toast.success('News updated successfully!');
-      navigate.to(`/store/${storeId}/news`);
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to update news');
-    } finally {
-      setIsLoading(false);
-    }
+  const handleSubmit = async (data: NewsFormData, newImages: File[]) => {
+    await updatePost.mutateAsync({
+      id: newsId!,
+      data: { ...data, photos: [...newImages] },
+    });
+    navigate.to(`/store/${storeId}/news/management`);
   };
 
-  const defaultValues: Partial<NewsFormData> = {
-    title: newsPost.title,
-    excerpt: newsPost.excerpt,
-    content: newsPost.content,
-    tags: newsPost.tags,
+  const onGenerate = () => {
+    navigate.to(`/store/${storeId}/ai`);
   };
 
   return (
@@ -75,22 +49,30 @@ export function EditNewsPage() {
       </div>
 
       {/* Form */}
-      <NewsForm
-        defaultValues={defaultValues}
-        onSubmit={handleSubmit}
-        isLoading={isLoading}
-        isEdit
-        existingImage={existingImage}
-        onRemoveImage={() => setExistingImage(undefined)}
-      />
+      <QueryLoader isLoading={isLoading} error={error} refetch={refetch}>
+        {newsPost && (
+          <NewsForm
+            defaultValues={{
+              title: newsPost.title,
+              content: newsPost.content,
+              tags: newsPost.tags,
+            }}
+            onSubmit={handleSubmit}
+            isLoading={updatePost.isPending}
+            isEdit
+            existingImageUrls={newsPost.photos}
+            onGenerate={onGenerate}
+          />
+        )}
+      </QueryLoader>
 
       {/* Cancel */}
       <div className="flex justify-end">
         <Button
           type="button"
           variant="outline"
-          onClick={() => navigate.to(`/store/${storeId}/news`)}
-          disabled={isLoading}
+          onClick={() => navigate.to(`/store/${storeId}/news/management`)}
+          disabled={updatePost.isPending}
         >
           Cancel
         </Button>

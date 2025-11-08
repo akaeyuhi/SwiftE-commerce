@@ -6,7 +6,7 @@ import {
   NewsPost,
   UpdateNewsDto,
 } from '@/features/news/types/news.types.ts';
-import { NewsFilters } from '@/types/filters.types.ts';
+import { NewsFilters } from '@/shared/types/filters.types.ts';
 
 export class NewsService extends BaseService {
   /**
@@ -57,7 +57,8 @@ export class NewsService extends BaseService {
     data: CreateNewsDto
   ): Promise<NewsPost> {
     const url = buildUrl(API_ENDPOINTS.NEWS.CREATE_WITH_RELATIONS, { storeId });
-    return this.client.post<NewsPost>(url, data);
+    const formData = this.mapToFormData(data);
+    return this.client.post<NewsPost>(url, formData);
   }
 
   /**
@@ -69,7 +70,8 @@ export class NewsService extends BaseService {
     data: UpdateNewsDto
   ): Promise<NewsPost> {
     const url = buildUrl(API_ENDPOINTS.NEWS.UPDATE, { storeId, id: articleId });
-    return this.client.patch<NewsPost>(url, data);
+    const formData = this.mapToFormData(data);
+    return this.client.patch<NewsPost>(url, formData);
   }
 
   /**

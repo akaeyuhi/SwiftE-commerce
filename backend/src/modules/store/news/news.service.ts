@@ -10,6 +10,8 @@ import { NewsPostDto } from './dto/news.dto';
 import { NewsPublishedEvent } from 'src/common/events/news/news-published.event';
 import { domainEventFactory } from 'src/common/events/helper';
 
+import { NewsFileService } from 'src/modules/store/news/news-file.service';
+
 /**
  * NewsService
  *
@@ -25,9 +27,38 @@ export class NewsService extends BaseService<
 > {
   constructor(
     private readonly newsRepo: NewsRepository,
-    private readonly eventEmitter: EventEmitter2
+    private readonly eventEmitter: EventEmitter2,
+    private readonly newsFileService: NewsFileService
   ) {
     super(newsRepo);
+  }
+
+  async uploadFiles(
+    newsId: string,
+    mainPhoto?: Express.Multer.File,
+    photos?: Express.Multer.File[]
+  ): Promise<NewsPost> {
+    const news = await this.newsRepo.findById(newsId);
+    if (!news) {
+      throw new NotFoundException('News not found');
+    }
+
+    if (mainPhoto) {
+      news.mainPhotoUrl = await this.newsFileService.saveFile(
+        mainPhoto,
+        newsId,
+        'mainPhoto'
+      );
+    }
+
+    if (photos) {
+      for (const photo of photos) {
+        const url = await this.newsFileService.saveFile(photo, newsId, 'photo');
+        news.photoUrls.push(url);
+      }
+    }
+
+    return this.newsRepo.save(news);
   }
 
   /**
@@ -65,11 +96,16 @@ export class NewsService extends BaseService<
       authorId: authorId ? authorId : dto.authorId,
       title: dto.title ?? '',
       content: dto.content ?? '',
+      tags: dto.tags ?? [],
       isPublished: dto.isPublished ?? false,
       publishedAt: dto.publishedAt ? new Date(dto.publishedAt) : undefined,
     };
 
     const created = await this.newsRepo.createEntity(partial);
+
+    if (dto.mainPhoto || dto.photos) {
+      await this.uploadFiles(created.id, dto.mainPhoto, dto.photos);
+    }
 
     const reloaded = await this.newsRepo.findOne({
       where: { id: created.id },

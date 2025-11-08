@@ -2,12 +2,12 @@ import { BaseService } from '@/lib/api/BaseService';
 import { API_ENDPOINTS, buildUrl } from '@/config/api.config';
 import {
   ProductVariant,
-  CreateVariantRequest,
-  UpdateVariantRequest,
-  SetInventoryRequest,
-  AdjustInventoryRequest,
-  UpdatePriceRequest,
-  AddAttributesRequest,
+  CreateVariantDto,
+  UpdateVariantDto,
+  AdjustInventoryDto,
+  AddAttributesDto,
+  SetInventoryDto,
+  UpdatePriceDto,
 } from '../types/variant.types';
 
 export class VariantsService extends BaseService {
@@ -60,7 +60,7 @@ export class VariantsService extends BaseService {
   async createVariant(
     storeId: string,
     productId: string,
-    data: CreateVariantRequest
+    data: CreateVariantDto
   ): Promise<ProductVariant> {
     const url = buildUrl(API_ENDPOINTS.VARIANTS.CREATE, { storeId, productId });
     return this.client.post<ProductVariant>(url, data);
@@ -73,7 +73,7 @@ export class VariantsService extends BaseService {
     storeId: string,
     productId: string,
     variantId: string,
-    data: UpdateVariantRequest
+    data: UpdateVariantDto
   ): Promise<ProductVariant> {
     const url = buildUrl(API_ENDPOINTS.VARIANTS.UPDATE, {
       storeId,
@@ -106,7 +106,7 @@ export class VariantsService extends BaseService {
     storeId: string,
     productId: string,
     variantId: string,
-    data: SetInventoryRequest
+    data: SetInventoryDto
   ): Promise<ProductVariant> {
     const url = buildUrl(API_ENDPOINTS.VARIANTS.SET_INVENTORY, {
       storeId,
@@ -123,7 +123,7 @@ export class VariantsService extends BaseService {
     storeId: string,
     productId: string,
     variantId: string,
-    data: AdjustInventoryRequest
+    data: AdjustInventoryDto
   ): Promise<ProductVariant> {
     const url = buildUrl(API_ENDPOINTS.VARIANTS.ADJUST_INVENTORY, {
       storeId,
@@ -140,7 +140,7 @@ export class VariantsService extends BaseService {
     storeId: string,
     productId: string,
     variantId: string,
-    data: UpdatePriceRequest
+    data: UpdatePriceDto
   ): Promise<ProductVariant> {
     const url = buildUrl(API_ENDPOINTS.VARIANTS.UPDATE_PRICE, {
       storeId,
@@ -157,7 +157,7 @@ export class VariantsService extends BaseService {
     storeId: string,
     productId: string,
     variantId: string,
-    data: AddAttributesRequest
+    data: AddAttributesDto
   ): Promise<ProductVariant> {
     const url = buildUrl(API_ENDPOINTS.VARIANTS.ADD_ATTRIBUTES, {
       storeId,

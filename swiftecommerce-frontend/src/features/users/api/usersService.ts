@@ -1,6 +1,9 @@
 import { BaseService } from '@/lib/api/BaseService';
 import { API_ENDPOINTS, buildUrl } from '@/config/api.config';
-import { StoreRole } from '@/features/stores/types/store.types.ts';
+import {
+  CreateStoreDto,
+  StoreRole,
+} from '@/features/stores/types/store.types.ts';
 import {
   CreateUserDto,
   UpdateProfileDto,
@@ -199,22 +202,17 @@ export class UsersService extends BaseService {
   /**
    * Create store for user
    */
-  async createStore(
-    userId: string,
-    data: { name: string; description?: string }
-  ): Promise<any> {
+  async createStore(userId: string, data: CreateStoreDto): Promise<any> {
     const url = buildUrl(API_ENDPOINTS.USERS.CREATE_STORE, { id: userId });
-    return this.client.post(url, data);
+    const { formData, headers } = this.mapToFormData(data);
+    return this.client.post(url, formData, { headers });
   }
 
   async uploadAvatar(file: File) {
-    const formData = new FormData();
-    formData.append('avatar', file);
+    const { formData, headers } = this.mapToFormData({ avatar: file });
 
     const { data } = await this.client.post('/users/profile/avatar', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+      headers,
     });
 
     return data;

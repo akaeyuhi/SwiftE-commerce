@@ -6,6 +6,7 @@ import {
   IsDateString,
   MinLength,
   MaxLength,
+  IsArray,
 } from 'class-validator';
 
 /**
@@ -33,6 +34,17 @@ export class CreateNewsDto {
   @MinLength(10)
   @MaxLength(10000)
   content: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  tags?: string[];
+
+  @IsOptional()
+  mainPhoto?: Express.Multer.File;
+
+  @IsOptional()
+  photos?: Express.Multer.File[];
 
   @IsOptional()
   @IsBoolean()

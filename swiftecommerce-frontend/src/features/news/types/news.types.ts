@@ -9,6 +9,9 @@ export interface NewsPost {
   authorId: string;
   title: string;
   content: string;
+  tags: string[];
+  mainPhotoUrl: string;
+  photos: string[];
   isPublished: boolean;
   publishedAt?: Date;
   createdAt: Date;
@@ -20,10 +23,14 @@ export interface CreateNewsDto {
   content: string;
   authorId?: string;
   isPublished?: boolean;
+  mainPhoto?: File;
+  photos?: File[];
 }
 
 export interface UpdateNewsDto {
   title?: string;
   content?: string;
   isPublished?: boolean;
+  mainPhoto?: File;
+  photos?: File[];
 }

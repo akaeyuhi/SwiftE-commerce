@@ -29,24 +29,6 @@ export interface TopProductsParams {
   period?: 'day' | 'week' | 'month' | 'year';
 }
 
-const mapDtoToFormData = (data: Partial<CreateProductDto>) => {
-  const formData = new FormData();
-  if (data.photos && data.photos.length > 0) {
-    Object.entries(data).forEach(([key, value]) => {
-      if (key !== 'photos') {
-        formData.append(key, value as string);
-      }
-    });
-    data.photos.forEach((file) => {
-      formData.append('photos', file);
-    });
-  }
-  if (data.mainPhoto) {
-    formData.append('mainPhoto', data.mainPhoto);
-    return formData;
-  }
-};
-
 export class ProductsService extends BaseService {
   async getAllProducts(
     filters?: ProductFilters
@@ -118,11 +100,9 @@ export class ProductsService extends BaseService {
   ): Promise<Product> {
     const url = buildUrl(API_ENDPOINTS.PRODUCTS.CREATE, { storeId });
     if (data.photos || data.mainPhoto) {
-      const formData = mapDtoToFormData(data);
+      const { formData, headers } = this.mapToFormData(data);
       return this.client.post<Product>(url, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+        headers,
       });
     } else {
       return this.client.post<Product>(url, data);
@@ -142,11 +122,9 @@ export class ProductsService extends BaseService {
       id: productId,
     });
     if (data.photos || data.mainPhoto) {
-      const formData = mapDtoToFormData(data);
+      const { formData, headers } = this.mapToFormData(data);
       return this.client.post<Product>(url, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+        headers,
       });
     } else {
       return this.client.post<Product>(url, data);
