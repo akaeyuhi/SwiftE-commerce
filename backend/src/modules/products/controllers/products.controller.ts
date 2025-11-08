@@ -145,33 +145,23 @@ export class ProductsController extends BaseController<
    *   "offset": 0
    * }
    */
+import { Pagination } from 'src/common/decorators/pagination.decorator';
+import { PaginationDto } from 'src/common/dtos/pagination.dto';
+import { PaginatedResponse } from 'src/common/decorators/paginated-response.decorator';
+
   @Post('advanced-search')
   @HttpCode(HttpStatus.OK)
   @StoreRole(StoreRoles.ADMIN, StoreRoles.MODERATOR)
+  @PaginatedResponse(ProductListDto)
   async advancedSearch(
-    @Param('storeId', ParseUUIDPipe) storeId: string,
-    @Body() searchDto: AdvancedSearchDto
-  ): Promise<{
-    products: ProductListDto[];
-    total: number;
-    page: number;
-    limit: number;
-  }> {
-    const result = await this.productsService.advancedProductSearch({
+    @Param('storeId', new ParseUUIDPipe()) storeId: string,
+    @Body() searchDto: AdvancedSearchDto,
+    @Pagination() pagination: PaginationDto,
+  ): Promise<[ProductListDto[], number]> {
+    return this.productsService.paginate(pagination, {
       storeId,
       ...searchDto,
     });
-
-    const page = searchDto.offset
-      ? Math.floor(searchDto.offset / (searchDto.limit || 20)) + 1
-      : 1;
-
-    return {
-      products: result.products,
-      total: result.total,
-      page,
-      limit: searchDto.limit || 20,
-    };
   }
 
   /**

@@ -6,50 +6,33 @@ import {
 } from '@nestjs/common';
 import { CreateProductDto } from 'src/modules/products/dto/create-product.dto';
 import { UpdateProductDto } from 'src/modules/products/dto/update-product.dto';
-import { BaseService } from 'src/common/abstracts/base.service';
-import { Product } from 'src/entities/store/product/product.entity';
-import { ProductRepository } from 'src/modules/products/repositories/products.repository';
-import { ProductPhotoService } from 'src/modules/products/product-photo/product-photo.service';
-import { CategoriesService } from 'src/modules/store/categories/categories.service';
-import { ProductPhoto } from 'src/entities/store/product/product-photo.entity';
+import { PaginatedService } from 'src/common/abstracts/paginated.service';
 import { IStoreService } from 'src/common/contracts/products.contract';
+import { ProductRepository } from 'src/modules/products/repositories/products.repository';
+import { ProductSearchRepository } from '../repositories/product-search.repository';
+import { CategoriesService } from 'src/modules/store/categories/categories.service';
+import { ProductPhotoService } from '../product-photo/product-photo.service';
+import { ProductsMapper } from '../products.mapper';
+import { Product } from 'src/entities/store/product/product.entity';
 import {
   ProductDetailDto,
   ProductDto,
   ProductListDto,
   ProductStatsDto,
 } from 'src/modules/products/dto/product.dto';
-import { ProductsMapper } from 'src/modules/products/products.mapper';
+import { VariantsService } from 'src/modules/store/variants/variants.service';
+import { PaginationDto } from 'src/common/dtos/pagination.dto';
 import {
   AdvancedSearchOptions,
   ProductSearchOptions,
 } from 'src/modules/products/types';
-import { ProductSearchRepository } from 'src/modules/products/repositories/product-search.repository';
-import { VariantsService } from 'src/modules/store/variants/variants.service';
+import { ProductPhoto } from 'src/entities/store/product/product-photo.entity';
 import { CreateVariantDto } from 'src/modules/store/variants/dto/create-variant.dto';
 import { ProductVariant } from 'src/entities/store/product/variant.entity';
 import { UpdateVariantDto } from 'src/modules/store/variants/dto/update-variant.dto';
 
-/**
- * ProductsService
- *
- * Coordinates product CRUD, variant creation and photo handling.
- *
- * Responsibilities:
- *  - Product creation / update / read operations (via ProductRepository)
- *  - Delegates photo filesystem + DB creation/deletion to ProductPhotoService.
- *  - Provides convenience methods to add/remove photos for existing products.
- *
- * Important notes:
- *  - File-system operations (save/delete) live in ProductPhotoService. ProductService
- *    orchestrates calls and ensures product existence before attaching photos.
- *  - Product creation with photos is not transactional across FS and DB by default:
- *    if a file write succeeds but DB save fails later, files may remain on disk.
- *    If you require atomic behavior, wrap calls in a QueryRunner transaction and
- *    implement cleanup of created files on rollback.
- */
 @Injectable()
-export class ProductsService extends BaseService<
+export class ProductsService extends PaginatedService<
   Product,
   CreateProductDto,
   UpdateProductDto,
@@ -65,6 +48,18 @@ export class ProductsService extends BaseService<
     @Inject(IStoreService) private readonly storeService: IStoreService
   ) {
     super(productRepo, productsMapper);
+  }
+
+  async paginate(
+    pagination: PaginationDto,
+    filters: AdvancedSearchOptions
+  ): Promise<[ProductListDto[], number]> {
+    const { products, total } = await this.productSearchRepo.advancedSearch({
+      ...filters,
+      limit: pagination.take,
+      offset: pagination.skip,
+    });
+    return [products, total];
   }
 
   /**

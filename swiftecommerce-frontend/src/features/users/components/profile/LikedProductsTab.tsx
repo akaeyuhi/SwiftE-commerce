@@ -11,7 +11,10 @@ export function LikedProductsTab() {
   const { user } = useAuth();
   const { data: likes, isLoading, error } = useLikes(user!.id);
 
-  const likedProducts = useMemo(() => likes?.filter((like) => !!like.product) || [], [likes]);
+  const likedProducts = useMemo(
+    () => likes?.filter((like) => !!like.product) || [],
+    [likes]
+  );
 
   return (
     <QueryLoader isLoading={isLoading} error={error}>

@@ -13,7 +13,6 @@ import {
   ParseEnumPipe,
   UploadedFile,
   UploadedFiles,
-  Query,
 } from '@nestjs/common';
 import { UserService } from 'src/modules/user/user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -96,12 +95,9 @@ export class UserController extends BaseController<
   @PaginatedResponse(Order)
   async getProfileOrders(
     @Req() req: Request,
-    @Pagination() pagination: PaginationDto,
+    @Pagination() pagination: PaginationDto
   ) {
     const userId = (req.user as any)?.id;
-    if (!userId) {
-      throw new BadRequestException('User ID not found');
-    }
     return this.userService.getOrdersForUser(userId, pagination);
   }
 

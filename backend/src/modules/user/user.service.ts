@@ -319,7 +319,7 @@ export class UserService extends BaseService<
 
   async getOrdersForUser(
     userId: string,
-    pagination: any,
+    pagination: any
   ): Promise<[Order[], number]> {
     const { skip, take, ...where } = pagination;
     return this.orderRepository.findAndCount({

@@ -6,10 +6,6 @@ import { Like } from '@/features/likes/types/likes.types.ts';
 import { ShoppingCart } from '@/features/cart/types/cart.types.ts';
 import { NewsPost } from '@/features/news/types/news.types.ts';
 
-export interface NewsPost {
-  // ...
-}
-
 export interface UserStats {
   totalOrders: number;
   likedProducts: number;

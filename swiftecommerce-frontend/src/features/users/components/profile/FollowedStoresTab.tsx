@@ -9,14 +9,15 @@ import { FollowedStoreCard } from './FollowedStoreCard';
 
 export function FollowedStoresTab() {
   const { user } = useAuth();
-  const { data: likes, isLoading, isError, error } = useLikes(user!.id);
+  const { data: likes, isLoading, error } = useLikes(user!.id);
 
-  const followedStores = useMemo(() => {
-    return likes?.filter((like) => !!like.store) || [];
-  }, [likes]);
+  const followedStores = useMemo(
+    () => likes?.filter((like) => !!like.store) || [],
+    [likes]
+  );
 
   return (
-    <QueryLoader isLoading={isLoading} isError={isError} error={error}>
+    <QueryLoader isLoading={isLoading} error={error}>
       {followedStores.length === 0 ? (
         <Card>
           <EmptyState
