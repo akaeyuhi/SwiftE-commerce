@@ -19,6 +19,7 @@ export class CartItemRepository extends BaseRepository<CartItem> {
    * Find all items for a cart (with variant relation) - paginated.
    *
    * @param cartId - uuid of the shopping cart
+   * @param pagination
    */
   async findByCartPaginated(
     cartId: string,

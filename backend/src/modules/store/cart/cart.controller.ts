@@ -186,6 +186,7 @@ export class CartController extends BaseController<
    *
    * @param _storeId - store UUID - used for routing convenience
    * @param userId - UUID of the user
+   * @param pagination
    * @returns array of ShoppingCart (each includes store relation)
    */
   @Get('merged')

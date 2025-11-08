@@ -181,6 +181,7 @@ export class VariantsService extends BaseService<
    * List all variants for a product.
    *
    * @param productId - product id
+   * @param pagination
    * @returns ProductVariant[]
    */
   async listByProduct(

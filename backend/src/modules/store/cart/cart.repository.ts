@@ -38,6 +38,7 @@ export class CartRepository extends BaseRepository<ShoppingCart> {
    * Find all carts that belong to a user, with store relation attached.
    *
    * @param userId - user uuid
+   * @param pagination
    */
   async findAllByUser(
     userId: string,

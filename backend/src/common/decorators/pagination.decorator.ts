@@ -17,5 +17,5 @@ export const Pagination = createParamDecorator(
     const skip = (page - 1) * limit;
 
     return { page, limit, skip, take: limit, offset: skip };
-  },
+  }
 );

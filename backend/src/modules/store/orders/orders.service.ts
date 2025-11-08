@@ -255,6 +255,7 @@ export class OrdersService extends BaseService<
   /**
    * Find orders for a user (includes items & store).
    * @param userId
+   * @param pagination
    */
   async findByUser(
     userId: string,
@@ -266,6 +267,7 @@ export class OrdersService extends BaseService<
   /**
    * Find orders for a store (includes items & user).
    * @param storeId
+   * @param pagination
    */
   async findByStore(
     storeId: string,
