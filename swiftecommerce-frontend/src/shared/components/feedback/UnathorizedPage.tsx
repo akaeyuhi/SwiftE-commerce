@@ -7,7 +7,10 @@ export function UnauthorizedPage() {
   const { isAuthenticated } = useAuth();
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-error-light to-background px-4">
+    <div
+      className="min-h-screen flex items-center justify-center
+    bg-gradient-to-b from-error-light to-background px-4"
+    >
       <div className="max-w-md w-full text-center">
         {/* Icon */}
         <div className="mb-8">
@@ -25,7 +28,7 @@ export function UnauthorizedPage() {
           Access Denied
         </h2>
         <p className="text-lg text-muted-foreground mb-8">
-          You don't have permission to access this page.
+          You don&apos;t have permission to access this page.
           {!isAuthenticated && ' Please log in to continue.'}
         </p>
 

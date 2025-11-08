@@ -37,6 +37,14 @@
       "@/assets/*": ["./src/assets/*"]
     }
   },
-  "include": ["src"],
+  "include": [
+    "src",
+    "commitlint.config.js",
+    "postcss.config.js",
+    "tailwind.config.js",
+    "vite-env.d.ts",
+    "dev-dist/sw.js",
+    "dev-dist/workbox-3ad5617a.js"
+  ],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

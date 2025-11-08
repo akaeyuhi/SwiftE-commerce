@@ -31,7 +31,9 @@ export function useLikeMutations(userId: string) {
   const likeProduct = useMutation({
     mutationFn: (productId: string) => api.likes.likeProduct(userId, productId),
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: invalidateFeature.likes(userId).queryKey });
+      queryClient.invalidateQueries({
+        queryKey: invalidateFeature.likes(userId).queryKey,
+      });
       addToWishlist(data.productId!);
       toast.success('Product liked');
     },
@@ -43,7 +45,9 @@ export function useLikeMutations(userId: string) {
   const likeStore = useMutation({
     mutationFn: (storeId: string) => api.likes.likeStore(userId, storeId),
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: invalidateFeature.likes(userId).queryKey });
+      queryClient.invalidateQueries({
+        queryKey: invalidateFeature.likes(userId).queryKey,
+      });
       followStore(data.storeId!);
       toast.success('Store followed');
     },
@@ -55,7 +59,9 @@ export function useLikeMutations(userId: string) {
   const removeLike = useMutation({
     mutationFn: (likeId: string) => api.likes.unlike(userId, likeId),
     onMutate: async (likeId: string) => {
-      await queryClient.cancelQueries({ queryKey: queryKeys.likes.user(userId) });
+      await queryClient.cancelQueries({
+        queryKey: queryKeys.likes.user(userId),
+      });
       const previousLikes = queryClient.getQueryData<Like[]>(
         queryKeys.likes.user(userId)
       );
@@ -71,10 +77,12 @@ export function useLikeMutations(userId: string) {
       return { previousLikes };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: invalidateFeature.likes(userId).queryKey });
+      queryClient.invalidateQueries({
+        queryKey: invalidateFeature.likes(userId).queryKey,
+      });
       toast.success('Like removed');
     },
-    onError: (err, likeId, context) => {
+    onError: (_, likeId, context) => {
       if (context?.previousLikes) {
         const likeToRestore = context.previousLikes.find(
           (like) => like.id === likeId

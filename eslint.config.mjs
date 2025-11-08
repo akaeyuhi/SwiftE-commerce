@@ -21,7 +21,14 @@ const compat = new FlatCompat({
 
 export default [
     {
-        ignores: ['**/eslint.config.mjs'],
+        ignores: [
+      '**/eslint.config.mjs',
+      'swiftecommerce-frontend/commitlint.config.js',
+      'swiftecommerce-frontend/postcss.config.js',
+      'swiftecommerce-frontend/tailwind.config.js',
+      'swiftecommerce-frontend/vite-env.d.ts',
+      'swiftecommerce-frontend/dev-dist/',
+    ],
     },
     ...fixupConfigRules(
         compat.extends(

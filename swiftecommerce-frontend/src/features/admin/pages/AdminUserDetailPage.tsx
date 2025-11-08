@@ -66,6 +66,31 @@ interface UserDetail {
   suspendedAt?: string;
 }
 
+const mockUser: UserDetail = {
+  id: '1',
+  firstName: 'John',
+  lastName: 'Doe',
+  email: 'john@example.com',
+  phone: '+1 (555) 123-4567',
+  avatar: null,
+  role: 'BUYER',
+  status: 'active',
+  verified: true,
+  createdAt: '2024-01-15',
+  lastLogin: '2024-03-21',
+  address: '123 Main Street',
+  city: 'New York',
+  state: 'NY',
+  zipCode: '10001',
+  country: 'USA',
+  bio: 'Love shopping online for quality products',
+  totalOrders: 45,
+  totalSpent: 2543.5,
+  stores: 0,
+  products: 0,
+  reviews: 12,
+};
+
 export function AdminUserDetailPage() {
   const { userId } = useParams();
   const navigate = useNavigate();
@@ -74,32 +99,6 @@ export function AdminUserDetailPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [showReasonModal, setShowReasonModal] = useState(false);
   const [suspensionReason, setSuspensionReason] = useState('');
-
-  // Mock user data
-  const mockUser: UserDetail = {
-    id: '1',
-    firstName: 'John',
-    lastName: 'Doe',
-    email: 'john@example.com',
-    phone: '+1 (555) 123-4567',
-    avatar: null,
-    role: 'BUYER',
-    status: 'active',
-    verified: true,
-    createdAt: '2024-01-15',
-    lastLogin: '2024-03-21',
-    address: '123 Main Street',
-    city: 'New York',
-    state: 'NY',
-    zipCode: '10001',
-    country: 'USA',
-    bio: 'Love shopping online for quality products',
-    totalOrders: 45,
-    totalSpent: 2543.5,
-    stores: 0,
-    products: 0,
-    reviews: 12,
-  };
 
   useEffect(() => {
     // Simulate API call

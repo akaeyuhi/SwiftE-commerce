@@ -10,7 +10,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/shared/components/dialogs/dialog.tsx';
+} from '@/shared/components/dialogs/dialog';
 import {
   Select,
   SelectContent,
@@ -22,14 +22,17 @@ import {
   categorySchema,
   CategoryFormData,
 } from '@/lib/validations/product.schemas';
-import { useState } from 'react';
-import { Textarea } from '@/shared/components/forms/Textarea.tsx';
+import { useEffect, useMemo } from 'react';
+import { Textarea } from '@/shared/components/forms/Textarea';
+import { useCategoryMutations } from '../hooks/useCategories';
+import { CategoryDto } from '../types/categories.types';
 
 interface CategoryFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  category?: any; // Existing category for editing
-  categories: any[]; // All categories for parent selection
+  category?: CategoryDto | null;
+  categories: CategoryDto[];
+  storeId: string;
   onSuccess: () => void;
 }
 
@@ -38,9 +41,10 @@ export function CategoryFormDialog({
   onOpenChange,
   category,
   categories,
+  storeId,
   onSuccess,
 }: CategoryFormDialogProps) {
-  const [isLoading, setIsLoading] = useState(false);
+  const { createCategory, updateCategory } = useCategoryMutations(storeId);
 
   const {
     register,
@@ -50,45 +54,55 @@ export function CategoryFormDialog({
     reset,
   } = useForm<CategoryFormData>({
     resolver: zodResolver(categorySchema),
-    defaultValues: category
-      ? {
-          name: category.name,
-          description: category.description || '',
-          parentId: category.parentId || undefined,
-        }
-      : {
-          name: '',
-          description: '',
-          parentId: undefined,
-        },
   });
 
-  const onSubmit = async (data: CategoryFormData) => {
-    setIsLoading(true);
-    try {
-      // TODO: API call
-      // if (category) {
-      //   await categoryService.updateCategory(category.id, data)
-      // } else {
-      //   await categoryService.createCategory(data)
-      // }
+  useEffect(() => {
+    if (open) {
+      reset(
+        category
+          ? {
+              name: category.name,
+              description: category.description || '',
+              parentId: category.parentId || undefined,
+            }
+          : {
+              name: '',
+              description: '',
+              parentId: undefined,
+            }
+      );
+    }
+  }, [category, open, reset]);
 
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      console.log('Category data:', data);
-      reset();
-      onSuccess();
-    } catch (error) {
-      console.error('Failed to save category:', error);
-    } finally {
-      setIsLoading(false);
+  const onSubmit = (data: CategoryFormData) => {
+    if (category) {
+      updateCategory.mutate(
+        { id: category.id, data },
+        {
+          onSuccess: () => {
+            reset();
+            onSuccess();
+          },
+        }
+      );
+    } else {
+      createCategory.mutate(data, {
+        onSuccess: () => {
+          reset();
+          onSuccess();
+        },
+      });
     }
   };
 
-  // Filter out current category and its children from parent options
-  const parentOptions = categories.filter(
-    (c) => c.id !== category?.id && c.parentId !== category?.id && !c.parentId // Only show root categories as parents
+  const parentOptions = useMemo(
+    () =>
+      // TODO: Improve this to filter out children and grandchildren
+      categories.filter((c) => c.id !== category?.id),
+    [categories, category]
   );
+
+  const isLoading = createCategory.isPending || updateCategory.isPending;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -110,6 +124,7 @@ export function CategoryFormDialog({
               {...register('name')}
               placeholder="e.g., Electronics"
               error={!!errors.name}
+              disabled={isLoading}
             />
           </FormField>
 
@@ -118,6 +133,7 @@ export function CategoryFormDialog({
               {...register('description')}
               placeholder="Brief description of this category"
               rows={3}
+              disabled={isLoading}
             />
           </FormField>
 
@@ -127,6 +143,7 @@ export function CategoryFormDialog({
                 setValue('parentId', value === 'none' ? undefined : value)
               }
               defaultValue={category?.parentId || 'none'}
+              disabled={isLoading}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select parent category" />

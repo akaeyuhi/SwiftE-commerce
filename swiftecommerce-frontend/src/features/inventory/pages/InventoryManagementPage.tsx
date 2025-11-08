@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { Button } from '@/shared/components/ui/Button';
 import { Card, CardContent } from '@/shared/components/ui/Card';
@@ -19,37 +19,43 @@ import {
   TrendingUp,
   Download,
 } from 'lucide-react';
-import { mockProducts } from '@/shared/mocks/products.mock';
+import { useInventory, InventoryItem } from '../hooks/useInventory';
+import { useVariantMutations } from '@/features/products/hooks/useVariants';
+import { QueryLoader } from '@/shared/components/loaders/QueryLoader';
+import { toast } from 'sonner';
+
+import { UpdateQuantityDialog } from '../components/UpdateQuantityDialog';
 
 export function InventoryManagementPage() {
   const { storeId } = useParams<{ storeId: string }>();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [updatingItem, setUpdatingItem] = useState<InventoryItem | null>(null);
 
-  // Convert mock products to inventory items
-  const inventoryItems = mockProducts.flatMap((product) =>
-    product.variants.map((variant) => ({
-      id: variant.id,
-      productName: product.name,
-      sku: variant.sku,
-      storeId,
-      quantity: variant.inventory.quantity,
-      reserved: Math.floor(variant.inventory.quantity * 0.1), // 10% reserved
-      available: Math.floor(variant.inventory.quantity * 0.9),
-      lastRestocked: product.createdAt,
-    }))
+  const { inventoryItems, isLoading, error, isFetching } = useInventory(
+    storeId!
   );
+  const { setInventory } = useVariantMutations(storeId!, ''); // ProductId is not needed for setInventory
 
-  const totalStock = inventoryItems.reduce(
-    (sum, item) => sum + item.quantity,
-    0
+  const totalStock = useMemo(
+    () => inventoryItems.reduce((sum, item) => sum + item.quantity, 0),
+    [inventoryItems]
   );
-  const lowStockItems = inventoryItems.filter(
-    (item) => item.available < 10
-  ).length;
-  const outOfStockItems = inventoryItems.filter(
-    (item) => item.available === 0
-  ).length;
+  const totalValue = useMemo(
+    () =>
+      inventoryItems.reduce((sum, item) => sum + item.quantity * item.price, 0),
+    [inventoryItems]
+  );
+  const lowStockItems = useMemo(
+    () =>
+      inventoryItems.filter((item) => item.quantity > 0 && item.quantity < 10)
+        .length,
+    [inventoryItems]
+  );
+  const outOfStockItems = useMemo(
+    () => inventoryItems.filter((item) => item.quantity === 0).length,
+    [inventoryItems]
+  );
 
   const stats = [
     {
@@ -58,8 +64,6 @@ export function InventoryManagementPage() {
       icon: Package,
       color: 'text-primary',
       bgColor: 'bg-primary/10',
-      change: '+5.2%',
-      trend: 'up' as const,
     },
     {
       title: 'Low Stock',
@@ -77,32 +81,57 @@ export function InventoryManagementPage() {
     },
     {
       title: 'Total Value',
-      value: `$${(totalStock * 100).toLocaleString()}`,
+      value: `$${totalValue.toLocaleString()}`,
       icon: TrendingUp,
       color: 'text-success',
       bgColor: 'bg-success/10',
-      change: '+12.3%',
-      trend: 'up' as const,
     },
   ];
 
-  const filteredItems = inventoryItems.filter((item) => {
-    const matchesSearch =
-      item.productName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.sku.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredItems = useMemo(
+    () =>
+      inventoryItems.filter((item) => {
+        const matchesSearch =
+          item.productName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          item.sku.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesStatus =
-      filterStatus === 'all' ||
-      (filterStatus === 'low' && item.available < 10 && item.available > 0) ||
-      (filterStatus === 'out' && item.available === 0) ||
-      (filterStatus === 'in' && item.available >= 10);
+        const matchesStatus =
+          filterStatus === 'all' ||
+          (filterStatus === 'low' && item.quantity > 0 && item.quantity < 10) ||
+          (filterStatus === 'out' && item.quantity === 0) ||
+          (filterStatus === 'in' && item.quantity >= 10);
 
-    return matchesSearch && matchesStatus;
-  });
+        return matchesSearch && matchesStatus;
+      }),
+    [inventoryItems, searchQuery, filterStatus]
+  );
+
+  const handleUpdateQuantity = (item: InventoryItem) => {
+    setUpdatingItem(item);
+  };
+
+  const handleConfirmUpdate = (quantity: number) => {
+    if (!updatingItem) return;
+
+    setInventory.mutate(
+      {
+        id: updatingItem.variantId,
+        data: { quantity },
+      },
+      {
+        onSuccess: () => {
+          toast.success('Inventory updated successfully');
+          setUpdatingItem(null);
+        },
+        onError: () => {
+          toast.error('Failed to update inventory');
+        },
+      }
+    );
+  };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground mb-2">
@@ -118,10 +147,8 @@ export function InventoryManagementPage() {
         </Button>
       </div>
 
-      {/* Stats */}
       <StatsGrid stats={stats} columns={4} />
 
-      {/* Low Stock Alert */}
       {lowStockItems > 0 && (
         <Card className="border-warning bg-warning/5">
           <CardContent className="p-4 flex items-center gap-3">
@@ -136,7 +163,6 @@ export function InventoryManagementPage() {
         </Card>
       )}
 
-      {/* Filters */}
       <Card>
         <CardContent className="p-6">
           <div className="flex flex-col md:flex-row gap-4">
@@ -160,17 +186,27 @@ export function InventoryManagementPage() {
         </CardContent>
       </Card>
 
-      {/* Inventory Table */}
       <Card>
         <CardContent className="p-0">
-          <InventoryTable
-            items={filteredItems}
-            onUpdateQuantity={(id, quantity) => {
-              console.log('Update quantity:', id, quantity);
-            }}
-          />
+          <QueryLoader
+            isLoading={isLoading}
+            isFetching={isFetching}
+            error={error}
+          >
+            <InventoryTable
+              items={filteredItems}
+              onUpdateQuantity={handleUpdateQuantity}
+            />
+          </QueryLoader>
         </CardContent>
       </Card>
+
+      <UpdateQuantityDialog
+        open={!!updatingItem}
+        onOpenChange={() => setUpdatingItem(null)}
+        item={updatingItem}
+        onConfirm={handleConfirmUpdate}
+      />
     </div>
   );
 }

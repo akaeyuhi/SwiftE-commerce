@@ -5,6 +5,7 @@ import { Review } from '@/features/reviews/types/reviews.types';
 import { Like } from '@/features/likes/types/likes.types.ts';
 import { ShoppingCart } from '@/features/cart/types/cart.types.ts';
 import { NewsPost } from '@/features/news/types/news.types.ts';
+import { AdminRoles } from '@/lib/enums/site-roles.enum.ts';
 
 export interface UserStats {
   totalOrders: number;
@@ -25,7 +26,8 @@ export interface User {
   deactivatedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
-  siteRole: 'SITE_USER' | 'SITE_ADMIN';
+  siteRole: AdminRoles;
+  avatarUrl?: string;
   ownedStores?: Store[];
   roles?: StoreRole[];
   carts?: ShoppingCart[];

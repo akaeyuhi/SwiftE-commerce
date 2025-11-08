@@ -1,27 +1,21 @@
 import { Badge } from '@/shared/components/ui/Badge';
 import { Button } from '@/shared/components/ui/Button';
 import { Package, Edit } from 'lucide-react';
-
-interface InventoryItem {
-  id: string;
-  productName: string;
-  sku: string;
-  quantity: number;
-  reserved: number;
-  available: number;
-  lastRestocked?: string;
-}
+import { InventoryItem } from '../hooks/useInventory';
 
 interface InventoryTableProps {
   items: InventoryItem[];
-  onUpdateQuantity: (id: string, quantity: number) => void;
+  onUpdateQuantity: (item: InventoryItem) => void;
 }
 
-export function InventoryTable({ items }: InventoryTableProps) {
-  const getStockStatus = (available: number) => {
-    if (available === 0)
+export function InventoryTable({
+  items,
+  onUpdateQuantity,
+}: InventoryTableProps) {
+  const getStockStatus = (quantity: number) => {
+    if (quantity === 0)
       return { label: 'Out of Stock', variant: 'error' as const };
-    if (available < 10)
+    if (quantity < 10)
       return { label: 'Low Stock', variant: 'warning' as const };
     return { label: 'In Stock', variant: 'success' as const };
   };
@@ -36,13 +30,7 @@ export function InventoryTable({ items }: InventoryTableProps) {
             </th>
             <th className="text-left p-4 font-semibold text-foreground">SKU</th>
             <th className="text-right p-4 font-semibold text-foreground">
-              Total
-            </th>
-            <th className="text-right p-4 font-semibold text-foreground">
-              Reserved
-            </th>
-            <th className="text-right p-4 font-semibold text-foreground">
-              Available
+              Quantity
             </th>
             <th className="text-left p-4 font-semibold text-foreground">
               Status
@@ -57,7 +45,7 @@ export function InventoryTable({ items }: InventoryTableProps) {
         </thead>
         <tbody>
           {items.map((item) => {
-            const status = getStockStatus(item.available);
+            const status = getStockStatus(item.quantity);
             return (
               <tr
                 key={item.id}
@@ -81,12 +69,6 @@ export function InventoryTable({ items }: InventoryTableProps) {
                 <td className="p-4 text-right font-semibold text-foreground">
                   {item.quantity}
                 </td>
-                <td className="p-4 text-right text-muted-foreground">
-                  {item.reserved}
-                </td>
-                <td className="p-4 text-right font-semibold text-foreground">
-                  {item.available}
-                </td>
                 <td className="p-4">
                   <Badge variant={status.variant}>{status.label}</Badge>
                 </td>
@@ -96,7 +78,11 @@ export function InventoryTable({ items }: InventoryTableProps) {
                     : 'Never'}
                 </td>
                 <td className="p-4 text-right">
-                  <Button variant="outline" size="sm">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onUpdateQuantity(item)}
+                  >
                     <Edit className="h-4 w-4" />
                   </Button>
                 </td>

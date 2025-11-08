@@ -40,8 +40,12 @@ export function ProfileHeader() {
             className="h-24 w-24 rounded-full bg-primary/10 flex
             items-center justify-center flex-shrink-0"
           >
-            {user?.avatar ? (
-              <img src={user.avatar} alt="avatar" className="h-24 w-24 rounded-full object-cover" />
+            {user?.avatarUrl ? (
+              <img
+                src={user.avatarUrl}
+                alt="avatar"
+                className="h-24 w-24 rounded-full object-cover"
+              />
             ) : (
               <User className="h-12 w-12 text-primary" />
             )}
@@ -64,10 +68,7 @@ export function ProfileHeader() {
           </div>
 
           {/* Actions */}
-          <Button
-            variant="outline"
-            onClick={() => navigate.to(`/settings`)}
-          >
+          <Button variant="outline" onClick={() => navigate.to(`/settings`)}>
             <Settings className="h-4 w-4 mr-2" />
             Profile settings
           </Button>

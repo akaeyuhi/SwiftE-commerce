@@ -79,3 +79,5 @@ export const UserOrderListItem = React.forwardRef<
     </Card>
   );
 });
+
+UserOrderListItem.displayName = 'UserOrderListItem';

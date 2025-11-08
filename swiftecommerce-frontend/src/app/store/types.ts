@@ -22,7 +22,7 @@ export interface User {
   deactivatedAt?: Date;
   createdAt?: Date;
   updatedAt?: Date;
-  avatar?: string;
+  avatarUrl?: string;
   siteRole: AdminRoles;
   ownedStores?: Store[];
   roles?: StoreRole[];
