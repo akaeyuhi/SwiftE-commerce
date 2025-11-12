@@ -3,3 +3,5 @@
 /gemini_files
 GEMINI.md
 OVERVIEW.md
+.env
+api-json.json

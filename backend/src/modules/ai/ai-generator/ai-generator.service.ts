@@ -389,11 +389,9 @@ export class AiGeneratorService extends BaseAiService<
         response.result ||
         JSON.stringify(response);
     } else {
-      // Fallback
       text = String(response || '');
     }
 
-    // ✅ Ensure text is a string
     if (!text || typeof text !== 'string') {
       return {
         title: fallbackTitle,
