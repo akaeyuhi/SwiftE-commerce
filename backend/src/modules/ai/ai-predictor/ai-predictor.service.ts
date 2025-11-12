@@ -224,7 +224,7 @@ export class AiPredictorService extends BaseAiService<
   /**
    * Internal batch prediction with automatic case transformation
    */
-  private async predictBatchInternal(
+  async predictBatchInternal(
     items: Array<
       string | { productId: string; storeId?: string } | AiPredictRow
     >,
@@ -232,17 +232,56 @@ export class AiPredictorService extends BaseAiService<
     userId?: string,
     contextStoreId?: string
   ) {
-    if (!items || items.length === 0) return [];
-
-    const normalized = await this.normalizeItems(items);
-    await this.buildMissingFeatures(normalized);
-
-    return this.processPredictionChunks(
-      normalized,
+    const preparedItems = await this.preparePredictionItems(items);
+    return this.processHttpPrediction(
+      preparedItems,
       modelVersion,
       userId,
       contextStoreId
     );
+  }
+
+  public async preparePredictionItems(
+    items: Array<
+      string | { productId: string; storeId?: string } | AiPredictRow
+    >
+  ): Promise<
+    Array<AiPredictRow & { meta: { productId?: string; storeId?: string } }>
+  > {
+    if (!items || items.length === 0) return [];
+
+    const normalized = await this.normalizeItems(items);
+    await this.buildMissingFeatures(normalized);
+    return normalized;
+  }
+
+  public async processHttpPrediction(
+    normalized: Array<AiPredictRow & { meta: any }>,
+    modelVersion?: string,
+    userId?: string,
+    contextStoreId?: string
+  ) {
+    const results: Array<any> = [];
+
+    for (let i = 0; i < normalized.length; i += this.chunkSize) {
+      const chunk = normalized.slice(i, i + this.chunkSize);
+
+      try {
+        const chunkResults = await this.processSingleChunk(
+          chunk,
+          i,
+          modelVersion,
+          userId,
+          contextStoreId
+        );
+        results.push(...chunkResults);
+      } catch (error) {
+        const errorResults = this.createErrorResults(chunk, i, error.message);
+        results.push(...errorResults);
+      }
+    }
+
+    return results;
   }
 
   private async normalizeItems(
@@ -330,35 +369,6 @@ export class AiPredictorService extends BaseAiService<
         `buildFeatureVector failed for ${item.productId}: ${error.message || error}`
       );
     }
-  }
-
-  private async processPredictionChunks(
-    normalized: Array<AiPredictRow & { meta: any }>,
-    modelVersion?: string,
-    userId?: string,
-    contextStoreId?: string
-  ) {
-    const results: Array<any> = [];
-
-    for (let i = 0; i < normalized.length; i += this.chunkSize) {
-      const chunk = normalized.slice(i, i + this.chunkSize);
-
-      try {
-        const chunkResults = await this.processSingleChunk(
-          chunk,
-          i,
-          modelVersion,
-          userId,
-          contextStoreId
-        );
-        results.push(...chunkResults);
-      } catch (error) {
-        const errorResults = this.createErrorResults(chunk, i, error.message);
-        results.push(...errorResults);
-      }
-    }
-
-    return results;
   }
 
   private async processSingleChunk(
