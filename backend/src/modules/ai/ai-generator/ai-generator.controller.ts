@@ -26,6 +26,7 @@ import {
   GenerateIdeasDto,
   GenerateCustomDto,
   GenerationQueryDto,
+  GenerateImageDto,
 } from './dto/generator-request.dto';
 import { AiTransform } from 'src/modules/ai/decorators/ai-transform.decorator';
 
@@ -57,6 +58,7 @@ export class AiGeneratorController {
     },
     generateIdeas: { storeRoles: [StoreRoles.ADMIN, StoreRoles.MODERATOR] },
     generateCustom: { storeRoles: [StoreRoles.ADMIN, StoreRoles.MODERATOR] },
+    generateImage: { storeRoles: [StoreRoles.ADMIN, StoreRoles.MODERATOR] },
 
     // Analytics endpoints
     getUsageStats: { storeRoles: [StoreRoles.ADMIN] },
@@ -212,6 +214,39 @@ export class AiGeneratorController {
           generatedAt: new Date().toISOString(),
           userId: user.id,
           storeId: dto.storeId || storeId,
+        },
+      },
+    };
+  }
+
+  /**
+   * POST /ai/generator/image
+   * Generate image from prompt
+   */
+  @Post('image')
+  @HttpCode(HttpStatus.OK)
+  async generateImage(
+    @Param('storeId', new ParseUUIDPipe()) storeId: string,
+    @Body() dto: GenerateImageDto,
+    @Req() req: Request
+  ) {
+    const user = this.extractUser(req);
+
+    const imageUrl = await this.generatorService.generateImage({
+      prompt: dto.prompt,
+      userId: user.id,
+      storeId,
+    });
+
+    return {
+      success: true,
+      data: {
+        result: imageUrl,
+        metadata: {
+          prompt: dto.prompt,
+          generatedAt: new Date().toISOString(),
+          userId: user.id,
+          storeId,
         },
       },
     };

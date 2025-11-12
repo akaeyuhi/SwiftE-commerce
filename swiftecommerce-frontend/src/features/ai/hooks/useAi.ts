@@ -1,7 +1,13 @@
-import { useQuery, useMutation, UseQueryOptions } from '@tanstack/react-query';
+import { useMutation, useQuery, UseQueryOptions } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
+import {
+  GenerateCustomRequest,
+  GenerateDescriptionRequest,
+  GenerateIdeasRequest,
+  GenerateNamesRequest,
+} from '@/features/ai/types/ai-generator.types.ts';
 
 export function useTrendingProducts(
   storeId: string,
@@ -18,16 +24,33 @@ export function useTrendingProducts(
 
 export function useGenerateNames(storeId: string) {
   return useMutation({
-    mutationFn: (data: any) => api.ai.generator.generateNames(storeId, data),
+    mutationFn: (data: GenerateNamesRequest) =>
+      api.ai.generator.generateNames(storeId, data),
     onError: () => toast.error('Failed to generate names'),
   });
 }
 
 export function useGenerateDescription(storeId: string) {
   return useMutation({
-    mutationFn: (data: any) =>
+    mutationFn: (data: GenerateDescriptionRequest) =>
       api.ai.generator.generateDescription(storeId, data),
     onError: () => toast.error('Failed to generate description'),
+  });
+}
+
+export function useGenerateIdeas(storeId: string) {
+  return useMutation({
+    mutationFn: (data: GenerateIdeasRequest) =>
+      api.ai.generator.generateIdeas(storeId, data),
+    onError: () => toast.error('Failed to generate ideas'),
+  });
+}
+
+export function useGenerateCustom(storeId: string) {
+  return useMutation({
+    mutationFn: (data: GenerateCustomRequest) =>
+      api.ai.generator.generateCustom(storeId, data),
+    onError: () => toast.error('Failed to generate custom content'),
   });
 }
 
@@ -35,5 +58,21 @@ export function usePredictDemand(storeId: string) {
   return useMutation({
     mutationFn: (data: any) => api.ai.predictor.predictSingle(storeId, data),
     onError: () => toast.error('Failed to predict demand'),
+  });
+}
+
+export function useGenerateWholeProduct(storeId: string) {
+  return useMutation({
+    mutationFn: (data: { idea: string }) =>
+      api.ai.generator.generateWholeProduct(storeId, data),
+    onError: () => toast.error('Failed to generate product'),
+  });
+}
+
+export function useGenerateImage(storeId: string) {
+  return useMutation({
+    mutationFn: (data: { prompt: string }) =>
+      api.ai.generator.generateImage(storeId, data),
+    onError: () => toast.error('Failed to generate image'),
   });
 }

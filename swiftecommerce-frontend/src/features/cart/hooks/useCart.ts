@@ -45,6 +45,35 @@ export function useCartMutations(
     },
   });
 
+  const removeItem = useMutation({
+    mutationFn: (itemId: string) =>
+      api.cart.removeItem(storeId, userId, cartId!, itemId),
+    onSuccess: () => {
+      queryClient.invalidateQueries(invalidateFeature.cart(storeId, userId));
+      toast.success('Item removed from cart');
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to remove item from cart');
+    },
+  });
+
+  const updateItem = useMutation({
+    mutationFn: ({
+      itemId,
+      data,
+    }: {
+      itemId: string;
+      data: { quantity: number };
+    }) => api.cart.updateItem(storeId, userId, cartId!, itemId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(invalidateFeature.cart(storeId, userId));
+      toast.success('Cart updated');
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to update cart');
+    },
+  });
+
   const clearCart = useMutation({
     mutationFn: () => api.cart.clearCart(storeId, userId, cartId!),
     onSuccess: () => {
@@ -66,6 +95,8 @@ export function useCartMutations(
 
   return {
     addItem,
+    removeItem,
+    updateItem,
     clearCart,
     syncCart,
   };

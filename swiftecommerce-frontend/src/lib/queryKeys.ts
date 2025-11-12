@@ -158,6 +158,12 @@ export const queryKeys = {
     all: ['auth'] as const,
     session: () => [...queryKeys.auth.all, 'session'] as const,
   },
+
+  ai: {
+    all: ['ai'] as const,
+    trending: (storeId: string) =>
+      [...queryKeys.ai.all, 'trending', storeId] as const,
+  },
 } as const;
 
 /**

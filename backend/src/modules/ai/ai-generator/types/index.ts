@@ -2,7 +2,7 @@ import { AiGenerateOptions } from 'src/common/interfaces/ai/generator.interface'
 import { ProductSpecDto } from 'src/modules/ai/ai-generator/dto/generator-request.dto';
 
 export interface GenerationRequest {
-  type: 'name' | 'description' | 'ideas' | 'custom';
+  type: 'name' | 'description' | 'ideas' | 'custom' | 'image';
   prompt: string;
   options: AiGenerateOptions;
   context?: {

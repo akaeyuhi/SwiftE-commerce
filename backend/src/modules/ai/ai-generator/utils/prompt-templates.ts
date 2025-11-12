@@ -40,4 +40,11 @@ Return as JSON array.`,
       defaultOptions: { maxTokens: 256, temperature: 0.7 },
     },
   ],
+  [
+    'image',
+    {
+      template: '{{prompt}}',
+      defaultOptions: { maxTokens: 100, temperature: 0.7 },
+    },
+  ],
 ]);

@@ -125,3 +125,8 @@ export class GenerationQueryDto {
   @IsString()
   dateTo?: string;
 }
+
+export class GenerateImageDto {
+  @IsString()
+  prompt: string;
+}

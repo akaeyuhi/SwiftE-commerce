@@ -62,6 +62,32 @@ export class AIGeneratorService extends BaseService {
   }
 
   /**
+   * Generate whole product (name and description)
+   */
+  async generateWholeProduct(
+    storeId: string,
+    data: { idea: string }
+  ): Promise<{ name: string; description: string }> {
+    const url = buildUrl(API_ENDPOINTS.AI_GENERATOR.GENERATE_WHOLE_PRODUCT, {
+      storeId,
+    });
+    return this.client.post(url, data);
+  }
+
+  /**
+   * Generate image
+   */
+  async generateImage(
+    storeId: string,
+    data: { prompt: string }
+  ): Promise<string> {
+    const url = buildUrl(API_ENDPOINTS.AI_GENERATOR.GENERATE_IMAGE, {
+      storeId,
+    });
+    return this.client.post<string>(url, data);
+  }
+
+  /**
    * Get generation types
    */
   async getGenerationTypes(storeId: string): Promise<string[]> {

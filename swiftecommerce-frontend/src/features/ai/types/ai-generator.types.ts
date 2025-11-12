@@ -1,18 +1,18 @@
 export interface GenerateNamesRequest {
-  category: string;
-  keywords: string[];
+  storeStyle: string;
+  seed: string;
   count?: number;
 }
 
 export interface GenerateDescriptionRequest {
   name: string;
-  productSpec: string;
+  productSpec?: string;
   tone?: 'professional' | 'casual' | 'enthusiastic';
 }
 
 export interface GenerateIdeasRequest {
-  category: string;
-  trends: string[];
+  storeStyle: string;
+  seed: string;
   count?: number;
 }
 
