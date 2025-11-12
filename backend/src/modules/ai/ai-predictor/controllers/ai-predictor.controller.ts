@@ -1,13 +1,9 @@
 import {
   Controller,
-  Get,
   Post,
   Body,
-  Param,
-  Query,
   UseGuards,
   Req,
-  ParseUUIDPipe,
   ValidationPipe,
   HttpStatus,
   HttpCode,
@@ -15,21 +11,16 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Request } from 'express';
-import { AiPredictorService } from './ai-predictor.service';
 import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';
 import { AdminGuard } from 'src/modules/authorization/guards/admin.guard';
 import { StoreRolesGuard } from 'src/modules/authorization/guards/store-roles.guard';
 import { EntityOwnerGuard } from 'src/modules/authorization/guards/entity-owner.guard';
-import { AdminRole } from 'src/common/decorators/admin-role.decorator';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { AdminRoles } from 'src/common/enums/admin.enum';
 import { AccessPolicies } from 'src/modules/authorization/policy/policy.types';
 import {
   BatchPredictDto,
-  BuildFeatureVectorDto,
-  PredictionQueryDto,
   SinglePredictDto,
-  TrendingQueryDto,
 } from 'src/modules/ai/ai-predictor/dto/predictor-request.dto';
 import { AiTransform } from 'src/modules/ai/decorators/ai-transform.decorator';
 
@@ -48,6 +39,9 @@ import { AiTransform } from 'src/modules/ai/decorators/ai-transform.decorator';
  * - Site admins can predict for any products
  * - Entity owner guards for data access control
  */
+import { IAiPredictorService } from '../contracts/ai-predictor.service.contract';
+import { Inject } from '@nestjs/common';
+
 @Controller('stores/:storesId/ai/predictor')
 @UseGuards(JwtAuthGuard, AdminGuard, StoreRolesGuard, EntityOwnerGuard)
 @AiTransform()
@@ -67,38 +61,41 @@ export class AiPredictorController {
     getModelComparison: { adminRole: AdminRoles.ADMIN },
   };
 
-  constructor(private readonly predictorService: AiPredictorService) {}
+  constructor(
+    @Inject(IAiPredictorService)
+    private readonly predictorService: IAiPredictorService
+  ) {}
 
-  /**
-   * GET /ai/predictor/features/:productId
-   * Build feature vector for a product
-   */
-  @Get('features/:productId')
-  async buildFeatureVector(
-    @Param('productId', ParseUUIDPipe) productId: string,
-    @Query(ValidationPipe) query: BuildFeatureVectorDto,
-    @Req() req: Request
-  ) {
-    const user = this.extractUser(req);
-
-    const features = await this.predictorService.buildFeatureVector(
-      productId,
-      query.storeId
-    );
-
-    return {
-      success: true,
-      data: {
-        productId,
-        storeId: query.storeId || null,
-        features,
-        metadata: {
-          generatedAt: new Date().toISOString(),
-          userId: user.id,
-        },
-      },
-    };
-  }
+  // /**
+  //  * GET /ai/predictor/features/:productId
+  //  * Build feature vector for a product
+  //  */
+  // @Get('features/:productId')
+  // async buildFeatureVector(
+  //   @Param('productId', ParseUUIDPipe) productId: string,
+  //   @Query(ValidationPipe) query: BuildFeatureVectorDto,
+  //   @Req() req: Request
+  // ) {
+  //   const user = this.extractUser(req);
+  //
+  //   const features = await this.predictorService.buildFeatureVector(
+  //     productId,
+  //     query.storeId
+  //   );
+  //
+  //   return {
+  //     success: true,
+  //     data: {
+  //       productId,
+  //       storeId: query.storeId || null,
+  //       features,
+  //       metadata: {
+  //         generatedAt: new Date().toISOString(),
+  //         userId: user.id,
+  //       },
+  //     },
+  //   };
+  // }
 
   /**
    * POST /ai/predictor/predict
@@ -131,7 +128,7 @@ export class AiPredictorController {
       ];
     } else items = [];
 
-    const results = await this.predictorService.predictBatch(items);
+    const results = await this.predictorService.predict(items);
     const prediction = results[0];
 
     if (!prediction) {
@@ -176,22 +173,22 @@ export class AiPredictorController {
     }
 
     let results;
+    let processedItems = 0;
 
     if (dto.persist) {
-      // Persist predictions to database
       const persisted = await this.predictorService.predictBatchAndPersist(
         dto.items,
         dto.modelVersion
       );
-
       results = persisted.map((p) => ({
         predictorStatId: p.predictorStat?.id,
         prediction: p.prediction,
         success: true,
       }));
+      processedItems = persisted.length;
     } else {
-      // Just return predictions without persistence
-      results = await this.predictorService.predictBatch(dto.items);
+      results = await this.predictorService.predict(dto.items);
+      processedItems = (results as any)?.results?.length || results.length || 0;
     }
 
     return {
@@ -200,147 +197,11 @@ export class AiPredictorController {
         results,
         metadata: {
           totalItems: dto.items.length,
-          processedItems: results.length,
+          processedItems,
           persisted: dto.persist || false,
           modelVersion: dto.modelVersion,
           processedAt: new Date().toISOString(),
           userId: user.id,
-        },
-      },
-    };
-  }
-
-  /**
-   * GET /ai/predictor/stores/:storeId/trending
-   * Get trending products for a store based on predictions
-   */
-  @Get('stores/:storeId/trending')
-  async getTrendingProducts(
-    @Param('storeId', ParseUUIDPipe)
-    storeId: string,
-    @Query(ValidationPipe)
-    query: TrendingQueryDto,
-    @Req()
-    req: Request
-  ) {
-    const user = this.extractUser(req);
-
-    const trending = await this.predictorService.getTrendingProducts(storeId, {
-      limit: query.limit || 10,
-      timeframe: query.timeframe || 'week',
-      minScore: query.minScore || 0.6,
-    });
-
-    return {
-      success: true,
-      data: {
-        storeId,
-        trending,
-        metadata: {
-          timeframe: query.timeframe || 'week',
-          minScore: query.minScore || 0.6,
-          generatedAt: new Date().toISOString(),
-          userId: user.id,
-        },
-      },
-    };
-  }
-
-  /**
-   * GET /ai/predictor/stores/:storeId/stats
-   * Get prediction statistics for a store
-   */
-  @Get('stores/:storeId/stats')
-  async getPredictionStats(
-    @Param('storeId', ParseUUIDPipe)
-    storeId: string,
-    @Query(ValidationPipe)
-    query: PredictionQueryDto,
-    @Req()
-    req: Request
-  ) {
-    const user = this.extractUser(req);
-
-    const stats = await this.predictorService.getPredictionStats({
-      storeId,
-      dateFrom: query.dateFrom ? new Date(query.dateFrom) : undefined,
-      dateTo: query.dateTo ? new Date(query.dateTo) : undefined,
-      modelVersion: query.modelVersion,
-    });
-
-    return {
-      success: true,
-      data: {
-        storeId,
-        stats,
-        metadata: {
-          period: {
-            from: query.dateFrom,
-            to: query.dateTo,
-          },
-          generatedAt: new Date().toISOString(),
-          userId: user.id,
-        },
-      },
-    };
-  }
-
-  /**
-   * GET /ai/predictor/health
-   * Health check for predictor service
-   */
-  @Get('health')
-  @AdminRole(AdminRoles.ADMIN)
-  async healthCheck() {
-    try {
-      const health = await this.predictorService.healthCheck();
-
-      return {
-        success: true,
-        data: {
-          service: 'ai-predictor',
-          ...health,
-          timestamp: new Date().toISOString(),
-        },
-      };
-    } catch (error) {
-      return {
-        success: false,
-        data: {
-          service: 'ai-predictor',
-          healthy: false,
-          error: error.message,
-          timestamp: new Date().toISOString(),
-        },
-      };
-    }
-  }
-
-  /**
-   * GET /ai/predictor/models/comparison
-   * Compare performance of different model versions
-   */
-  @Get('models/comparison')
-  @AdminRole(AdminRoles.ADMIN)
-  async getModelComparison(
-    @Query(ValidationPipe)
-    query: PredictionQueryDto
-  ) {
-    const comparison = await this.predictorService.getPredictionStats({
-      dateFrom: query.dateFrom ? new Date(query.dateFrom) : undefined,
-      dateTo: query.dateTo ? new Date(query.dateTo) : undefined,
-    });
-
-    return {
-      success: true,
-      data: {
-        comparison,
-        metadata: {
-          period: {
-            from: query.dateFrom,
-            to: query.dateTo,
-          },
-          generatedAt: new Date().toISOString(),
         },
       },
     };

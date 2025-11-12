@@ -1,12 +1,14 @@
+import { AiPredictorPersistenceService } from './services/ai-predictor-persistence.service';
+import { AiPredictorStatsController } from './controllers/ai-predictor-stats.controller';
 import { Module } from '@nestjs/common';
-import { AiPredictorService } from 'src/modules/ai/ai-predictor/ai-predictor.service';
-import { AiPredictorController } from 'src/modules/ai/ai-predictor/ai-predictor.controller';
+import { AiPredictorService } from 'src/modules/ai/ai-predictor/services/ai-predictor.service';
+import { AiPredictorController } from 'src/modules/ai/ai-predictor/controllers/ai-predictor.controller';
 import { AiAuditsModule } from 'src/modules/ai/ai-audit/ai-audit.module';
 import { AiLogsModule } from 'src/modules/ai/ai-logs/ai-logs.module';
 import { AiPredictorRepository } from 'src/modules/ai/ai-predictor/ai-predictor.repository';
 import { HttpModule } from '@nestjs/axios';
 import { AnalyticsModule } from 'src/modules/analytics/analytics.module';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import {
   IInventoryRepository,
   IInventoryService,
@@ -21,8 +23,8 @@ import { Inventory } from 'src/entities/store/product/inventory.entity';
 import { ProductVariant } from 'src/entities/store/product/variant.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RabbitMQModule } from 'src/modules/rabbitmq/rabbitmq.module';
-import { AiPredictorRabbitMQController } from './ai-predictor-rabbitmq.controller';
-import { AiPredictorRabbitMQService } from './ai-predictor-rabbitmq.service';
+import { AiPredictorRabbitMQService } from 'src/modules/ai/ai-predictor/services/ai-predictor-rabbitmq.service';
+import { IAiPredictorService } from './contracts/ai-predictor.service.contract';
 
 @Module({
   imports: [
@@ -34,16 +36,29 @@ import { AiPredictorRabbitMQService } from './ai-predictor-rabbitmq.service';
     ConfigModule,
     RabbitMQModule,
   ],
-  controllers: [AiPredictorController, AiPredictorRabbitMQController],
+  controllers: [AiPredictorController, AiPredictorStatsController],
   providers: [
     AiPredictorService,
     AiPredictorRepository,
     AiPredictorRabbitMQService,
+    AiPredictorPersistenceService,
+    {
+      provide: IAiPredictorService,
+      useFactory: (
+        configService: ConfigService,
+        httpService: AiPredictorService,
+        rabbitmqService: AiPredictorRabbitMQService
+      ) => {
+        const transport = configService.get('PREDICTOR_TRANSPORT');
+        return transport === 'rabbitmq' ? rabbitmqService : httpService;
+      },
+      inject: [ConfigService, AiPredictorService, AiPredictorRabbitMQService],
+    },
     { provide: IInventoryService, useClass: AiInventoryService },
     { provide: IVariantService, useClass: AiVariantService },
     { provide: IVariantRepository, useClass: AiVariantRepository },
     { provide: IInventoryRepository, useClass: AiInventoryRepository },
   ],
-  exports: [AiPredictorService, AiPredictorRepository],
+  exports: [AiPredictorService, AiPredictorRepository, IAiPredictorService],
 })
 export class AiPredictorModule {}

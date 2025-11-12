@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { HttpService } from '@nestjs/axios';
 import { DataSource, Repository } from 'typeorm';
-import { AiPredictorService } from 'src/modules/ai/ai-predictor/ai-predictor.service';
+import { AiPredictorService } from 'src/modules/ai/ai-predictor/services/ai-predictor.service';
 import { AiPredictorRepository } from 'src/modules/ai/ai-predictor/ai-predictor.repository';
 import { StoreDailyStatsRepository } from 'src/modules/analytics/repositories/store-daily-stats.repository';
 import { ProductDailyStatsRepository } from 'src/modules/analytics/repositories/product-daily-stats.repository';

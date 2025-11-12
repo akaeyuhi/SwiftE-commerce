@@ -9,7 +9,7 @@ import {
   AiGeneratorService,
 } from 'src/modules/ai/ai-generator/ai-generator.service';
 import { AiPredictorModule } from 'src/modules/ai/ai-predictor/ai-predictor.module';
-import { AiPredictorService } from 'src/modules/ai/ai-predictor/ai-predictor.service';
+import { AiPredictorService } from 'src/modules/ai/ai-predictor/services/ai-predictor.service';
 import { OpenAiProvider } from 'src/modules/ai/ai-generator/providers/open-ai.provider';
 import { HuggingFaceProvider } from 'src/modules/ai/ai-generator/providers/hugging-face.provider';
 import { HttpModule } from '@nestjs/axios';
