@@ -236,6 +236,8 @@ export const API_ENDPOINTS = {
     STORE_CONVERSION: '/analytics/stores/:storeId/conversion',
     STORE_RATINGS: '/analytics/stores/:storeId/ratings',
     STORE_QUICK_STATS: '/analytics/stores/:storeId/quick-stats',
+    CATEGORY_SALES: '/analytics/stores/:storeId/sales-by-category',
+    STORE_INSIGHTS: '/analytics/stores/:storeId/insights',
     FUNNEL: '/analytics/stores/:storeId/funnel',
     REVENUE_TRENDS: '/analytics/stores/:storeId/revenue-trends',
     COHORT_ANALYSIS: '/analytics/stores/:storeId/cohort-analysis',

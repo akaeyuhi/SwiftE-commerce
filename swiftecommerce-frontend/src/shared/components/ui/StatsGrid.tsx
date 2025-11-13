@@ -1,7 +1,7 @@
 import { LucideIcon } from 'lucide-react';
 import { Card, CardContent } from './Card';
 
-interface StatItem {
+export interface StatItem {
   title: string;
   value: string | number;
   icon: LucideIcon;

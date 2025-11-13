@@ -9,31 +9,12 @@ import {
   PeriodComparison,
   ProductPerformance,
   AnalyticsEvent,
+  AnalyticsParams,
+  TopProductsParams,
+  CompareStoresParams,
 } from '../types/analytics.types';
 
-export interface AnalyticsParams {
-  from?: string;
-  to?: string;
-  includeTimeseries?: boolean;
-  interval?: 'day' | 'week' | 'month';
-}
-
-export interface TopProductsParams {
-  limit?: number;
-  period?: 'day' | 'week' | 'month' | 'year';
-  category?: string;
-}
-
-export interface CompareStoresParams {
-  storeIds: string[];
-  from?: string;
-  to?: string;
-  metrics?: string[];
-}
-
 export class AnalyticsService extends BaseService {
-  // ==================== STORE ANALYTICS ====================
-
   /**
    * Get store analytics
    */
@@ -73,11 +54,33 @@ export class AnalyticsService extends BaseService {
   /**
    * Get store quick stats
    */
-  async getStoreQuickStats(storeId: string): Promise<any> {
+  async getStoreQuickStats(
+    storeId: string,
+    params?: AnalyticsParams
+  ): Promise<any> {
     const url = buildUrl(API_ENDPOINTS.ANALYTICS.STORE_QUICK_STATS, {
       storeId,
     });
-    return this.client.get(url);
+    const urlWithParams = this.buildQueryUrl(url, params);
+    return this.client.get(urlWithParams);
+  }
+
+  async getCategorySales(
+    storeId: string,
+    params?: AnalyticsParams
+  ): Promise<any[]> {
+    const url = buildUrl(API_ENDPOINTS.ANALYTICS.CATEGORY_SALES, { storeId });
+    const urlWithParams = this.buildQueryUrl(url, params);
+    return this.client.get<any[]>(urlWithParams);
+  }
+
+  async getStoreInsights(
+    storeId: string,
+    params?: AnalyticsParams
+  ): Promise<any> {
+    const url = buildUrl(API_ENDPOINTS.ANALYTICS.STORE_INSIGHTS, { storeId });
+    const urlWithParams = this.buildQueryUrl(url, params);
+    return this.client.get(urlWithParams);
   }
 
   /**

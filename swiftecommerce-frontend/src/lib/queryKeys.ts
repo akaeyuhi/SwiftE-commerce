@@ -164,6 +164,15 @@ export const queryKeys = {
     trending: (storeId: string) =>
       [...queryKeys.ai.all, 'trending', storeId] as const,
   },
+
+  dashboard: {
+    all: ['dashboard'] as const,
+    stats: () => [...queryKeys.dashboard.all, 'stats'] as const,
+    recentOrders: (limit: number) =>
+      [...queryKeys.dashboard.all, 'recent-orders', limit] as const,
+    myStores: (limit: number) =>
+      [...queryKeys.dashboard.all, 'my-stores', limit] as const,
+  },
 } as const;
 
 /**

@@ -8,29 +8,57 @@ import { queryKeys } from '@/lib/queryKeys';
 import { api } from '@/lib/api';
 import {
   AnalyticsEvent,
+  AnalyticsParams,
   CohortAnalysis,
   ConversionMetrics,
   FunnelAnalysis,
   ProductPerformance,
+  TopProductsParams,
   UserJourney,
 } from '../types/analytics.types';
-import {
-  AnalyticsParams,
-  TopProductsParams,
-} from '@/features/analytics/api/analyticsService.ts';
 
-// export function useQuickStats(
-//   storeId: string,
-//   options?: Omit<UseQueryOptions<QuickStatsDto>, 'queryKey' | 'queryFn'>
-// ) {
-//   return useQuery({
-//     queryKey: [...queryKeys.analytics.store(storeId), 'quick-stats'],
-//     queryFn: () => api.analytics.getQuickStats(storeId),
-//     enabled: !!storeId,
-//     staleTime: 1 * 60 * 1000,
-//     ...options,
-//   });
-// }
+export function useStoreQuickStats(
+  storeId: string,
+  timeRange: Extract<AnalyticsParams, 'period'>,
+  options?: Omit<UseQueryOptions<any>, 'queryKey' | 'queryFn'>
+) {
+  return useQuery({
+    queryKey: [...queryKeys.analytics.store(storeId), 'quick-stats', timeRange],
+    queryFn: () =>
+      api.analytics.getStoreQuickStats(storeId, { period: timeRange }),
+    enabled: !!storeId,
+    staleTime: 60 * 1000,
+    ...options,
+  });
+}
+
+export function useCategorySales(
+  storeId: string,
+  params?: AnalyticsParams,
+  options?: Omit<UseQueryOptions<any[]>, 'queryKey' | 'queryFn'>
+) {
+  return useQuery({
+    queryKey: [...queryKeys.analytics.store(storeId), 'category-sales', params],
+    queryFn: () => api.analytics.getCategorySales(storeId, params),
+    enabled: !!storeId,
+    staleTime: 5 * 60 * 1000,
+    ...options,
+  });
+}
+
+export function useStoreInsights(
+  storeId: string,
+  params?: AnalyticsParams,
+  options?: Omit<UseQueryOptions<any>, 'queryKey' | 'queryFn'>
+) {
+  return useQuery({
+    queryKey: [...queryKeys.analytics.store(storeId), 'insights', params],
+    queryFn: () => api.analytics.getStoreInsights(storeId, params),
+    enabled: !!storeId,
+    staleTime: 5 * 60 * 1000,
+    ...options,
+  });
+}
 
 export function useStoreAnalytics(
   storeId: string,

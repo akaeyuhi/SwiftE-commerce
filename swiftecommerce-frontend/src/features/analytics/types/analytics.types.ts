@@ -104,3 +104,26 @@ export interface RecordEventDto {
   userId?: string;
   metadata?: Record<string, any>;
 }
+
+export interface AnalyticsParams {
+  from?: string;
+  to?: string;
+  includeTimeseries?: boolean;
+  interval?: 'day' | 'week' | 'month';
+  period?: 'day' | 'week' | 'month' | 'year';
+}
+
+export interface TopProductsParams {
+  limit?: number;
+  period?: 'day' | 'week' | 'month' | 'year';
+  category?: string;
+}
+
+export interface CompareStoresParams {
+  storeIds: string[];
+  from?: string;
+  to?: string;
+  metrics?: string[];
+}
+
+export type TimePeriod = Extract<AnalyticsParams, 'period'>;
