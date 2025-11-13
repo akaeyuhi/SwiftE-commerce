@@ -12,6 +12,8 @@ setup(
         "sqlalchemy>=2.0.0",
         "psycopg2-binary>=2.9.0",
         "pydantic>=2.0.0",
+        "openpyxl>=3.0.0",
+        "pika>=1.2.0",
     ],
     extras_require={
         "train": [
@@ -31,6 +33,8 @@ setup(
             "predictor-export=predictor.export_features:main",
             "predictor-train=predictor.train_model:main",
             "predictor-serve=predictor.serve:main",
+            "predictor-serve-rabbitmq=predictor.serve_rabbitmq:main",
+            "predictor-export-file=predictor.file_export_features:main",
         ],
     },
 )

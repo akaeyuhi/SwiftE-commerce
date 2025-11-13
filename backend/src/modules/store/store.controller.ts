@@ -11,6 +11,7 @@ import {
   Post,
   Put,
   Query,
+  UploadedFiles,
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';
@@ -33,6 +34,12 @@ import { StoreRole } from 'src/common/decorators/store-role.decorator';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { AdvancedStoreSearchDto } from 'src/modules/store/dto/advanced-store-search.dto';
 import { AccessPolicies } from 'src/modules/authorization/policy/policy.types';
+import {
+  Pagination,
+  PaginationParams,
+} from 'src/common/decorators/pagination.decorator';
+import { PaginatedResponse } from 'src/common/decorators/paginated-response.decorator';
+import { UploadStoreFiles } from 'src/common/decorators/upload-store-files.decorator';
 
 /**
  * StoreController
@@ -71,6 +78,19 @@ export class StoreController extends BaseController<
     super(storeService);
   }
 
+  @Post(':id/upload-files')
+  @UploadStoreFiles()
+  @StoreRole(StoreRoles.ADMIN)
+  async uploadFiles(
+    @Param('id', ParseUUIDPipe) id: string,
+    @UploadedFiles()
+    files: { logo?: Express.Multer.File[]; banner?: Express.Multer.File[] }
+  ): Promise<StoreDto> {
+    const logoFile = files.logo ? files.logo[0] : undefined;
+    const bannerFile = files.banner ? files.banner[0] : undefined;
+    return this.storeService.uploadFiles(id, logoFile, bannerFile);
+  }
+
   // ===============================
   // Store Listings & Discovery
   // ===============================
@@ -103,20 +123,14 @@ export class StoreController extends BaseController<
     @Query('sortBy')
     sortBy?: 'followers' | 'revenue' | 'products' | 'recent'
   ): Promise<StoreSearchResultDto[]> {
-    try {
-      if (!query || query.trim().length === 0) {
-        throw new BadRequestException('Search query is required');
-      }
-
-      const maxLimit = limit ? Math.min(parseInt(limit), 50) : 20;
-      return await this.storeService.searchStoresByName(query, maxLimit, {
-        sortBy,
-      });
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to search stores: ${error.message}`
-      );
+    if (!query || query.trim().length === 0) {
+      throw new BadRequestException('Search query is required');
     }
+
+    const maxLimit = limit ? Math.min(parseInt(limit), 50) : 20;
+    return await this.storeService.searchStoresByName(query, maxLimit, {
+      sortBy,
+    });
   }
 
   /**
@@ -138,32 +152,14 @@ export class StoreController extends BaseController<
    * }
    */
   @Post('advanced-search')
+  @PaginatedResponse(StoreSearchResultDto)
   @HttpCode(HttpStatus.OK)
   @StoreRole(StoreRoles.ADMIN, StoreRoles.MODERATOR)
-  async advancedSearch(@Body() searchDto: AdvancedStoreSearchDto): Promise<{
-    stores: StoreSearchResultDto[];
-    total: number;
-    page: number;
-    limit: number;
-  }> {
-    try {
-      const result = await this.storeService.advancedStoreSearch(searchDto);
-
-      const page = searchDto.offset
-        ? Math.floor(searchDto.offset / (searchDto.limit || 20)) + 1
-        : 1;
-
-      return {
-        stores: result.stores,
-        total: result.total,
-        page,
-        limit: searchDto.limit || 20,
-      };
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to perform advanced search: ${error.message}`
-      );
-    }
+  async advancedSearch(
+    @Body() searchDto: AdvancedStoreSearchDto,
+    @Pagination() pagination: PaginationParams
+  ) {
+    return this.storeService.paginate(pagination, searchDto);
   }
 
   /**
@@ -194,18 +190,12 @@ export class StoreController extends BaseController<
       followerCount: number;
     }>
   > {
-    try {
-      if (!query || query.trim().length < 2) {
-        return [];
-      }
-
-      const maxLimit = limit ? Math.min(parseInt(limit), 20) : 10;
-      return await this.storeService.autocompleteStores(query.trim(), maxLimit);
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get autocomplete suggestions: ${error.message}`
-      );
+    if (!query || query.trim().length < 2) {
+      return [];
     }
+
+    const maxLimit = limit ? Math.min(parseInt(limit), 20) : 10;
+    return await this.storeService.autocompleteStores(query.trim(), maxLimit);
   }
   // ===============================
   // Store Statistics & Analytics
@@ -247,14 +237,8 @@ export class StoreController extends BaseController<
   async getTopStoresByRevenue(
     @Query('limit') limit?: string
   ): Promise<StoreStatsDto[]> {
-    try {
-      const maxLimit = limit ? Math.min(parseInt(limit), 50) : 10;
-      return await this.storeService.getTopStoresByRevenue(maxLimit);
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get top stores: ${error.message}`
-      );
-    }
+    const maxLimit = limit ? Math.min(parseInt(limit), 50) : 10;
+    return await this.storeService.getTopStoresByRevenue(maxLimit);
   }
 
   /**
@@ -265,14 +249,8 @@ export class StoreController extends BaseController<
   async getTopStoresByProducts(
     @Query('limit') limit?: string
   ): Promise<StoreStatsDto[]> {
-    try {
-      const maxLimit = limit ? Math.min(parseInt(limit), 50) : 10;
-      return await this.storeService.getTopStoresByProducts(maxLimit);
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get top stores: ${error.message}`
-      );
-    }
+    const maxLimit = limit ? Math.min(parseInt(limit), 50) : 10;
+    return await this.storeService.getTopStoresByProducts(maxLimit);
   }
 
   /**
@@ -283,14 +261,8 @@ export class StoreController extends BaseController<
   async getTopStoresByFollowers(
     @Query('limit') limit?: string
   ): Promise<StoreStatsDto[]> {
-    try {
-      const maxLimit = limit ? Math.min(parseInt(limit), 50) : 10;
-      return await this.storeService.getTopStoresByFollowers(maxLimit);
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to get top stores: ${error.message}`
-      );
-    }
+    const maxLimit = limit ? Math.min(parseInt(limit), 50) : 10;
+    return await this.storeService.getTopStoresByFollowers(maxLimit);
   }
 
   // ===============================
@@ -305,18 +277,12 @@ export class StoreController extends BaseController<
   @StoreRole(StoreRoles.ADMIN)
   @HttpCode(HttpStatus.OK)
   async recalculateStats(@Param('id', ParseUUIDPipe) id: string) {
-    try {
-      await this.storeService.recalculateStoreStats(id);
-      return {
-        success: true,
-        message: 'Store statistics recalculated successfully',
-        storeId: id,
-      };
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to recalculate stats: ${error.message}`
-      );
-    }
+    await this.storeService.recalculateStoreStats(id);
+    return {
+      success: true,
+      message: 'Store statistics recalculated successfully',
+      storeId: id,
+    };
   }
 
   /**
@@ -327,17 +293,11 @@ export class StoreController extends BaseController<
   @AdminRole(AdminRoles.ADMIN)
   @HttpCode(HttpStatus.OK)
   async recalculateAllStats() {
-    try {
-      await this.storeService.recalculateAllStoreStats();
-      return {
-        success: true,
-        message: 'All store statistics recalculated successfully',
-      };
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to recalculate stats: ${error.message}`
-      );
-    }
+    await this.storeService.recalculateAllStoreStats();
+    return {
+      success: true,
+      message: 'All store statistics recalculated successfully',
+    };
   }
 
   /**
@@ -347,20 +307,14 @@ export class StoreController extends BaseController<
   @Get(':id/health')
   @StoreRole(StoreRoles.ADMIN)
   async checkStoreHealth(@Param('id', ParseUUIDPipe) id: string) {
-    try {
-      return await this.storeService.checkStoreDataHealth(id);
-    } catch (error) {
-      throw new BadRequestException(
-        `Failed to check store health: ${error.message}`
-      );
-    }
+    return await this.storeService.checkStoreDataHealth(id);
   }
 
   @Put(':id')
   async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateStoreDto
-  ) {
+  ): Promise<StoreDto> {
     return this.storeService.update(id, dto);
   }
 

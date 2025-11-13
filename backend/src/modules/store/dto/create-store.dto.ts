@@ -13,4 +13,9 @@ export class CreateStoreDto {
   @IsUUID()
   @IsOptional()
   ownerId: string;
+
+  @IsOptional()
+  logoFile?: Express.Multer.File;
+  @IsOptional()
+  bannerFile?: Express.Multer.File;
 }

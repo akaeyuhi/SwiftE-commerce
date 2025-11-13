@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { ShoppingCart } from 'src/entities/store/cart/cart.entity';
 import { BaseRepository } from 'src/common/abstracts/base.repository';
+import { PaginationParams } from 'src/common/decorators/pagination.decorator';
 
 /**
  * Cart repository extending BaseRepository<ShoppingCart>.
@@ -37,12 +38,19 @@ export class CartRepository extends BaseRepository<ShoppingCart> {
    * Find all carts that belong to a user, with store relation attached.
    *
    * @param userId - user uuid
+   * @param pagination
    */
-  async findAllByUser(userId: string): Promise<ShoppingCart[]> {
-    return this.find({
+  async findAllByUser(
+    userId: string,
+    pagination?: PaginationParams
+  ): Promise<[ShoppingCart[], number]> {
+    const { limit = 10, offset = 0 } = pagination || {};
+    return this.findAndCount({
       where: { user: { id: userId } },
       relations: ['store', 'items', 'items.variant'],
       order: { updatedAt: 'DESC' },
+      take: limit,
+      skip: offset,
     });
   }
 

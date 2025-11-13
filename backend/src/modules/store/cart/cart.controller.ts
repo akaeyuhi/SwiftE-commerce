@@ -11,6 +11,7 @@ import {
   NotFoundException,
   Req,
   ForbiddenException,
+  Patch,
 } from '@nestjs/common';
 import { CartService } from 'src/modules/store/cart/cart.service';
 import { CreateCartDto } from 'src/modules/store/cart/dto/create-cart.dto';
@@ -29,6 +30,10 @@ import { CartItemDto } from 'src/modules/store/cart/cart-item/dto/cart-item.dto'
 import { CartItem } from 'src/entities/store/cart/cart-item.entity';
 import { EntityOwnerGuard } from 'src/modules/authorization/guards/entity-owner.guard';
 import { EntityOwner } from 'src/common/decorators/entity-owner.decorator';
+import {
+  Pagination,
+  PaginationParams,
+} from 'src/common/decorators/pagination.decorator';
 
 /**
  * CartController
@@ -181,13 +186,39 @@ export class CartController extends BaseController<
    *
    * @param _storeId - store UUID - used for routing convenience
    * @param userId - UUID of the user
+   * @param pagination
    * @returns array of ShoppingCart (each includes store relation)
    */
   @Get('merged')
   async getUserMergedCarts(
     @Param('storeId', new ParseUUIDPipe()) _storeId: string,
-    @Param('userId', new ParseUUIDPipe()) userId: string
-  ): Promise<{ userId: string; result: ShoppingCart[] }> {
-    return this.cartService.getUserMergedCarts(userId);
+    @Param('userId', new ParseUUIDPipe()) userId: string,
+    @Pagination() pagination: PaginationParams
+  ): Promise<{
+    userId: string;
+    data: ShoppingCart[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
+    const {
+      result: [data, total],
+    } = await this.cartService.getUserMergedCarts(userId, pagination);
+    return {
+      userId,
+      data,
+      total,
+      page: pagination.page,
+      limit: pagination.limit,
+    };
+  }
+
+  @Patch('sync')
+  async syncCartData(
+    @Param('storeId', new ParseUUIDPipe()) storeId: string,
+    @Param('userId', new ParseUUIDPipe()) userId: string,
+    @Body() dto: CreateCartDto
+  ) {
+    return this.cartService.syncCart(storeId, userId, dto);
   }
 }

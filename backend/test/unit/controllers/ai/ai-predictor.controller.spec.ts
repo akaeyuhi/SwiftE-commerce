@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { AiPredictorController } from 'src/modules/ai/ai-predictor/ai-predictor.controller';
-import { AiPredictorService } from 'src/modules/ai/ai-predictor/ai-predictor.service';
+import { AiPredictorController } from 'src/modules/ai/ai-predictor/controllers/ai-predictor.controller';
+import { AiPredictorService } from 'src/modules/ai/ai-predictor/services/ai-predictor.service';
 import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';
 import { AdminGuard } from 'src/modules/authorization/guards/admin.guard';
 import { StoreRolesGuard } from 'src/modules/authorization/guards/store-roles.guard';

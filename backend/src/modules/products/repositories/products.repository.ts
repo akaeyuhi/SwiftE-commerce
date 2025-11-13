@@ -54,50 +54,56 @@ export class ProductRepository extends BaseRepository<Product> {
 
   /**
    * Manually recalculate cached statistics
+   * REFACTORED: This method now uses a single query with subqueries to avoid N+1 issues.
    */
   async recalculateStats(productId: string): Promise<void> {
-    const product = await this.findOne({
-      where: { id: productId },
-    });
+    const stats = await this.manager
+      .createQueryBuilder(Product, 'p')
+      .select('p.id')
+      .addSelect(
+        (subQuery) =>
+          subQuery
+            .select('COUNT(r.id)')
+            .from('Review', 'r')
+            .where('r.productId = :productId', { productId }),
+        'reviewCount'
+      )
+      .addSelect(
+        (subQuery) =>
+          subQuery
+            .select('ROUND(AVG(r.rating)::NUMERIC, 2)')
+            .from('Review', 'r')
+            .where('r.productId = :productId', { productId }),
+        'averageRating'
+      )
+      .addSelect(
+        (subQuery) =>
+          subQuery
+            .select('COUNT(l.id)')
+            .from('Like', 'l')
+            .where('l.productId = :productId', { productId }),
+        'likeCount'
+      )
+      .addSelect(
+        (subQuery) =>
+          subQuery
+            .select('COALESCE(SUM(oi.quantity), 0)')
+            .from('OrderItem', 'oi')
+            .where('oi.product.id = :productId', { productId }),
+        'totalSales'
+      )
+      .where('p.id = :productId', { productId })
+      .getRawOne();
 
-    if (!product) {
+    if (!stats) {
       throw new NotFoundException('Product not found');
     }
 
-    // Count reviews
-    const reviewCount = await this.manager.getRepository('Review').count({
-      where: { productId },
-    });
-
-    // Calculate average rating
-    const ratingResult = await this.manager
-      .getRepository('Review')
-      .createQueryBuilder('r')
-      .select('ROUND(AVG(r.rating)::NUMERIC, 2)', 'avgRating')
-      .where('r.productId = :productId', { productId })
-      .getRawOne();
-
-    const averageRating = parseFloat(ratingResult?.avgRating || '0');
-
-    // Count likes
-    const likeCount = await this.manager.getRepository('Like').count({
-      where: { productId },
-    });
-
-    const salesResult = await this.manager
-      .getRepository('OrderItem')
-      .createQueryBuilder('oi')
-      .select('COALESCE(SUM(oi.quantity), 0)', 'totalSales')
-      .where('oi.product.id = :productId', { productId })
-      .getRawOne();
-
-    const totalSales = parseInt(salesResult?.totalSales || '0', 10);
-
     await this.update(productId, {
-      reviewCount,
-      averageRating,
-      likeCount,
-      totalSales,
+      reviewCount: stats.reviewCount,
+      averageRating: parseFloat(stats.averageRating || '0'),
+      likeCount: stats.likeCount,
+      totalSales: parseInt(stats.totalSales || '0', 10),
     });
   }
 }

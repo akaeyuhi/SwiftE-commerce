@@ -5,11 +5,12 @@ import {
 } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
 import { VariantsRepository } from 'src/modules/store/variants/variants.repository';
-import { BaseService } from 'src/common/abstracts/base.service';
+import { PaginationParams } from 'src/common/decorators/pagination.decorator';
 import { ProductVariant } from 'src/entities/store/product/variant.entity';
 import { CreateVariantDto } from 'src/modules/store/variants/dto/create-variant.dto';
 import { UpdateVariantDto } from 'src/modules/store/variants/dto/update-variant.dto';
 import { InventoryService } from 'src/modules/store/inventory/inventory.service';
+import { BaseService } from 'src/common/abstracts/base.service';
 
 /**
  * VariantsService
@@ -180,11 +181,18 @@ export class VariantsService extends BaseService<
    * List all variants for a product.
    *
    * @param productId - product id
+   * @param pagination
    * @returns ProductVariant[]
    */
-  async listByProduct(productId: string): Promise<ProductVariant[]> {
-    return this.variantRepo.find({
+  async listByProduct(
+    productId: string,
+    pagination?: PaginationParams
+  ): Promise<[ProductVariant[], number]> {
+    const { limit = 10, offset = 0 } = pagination || {};
+    return this.variantRepo.findAndCount({
       where: { productId },
+      take: limit,
+      skip: offset,
     });
   }
 
@@ -290,5 +298,24 @@ export class VariantsService extends BaseService<
         },
       },
     });
+  }
+
+  async createMultiple(dtos: CreateVariantDto[]): Promise<ProductVariant[]> {
+    const created = [] as ProductVariant[];
+    for (const dto of dtos) {
+      const variant = await this.create(dto);
+      created.push(variant);
+    }
+    return created;
+  }
+
+  async updateMultiple(dtos: UpdateVariantDto[]): Promise<ProductVariant[]> {
+    const updated = [] as ProductVariant[];
+    for (const dto of dtos) {
+      if (!dto.variantId) continue;
+      const variant = await this.update(dto.variantId, dto);
+      updated.push(variant);
+    }
+    return updated;
   }
 }

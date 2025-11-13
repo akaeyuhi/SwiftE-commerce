@@ -1,0 +1,50 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "allowUnusedLabels": false,
+    "allowUnreachableCode": false,
+
+    "types": ["vite/client", "vite-plugin-pwa/client"],
+
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@/shared/components/*": ["./src/shared/components/*"],
+      "@/features/*": ["./src/features/*"],
+      "@/lib/*": ["./src/lib/*"],
+      "@/shared/hooks/*": ["./src/shared/hooks/*"],
+      "@/shared/types/*": ["./src/shared/types/*"],
+      "@/shared/utils/*": ["./src/shared/utils/*"],
+      "@/config/*": ["./src/config/*"],
+      "@/assets/*": ["./src/assets/*"]
+    }
+  },
+  "include": [
+    "src",
+    "commitlint.config.js",
+    "postcss.config.js",
+    "tailwind.config.js",
+    "vite-env.d.ts",
+    "dev-dist/sw.js",
+    "dev-dist/workbox-3ad5617a.js"
+  ],
+  "references": [{ "path": "./tsconfig.node.json" }]
+}

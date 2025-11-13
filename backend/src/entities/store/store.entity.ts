@@ -19,6 +19,7 @@ import { AiLog } from 'src/entities/ai/ai-log.entity';
 import { Inventory } from 'src/entities/store/product/inventory.entity';
 import { Category } from 'src/entities/store/product/category.entity';
 import { UserOwnedEntity } from 'src/common/interfaces/crud/user-owned.entity.interface';
+import { ApiProperty } from '@nestjs/swagger';
 
 @Entity({ name: 'stores' })
 @Index(['name'])
@@ -32,6 +33,12 @@ export class Store implements UserOwnedEntity {
 
   @Column({ type: 'text' })
   description: string;
+
+  @Column({ nullable: true })
+  logoUrl?: string;
+
+  @Column({ nullable: true })
+  bannerUrl?: string;
 
   @Column({ name: 'owner_id', type: 'uuid' })
   ownerId: string;
@@ -65,6 +72,10 @@ export class Store implements UserOwnedEntity {
   @OneToMany(() => Product, (product) => product.store, {
     cascade: ['update', 'remove'],
   })
+  @ApiProperty({
+    type: () => [Product],
+    required: false,
+  })
   products: Product[];
 
   @OneToMany(() => Inventory, (inventory) => inventory.store, {
@@ -79,6 +90,10 @@ export class Store implements UserOwnedEntity {
 
   @OneToMany(() => Category, (category) => category.store, {
     cascade: ['update', 'remove'],
+  })
+  @ApiProperty({
+    type: () => [Category],
+    required: false,
   })
   categories: Category[];
 

@@ -7,6 +7,7 @@ import {
   Post,
   Put,
   Req,
+  UploadedFiles,
   UseGuards,
 } from '@nestjs/common';
 import { NewsService } from 'src/modules/store/news/news.service';
@@ -19,7 +20,13 @@ import { StoreRolesGuard } from 'src/modules/authorization/guards/store-roles.gu
 import { NewsPostDto } from 'src/modules/store/news/dto/news.dto';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { AccessPolicies } from 'src/modules/authorization/policy/policy.types';
+import {
+  Pagination,
+  PaginationParams,
+} from 'src/common/decorators/pagination.decorator';
+import { PaginatedResponse } from 'src/common/decorators/paginated-response.decorator';
 import { Request } from 'express';
+import { UploadNewsFiles } from 'src/common/decorators/upload-news-files.decorator';
 
 /**
  * NewsController
@@ -81,14 +88,17 @@ export class NewsController extends BaseController<
    * at controller level if desired (not included here to keep API minimal).
    *
    * @param storeId - store id (UUID)
+   * @param pagination
    */
   @Get('store-all')
+  @PaginatedResponse(NewsPost)
   async findAllByStore(
-    @Param('storeId', new ParseUUIDPipe()) storeId: string
-  ): Promise<NewsPost[]> {
+    @Param('storeId', new ParseUUIDPipe()) storeId: string,
+    @Pagination() pagination: PaginationParams
+  ): Promise<[NewsPost[], number]> {
     // default: return all posts (including unpublished). If you want only published,
     // add a query param and pass `onlyPublished` to service.
-    return this.newsService.findAllByStore(storeId, false);
+    return this.newsService.findAllByStore(storeId, false, pagination);
   }
 
   /**
@@ -96,14 +106,31 @@ export class NewsController extends BaseController<
    * Author is taken from the authenticated request (req.user.id) when available.
    */
   @Post('/create')
+  @UploadNewsFiles()
   async createWithRelations(
     @Param('storeId', new ParseUUIDPipe()) storeId: string,
     @Body() dto: CreateNewsDto,
-    @Req() req: Request
+    @Req() req: Request,
+    @UploadedFiles()
+    files: { mainPhoto?: Express.Multer.File[]; photos?: Express.Multer.File[] }
   ): Promise<NewsPost | NewsPostDto> {
     const authorId = (req as any).user?.id;
-    const enriched = { ...dto, storeId };
+    const mainPhoto = files.mainPhoto?.[0];
+    const photos = files.photos;
+    const enriched = { ...dto, storeId, mainPhoto, photos };
     return this.newsService.createWithRelations(enriched, authorId);
+  }
+
+  @Post(':id/upload-files')
+  @UploadNewsFiles()
+  async uploadFiles(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @UploadedFiles()
+    files: { mainPhoto?: Express.Multer.File[]; photos?: Express.Multer.File[] }
+  ): Promise<NewsPost> {
+    const mainPhoto = files.mainPhoto?.[0];
+    const photos = files.photos;
+    return this.newsService.uploadFiles(id, mainPhoto, photos);
   }
 
   /**

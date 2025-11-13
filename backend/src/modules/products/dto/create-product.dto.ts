@@ -1,4 +1,12 @@
-import { IsString, IsOptional, IsUUID, IsArray } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsUUID,
+  IsArray,
+  ValidateNested,
+} from 'class-validator';
+import { CreateVariantDto } from 'src/modules/store/variants/dto/create-variant.dto';
+import { Type } from 'class-transformer';
 
 export class CreateProductDto {
   @IsOptional()
@@ -26,4 +34,15 @@ export class CreateProductDto {
   @IsOptional()
   @IsUUID()
   categoryId?: string;
+
+  @IsOptional()
+  files: {
+    photos: Express.Multer.File[];
+    mainPhoto: Express.Multer.File[];
+  };
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => CreateVariantDto)
+  variants: CreateVariantDto[];
 }

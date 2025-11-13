@@ -30,7 +30,8 @@
     "migration:create": "npm run typeorm -- migration:create",
     "migration:run": "npm run typeorm -- migration:run -d ./data-source.ts",
     "migration:revert": "npm run typeorm -- migration:revert -d ./data-source.ts",
-    "migration:show": "npm run typeorm -- migration:show -d ./data-source.ts"
+    "migration:show": "npm run typeorm -- migration:show -d ./data-source.ts",
+    "seed": "ts-node -r tsconfig-paths/register src/database/seeders/seeding.ts"
   },
   "dependencies": {
     "@huggingface/inference": "^4.11.3",
@@ -43,6 +44,7 @@
     "@nestjs/event-emitter": "^3.0.1",
     "@nestjs/jwt": "^11.0.0",
     "@nestjs/mapped-types": "^2.1.0",
+    "@nestjs/microservices": "^11.1.8",
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/schedule": "^6.0.0",
@@ -50,6 +52,7 @@
     "@nestjs/typeorm": "^11.0.0",
     "@sendgrid/mail": "^8.1.6",
     "@types/handlebars": "^4.0.40",
+    "amqplib": "^0.10.9",
     "axios": "^1.12.2",
     "bcrypt": "^6.0.0",
     "bull": "^4.16.5",
@@ -71,6 +74,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.18.0",
+    "@faker-js/faker": "^10.1.0",
     "@nestjs/cli": "^11.0.0",
     "@nestjs/schematics": "^11.0.0",
     "@nestjs/testing": "^11.0.1",

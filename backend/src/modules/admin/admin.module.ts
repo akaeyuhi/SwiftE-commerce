@@ -11,9 +11,17 @@ import {
 import { AdminUserService } from 'src/modules/admin/implementations/user.service';
 import { AdminUserRepository } from 'src/modules/admin/implementations/user.repository';
 import { User } from 'src/entities/user/user.entity';
+import { StoreModule } from 'src/modules/store/store.module';
+import { OrdersModule } from 'src/modules/store/orders/orders.module';
+import { UserModule } from 'src/modules/user/user.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Admin, User])],
+  imports: [
+    TypeOrmModule.forFeature([Admin, User]),
+    StoreModule,
+    OrdersModule,
+    UserModule,
+  ],
   controllers: [AdminController],
   providers: [
     AdminService,

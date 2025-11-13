@@ -18,6 +18,11 @@ import { StoreRolesGuard } from 'src/modules/authorization/guards/store-roles.gu
 import { CategoryDto } from 'src/modules/store/categories/dto/category.dto';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { AccessPolicies } from 'src/modules/authorization/policy/policy.types';
+import {
+  Pagination,
+  PaginationParams,
+} from 'src/common/decorators/pagination.decorator';
+import { PaginatedResponse } from 'src/common/decorators/paginated-response.decorator';
 
 /**
  * CategoriesController
@@ -70,6 +75,14 @@ export class CategoriesController extends BaseController<
     super(categoriesService);
   }
 
+  @Get()
+  @PaginatedResponse(Category)
+  async findAll(
+    @Pagination() pagination: PaginationParams
+  ): Promise<[Category[], number]> {
+    return this.categoriesService.paginate(pagination);
+  }
+
   /**
    * Return an in-memory category tree (root categories with nested children).
    *
@@ -78,7 +91,7 @@ export class CategoriesController extends BaseController<
    * @returns Promise resolving to an array of root Category objects, each containing nested `children`.
    */
   @Get('tree')
-  async getTree(): Promise<Category[]> {
+  async getTree(): Promise<CategoryDto[]> {
     return this.categoriesService.getTree();
   }
 

@@ -37,6 +37,11 @@ import { AccessPolicies } from 'src/modules/authorization/policy/policy.types';
 import { AdminRoles } from 'src/common/enums/admin.enum';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { StoreRole } from 'src/common/decorators/store-role.decorator';
+import { ApiResponse } from '@nestjs/swagger';
+import { ProductSearchOptions } from 'src/modules/products/types';
+import { Pagination } from 'src/common/decorators/pagination.decorator';
+import { PaginationDto } from 'src/common/dtos/pagination.dto';
+import { PaginatedResponse } from 'src/common/decorators/paginated-response.decorator';
 
 /**
  * ProductsController
@@ -147,30 +152,16 @@ export class ProductsController extends BaseController<
   @Post('advanced-search')
   @HttpCode(HttpStatus.OK)
   @StoreRole(StoreRoles.ADMIN, StoreRoles.MODERATOR)
+  @PaginatedResponse(ProductListDto)
   async advancedSearch(
-    @Param('storeId', ParseUUIDPipe) storeId: string,
-    @Body() searchDto: AdvancedSearchDto
-  ): Promise<{
-    products: ProductListDto[];
-    total: number;
-    page: number;
-    limit: number;
-  }> {
-    const result = await this.productsService.advancedProductSearch({
+    @Param('storeId', new ParseUUIDPipe()) storeId: string,
+    @Body() searchDto: AdvancedSearchDto,
+    @Pagination() pagination: PaginationDto
+  ): Promise<[ProductListDto[], number]> {
+    return this.productsService.paginate(pagination, {
       storeId,
       ...searchDto,
     });
-
-    const page = searchDto.offset
-      ? Math.floor(searchDto.offset / (searchDto.limit || 20)) + 1
-      : 1;
-
-    return {
-      products: result.products,
-      total: result.total,
-      page,
-      limit: searchDto.limit || 20,
-    };
   }
 
   /**
@@ -232,6 +223,23 @@ export class ProductsController extends BaseController<
     return await this.productsService.findProductDetail(id);
   }
 
+  @Get('filtered')
+  async findAllByStoreWithFilters(
+    @Param('storeId', ParseUUIDPipe) storeId: string,
+    @Query() filters: ProductSearchOptions
+  ): Promise<ProductListDto[]> {
+    return this.productsService.findAllByStoreWithFilters(storeId, filters);
+  }
+
+  @Get(':id/related')
+  async findRelatedProducts(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query('limit') limit?: string
+  ): Promise<ProductListDto[]> {
+    const maxLimit = limit ? Math.min(parseInt(limit), 10) : 5;
+    return this.productsService.findRelatedProducts(id, maxLimit);
+  }
+
   /**
    * GET /stores/:storeId/products/:id/stats
    * Get detailed statistics for a product
@@ -265,18 +273,26 @@ export class ProductsController extends BaseController<
    * POST /stores/:storeId/products
    * Create a new product with optional photos
    */
-  @UploadProductPhotos()
   @Post()
+  @UploadProductPhotos()
   @StoreRole(StoreRoles.ADMIN, StoreRoles.MODERATOR)
   @HttpCode(HttpStatus.CREATED)
+  @ApiResponse({
+    status: 201,
+    description: 'The record has been successfully created.',
+    type: ProductDto,
+  })
   async createProduct(
     @Param('storeId', ParseUUIDPipe) storeId: string,
     @Body() body: CreateProductDto,
     @UploadedFiles(new ParseFilePipe({ fileIsRequired: false }))
-    files?: { photos: Express.Multer.File[]; mainPhoto: Express.Multer.File[] }
+    files?: {
+      photos?: Express.Multer.File[];
+      mainPhoto?: Express.Multer.File[];
+    }
   ) {
     return await this.productsService.create(
-      { ...body, storeId } as CreateProductDto,
+      { ...body, storeId },
       files?.photos,
       files?.mainPhoto?.[0]
     );

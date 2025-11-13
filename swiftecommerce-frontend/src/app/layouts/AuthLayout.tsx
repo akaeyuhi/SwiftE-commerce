@@ -1,0 +1,19 @@
+import { Outlet, Navigate } from 'react-router-dom';
+import { useAuth } from '@/app/store';
+import { ROUTES } from '../routes/routes';
+
+export function AuthLayout() {
+  const { isAuthenticated } = useAuth();
+
+  if (isAuthenticated) {
+    return <Navigate to={ROUTES.DASHBOARD} replace />;
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="max-w-md w-full">
+        <Outlet />
+      </div>
+    </div>
+  );
+}

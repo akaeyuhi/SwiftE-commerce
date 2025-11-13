@@ -140,7 +140,7 @@ describe('NewsNotificationsListener', () => {
     it('should log warning for unknown event type', async () => {
       const loggerSpy = jest.spyOn(Logger.prototype, 'warn');
 
-      const event: DomainEvent<any> = {
+      const event: DomainEvent = {
         type: 'unknown.event' as any,
         data: {},
         aggregateId: '',

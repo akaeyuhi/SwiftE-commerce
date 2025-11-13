@@ -28,6 +28,7 @@ export class StoreMapper extends BaseMapper<Store, StoreDto> {
 
       // Relations (only if loaded)
       products: entity.products,
+      categories: entity.categories,
       orders: entity.orders,
       carts: entity.carts,
       newsPosts: entity.newsPosts,

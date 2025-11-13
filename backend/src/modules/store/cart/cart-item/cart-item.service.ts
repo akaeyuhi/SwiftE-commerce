@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { BaseService } from 'src/common/abstracts/base.service';
+import { PaginationParams } from 'src/common/decorators/pagination.decorator';
 import { CartItem } from 'src/entities/store/cart/cart-item.entity';
 import { CartItemRepository } from 'src/modules/store/cart/cart-item/cart-item.repository';
 import { CartItemDto } from 'src/modules/store/cart/cart-item/dto/cart-item.dto';
@@ -128,6 +129,20 @@ export class CartItemService extends BaseService<
 
     item.quantity = newQty;
     return this.itemRepo.save(item);
+  }
+
+  /**
+   * List items for a cart.
+   *
+   * @param cartId - uuid of the cart
+   * @param pagination
+   * @returns array of CartItem entities with variant relation
+   */
+  async findByCartPaginated(
+    cartId: string,
+    pagination?: PaginationParams
+  ): Promise<[CartItem[], number]> {
+    return this.itemRepo.findByCartPaginated(cartId, pagination);
   }
 
   /**

@@ -5,7 +5,8 @@ import {
 } from '@nestjs/common';
 import { CreateStoreDto } from './dto/create-store.dto';
 import { UpdateStoreDto } from './dto/update-store.dto';
-import { BaseService } from 'src/common/abstracts/base.service';
+import { PaginationParams } from 'src/common/decorators/pagination.decorator';
+import { AdvancedStoreSearchDto } from './dto/advanced-store-search.dto';
 import { Store } from 'src/entities/store/store.entity';
 import { StoreRepository } from 'src/modules/store/store.repository';
 import {
@@ -17,19 +18,72 @@ import {
 import { StoreMapper } from 'src/modules/store/store.mapper';
 import { StoreRole } from 'src/entities/user/authentication/store-role.entity';
 import { StoreSearchOptions } from 'src/modules/store/types';
+import { StoreFileService } from './store-file/store-file.service';
+import { PaginatedService } from 'src/common/abstracts/paginated.service';
 
 @Injectable()
-export class StoreService extends BaseService<
+export class StoreService extends PaginatedService<
   Store,
   CreateStoreDto,
   UpdateStoreDto,
-  StoreDto
+  StoreDto,
+  StoreSearchResultDto
 > {
   constructor(
     private readonly storeRepo: StoreRepository,
-    protected readonly mapper: StoreMapper
+    protected readonly mapper: StoreMapper,
+    private readonly storeFileService: StoreFileService
   ) {
     super(storeRepo, mapper);
+  }
+
+  async paginate(
+    options: PaginationParams,
+    searchDto?: AdvancedStoreSearchDto
+  ): Promise<[StoreSearchResultDto[], number]> {
+    const { limit, offset } = options;
+    const { stores, total } = await this.storeRepo.advancedStoreSearch({
+      ...searchDto,
+      limit,
+      offset,
+    });
+
+    const storeDtos = stores.map((store) => ({
+      ...this.mapper.toListDto(store),
+      matchType: 'none' as const,
+    }));
+
+    return [storeDtos, total];
+  }
+
+  async uploadFiles(
+    storeId: string,
+    logoFile?: Express.Multer.File,
+    bannerFile?: Express.Multer.File
+  ): Promise<StoreDto> {
+    const store = await this.storeRepo.findById(storeId);
+    if (!store) {
+      throw new NotFoundException('Store not found');
+    }
+
+    if (logoFile) {
+      store.logoUrl = await this.storeFileService.saveFile(
+        logoFile,
+        storeId,
+        'logo'
+      );
+    }
+
+    if (bannerFile) {
+      store.bannerUrl = await this.storeFileService.saveFile(
+        bannerFile,
+        storeId,
+        'banner'
+      );
+    }
+
+    const updatedStore = await this.storeRepo.save(store);
+    return this.mapper.toDto(updatedStore);
   }
 
   async create(dto: CreateStoreDto): Promise<StoreDto> {
@@ -38,6 +92,8 @@ export class StoreService extends BaseService<
 
     const store = this.mapper.toEntity(dto as any);
     const saved = await this.storeRepo.save(store);
+
+    await this.uploadFiles(store.id, dto.logoFile, dto.bannerFile);
 
     return this.mapper.toDto(saved);
   }
@@ -76,7 +132,7 @@ export class StoreService extends BaseService<
 
   /**
    * Manually recalculate store statistics (for data integrity checks)
-   * This bypasses the triggers and recalculates from actual data
+   * NOTE: The N+1 problem in this method has been fixed in the StoreRepository.
    */
   async recalculateStoreStats(storeId: string): Promise<void> {
     await this.storeRepo.recalculateStats(storeId);

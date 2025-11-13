@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { CategoriesRepository } from 'src/modules/store/categories/categories.repository';
 import { BaseService } from 'src/common/abstracts/base.service';
+import { PaginationParams } from 'src/common/decorators/pagination.decorator';
 import { Category } from 'src/entities/store/product/category.entity';
 import { UpdateCategoryDto } from 'src/modules/store/categories/dto/update-category.dto';
 import { CreateCategoryDto } from 'src/modules/store/categories/dto/create-category.dto';
@@ -27,6 +28,15 @@ export class CategoriesService extends BaseService<
 > {
   constructor(private readonly categoriesRepo: CategoriesRepository) {
     super(categoriesRepo);
+  }
+
+  async paginate(pagination: PaginationParams): Promise<[Category[], number]> {
+    const { limit = 10, offset = 0 } = pagination || {};
+    return this.categoriesRepo.findAndCount({
+      order: { name: 'ASC' },
+      take: limit,
+      skip: offset,
+    });
   }
 
   async findByCategoryName(name: string) {

@@ -78,7 +78,7 @@ export class AiGeneratorService extends BaseAiService<
     const { type, prompt, options } = request.data;
 
     // Validate generation type
-    if (!['name', 'description', 'ideas', 'custom'].includes(type)) {
+    if (!['name', 'description', 'ideas', 'custom', 'image'].includes(type)) {
       throw new Error(`Invalid generation type: ${type}`);
     }
 
@@ -389,11 +389,9 @@ export class AiGeneratorService extends BaseAiService<
         response.result ||
         JSON.stringify(response);
     } else {
-      // Fallback
       text = String(response || '');
     }
 
-    // ✅ Ensure text is a string
     if (!text || typeof text !== 'string') {
       return {
         title: fallbackTitle,
@@ -496,6 +494,39 @@ export class AiGeneratorService extends BaseAiService<
     return response.result.result;
   }
 
+  /**
+   * Generate image from prompt
+   */
+  async generateImage(params: {
+    prompt: string;
+    userId: string;
+    storeId: string;
+  }): Promise<string> {
+    const { prompt, userId, storeId } = params;
+
+    const request: AiServiceRequest<GenerationRequest> = {
+      feature: 'generator_image',
+      provider: 'ai_generator',
+      data: {
+        type: 'image',
+        prompt,
+        options: {
+          // Add any specific options for image generation here
+        },
+      },
+      userId,
+      storeId,
+    };
+
+    const response = await this.execute(request);
+
+    if (!response.success || !response.result) {
+      throw new Error(response.error || 'Image generation failed');
+    }
+
+    return response.result.result;
+  }
+
   // ===============================
   // Service Management Methods
   // ===============================
@@ -578,6 +609,11 @@ export class AiGeneratorService extends BaseAiService<
         description: 'Generate custom content with your prompt',
         defaultOptions: this.promptTemplates.get('custom')!.defaultOptions,
       },
+      {
+        type: 'image',
+        description: 'Generate an image from a text prompt',
+        defaultOptions: this.promptTemplates.get('image')!.defaultOptions,
+      },
     ];
   }
 
@@ -641,6 +677,7 @@ export class AiGeneratorService extends BaseAiService<
       description: 'productDescription',
       ideas: 'productIdeas',
       custom: 'custom',
+      image: 'image',
     };
 
     return typeToTemplateMap[type] || 'custom';
@@ -677,6 +714,9 @@ export class AiGeneratorService extends BaseAiService<
           }
           break;
 
+        case 'image':
+          return jsonResult;
+
         default:
           return jsonResult;
       }
@@ -704,6 +744,9 @@ export class AiGeneratorService extends BaseAiService<
             title: aiResult.text.substring(0, 100),
             description: aiResult.text,
           };
+
+        case 'image':
+          return aiResult.text;
 
         default:
           return aiResult.text;

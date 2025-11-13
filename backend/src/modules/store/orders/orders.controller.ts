@@ -41,6 +41,11 @@ import { AccessPolicies } from 'src/modules/authorization/policy/policy.types';
 import { Request } from 'express';
 import { AnalyticsEventType } from 'src/entities/infrastructure/analytics/analytics-event.entity';
 import { RecordEvent } from 'src/common/decorators/record-event.decorator';
+import {
+  Pagination,
+  PaginationParams,
+} from 'src/common/decorators/pagination.decorator';
+import { PaginatedResponse } from 'src/common/decorators/paginated-response.decorator';
 import { OrderStatus } from 'src/common/enums/order-status.enum';
 import { ReturnOrderDto } from 'src/modules/store/orders/dto/return-order.dto';
 import { CancelOrderDto } from 'src/modules/store/orders/dto/cancel-order.dto';
@@ -185,10 +190,12 @@ export class OrdersController extends BaseController<
     description: 'Orders retrieved successfully',
     type: () => [Order],
   })
+  @PaginatedResponse(Order)
   async findAllByStore(
-    @Param('storeId', new ParseUUIDPipe()) storeId: string
-  ): Promise<Order[]> {
-    return this.ordersService.findByStore(storeId);
+    @Param('storeId', new ParseUUIDPipe()) storeId: string,
+    @Pagination() pagination: PaginationParams
+  ): Promise<[Order[], number]> {
+    return this.ordersService.findByStore(storeId, pagination);
   }
 
   // ===============================
@@ -367,16 +374,22 @@ export class OrdersController extends BaseController<
     description: 'User orders retrieved',
     type: () => [Order],
   })
+  @PaginatedResponse(Order)
   async findByUser(
-    @Param('storeId', new ParseUUIDPipe()) _storeId: string,
-    @Param('userId', new ParseUUIDPipe()) userId: string
-  ): Promise<Order[]> {
-    const orders = await this.ordersService.findByUser(userId);
+    @Param('storeId', new ParseUUIDPipe()) storeId: string,
+    @Param('userId', new ParseUUIDPipe()) userId: string,
+    @Pagination() pagination: PaginationParams
+  ): Promise<[Order[], number]> {
+    const [orders, total] = await this.ordersService.findByUser(
+      userId,
+      pagination
+    );
 
     // Filter to only orders from this store
-    return orders.filter(
-      (o) => o.store && String(o.store.id) === String(_storeId)
+    const filteredOrders = orders.filter(
+      (o) => o.store && String(o.store.id) === String(storeId)
     );
+    return [filteredOrders, total];
   }
 
   // ===============================

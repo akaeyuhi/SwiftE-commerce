@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="320" height="320" role="img" aria-labelledby="darkTitle darkDesc">
+    <title id="darkTitle">Swift Ecommerce — Dark</title>
+    <desc id="darkDesc">Dark mode variant with violet gradient lightning and centered layout</desc>
+
+    <defs>
+        <linearGradient id="gradDark" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#9D7BFF"/>
+            <stop offset="100%" stop-color="#7A5CFF"/>
+        </linearGradient>
+    </defs>
+
+    <!-- Handle -->
+    <path d="M196 120 A60 60 0 0 1 316 120"
+          fill="none" stroke="#BBA0FF" stroke-width="12" stroke-linecap="round"/>
+
+    <!-- Bag -->
+    <rect x="86" y="130" width="340" height="290" rx="36" ry="36"
+          fill="#0f1113" stroke="url(#gradDark)" stroke-width="14"/>
+
+    <!-- Lightning bolt -->
+    <path d="M255 210 L195 330 L245 310 L215 390 L335 240 L275 260 L305 200 Z"
+          fill="url(#gradDark)"/>
+
+    <!-- Text -->
+    <text x="256" y="492" text-anchor="middle" font-family="Inter, Arial, sans-serif"
+          font-size="40" font-weight="700" fill="#D8CFFF">
+        Swift
+        <tspan font-weight="500" fill="#BFA8FF">Ecommerce</tspan>
+    </text>
+</svg>

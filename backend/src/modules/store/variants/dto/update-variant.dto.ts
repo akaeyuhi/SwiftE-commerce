@@ -1,6 +1,6 @@
 import { PartialType } from '@nestjs/mapped-types';
 import { CreateVariantDto } from 'src/modules/store/variants/dto/create-variant.dto';
-import { IsOptional, IsPositive } from 'class-validator';
+import { IsOptional, IsPositive, IsUUID } from 'class-validator';
 
 export class UpdateVariantDto extends PartialType(CreateVariantDto) {
   @IsPositive()
@@ -10,4 +10,8 @@ export class UpdateVariantDto extends PartialType(CreateVariantDto) {
   @IsOptional()
   @IsPositive()
   quantity: number;
+
+  @IsOptional()
+  @IsUUID()
+  variantId: string;
 }

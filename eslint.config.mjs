@@ -9,6 +9,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import js from '@eslint/js';
 import { FlatCompat } from '@eslint/eslintrc';
+import importPlugin from "eslint-plugin-import";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -20,7 +21,14 @@ const compat = new FlatCompat({
 
 export default [
     {
-        ignores: ['**/eslint.config.mjs'],
+        ignores: [
+      '**/eslint.config.mjs',
+      'swiftecommerce-frontend/commitlint.config.js',
+      'swiftecommerce-frontend/postcss.config.js',
+      'swiftecommerce-frontend/tailwind.config.js',
+      'swiftecommerce-frontend/vite-env.d.ts',
+      'swiftecommerce-frontend/dev-dist/',
+    ],
     },
     ...fixupConfigRules(
         compat.extends(
@@ -35,6 +43,7 @@ export default [
             'react-hooks': fixupPluginRules(reactHooks),
             '@typescript-eslint': fixupPluginRules(typescriptEslint),
             prettier: fixupPluginRules(prettier),
+            import: fixupPluginRules(importPlugin)
         },
 
         languageOptions: {
@@ -74,10 +83,12 @@ export default [
             'react-hooks/exhaustive-deps': 'warn',
             'react/react-in-jsx-scope': 'off',
             'react/prop-types': 'off',
-            'import/prefer-default-export': 'off',
             'import/extensions': 'off',
             'import/no-extraneous-dependencies': 'off',
             'linebreak-style': ['error', 'unix'],
+
+            "import/prefer-default-export": "off", // or "on" to enforce default exports
+            "import/no-default-export": "error", // enforce named exports
 
             quotes: [
                 'error',

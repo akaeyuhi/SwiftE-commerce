@@ -1,5 +1,10 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { BaseService } from 'src/common/abstracts/base.service';
+import { PaginationParams } from 'src/common/decorators/pagination.decorator';
 import { ShoppingCart } from 'src/entities/store/cart/cart.entity';
 import { CreateCartDto } from 'src/modules/store/cart/dto/create-cart.dto';
 import { UpdateCartDto } from 'src/modules/store/cart/dto/update-cart.dto';
@@ -139,17 +144,32 @@ export class CartService extends BaseService<
    * Useful for showing a user their carts across stores and merging items client-side.
    *
    * @param userId - uuid of the user
+   * @param pagination
    * @returns array of ShoppingCart (with store and items relations loaded by repository)
    */
   async getUserMergedCarts(
-    userId: string
-  ): Promise<{ userId: string; result: ShoppingCart[] }> {
-    const result = await this.cartRepo.findAllByUser(userId);
+    userId: string,
+    pagination?: PaginationParams
+  ): Promise<{ userId: string; result: [ShoppingCart[], number] }> {
+    const result = await this.cartRepo.findAllByUser(userId, pagination);
     return { userId, result };
   }
 
   async addToCart(cart: ShoppingCart, item: CartItem) {
     cart.items.push(item);
     return this.cartRepo.save(cart);
+  }
+
+  async syncCart(
+    storeId: string,
+    userId: string,
+    dto: CreateCartDto
+  ): Promise<ShoppingCart> {
+    const cart = await this.cartRepo.findByUserAndStore(userId, storeId);
+    if (!cart) throw new NotFoundException('Such cart does not exist');
+    for (const item of dto.products) {
+      await this.cartItemService.addOrIncrement({ ...item, cartId: cart.id });
+    }
+    return this.findOne(cart.id);
   }
 }
