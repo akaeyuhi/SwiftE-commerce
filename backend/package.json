@@ -30,7 +30,8 @@
     "migration:create": "npm run typeorm -- migration:create",
     "migration:run": "npm run typeorm -- migration:run -d ./data-source.ts",
     "migration:revert": "npm run typeorm -- migration:revert -d ./data-source.ts",
-    "migration:show": "npm run typeorm -- migration:show -d ./data-source.ts"
+    "migration:show": "npm run typeorm -- migration:show -d ./data-source.ts",
+    "seed": "ts-node -r tsconfig-paths/register src/database/seeders/seeding.ts"
   },
   "dependencies": {
     "@huggingface/inference": "^4.11.3",
@@ -73,6 +74,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.18.0",
+    "@faker-js/faker": "^10.1.0",
     "@nestjs/cli": "^11.0.0",
     "@nestjs/schematics": "^11.0.0",
     "@nestjs/testing": "^11.0.1",
