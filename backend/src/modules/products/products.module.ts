@@ -22,6 +22,7 @@ import { ProductsRankingService } from 'src/modules/products/services/product-ra
 import { Store } from 'src/entities/store/store.entity';
 import { ReviewsModule } from 'src/modules/products/reviews/reviews.module';
 import { VariantsModule } from 'src/modules/store/variants/variants.module';
+import { StoreModule } from 'src/modules/store/store.module';
 
 @Module({
   imports: [
@@ -30,7 +31,7 @@ import { VariantsModule } from 'src/modules/store/variants/variants.module';
     InventoryModule,
     CategoriesModule,
     ReviewsModule,
-    VariantsModule,
+    StoreModule,
   ],
   providers: [
     ProductRepository,

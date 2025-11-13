@@ -16,11 +16,14 @@ import { InterceptorsModule } from 'src/modules/infrastructure/interceptors/inte
 import { AnalyticsReviewsModule } from './modules/analytics-reviews/analytics-reviews.module';
 import { NotificationsModule } from 'src/modules/infrastructure/notifications/notifications.module';
 import { CleanupModule } from 'src/modules/infrastructure/cleanup/cleanup.module';
+import { RabbitMQModule } from 'src/modules/infrastructure/rabbitmq/rabbitmq.module';
+import { SeedModule } from 'src/database/seeders/seed.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot(),
     DatabaseModule,
+    SeedModule,
     AuthorizationModule,
     QueuesModule,
     InterceptorsModule,

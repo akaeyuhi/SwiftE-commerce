@@ -1,9 +1,6 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { usePredictDemand } from 'src/features/ai/hooks/useAi.ts';
-import { StockPredictorForm } from 'src/features/ai/components/stock-predictor/StockPredictorForm.tsx';
-import { StockPredictorResult } from 'src/features/ai/components/stock-predictor/StockPredictorResult.tsx';
 import {
   Card,
   CardContent,
@@ -12,6 +9,9 @@ import {
 } from '@/shared/components/ui/Card.tsx';
 import { Sparkles } from 'lucide-react';
 import { QueryLoader } from '@/shared/components/loaders/QueryLoader.tsx';
+import { usePredictDemand } from '@/features/ai/hooks/useAi.ts';
+import { StockPredictorForm } from '@/features/ai/components/stock-predictor/StockPredictorForm.tsx';
+import { StockPredictorResult } from '@/features/ai/components/stock-predictor/StockPredictorResult.tsx';
 
 export function StockPredictor() {
   const { storeId } = useParams<{ storeId: string }>();

@@ -11,7 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/shared/components/ui/Card';
-import { StockPredictor } from 'src/features/ai/components/stock-predictor/StockPredictor.tsx';
+import { StockPredictor } from '@/features/ai/components/stock-predictor/StockPredictor.tsx';
 
 export function AIFunctionalityPage() {
   const [selectedFeature, setSelectedFeature] =

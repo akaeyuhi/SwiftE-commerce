@@ -11,4 +11,8 @@ export class AdminUserRepository implements IUserRepository {
   async findById(id: string): Promise<User | null> {
     return this.userRepository.findOneBy({ id } as any);
   }
+
+  async count(searchParams: any) {
+    return this.userRepository.count(searchParams);
+  }
 }

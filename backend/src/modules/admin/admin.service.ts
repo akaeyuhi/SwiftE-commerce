@@ -11,10 +11,11 @@ import { AdminRepository } from 'src/modules/admin/admin.repository';
 import { CreateAdminDto } from 'src/modules/admin/dto/create-admin.dto';
 import { UpdateAdminDto } from 'src/modules/admin/dto/update-admin.dto';
 import { AdminStats, FormattedAdmin } from 'src/modules/admin/types';
-import { IUserService } from 'src/common/contracts/admin.contract';
-import { StoreService } from 'src/modules/store/store.service';
-import { OrdersService } from 'src/modules/store/orders/orders.service';
-import { UserService } from 'src/modules/user/user.service';
+import {
+  IOrderService,
+  IStoreService,
+  IUserService,
+} from 'src/common/contracts/admin.contract';
 
 @Injectable()
 export class AdminService extends BaseService<
@@ -25,16 +26,17 @@ export class AdminService extends BaseService<
   constructor(
     private readonly adminRepo: AdminRepository,
     @Inject(IUserService) private readonly userService: IUserService,
-    private readonly storeService: StoreService,
-    private readonly ordersService: OrdersService,
-    private readonly usersService: UserService
+    @Inject(IStoreService) private readonly storeService: IStoreService,
+    @Inject(IOrderService) private readonly ordersService: IOrderService
   ) {
     super(adminRepo);
   }
 
   async getDashboardStats() {
-    const totalUsers = await this.usersService.count();
-    const activeStores = await this.storeService.count({ where: { isActive: true } });
+    const totalUsers = await this.userService.count();
+    const activeStores = await this.storeService.count({
+      where: { isActive: true },
+    });
     const totalOrders = await this.ordersService.count();
     const totalRevenue = await this.ordersService.getTotalRevenue();
 
@@ -59,7 +61,7 @@ export class AdminService extends BaseService<
       {
         id: '2',
         type: 'store',
-        message: 'Store \"Tech Haven\" submitted for approval',
+        message: `Store "Tech Haven" submitted for approval`,
         time: '15 minutes ago',
         status: 'warning',
       },
@@ -81,8 +83,12 @@ export class AdminService extends BaseService<
   }
 
   async getPendingActions() {
-    const pendingStores = await this.storeService.count({ where: { status: 'pending' } });
-    const unverifiedUsers = await this.usersService.count({ where: { isEmailVerified: false } });
+    const pendingStores = await this.storeService.count({
+      where: { status: 'pending' },
+    });
+    const unverifiedUsers = await this.userService.count({
+      where: { isEmailVerified: false },
+    });
 
     return {
       storeApprovals: pendingStores,

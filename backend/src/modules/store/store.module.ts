@@ -13,11 +13,15 @@ import { CategoriesModule } from 'src/modules/store/categories/categories.module
 import { VariantsModule } from 'src/modules/store/variants/variants.module';
 import { StoreRoleModule } from 'src/modules/store/store-role/store-role.module';
 import { StoreFileService } from 'src/modules/store/store-file/store-file.service';
+import { VariantsService } from 'src/modules/store/variants/variants.service';
+import { ConfigModule } from '@nestjs/config';
+import { VariantsRepository } from 'src/modules/store/variants/variants.repository';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Store]),
     StoreRoleModule,
+    ConfigModule,
     CartModule,
     CategoriesModule,
     InventoryModule,
@@ -26,7 +30,14 @@ import { StoreFileService } from 'src/modules/store/store-file/store-file.servic
     OrdersModule,
   ],
   controllers: [StoreController],
-  providers: [StoreService, StoreRepository, StoreMapper, StoreFileService],
-  exports: [StoreService],
+  providers: [
+    StoreService,
+    StoreRepository,
+    StoreMapper,
+    StoreFileService,
+    VariantsRepository,
+    VariantsService,
+  ],
+  exports: [StoreService, VariantsService],
 })
 export class StoreModule {}

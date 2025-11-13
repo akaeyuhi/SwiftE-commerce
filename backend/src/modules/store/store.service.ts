@@ -86,6 +86,10 @@ export class StoreService extends PaginatedService<
     return this.mapper.toDto(updatedStore);
   }
 
+  async count(searchParams: any) {
+    return this.storeRepo.count(searchParams);
+  }
+
   async create(dto: CreateStoreDto): Promise<StoreDto> {
     const existing = await this.storeRepo.findStoreByName(dto.name);
     if (existing) throw new BadRequestException('Store name already in use');

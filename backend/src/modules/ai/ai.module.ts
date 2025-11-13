@@ -28,6 +28,9 @@ import { AiInventoryRepository } from 'src/modules/ai/ai-predictor/implementatio
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Inventory } from 'src/entities/store/product/inventory.entity';
 import { ProductVariant } from 'src/entities/store/product/variant.entity';
+import { AiPredictorFeatureService } from 'src/modules/ai/ai-predictor/services/ai-predictor-feature.service';
+import { AiPredictorPersistenceService } from 'src/modules/ai/ai-predictor/services/ai-predictor-persistence.service';
+import { AiPredictorStatsService } from 'src/modules/ai/ai-predictor/services/ai-predictor-stats.service';
 
 @Module({
   imports: [
@@ -60,6 +63,9 @@ import { ProductVariant } from 'src/entities/store/product/variant.entity';
     },
     AiGeneratorService,
     AiPredictorService,
+    AiPredictorFeatureService,
+    AiPredictorPersistenceService,
+    AiPredictorStatsService,
   ],
   exports: [
     AiAuditService,

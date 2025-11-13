@@ -5,8 +5,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/shared/components/ui/Card';
-import { useStoreHealth } from '../hooks/useStores';
 import { SkeletonLoader } from '@/shared/components/loaders/SkeletonLoader';
+import { useStoreHealth } from '@/features/stores/hooks/useStores.ts';
 
 interface StoreHealthProps {
   storeId: string;

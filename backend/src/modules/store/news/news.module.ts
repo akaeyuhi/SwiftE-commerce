@@ -9,11 +9,13 @@ import { StoreFollower } from 'src/entities/store/store-follower.entity';
 import { NewsNotificationsListener } from 'src/modules/store/news/listeners/news-notifications.listener';
 import { StoreRoleModule } from 'src/modules/store/store-role/store-role.module';
 import { NewsFileService } from 'src/modules/store/news/news-file.service';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([NewsPost, StoreFollower]),
     EventEmitterModule.forRoot(),
+    ConfigModule,
     StoreRoleModule,
   ],
   controllers: [NewsController],

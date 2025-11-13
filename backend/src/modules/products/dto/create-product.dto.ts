@@ -36,7 +36,7 @@ export class CreateProductDto {
   categoryId?: string;
 
   @IsOptional()
-  files: {
+  files?: {
     photos: Express.Multer.File[];
     mainPhoto: Express.Multer.File[];
   };
@@ -44,5 +44,5 @@ export class CreateProductDto {
   @IsOptional()
   @ValidateNested()
   @Type(() => CreateVariantDto)
-  variants: CreateVariantDto[];
+  variants?: CreateVariantDto[];
 }

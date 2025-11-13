@@ -33,11 +33,7 @@ describe('AiPredictorController', () => {
     const policyMock = createPolicyMock();
 
     predictorService = createMock<AiPredictorService>([
-      'buildFeatureVector',
-      'predictBatch',
       'predictBatchAndPersist',
-      'getTrendingProducts',
-      'getPredictionStats',
       'healthCheck',
     ]);
 

@@ -22,9 +22,11 @@ import { AiVariantService } from 'src/modules/ai/ai-predictor/implementations/se
 import { Inventory } from 'src/entities/store/product/inventory.entity';
 import { ProductVariant } from 'src/entities/store/product/variant.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { RabbitMQModule } from 'src/modules/rabbitmq/rabbitmq.module';
+import { RabbitMQModule } from 'src/modules/infrastructure/rabbitmq/rabbitmq.module';
 import { AiPredictorRabbitMQService } from 'src/modules/ai/ai-predictor/services/ai-predictor-rabbitmq.service';
 import { IAiPredictorService } from './contracts/ai-predictor.service.contract';
+import { AiPredictorFeatureService } from 'src/modules/ai/ai-predictor/services/ai-predictor-feature.service';
+import { AiPredictorStatsService } from 'src/modules/ai/ai-predictor/services/ai-predictor-stats.service';
 
 @Module({
   imports: [
@@ -41,6 +43,8 @@ import { IAiPredictorService } from './contracts/ai-predictor.service.contract';
     AiPredictorService,
     AiPredictorRepository,
     AiPredictorRabbitMQService,
+    AiPredictorStatsService,
+    AiPredictorFeatureService,
     AiPredictorPersistenceService,
     {
       provide: IAiPredictorService,

@@ -5,6 +5,7 @@ import logging
 import pika
 from pika.adapters.blocking_connection import BlockingChannel
 from pika.spec import Basic, BasicProperties
+from typing import Callable
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +60,7 @@ class RabbitMQ:
     def consume(
         self,
         queue_name: str,
-        callback: callable[[BlockingChannel, Basic.Deliver, BasicProperties, bytes], None],
+        callback: Callable[[BlockingChannel, Basic.Deliver, BasicProperties, bytes], None],
     ):
         """Consume messages from a queue."""
         if not self._channel:

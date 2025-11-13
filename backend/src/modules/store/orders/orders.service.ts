@@ -799,4 +799,8 @@ export class OrdersService extends BaseService<
       }
     }
   }
+
+  async count() {
+    return this.orderRepo.count();
+  }
 }

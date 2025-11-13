@@ -12,4 +12,8 @@ export class AdminUserService implements IUserService {
   getEntityById(id: string): Promise<User | null> {
     return this.userRepository.findById(id);
   }
+
+  async count(searchParams: any) {
+    return this.userRepository.count(searchParams);
+  }
 }

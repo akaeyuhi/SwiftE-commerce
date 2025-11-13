@@ -78,27 +78,6 @@ export function CreateStoreForm({ onSuccess }: CreateStoreFormProps) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      {/* Store Images Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Store Images</CardTitle>
-          <CardDescription>Add banner and logo for your store</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <ImageUpload
-            onFileSelect={onLogoUpload}
-            label="Logo"
-            aspectRatio="square"
-            className="w-64 h-64 mb-16"
-          />
-          <ImageUpload
-            onFileSelect={onBannerUpload}
-            label="Banner"
-            className="w-full"
-          />
-        </CardContent>
-      </Card>
-
       {/* Store Info Card */}
       <Card>
         <CardHeader>
@@ -143,6 +122,27 @@ export function CreateStoreForm({ onSuccess }: CreateStoreFormProps) {
               error={!!errors.description}
             />
           </FormField>
+        </CardContent>
+      </Card>
+
+      {/* Store Images Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Store Images</CardTitle>
+          <CardDescription>Add banner and logo for your store</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <ImageUpload
+            onFileSelect={onLogoUpload}
+            label="Logo"
+            aspectRatio="square"
+            className="w-64 h-64 mb-16"
+          />
+          <ImageUpload
+            onFileSelect={onBannerUpload}
+            label="Banner"
+            className="w-full"
+          />
         </CardContent>
       </Card>
 

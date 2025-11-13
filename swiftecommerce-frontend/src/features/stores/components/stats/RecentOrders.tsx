@@ -7,11 +7,11 @@ import {
 } from '@/shared/components/ui/Card';
 import { Link } from '@/shared/components/ui/Link';
 import { ROUTES } from '@/app/routes/routes';
-import { useRecentOrders } from '../hooks/useStoreOverview';
 import { ErrorState } from '@/shared/components/errors/ErrorState';
 import { SkeletonLoader } from '@/shared/components/loaders/SkeletonLoader';
 import { Badge } from '@/shared/components/ui/Badge';
 import { formatCurrency } from '@/shared/utils/statsCalculators';
+import { useRecentOrders } from '@/features/stores/hooks/useStoreOverview.ts';
 
 interface RecentOrdersProps {
   storeId: string;

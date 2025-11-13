@@ -35,7 +35,7 @@ export function Header() {
           <div className="flex items-center gap-4">
             <ThemeToggle />
 
-            <CartDropdown />
+            {isAuthenticated ? <CartDropdown /> : <></>}
 
             {/* User menu - Desktop */}
             {isAuthenticated ? (

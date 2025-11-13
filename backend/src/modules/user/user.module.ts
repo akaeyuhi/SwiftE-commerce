@@ -14,10 +14,12 @@ import { AvatarService } from 'src/modules/user/avatar/avatar.service';
 import { Order } from 'src/entities/store/product/order.entity';
 import { Review } from 'src/entities/store/review.entity';
 import { Like } from 'src/entities/user/like.entity';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([User, StoreRole, Store, Order, Review, Like]),
+    ConfigModule,
     StoreRoleModule,
     StoreModule,
     LikesModule,

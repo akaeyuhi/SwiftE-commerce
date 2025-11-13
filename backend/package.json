@@ -52,6 +52,7 @@
     "@nestjs/typeorm": "^11.0.0",
     "@sendgrid/mail": "^8.1.6",
     "@types/handlebars": "^4.0.40",
+    "amqp-connection-manager": "^5.0.0",
     "amqplib": "^0.10.9",
     "axios": "^1.12.2",
     "bcrypt": "^6.0.0",
