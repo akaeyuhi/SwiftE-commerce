@@ -46,9 +46,9 @@ class ServerConfig:
             logLevel: Optional[str] = None
     ):
         # Use provided values or fall back to environment or defaults
-        self.modelPath = modelPath or os.getenv('MODEL_PATH', './model/model.bin')
-        self.scalerPath = scalerPath or os.getenv('SCALER_PATH', './model/scaler.pkl')
-        self.modelType = modelType or os.getenv('MODEL_TYPE', 'lightgbm')
+        self.modelPath = modelPath or os.getenv('MODEL_PATH', './models/model.h5')
+        self.scalerPath = scalerPath or os.getenv('SCALER_PATH', './models/scaler.pkl')
+        self.modelType = modelType or os.getenv('MODEL_TYPE', 'tensorflow')
         self.authToken = authToken or os.getenv('PREDICTOR_AUTH_TOKEN', '')
         self.modelVersion = modelVersion or os.getenv('MODEL_VERSION', 'v1.0')
         self.host = host or os.getenv('HOST', '0.0.0.0')
