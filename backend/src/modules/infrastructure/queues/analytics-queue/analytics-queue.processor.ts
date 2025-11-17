@@ -1,15 +1,13 @@
 import { Processor, Process } from '@nestjs/bull';
 import { Job } from 'bull';
 import { Injectable, Logger } from '@nestjs/common';
-import { LazyModuleLoader, ModuleRef } from '@nestjs/core';
+import { LazyModuleLoader } from '@nestjs/core';
 import {
   AnalyticsEventType,
   AnalyticsJobData,
   AnalyticsJobPayload,
   AnalyticsJobType,
 } from './types/analytics-queue.types';
-import { EmailModule } from 'src/modules/email/email.module';
-import { EmailService } from 'src/modules/email/email.service';
 import { AnalyticsModule } from 'src/modules/analytics/analytics.module';
 import { AnalyticsEventRepository } from 'src/modules/analytics/repositories/analytics-event.repository';
 import { StoreDailyStatsRepository } from 'src/modules/analytics/repositories/store-daily-stats.repository';

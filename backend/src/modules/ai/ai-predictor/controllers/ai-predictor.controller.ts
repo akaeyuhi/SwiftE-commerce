@@ -9,6 +9,8 @@ import {
   HttpCode,
   BadRequestException,
   NotFoundException,
+  Param,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';
@@ -42,7 +44,7 @@ import { AiTransform } from 'src/modules/ai/decorators/ai-transform.decorator';
 import { IAiPredictorService } from '../contracts/ai-predictor.service.contract';
 import { Inject } from '@nestjs/common';
 
-@Controller('stores/:storesId/ai/predictor')
+@Controller('stores/:storeId/ai/predictor')
 @UseGuards(JwtAuthGuard, AdminGuard, StoreRolesGuard, EntityOwnerGuard)
 @AiTransform()
 export class AiPredictorController {
@@ -104,6 +106,7 @@ export class AiPredictorController {
   @Post('predict')
   @HttpCode(HttpStatus.OK)
   async predictSingle(
+    @Param('storeId', new ParseUUIDPipe()) storeId: string,
     @Body(ValidationPipe) dto: SinglePredictDto,
     @Req() req: Request
   ) {
@@ -128,7 +131,11 @@ export class AiPredictorController {
       ];
     } else items = [];
 
-    const results = await this.predictorService.predict(items);
+    const results = await this.predictorService.predict(
+      items,
+      user.id,
+      storeId ?? dto.storeId
+    );
     const prediction = results[0];
 
     if (!prediction) {
@@ -155,6 +162,7 @@ export class AiPredictorController {
   @Post('predict/batch')
   @HttpCode(HttpStatus.OK)
   async predictBatch(
+    @Param('storeId', new ParseUUIDPipe()) storeId: string,
     @Body(ValidationPipe)
     dto: BatchPredictDto,
     @Req()
@@ -174,21 +182,31 @@ export class AiPredictorController {
 
     let results;
     let processedItems = 0;
+    let errorsArray;
 
     if (dto.persist) {
-      const persisted = await this.predictorService.predictBatchAndPersist(
-        dto.items,
-        dto.modelVersion
-      );
+      const [persisted, errors] =
+        await this.predictorService.predictBatchAndPersist(
+          dto.items,
+          user.id,
+          dto.modelVersion,
+          storeId
+        );
       results = persisted.map((p) => ({
-        predictorStatId: p.predictorStat?.id,
         prediction: p.prediction,
         success: true,
       }));
+      errorsArray = errors;
       processedItems = persisted.length;
     } else {
       results = await this.predictorService.predict(dto.items);
       processedItems = (results as any)?.results?.length || results.length || 0;
+    }
+
+    if (errorsArray.length) {
+      throw new BadRequestException(
+        errorsArray.map((error) => error.message).join(', ')
+      );
     }
 
     return {

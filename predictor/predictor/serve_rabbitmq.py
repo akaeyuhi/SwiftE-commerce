@@ -185,7 +185,8 @@ def on_message(ch, method, properties, body):
     logger.info("Received message")
     try:
         request = json.loads(body)
-        response = predictBatch(request)
+        data = request['data']
+        response = predictBatch(data)
         ch.basic_publish(
             exchange='',
             routing_key=properties.reply_to,

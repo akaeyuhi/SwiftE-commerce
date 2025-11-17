@@ -12,11 +12,16 @@ import { QueryLoader } from '@/shared/components/loaders/QueryLoader.tsx';
 import { usePredictDemand } from '@/features/ai/hooks/useAi.ts';
 import { StockPredictorForm } from '@/features/ai/components/stock-predictor/StockPredictorForm.tsx';
 import { StockPredictorResult } from '@/features/ai/components/stock-predictor/StockPredictorResult.tsx';
+import { useProducts } from '@/features/products/hooks/useProducts.ts';
+import { normalizePredictionData } from '@/shared/utils/normalize-prediction.ts';
 
 export function StockPredictor() {
   const { storeId } = useParams<{ storeId: string }>();
   const [selectedProductId, setSelectedProductId] = useState<string>('');
   const [result, setResult] = useState<any | null>(null);
+  const { data: productsData } = useProducts(storeId!);
+
+  const products = productsData?.data;
 
   const predictDemand = usePredictDemand(storeId!);
 
@@ -31,8 +36,10 @@ export function StockPredictor() {
     try {
       const generatedResult = await predictDemand.mutateAsync({
         productId: selectedProductId,
+        storeId: storeId!,
       });
-      setResult(generatedResult);
+      const normalized = normalizePredictionData(generatedResult);
+      setResult(normalized);
       toast.success('Prediction complete!');
     } catch (error) {
       toast.error(`Failed to predict demand: ${error}`);
@@ -49,6 +56,7 @@ export function StockPredictor() {
       </CardHeader>
       <CardContent className="space-y-4">
         <StockPredictorForm
+          products={products!}
           selectedProductId={selectedProductId}
           setSelectedProductId={setSelectedProductId}
           handlePredict={handlePredict}
@@ -59,7 +67,7 @@ export function StockPredictor() {
           error={predictDemand.error}
           refetch={handlePredict}
         >
-          {result && <StockPredictorResult result={result} />}
+          {result && <StockPredictorResult predictions={result} />}
         </QueryLoader>
       </CardContent>
     </Card>

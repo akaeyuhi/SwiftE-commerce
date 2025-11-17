@@ -41,7 +41,7 @@ export class AiPredictorPersistenceService {
         feature: 'predictor',
         provider: 'predictor',
         model: undefined,
-        rawResponse: response.data,
+        rawResponse: response,
         userId: userId || null,
         storeId: storeId || null,
       });

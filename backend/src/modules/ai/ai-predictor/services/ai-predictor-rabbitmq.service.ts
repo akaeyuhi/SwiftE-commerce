@@ -12,7 +12,6 @@ import { PREDICTOR_SERVICE } from 'src/common/constants/services';
 import { AiPredictRow } from 'src/modules/ai/ai-predictor/dto/ai-predict.dto';
 import { firstValueFrom, timeout } from 'rxjs';
 import { CaseTransformer } from 'src/common/utils/case-transformer.util';
-import { AiPredictorStat } from 'src/entities/ai/ai-predictor-stat.entity';
 import { AiPredictorPersistenceService } from './ai-predictor-persistence.service';
 import { IAiPredictorService } from '../contracts/ai-predictor.service.contract';
 import { ConfigService } from '@nestjs/config';
@@ -27,6 +26,10 @@ import {
 } from 'src/common/interfaces/ai/predictor.interface';
 import { AiLogsService } from 'src/modules/ai/ai-logs/ai-logs.service';
 import { AiAuditService } from 'src/modules/ai/ai-audit/ai-audit.service';
+import {
+  ErrorResult,
+  PredictionResult,
+} from 'src/modules/ai/ai-predictor/types';
 
 @Injectable()
 export class AiPredictorRabbitMQService
@@ -125,13 +128,14 @@ export class AiPredictorRabbitMQService
     items: Array<
       string | { productId: string; storeId?: string } | AiPredictRow
     >,
-    modelVersion?: string,
     userId?: string,
-    contextStoreId?: string
+    contextStoreId?: string,
+    modelVersion?: string
   ) {
     this.validateItems(items);
     const preparedItems =
       await this.featureService.preparePredictionItems(items);
+
     return this.predictBatchAndPersist(
       preparedItems,
       modelVersion,
@@ -155,9 +159,10 @@ export class AiPredictorRabbitMQService
       })),
     };
 
-    // Use 'send' for request-response pattern
+    const preparedPayload = CaseTransformer.transformKeysToSnake(payload);
+
     const result = this.client
-      .send<PredictorResponseData>('predict', payload)
+      .send<PredictorResponseData>('predict', preparedPayload)
       .pipe(timeout(10000));
     const response = await firstValueFrom(result);
 
@@ -184,8 +189,9 @@ export class AiPredictorRabbitMQService
     modelVersion?: string,
     userId?: string,
     contextStoreId?: string
-  ): Promise<Array<{ predictorStat: AiPredictorStat; prediction: any }>> {
+  ): Promise<[PredictionResult[], ErrorResult[]]> {
     const results: Array<any> = [];
+    const errors: Array<any> = [];
 
     for (let i = 0; i < normalized.length; i += this.chunkSize) {
       const chunk = normalized.slice(i, i + this.chunkSize);
@@ -205,10 +211,10 @@ export class AiPredictorRabbitMQService
           i,
           error.message
         );
-        results.push(...errorResults);
+        errors.push(...errorResults);
       }
     }
-    return results;
+    return [results, errors];
   }
 
   healthCheck(): Promise<any> {

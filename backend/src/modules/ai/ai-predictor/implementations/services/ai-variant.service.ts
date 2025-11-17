@@ -1,6 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
 import {
-  IInventoryRepository,
   IVariantRepository,
   IVariantService,
 } from 'src/common/contracts/ai-predictor.contract';
@@ -8,7 +7,7 @@ import {
 @Injectable()
 export class AiVariantService implements IVariantService {
   constructor(
-    @Inject(IInventoryRepository)
+    @Inject(IVariantRepository)
     private readonly variantRepository: IVariantRepository
   ) {}
 

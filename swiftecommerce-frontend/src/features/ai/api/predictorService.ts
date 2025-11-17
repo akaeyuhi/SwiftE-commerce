@@ -2,9 +2,9 @@ import { BaseService } from '@/lib/api/BaseService';
 import { API_ENDPOINTS, buildUrl } from '@/config/api.config';
 import {
   BatchPredictRequest,
-  DemandPrediction,
   ModelComparison,
   PredictDemandRequest,
+  PredictionResponse,
   PredictorStats,
   TrendingProduct,
 } from '@/features/ai/types/ai-predictor.types.ts';
@@ -27,11 +27,11 @@ export class AIPredictorService extends BaseService {
   async predictSingle(
     storeId: string,
     data: PredictDemandRequest
-  ): Promise<DemandPrediction> {
+  ): Promise<PredictionResponse> {
     const url = buildUrl(API_ENDPOINTS.AI_PREDICTOR.PREDICT_SINGLE, {
       storesId: storeId,
     });
-    return this.client.post<DemandPrediction>(url, data);
+    return this.client.post<PredictionResponse>(url, data);
   }
 
   /**
@@ -40,11 +40,11 @@ export class AIPredictorService extends BaseService {
   async predictBatch(
     storeId: string,
     data: BatchPredictRequest
-  ): Promise<DemandPrediction[]> {
+  ): Promise<PredictionResponse[]> {
     const url = buildUrl(API_ENDPOINTS.AI_PREDICTOR.PREDICT_BATCH, {
       storesId: storeId,
     });
-    return this.client.post<DemandPrediction[]>(url, data);
+    return this.client.post<PredictionResponse[]>(url, data);
   }
 
   /**

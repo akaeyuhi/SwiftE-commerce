@@ -7,11 +7,12 @@ import {
   SelectValue,
 } from '@/shared/components/ui/select';
 import { Sparkles } from 'lucide-react';
-import { mockProducts } from '@/shared/mocks/products.mock';
+import { ProductListDto } from '@/features/products/types/product.types.ts';
 
 interface StockPredictorFormProps {
   selectedProductId: string;
   setSelectedProductId: (productId: string) => void;
+  products: ProductListDto[];
   handlePredict: () => void;
   isLoading: boolean;
 }
@@ -19,6 +20,7 @@ interface StockPredictorFormProps {
 export function StockPredictorForm({
   selectedProductId,
   setSelectedProductId,
+  products,
   handlePredict,
   isLoading,
 }: StockPredictorFormProps) {
@@ -32,7 +34,7 @@ export function StockPredictorForm({
           <SelectValue placeholder="Choose a product..." />
         </SelectTrigger>
         <SelectContent>
-          {mockProducts.map((product) => (
+          {products?.map((product) => (
             <SelectItem key={product.id} value={product.id}>
               {product.name}
             </SelectItem>

@@ -33,6 +33,10 @@ import { AiPredictorPersistenceService } from './ai-predictor-persistence.servic
  */
 import { IAiPredictorService } from '../contracts/ai-predictor.service.contract';
 import { AiPredictorFeatureService } from 'src/modules/ai/ai-predictor/services/ai-predictor-feature.service';
+import {
+  ErrorResult,
+  PredictionResult,
+} from 'src/modules/ai/ai-predictor/types';
 @Injectable()
 export class AiPredictorService
   extends BaseAiService<PredictorRequestData, PredictorResponseData>
@@ -95,7 +99,7 @@ export class AiPredictorService
     const startTime = Date.now();
 
     try {
-      const predictions = await this.predict(
+      const [predictions] = await this.predict(
         request.data.items,
         request.data.modelVersion,
         request.userId,
@@ -108,7 +112,7 @@ export class AiPredictorService
         success: true,
         text: `Processed ${predictions.length} predictions`,
         result: {
-          predictions,
+          predictions: predictions as any,
           modelVersion: request.data.modelVersion,
           processingTime,
         },
@@ -186,8 +190,9 @@ export class AiPredictorService
     modelVersion?: string,
     userId?: string,
     contextStoreId?: string
-  ) {
-    const results: Array<any> = [];
+  ): Promise<[PredictionResult[], ErrorResult[]]> {
+    const results: Array<PredictionResult> = [];
+    const errors: Array<ErrorResult> = [];
 
     for (let i = 0; i < normalized.length; i += this.chunkSize) {
       const chunk = normalized.slice(i, i + this.chunkSize);
@@ -200,18 +205,18 @@ export class AiPredictorService
           userId,
           contextStoreId
         );
-        results.push(...chunkResults);
+        results.push(...(chunkResults as any));
       } catch (error) {
         const errorResults = this.featureService.createErrorResults(
           chunk,
           i,
           error.message
         );
-        results.push(...errorResults);
+        errors.push(...errorResults);
       }
     }
 
-    return results;
+    return [results, errors];
   }
 
   private async processSingleChunk(
