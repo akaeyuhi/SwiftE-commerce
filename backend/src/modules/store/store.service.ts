@@ -12,15 +12,16 @@ import { StoreRepository } from 'src/modules/store/store.repository';
 import {
   StoreDto,
   StoreListDto,
+  StoreOverviewDto,
   StoreSearchResultDto,
   StoreStatsDto,
 } from 'src/modules/store/dto/store.dto';
 import { StoreMapper } from 'src/modules/store/store.mapper';
 import { StoreRole } from 'src/entities/user/authentication/store-role.entity';
-import {StoreOverviewDto, StoreSearchOptions} from 'src/modules/store/types';
 import { StoreFileService } from './store-file/store-file.service';
 import { PaginatedService } from 'src/common/abstracts/paginated.service';
 import { Order } from 'src/entities/store/product/order.entity';
+import { StoreSearchOptions } from 'src/modules/store/types';
 
 @Injectable()
 export class StoreService extends PaginatedService<

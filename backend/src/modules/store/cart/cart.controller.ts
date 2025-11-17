@@ -29,7 +29,6 @@ import { AnalyticsEventType } from 'src/entities/infrastructure/analytics/analyt
 import { CartItemDto } from 'src/modules/store/cart/cart-item/dto/cart-item.dto';
 import { CartItem } from 'src/entities/store/cart/cart-item.entity';
 import { EntityOwnerGuard } from 'src/modules/authorization/guards/entity-owner.guard';
-import { EntityOwner } from 'src/common/decorators/entity-owner.decorator';
 import {
   Pagination,
   PaginationParams,
@@ -98,7 +97,7 @@ export class CartController extends BaseController<
   async addOrIncrement(
     @Param('storeId', new ParseUUIDPipe()) storeId: string,
     @Param('userId', new ParseUUIDPipe()) userId: string,
-    @Body() dto: CartItemDto,
+    @Body() dto: CartItemDto
   ): Promise<CartItem> {
     return this.cartService.addItemToUserCart(userId, storeId, dto);
   }

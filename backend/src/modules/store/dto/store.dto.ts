@@ -7,6 +7,7 @@ import { UserDto } from 'src/modules/user/dto/user.dto';
 import { ProductListDto } from 'src/modules/products/dto/product.dto';
 import { ApiProperty } from '@nestjs/swagger';
 import { CategoryDto } from 'src/modules/store/categories/dto/category.dto';
+import { Product } from 'src/entities/store/product/product.entity';
 
 export class StoreDto {
   id?: string;
@@ -70,4 +71,10 @@ export class StoreStatsDto {
 
 export class StoreSearchResultDto extends StoreListDto {
   matchType: 'exact' | 'startsWith' | 'contains' | 'none';
+}
+
+export class StoreOverviewDto {
+  stats: StoreStatsDto;
+  recentOrders: Order[];
+  topProducts: Product[];
 }

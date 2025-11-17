@@ -40,6 +40,11 @@ export interface ChunkResult {
   rawPrediction: string | null;
 }
 
+export interface PredictionResult {
+  metadata: any;
+  prediction: ChunkResult;
+}
+
 export interface ErrorResult extends ChunkResult {
   error: string;
 }

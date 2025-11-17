@@ -1,17 +1,13 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
-import { BaseService } from 'src/common/abstracts/base.service';
-import { PaginationParams } from 'src/common/decorators/pagination.decorator';
-import { ShoppingCart } from 'src/entities/store/cart/cart.entity';
-import { CreateCartDto } from 'src/modules/store/cart/dto/create-cart.dto';
-import { UpdateCartDto } from 'src/modules/store/cart/dto/update-cart.dto';
-import { CartRepository } from 'src/modules/store/cart/cart.repository';
-import { CartItemService } from 'src/modules/store/cart/cart-item/cart-item.service';
-import { CartItem } from 'src/entities/store/cart/cart-item.entity';
-import { CartItemDto } from 'src/modules/store/cart/cart-item/dto/cart-item.dto';
+import {BadRequestException, Injectable, NotFoundException,} from '@nestjs/common';
+import {BaseService} from 'src/common/abstracts/base.service';
+import {PaginationParams} from 'src/common/decorators/pagination.decorator';
+import {ShoppingCart} from 'src/entities/store/cart/cart.entity';
+import {CreateCartDto} from 'src/modules/store/cart/dto/create-cart.dto';
+import {UpdateCartDto} from 'src/modules/store/cart/dto/update-cart.dto';
+import {CartRepository} from 'src/modules/store/cart/cart.repository';
+import {CartItemService} from 'src/modules/store/cart/cart-item/cart-item.service';
+import {CartItem} from 'src/entities/store/cart/cart-item.entity';
+import {CartItemDto} from 'src/modules/store/cart/cart-item/dto/cart-item.dto';
 
 /**
  * CartService
@@ -88,13 +84,11 @@ export class CartService extends BaseService<
       throw new BadRequestException('Quantity must be > 0');
 
     const cart = await this.getOrCreateCart(userId, storeId);
-    const item = await this.cartItemService.addOrIncrement({
+    return await this.cartItemService.addOrIncrement({
       cartId: cart.id,
       variantId: dto.variantId,
       quantity: dto.quantity,
     });
-    await this.addToCart(cart, item);
-    return item;
   }
 
   /**
@@ -149,11 +143,6 @@ export class CartService extends BaseService<
    */
   async getUserMergedCarts(userId: string, pagination?: PaginationParams) {
     return this.cartRepo.findAllByUser(userId, pagination);
-  }
-
-  async addToCart(cart: ShoppingCart, item: CartItem) {
-    cart.items.push(item);
-    return this.cartRepo.save(cart);
   }
 
   async syncCart(
