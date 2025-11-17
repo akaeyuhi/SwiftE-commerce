@@ -6,6 +6,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   Index,
+  JoinColumn,
 } from 'typeorm';
 import { User } from 'src/entities/user/user.entity';
 import { Product } from 'src/entities/store/product/product.entity';
@@ -23,6 +24,7 @@ export class Review implements UserOwnedEntity {
   userId: string;
 
   @ManyToOne(() => User, (user) => user.reviews, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'user_id', referencedColumnName: 'id' })
   user: User;
 
   @Column({ name: 'product_id', type: 'uuid' })

@@ -12,17 +12,16 @@ export class ProductSearchRepository extends BaseRepository<Product> {
   }
 
   async searchProducts(
-    storeId: string,
     query: string,
     limit = 20,
     searchTerms: string[],
+    storeId?: string,
     options?: ProductSearchOptions
   ): Promise<ProductListDto[]> {
     const qb = this.createQueryBuilder('p')
-      .leftJoin('p.photos', 'photos', 'photos.isMain = true')
-      .leftJoin('p.variants', 'variants')
       .select([
         'p.id',
+        'p.storeId',
         'p.name',
         'p.description',
         'p.averageRating',
@@ -30,24 +29,31 @@ export class ProductSearchRepository extends BaseRepository<Product> {
         'p.likeCount',
         'p.viewCount',
         'p.totalSales',
+        'p.createdAt',
+        'p.updatedAt',
       ])
-      .addSelect('MAX(photos.url)', 'mainPhotoUrl') // ✅ Use MAX instead of direct selection
+      .leftJoin('p.photos', 'photos', 'photos.isMain = true')
+      .leftJoin('p.variants', 'variants')
+      .addSelect('MAX(photos.url)', 'mainPhotoUrl')
       .addSelect('MIN(variants.price)', 'minPrice')
       .addSelect('MAX(variants.price)', 'maxPrice')
-      .where('p.storeId = :storeId', { storeId })
-      .andWhere('p.deletedAt IS NULL');
+      .where('p.deletedAt IS NULL');
+
+    if (storeId) {
+      qb.andWhere('p.storeId = :storeId', { storeId });
+    }
 
     // Multi-term search
     if (searchTerms.length === 1) {
       qb.andWhere(
         '(LOWER(p.name) LIKE :query OR LOWER(p.description) LIKE :query)',
-        { query: `%${query}%` }
+        { query: `%${query.toLowerCase()}%` }
       );
     } else {
       searchTerms.forEach((term, index) => {
         qb.andWhere(
           `(LOWER(p.name) LIKE :term${index} OR LOWER(p.description) LIKE :term${index})`,
-          { [`term${index}`]: `%${term}%` }
+          { [`term${index}`]: `%${term.toLowerCase()}%` }
         );
       });
     }
@@ -66,7 +72,6 @@ export class ProductSearchRepository extends BaseRepository<Product> {
       });
     }
 
-    // Price filtering
     const havingConditions: string[] = [];
     if (options?.minPrice) {
       havingConditions.push('MIN(variants.price) >= :minPrice');
@@ -77,35 +82,71 @@ export class ProductSearchRepository extends BaseRepository<Product> {
       qb.setParameter('maxPrice', options.maxPrice);
     }
 
-    // Relevance score
-    let relevanceScore = `
+    const relevanceScore = `
     CASE
       WHEN LOWER(p.name) = :exactQuery THEN 1000
       WHEN LOWER(p.name) LIKE :startsWithQuery THEN 500
       WHEN LOWER(p.name) LIKE :query THEN 100
       WHEN LOWER(p.description) LIKE :query THEN 50
       ELSE 10
-    END
+    END + (p.viewCount * 0.1) + (p.likeCount * 0.5) + (p.totalSales * 2)
   `;
-    relevanceScore += ` + (p.viewCount * 0.1) + (p.likeCount * 0.5) + (p.totalSales * 2)`;
 
     qb.addSelect(`(${relevanceScore})`, 'relevanceScore')
-      .setParameter('exactQuery', query)
-      .setParameter('startsWithQuery', `${query}%`)
-      .setParameter('query', `%${query}%`);
+      .setParameter('exactQuery', query.toLowerCase())
+      .setParameter('startsWithQuery', `${query.toLowerCase()}%`)
+      .setParameter('query', `%${query.toLowerCase()}%`);
 
-    // ✅ Only group by p.id - removed photos.url since we use MAX()
     qb.groupBy('p.id');
 
     if (havingConditions.length > 0) {
       qb.having(havingConditions.join(' AND '));
     }
 
-    // Sorting
     this.applySorting(qb, options?.sortBy || 'relevance');
     qb.limit(limit);
 
-    return qb.getMany();
+    const { entities, raw } = await qb.getRawAndEntities();
+
+    const productIds = entities.map((e) => e.id);
+
+    if (productIds.length === 0) {
+      return [];
+    }
+
+    const productsWithVariants = await this.createQueryBuilder('p')
+      .leftJoinAndSelect('p.variants', 'variants')
+      .leftJoinAndSelect('variants.inventory', 'inventory')
+      .leftJoinAndSelect('p.photos', 'photos')
+      .leftJoinAndSelect('p.store', 'store')
+      .whereInIds(productIds)
+      .getMany();
+
+    const productsMap = new Map(productsWithVariants.map((p) => [p.id, p]));
+
+    return entities.map((entity, index) => {
+      const productWithRelations = productsMap.get(entity.id);
+
+      return {
+        ...entity,
+        variants: productWithRelations?.variants || [],
+        photos: productWithRelations?.photos || [],
+        store: productWithRelations?.store,
+        mainPhotoUrl: raw[index].mainPhotoUrl || null,
+        minPrice: parseFloat(raw[index].minPrice) || 0,
+        maxPrice: parseFloat(raw[index].maxPrice) || 0,
+        relevanceScore: parseFloat(raw[index].relevanceScore) || 0,
+      };
+    }) as ProductListDto[];
+
+    // return entities.map((entity, index) => ({
+    //   ...entity,
+    //   variants: raw[index].variants || [],
+    //   mainPhotoUrl: raw[index].mainPhotoUrl || null,
+    //   minPrice: parseFloat(raw[index].minPrice) || 0,
+    //   maxPrice: parseFloat(raw[index].maxPrice) || 0,
+    //   relevanceScore: parseFloat(raw[index].relevanceScore) || 0,
+    // })) as ProductListDto[];
   }
 
   async advancedSearch(

@@ -18,12 +18,7 @@ export function ProductsPage() {
   const [priceRange, setPriceRange] = useState({ min: 0, max: 10000 });
   const [showFilters, setShowFilters] = useState(false);
 
-  const {
-    data: products,
-    isLoading,
-    error,
-    refetch,
-  } = useAllProducts({
+  const { data, isLoading, error, refetch } = useAllProducts({
     search: searchQuery,
     categoryId: selectedCategory === 'all' ? undefined : selectedCategory,
     sortBy,
@@ -43,9 +38,13 @@ export function ProductsPage() {
     priceRange.max < 10000 ||
     searchQuery !== '';
 
+  const products = data?.data;
+
   useEffect(() => {
     setSearchQuery(urlSearch);
   }, [urlSearch]);
+
+  //TODO pagination
 
   return (
     <ErrorBoundary title="Products Page Error">
@@ -107,7 +106,7 @@ export function ProductsPage() {
                 refetch={refetch}
                 loadingMessage="Loading products..."
               >
-                <ProductGrid products={products?.data || []} />
+                <ProductGrid products={products || []} />
               </QueryLoader>
             </div>
           </div>

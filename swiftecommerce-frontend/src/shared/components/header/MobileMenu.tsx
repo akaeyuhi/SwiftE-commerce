@@ -3,13 +3,14 @@ import { useAuth } from '@/app/store';
 import { useNavigate } from '@/shared/hooks/useNavigate';
 import { ROUTES } from '@/app/routes/routes';
 import { Search, ShoppingCart, Store, User, LogOut } from 'lucide-react';
+import { buildUrl } from '@/config/api.config.ts';
 
 interface MobileMenuProps {
   onClose: () => void;
 }
 
 export function MobileMenu({ onClose }: MobileMenuProps) {
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, logout, user } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -39,7 +40,7 @@ export function MobileMenu({ onClose }: MobileMenuProps) {
         {isAuthenticated ? (
           <div className="space-y-2 pt-4 border-t border-border">
             <Link
-              to="/profile"
+              to={buildUrl(ROUTES.USER_PROFILE, { userId: user!.id })}
               className="flex items-center gap-2 py-2 text-foreground"
               onClick={onClose}
             >

@@ -8,8 +8,8 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import { Badge } from '@/shared/components/ui/Badge.tsx';
-import { Store } from '@/features/stores/pages/StoresPage.tsx';
 import { useNavigate } from '@/shared/hooks/useNavigate.ts';
+import { Store } from '@/features/stores/types/store.types.ts';
 
 interface StoresGridProps {
   stores: Store[];
@@ -86,7 +86,7 @@ export const StoresGrid: React.FC<StoresGridProps> = ({ stores }) => {
                   <div>
                     <p className="text-xs text-muted-foreground">Products</p>
                     <p className="font-semibold text-foreground">
-                      {store.totalProducts}
+                      {store.productCount}
                     </p>
                   </div>
                 </div>
@@ -95,7 +95,7 @@ export const StoresGrid: React.FC<StoresGridProps> = ({ stores }) => {
                   <div>
                     <p className="text-xs text-muted-foreground">Sales</p>
                     <p className="font-semibold text-foreground">
-                      {store.totalSales}
+                      {store.totalRevenue}
                     </p>
                   </div>
                 </div>
@@ -103,17 +103,17 @@ export const StoresGrid: React.FC<StoresGridProps> = ({ stores }) => {
 
               {/* Rating & Followers */}
               <div className="flex items-center justify-between pt-4 border-t border-border">
-                {store.averageRating && (
+                {store.orderCount && (
                   <div className="flex items-center gap-1">
                     <Star className="h-4 w-4 fill-warning text-warning" />
                     <span className="font-semibold text-foreground">
-                      {store.averageRating.toFixed(1)}
+                      {store.orderCount}
                     </span>
                   </div>
                 )}
                 <div className="flex items-center gap-1 text-muted-foreground">
                   <Heart className="h-4 w-4" />
-                  <span className="text-sm">{store.followersCount}</span>
+                  <span className="text-sm">{store.followerCount}</span>
                 </div>
               </div>
             </div>

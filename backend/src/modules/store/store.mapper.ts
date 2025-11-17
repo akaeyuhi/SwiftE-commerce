@@ -22,6 +22,8 @@ export class StoreMapper extends BaseMapper<Store, StoreDto> {
       followerCount: entity.followerCount,
       totalRevenue: entity.totalRevenue,
       orderCount: entity.orderCount,
+      logoUrl: entity.logoUrl,
+      bannerUrl: entity.bannerUrl,
 
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,

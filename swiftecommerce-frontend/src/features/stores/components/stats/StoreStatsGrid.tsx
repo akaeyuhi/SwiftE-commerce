@@ -2,8 +2,8 @@ import { StatsGrid } from '@/shared/components/ui/StatsGrid';
 import { useMemo } from 'react';
 import { useStatsChange } from '@/shared/hooks/useStatsChange';
 import { formatCurrency } from '@/shared/utils/statsCalculators';
-import { StoreOverviewDto } from '../types/store.types';
 import { DollarSign, Package, ShoppingCart, TrendingUp } from 'lucide-react';
+import { StoreOverviewDto } from '@/features/stores/types/store.types.ts';
 
 interface StoreStatsGridProps {
   overviewData: StoreOverviewDto;

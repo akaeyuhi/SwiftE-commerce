@@ -1,4 +1,5 @@
 import { Loader } from 'lucide-react';
+import React, { Suspense, lazy } from 'react';
 
 interface LoadingStateProps {
   /**
@@ -37,7 +38,13 @@ interface LoadingStateProps {
   skeletonCount?: number;
 }
 
-export async function LoadingState({
+const SkeletonLoader = lazy(() =>
+  import('./SkeletonLoader').then((module) => ({
+    default: module.SkeletonLoader,
+  }))
+);
+
+export function LoadingState({
   isLoading,
   isLoaded = !isLoading,
   children,
@@ -70,8 +77,19 @@ export async function LoadingState({
 
   if (isLoading) {
     if (loaderType === 'skeleton') {
-      const SkeletonLoader = (await import('./SkeletonLoader')).SkeletonLoader;
-      return <SkeletonLoader variant={skeletonVariant} count={skeletonCount} />;
+      // ✅ Use Suspense for lazy-loaded component
+      return (
+        <Suspense
+          fallback={
+            <div className="flex flex-col items-center justify-center py-12 gap-3">
+              <Loader className="h-8 w-8 animate-spin text-primary" />
+              <p className="text-sm text-muted-foreground">Loading...</p>
+            </div>
+          }
+        >
+          <SkeletonLoader variant={skeletonVariant} count={skeletonCount} />
+        </Suspense>
+      );
     }
 
     return (

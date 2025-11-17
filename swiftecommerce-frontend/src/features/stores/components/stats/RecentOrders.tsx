@@ -12,6 +12,7 @@ import { SkeletonLoader } from '@/shared/components/loaders/SkeletonLoader';
 import { Badge } from '@/shared/components/ui/Badge';
 import { formatCurrency } from '@/shared/utils/statsCalculators';
 import { useRecentOrders } from '@/features/stores/hooks/useStoreOverview.ts';
+import { buildUrl } from '@/config/api.config.ts';
 
 interface RecentOrdersProps {
   storeId: string;
@@ -55,7 +56,7 @@ export function RecentOrders({ storeId }: RecentOrdersProps) {
             <CardDescription>Latest orders from your store</CardDescription>
           </div>
           <Link
-            to={ROUTES.STORE_ORDERS}
+            to={buildUrl(ROUTES.STORE_ORDERS, { storeId })}
             className="text-sm text-primary hover:underline"
           >
             View all
@@ -85,7 +86,7 @@ export function RecentOrders({ storeId }: RecentOrdersProps) {
               >
                 <div className="flex-1">
                   <p className="font-medium text-foreground mb-1">
-                    {order.customerName}
+                    {order.shipping.firstName + ' ' + order.shipping.lastName}
                   </p>
                   <p className="text-sm text-muted-foreground mb-2">
                     {order.productName}
@@ -100,7 +101,7 @@ export function RecentOrders({ storeId }: RecentOrdersProps) {
                   </div>
                 </div>
                 <p className="font-semibold text-foreground ml-4">
-                  {formatCurrency(order.amount, 'USD')}
+                  {formatCurrency(order.totalAmount, 'USD')}
                 </p>
               </div>
             ))}

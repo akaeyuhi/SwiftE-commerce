@@ -3,8 +3,8 @@ import { ApiOkResponse, getSchemaPath } from '@nestjs/swagger';
 import { PaginationInterceptor } from '../interceptors/pagination.interceptor';
 import { PaginatedDto } from '../dtos/paginated.dto';
 
-export const PaginatedResponse = <TModel extends Type<any>>(model: TModel) => {
-  return applyDecorators(
+export const PaginatedResponse = <TModel extends Type<any>>(model: TModel) =>
+  applyDecorators(
     UseInterceptors(new PaginationInterceptor()),
     ApiOkResponse({
       schema: {
@@ -21,6 +21,5 @@ export const PaginatedResponse = <TModel extends Type<any>>(model: TModel) => {
           },
         ],
       },
-    }),
+    })
   );
-};

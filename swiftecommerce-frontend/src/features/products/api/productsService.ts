@@ -1,7 +1,7 @@
 import { BaseService } from '@/lib/api/BaseService';
 import { API_ENDPOINTS, buildUrl } from '@/config/api.config';
 import { PaginatedResponse } from '@/lib/api/types';
-import { Product } from '../types/product.types';
+import { Product, ProductListDto } from '../types/product.types';
 import { ProductFilters } from '@/shared/types/filters.types.ts';
 import {
   CreateProductDto,
@@ -32,13 +32,13 @@ export interface TopProductsParams {
 export class ProductsService extends BaseService {
   async getAllProducts(
     filters?: ProductFilters
-  ): Promise<PaginatedResponse<Product>> {
+  ): Promise<PaginatedResponse<ProductListDto>> {
     const urlWithParams = this.buildQueryUrl(
       API_ENDPOINTS.PRODUCTS.LIST_ALL,
       filters
     );
     const response = await this.client.get<any>(urlWithParams);
-    return this.handlePaginatedResponse<Product>(response);
+    return this.handlePaginatedResponse<ProductListDto>(response);
   }
 
   /**
@@ -47,11 +47,11 @@ export class ProductsService extends BaseService {
   async getProducts(
     storeId: string,
     filters?: ProductFilters
-  ): Promise<PaginatedResponse<Product>> {
-    const url = buildUrl(API_ENDPOINTS.PRODUCTS.LIST, { storeId });
+  ): Promise<PaginatedResponse<ProductListDto>> {
+    const url = buildUrl(API_ENDPOINTS.PRODUCTS.LIST_BY_STORE, { storeId });
     const urlWithParams = this.buildQueryUrl(url, filters as any);
     const response = await this.client.get<any>(urlWithParams);
-    return this.handlePaginatedResponse<Product>(response);
+    return this.handlePaginatedResponse<ProductListDto>(response);
   }
 
   /**
@@ -72,6 +72,16 @@ export class ProductsService extends BaseService {
   async getProduct(storeId: string, productId: string): Promise<Product> {
     const url = buildUrl(API_ENDPOINTS.PRODUCTS.FIND_ONE, {
       storeId,
+      id: productId,
+    });
+    return this.client.get<Product>(url);
+  }
+
+  /**
+   * Get single product
+   */
+  async getPublicProduct(productId: string): Promise<Product> {
+    const url = buildUrl(API_ENDPOINTS.PRODUCTS.FIND_PUBLIC, {
       id: productId,
     });
     return this.client.get<Product>(url);
@@ -123,11 +133,11 @@ export class ProductsService extends BaseService {
     });
     if (data.photos || data.mainPhoto) {
       const { formData, headers } = this.mapToFormData(data);
-      return this.client.post<Product>(url, formData, {
+      return this.client.put<Product>(url, formData, {
         headers,
       });
     } else {
-      return this.client.post<Product>(url, data);
+      return this.client.put<Product>(url, data);
     }
   }
 

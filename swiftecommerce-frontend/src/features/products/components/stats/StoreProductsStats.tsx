@@ -1,6 +1,6 @@
 import { StatsGrid } from '@/shared/components/ui/StatsGrid';
 import { Package, Layers, Eye } from 'lucide-react';
-import { Product } from '../types/product.types';
+import { Product } from '@/features/products/types/product.types.ts';
 
 interface StoreProductsStatsProps {
   products: Product[];

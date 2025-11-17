@@ -26,7 +26,7 @@ export class GuardUserRepository implements IUserRepository {
     if (!id) return null;
     return this.userRepo.findOne({
       where: { id },
-      relations: ['roles', 'carts', 'orders', 'aiLogs'],
+      relations: ['roles', 'ownedStores'],
     });
   }
 }

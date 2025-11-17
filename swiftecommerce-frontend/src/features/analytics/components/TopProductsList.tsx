@@ -19,6 +19,8 @@ export function TopProductsList({ timeRange }: { timeRange: TimePeriod }) {
     refetch,
   } = useTopProductsByConversion(storeId!, { period: timeRange });
 
+  console.log(topProducts);
+
   return (
     <Card>
       <CardHeader>

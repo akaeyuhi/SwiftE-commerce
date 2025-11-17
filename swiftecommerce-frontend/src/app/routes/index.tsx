@@ -181,12 +181,6 @@ export const router = createBrowserRouter([
         element: <ProductDetailPage />,
       },
 
-      // Store news
-      {
-        path: ROUTES.STORE_NEWS,
-        element: <StoreNewsPage />,
-      },
-
       // Cart
       {
         path: ROUTES.CART,
@@ -288,6 +282,13 @@ export const router = createBrowserRouter([
                 path: ROUTES.ORDER_DETAIL,
                 element: <OrderDetailPage />,
               },
+
+              // Store news
+              {
+                path: ROUTES.STORE_NEWS,
+                element: <StoreNewsPage />,
+              },
+
               {
                 path: ROUTES.WISHLIST,
                 element: <WishlistPage />,

@@ -5,6 +5,7 @@ import {
   CreateDateColumn,
   Column,
   UpdateDateColumn,
+  JoinColumn,
 } from 'typeorm';
 import { User } from 'src/entities/user/user.entity';
 import { Store } from 'src/entities/store/store.entity';
@@ -23,7 +24,10 @@ export class StoreRole implements UserOwnedEntity {
   })
   roleName: StoreRoles;
 
-  @ManyToOne(() => User, (user) => user.roles, { onDelete: 'CASCADE' })
+  @ManyToOne(() => User, (user) => user.roles, {
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'user_id', referencedColumnName: 'id' })
   user: User;
 
   @Column({ name: 'user_id', type: 'uuid' })
@@ -32,7 +36,9 @@ export class StoreRole implements UserOwnedEntity {
   @ManyToOne(() => Store, (store) => store.storeRoles, {
     nullable: true,
     onDelete: 'SET NULL',
+    eager: true,
   })
+  @JoinColumn({ name: 'store_id', referencedColumnName: 'id' })
   store: Store;
 
   @Column({ name: 'store_id', type: 'uuid' })

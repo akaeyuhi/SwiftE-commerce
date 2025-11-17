@@ -8,7 +8,6 @@ import {
   UpdateDateColumn,
   ManyToMany,
   JoinTable,
-  Unique,
 } from 'typeorm';
 import { Product } from 'src/entities/store/product/product.entity';
 import { Store } from 'src/entities/store/store.entity';
@@ -16,7 +15,6 @@ import { StoreOwnedEntity } from 'src/common/interfaces/crud/store-owned.entity.
 import { ApiProperty } from '@nestjs/swagger';
 
 @Entity({ name: 'categories' })
-@Unique(['name'])
 export class Category implements StoreOwnedEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;

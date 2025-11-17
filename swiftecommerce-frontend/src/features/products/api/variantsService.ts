@@ -80,7 +80,7 @@ export class VariantsService extends BaseService {
       productId,
       id: variantId,
     });
-    return this.client.patch<ProductVariant>(url, data);
+    return this.client.put<ProductVariant>(url, data);
   }
 
   /**
@@ -113,7 +113,7 @@ export class VariantsService extends BaseService {
       productId,
       id: variantId,
     });
-    return this.client.put<ProductVariant>(url, data);
+    return this.client.post<ProductVariant>(url, data);
   }
 
   /**

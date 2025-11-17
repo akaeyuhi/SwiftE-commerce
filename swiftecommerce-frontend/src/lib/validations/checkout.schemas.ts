@@ -7,6 +7,7 @@ export const checkoutSchema = z.object({
   email: z.string().email('Invalid email'),
   phone: z.string().min(10, 'Valid phone number required'),
   addressLine1: z.string().min(5, 'Street address is required'),
+  addressLine2: z.string().min(5, 'Street address is required'),
   city: z.string().min(2, 'City is required'),
   state: z.string().min(2, 'State is required'),
   postalCode: z.string().min(5, 'ZIP code is required'),

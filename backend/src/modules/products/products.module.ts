@@ -21,8 +21,8 @@ import { ProductsRankingController } from 'src/modules/products/controllers/prod
 import { ProductsRankingService } from 'src/modules/products/services/product-ranking.service';
 import { Store } from 'src/entities/store/store.entity';
 import { ReviewsModule } from 'src/modules/products/reviews/reviews.module';
-import { VariantsModule } from 'src/modules/store/variants/variants.module';
 import { StoreModule } from 'src/modules/store/store.module';
+import { ProductsSearchController } from 'src/modules/products/controllers/products-search.controller';
 
 @Module({
   imports: [
@@ -50,7 +50,11 @@ import { StoreModule } from 'src/modules/store/store.module';
       useClass: ProductStoreRepository,
     },
   ],
-  controllers: [ProductsRankingController, ProductsController],
+  controllers: [
+    ProductsRankingController,
+    ProductsController,
+    ProductsSearchController,
+  ],
   exports: [ProductsService],
 })
 export class ProductsModule {}

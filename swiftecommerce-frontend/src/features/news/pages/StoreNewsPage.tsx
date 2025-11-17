@@ -8,6 +8,10 @@ import { useNews } from '../hooks/useNews';
 import { QueryLoader } from '@/shared/components/loaders/QueryLoader';
 import { NewsCard } from '../components/public/NewsCard';
 import { Pagination } from '@/shared/components/ui/Pagination';
+import { useStore } from '@/features/stores/hooks/useStores.ts';
+import { Link } from '@/shared/components/ui/Link.tsx';
+import { buildUrl } from '@/config/api.config.ts';
+import { ROUTES } from '@/app/routes/routes.ts';
 
 export function StoreNewsPage() {
   const { storeId } = useParams<{ storeId: string }>();
@@ -20,6 +24,8 @@ export function StoreNewsPage() {
     limit: 10,
   });
 
+  const { data: store } = useStore(storeId!);
+
   const news = data?.data || [];
   const meta = data?.meta;
 
@@ -27,7 +33,11 @@ export function StoreNewsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-foreground mb-2">Store News</h1>
+        <h1 className="text-3xl font-bold text-foreground mb-2">
+          <Link to={buildUrl(ROUTES.STORE_PUBLIC, { storeId: storeId! })}>
+            {store?.name} News
+          </Link>
+        </h1>
         <p className="text-muted-foreground">
           Stay updated with the latest announcements and updates
         </p>

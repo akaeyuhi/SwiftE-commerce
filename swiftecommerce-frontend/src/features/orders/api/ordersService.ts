@@ -16,7 +16,7 @@ export class OrdersService extends BaseService {
     storeId: string,
     params?: { page?: number; pageSize?: number; status?: string }
   ): Promise<PaginatedResponse<Order>> {
-    const url = this.buildUrl(API_ENDPOINTS.ORDERS.LIST, { storeId });
+    const url = this.buildUrl(API_ENDPOINTS.ORDERS.LIST_ALL, { storeId });
     const urlWithParams = this.buildQueryUrl(url, params);
     const response = await this.client.get<any>(urlWithParams);
     return this.handlePaginatedResponse<Order>(response);

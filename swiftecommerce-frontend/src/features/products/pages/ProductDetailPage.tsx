@@ -1,5 +1,5 @@
 import { useParams } from 'react-router-dom';
-import { useProduct } from '../hooks/useProducts';
+import { usePublicProduct } from '../hooks/useProducts';
 import { ErrorBoundary } from '@/shared/components/errors/ErrorBoundary';
 import { QueryLoader } from '@/shared/components/loaders/QueryLoader';
 import { ProductImageGallery } from '../components/details/ProductImageGallery';
@@ -11,9 +11,8 @@ import { Button } from '@/shared/components/ui/Button';
 import { useNavigate } from '@/shared/hooks/useNavigate';
 
 export function ProductDetailPage() {
-  const { productId, storeId } = useParams<{
+  const { productId } = useParams<{
     productId: string;
-    storeId: string;
   }>();
   const navigate = useNavigate();
   const {
@@ -21,7 +20,9 @@ export function ProductDetailPage() {
     isLoading,
     error,
     refetch,
-  } = useProduct(storeId!, productId!);
+  } = usePublicProduct(productId!);
+
+  //TODO FIX THE ATTRIBUTES SYSTEM
 
   return (
     <ErrorBoundary title="Product Detail Error">

@@ -50,6 +50,7 @@ export class ProductListDto {
   likeCount: number;
   viewCount: number;
   totalSales: number;
+  variants?: ProductVariant[];
   mainPhotoUrl?: string;
   minPrice?: number;
   maxPrice?: number;

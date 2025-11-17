@@ -11,7 +11,6 @@ import { useNavigate } from '@/shared/hooks/useNavigate';
 import { Button } from '@/shared/components/ui/Button.tsx';
 import { useAuthMutations } from '../hooks/useAuthMutations';
 import { useAuth } from '@/app/store';
-import { toast } from 'sonner';
 
 export function LoginPage() {
   const { login } = useAuthMutations();
@@ -27,26 +26,8 @@ export function LoginPage() {
   });
 
   const onSubmit = async (data: LoginFormData) => {
-    login.mutate(data, {
-      onSuccess: () => {
-        navigate.toDashboard();
-      },
-    });
-    storeLogin(
-      {
-        id: '1',
-        email: data.email,
-        firstName: 'John',
-        lastName: 'Doe',
-        isEmailVerified: true,
-        isActive: true,
-        siteRole: 'SITE_ADMIN',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      'mock-token'
-    );
-    toast.success('Login successful!');
+    const result = await login.mutateAsync(data);
+    storeLogin(result.user, result.accessToken, result.refreshToken);
     navigate.toDashboard();
   };
 

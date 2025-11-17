@@ -18,7 +18,7 @@ import {
 import { toast } from 'sonner';
 import { Store, Save } from 'lucide-react';
 import { useStoreMutations } from '@/features/stores/hooks/useStoreMutations.ts';
-import { StoreDto } from '../types/store.types';
+import { StoreDto } from '@/features/stores/types/store.types.ts';
 
 interface StoreInfoFormProps {
   store: StoreDto;

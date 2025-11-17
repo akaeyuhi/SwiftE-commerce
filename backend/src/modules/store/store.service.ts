@@ -17,9 +17,10 @@ import {
 } from 'src/modules/store/dto/store.dto';
 import { StoreMapper } from 'src/modules/store/store.mapper';
 import { StoreRole } from 'src/entities/user/authentication/store-role.entity';
-import { StoreSearchOptions } from 'src/modules/store/types';
+import {StoreOverviewDto, StoreSearchOptions} from 'src/modules/store/types';
 import { StoreFileService } from './store-file/store-file.service';
 import { PaginatedService } from 'src/common/abstracts/paginated.service';
+import { Order } from 'src/entities/store/product/order.entity';
 
 @Injectable()
 export class StoreService extends PaginatedService<
@@ -132,6 +133,41 @@ export class StoreService extends PaginatedService<
     if (!store) throw new NotFoundException('Store not found');
 
     return this.mapper.toStatsDto(store);
+  }
+
+  async getStoreOverview(storeId: string): Promise<StoreOverviewDto> {
+    const stats = await this.getStoreStats(storeId);
+    const recentOrders = await this.getRecentOrders(storeId);
+    const topProducts = await this.getTopStoreProducts(storeId);
+    return {
+      stats,
+      recentOrders,
+      topProducts,
+    };
+  }
+
+  async getRecentOrders(storeId: string, limit = 5): Promise<Order[]> {
+    const store = await this.storeRepo.findOne({
+      where: { id: storeId },
+      relations: ['orders'],
+      order: { id: 'DESC' },
+    });
+    if (!store) {
+      throw new NotFoundException('Store not found');
+    }
+    return store.orders.slice(0, limit);
+  }
+
+  async getTopStoreProducts(storeId: string, limit = 5) {
+    const store = await this.storeRepo.findOne({
+      where: { id: storeId },
+      relations: ['products'],
+      order: { id: 'DESC' },
+    });
+    if (!store) {
+      throw new NotFoundException('Store not found');
+    }
+    return store.products.slice(0, limit);
   }
 
   /**

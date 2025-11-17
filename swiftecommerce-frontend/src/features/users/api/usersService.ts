@@ -45,6 +45,11 @@ export class UsersService extends BaseService {
     return this.client.get<User>(url);
   }
 
+  async getUserDashboard(userId: string): Promise<User> {
+    const url = buildUrl(API_ENDPOINTS.USERS.DASHBOARD, { id: userId });
+    return this.client.get<User>(url);
+  }
+
   /**
    * Update user
    */
@@ -77,8 +82,7 @@ export class UsersService extends BaseService {
     pageSize?: number;
   }): Promise<PaginatedResponse<Order>> {
     const url = this.buildQueryUrl(API_ENDPOINTS.USERS.PROFILE_ORDERS, params);
-    const response = await this.client.get<any>(url);
-    return this.handlePaginatedResponse<Order>(response);
+    return await this.client.get<PaginatedResponse<Order>>(url);
   }
 
   /**
@@ -94,6 +98,10 @@ export class UsersService extends BaseService {
   async getUserProfile(userId: string): Promise<User> {
     const url = buildUrl(API_ENDPOINTS.USERS.GET_USER_PROFILE, { id: userId });
     return this.client.get<User>(url);
+  }
+
+  async getMyProfile(): Promise<User> {
+    return this.client.get<User>(API_ENDPOINTS.USERS.GET_MY_PROFILE);
   }
 
   /**

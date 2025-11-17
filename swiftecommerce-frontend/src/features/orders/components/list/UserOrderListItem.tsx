@@ -37,7 +37,7 @@ export const UserOrderListItem = React.forwardRef<
           </div>
           <div className="mt-4 md:mt-0">
             <p className="text-2xl font-bold text-foreground">
-              ${order.totalAmount.toFixed(2)}
+              ${order.totalAmount}
             </p>
           </div>
         </div>
@@ -60,7 +60,7 @@ export const UserOrderListItem = React.forwardRef<
                 </p>
               </div>
               <p className="font-semibold text-foreground">
-                ${item.lineTotal.toFixed(2)}
+                ${parseFloat(String(item.lineTotal)).toFixed(2)}
               </p>
             </div>
           ))}

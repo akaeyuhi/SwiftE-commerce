@@ -11,7 +11,7 @@ import { ImageUpload } from '@/shared/components/forms/ImageUpload.tsx';
 import { Button } from '@/shared/components/ui/Button';
 import { Save } from 'lucide-react';
 import { useUploadStoreFiles } from '@/features/stores/hooks/useUploadStoreFiles.ts';
-import { StoreDto } from '../types/store.types';
+import { StoreDto } from '@/features/stores/types/store.types.ts';
 
 interface StoreImagesFormProps {
   store: StoreDto;

@@ -10,6 +10,7 @@ import {
   ParseFilePipe,
   ParseUUIDPipe,
   Post,
+  Put,
   Query,
   UploadedFiles,
   UseGuards,
@@ -59,6 +60,14 @@ import { PaginatedResponse } from 'src/common/decorators/paginated-response.deco
 @UseInterceptors(RecordEventInterceptor)
 @RecordEvents({
   findOne: {
+    eventType: AnalyticsEventType.VIEW,
+    storeId: 'params.storeId',
+    productId: 'params.id',
+    userId: 'user.id',
+    invokedOn: 'product',
+    when: 'after',
+  },
+  findOneProduct: {
     eventType: AnalyticsEventType.VIEW,
     storeId: 'params.storeId',
     productId: 'params.id',
@@ -125,7 +134,7 @@ export class ProductsController extends BaseController<
     sortBy?: 'relevance' | 'views' | 'sales' | 'rating' | 'price' | 'recent'
   ): Promise<ProductListDto[]> {
     const maxLimit = limit ? Math.min(parseInt(limit), 50) : 20;
-    return await this.productsService.searchProducts(storeId, query, maxLimit, {
+    return await this.productsService.searchProducts(query, maxLimit, storeId, {
       sortBy,
     });
   }
@@ -284,7 +293,8 @@ export class ProductsController extends BaseController<
   })
   async createProduct(
     @Param('storeId', ParseUUIDPipe) storeId: string,
-    @Body() body: CreateProductDto,
+    @Body()
+    body: CreateProductDto,
     @UploadedFiles(new ParseFilePipe({ fileIsRequired: false }))
     files?: {
       photos?: Express.Multer.File[];
@@ -296,6 +306,31 @@ export class ProductsController extends BaseController<
       files?.photos,
       files?.mainPhoto?.[0]
     );
+  }
+
+  /**
+   * PUT /stores/:storeId/products
+   * Updates a product with optional photos and variants
+   */
+  @Put(':id')
+  @UploadProductPhotos()
+  @StoreRole(StoreRoles.ADMIN, StoreRoles.MODERATOR)
+  @HttpCode(HttpStatus.CREATED)
+  @ApiResponse({
+    status: 201,
+    description: 'The record has been successfully updated.',
+    type: ProductDto,
+  })
+  async updateProduct(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body()
+    body: UpdateProductDto,
+    @UploadedFiles(new ParseFilePipe({ fileIsRequired: false }))
+    files?: {
+      photos?: Express.Multer.File[];
+    }
+  ) {
+    return await this.productsService.updateProduct(id, body, files?.photos);
   }
 
   /**

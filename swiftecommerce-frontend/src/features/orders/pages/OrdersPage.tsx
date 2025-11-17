@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import { useAuth } from '@/app/store';
 import { useMyOrders } from '../hooks/useOrders';
 import { QueryLoader } from '@/shared/components/loaders/QueryLoader';
@@ -23,7 +22,7 @@ export function OrdersPage() {
     enabled: !!user,
   });
 
-  const orders = useMemo(() => data, [data]);
+  const orders = data?.pages || [];
 
   const lastOrderRef = useInfiniteScroll({
     isLoading: isFetchingNextPage,
@@ -50,8 +49,14 @@ export function OrdersPage() {
                 />
               ))}
               {isFetchingNextPage && (
-                <div className="flex justify-center">
-                  <p>Loading more orders...</p>
+                <div className="flex justify-center py-4">
+                  <div
+                    className="animate-spin h-8 w-8 border-4 border-primary
+                  border-t-transparent rounded-full"
+                  />
+                  <p className="ml-3 text-muted-foreground">
+                    Loading more orders...
+                  </p>
                 </div>
               )}
               {!hasNextPage && orders.length > 0 && (

@@ -41,7 +41,7 @@ export function StoresPage() {
                   sortBy={sortBy}
                 />
                 <StoresStats stores={stores} />
-                <StoresGrid stores={stores} />
+                <StoresGrid stores={stores as any} />
               </>
             )}
           </QueryLoader>

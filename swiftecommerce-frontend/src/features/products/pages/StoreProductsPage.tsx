@@ -26,7 +26,7 @@ export function StoreProductsPage() {
   }>({ open: false, productId: null });
 
   const {
-    data: products,
+    data: productsData,
     isLoading,
     error,
     refetch,
@@ -34,7 +34,7 @@ export function StoreProductsPage() {
     search: searchQuery,
     categoryId: selectedCategory === 'all' ? undefined : selectedCategory.id,
   });
-  const { data: categories } = useCategories(storeId!);
+  const { data: categoriesData } = useCategories(storeId!);
   const { deleteProduct } = useProductMutations(storeId!);
 
   const handleDelete = async () => {
@@ -46,6 +46,9 @@ export function StoreProductsPage() {
       },
     });
   };
+
+  const products = productsData?.data;
+  const categories = categoriesData?.data;
 
   return (
     <ErrorBoundary title="Store Products Error">
@@ -59,7 +62,7 @@ export function StoreProductsPage() {
         >
           {products && (
             <>
-              <StoreProductsStats products={products.data} />
+              <StoreProductsStats products={products} />
               <ProductFilters
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
@@ -68,7 +71,7 @@ export function StoreProductsPage() {
                 onCategoryChange={setSelectedCategory}
               />
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {products.data.map((product) => (
+                {products.map((product) => (
                   <ProductCard
                     key={product.id}
                     {...product}

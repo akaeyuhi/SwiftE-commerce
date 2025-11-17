@@ -42,7 +42,8 @@ export function CheckoutForm() {
         shipping: {
           firstName: data.firstName,
           lastName: data.lastName,
-          address: data.addressLine1,
+          addressLine1: data.addressLine1,
+          addressLine2: data.addressLine2,
           city: data.city,
           postalCode: data.postalCode,
           country: data.country,

@@ -72,6 +72,7 @@ export class ProductsMapper extends BaseMapper<Product, ProductDto> {
       likeCount: entity.likeCount || 0,
       viewCount: entity.viewCount || 0,
       totalSales: entity.totalSales || 0,
+      variants: entity.variants || [],
       mainPhotoUrl:
         entity.mainPhotoUrl ||
         mainPhotoUrl ||
@@ -103,7 +104,7 @@ export class ProductsMapper extends BaseMapper<Product, ProductDto> {
       totalSales: entity.totalSales || 0,
 
       // Store info
-      storeId: entity.store?.id,
+      storeId: entity.store?.id ?? entity.storeId,
       storeName: entity.store?.name,
 
       // Categories

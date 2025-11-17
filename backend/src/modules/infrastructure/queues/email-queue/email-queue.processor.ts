@@ -1,9 +1,11 @@
 import { Processor, Process } from '@nestjs/bull';
 import { Job } from 'bull';
 import { Injectable, Logger } from '@nestjs/common';
-import { ModuleRef } from '@nestjs/core';
+import { LazyModuleLoader } from '@nestjs/core';
 import { EmailJobData } from 'src/common/interfaces/infrastructure/email.interface';
 import { EmailJobType } from 'src/common/enums/email.enum';
+import { EmailModule } from 'src/modules/email/email.module';
+import { EmailService } from 'src/modules/email/email.service';
 
 /**
  * EmailQueueProcessor
@@ -17,7 +19,7 @@ import { EmailJobType } from 'src/common/enums/email.enum';
 export class EmailQueueProcessor {
   private readonly logger = new Logger(EmailQueueProcessor.name);
 
-  constructor(private readonly moduleRef: ModuleRef) {}
+  constructor(private readonly lazyModuleLoader: LazyModuleLoader) {}
 
   @Process(EmailJobType.USER_CONFIRMATION)
   async handleUserConfirmation(job: Job<EmailJobData>) {
@@ -120,8 +122,8 @@ export class EmailQueueProcessor {
    */
   private async getEmailService() {
     try {
-      const { EmailService } = await import('src/modules/email/email.service');
-      return this.moduleRef.get(EmailService, { strict: false });
+      const moduleRef = await this.lazyModuleLoader.load(() => EmailModule);
+      return moduleRef.get(EmailService, { strict: false });
     } catch (error) {
       this.logger.error('Failed to load EmailService:', error);
       throw new Error(

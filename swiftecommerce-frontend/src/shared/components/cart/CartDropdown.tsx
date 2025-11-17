@@ -15,6 +15,7 @@ import { Card, CardContent } from '../ui/Card';
 import {
   useCartOrCreate,
   useCartMutations,
+  useUserMergedCarts,
 } from '@/features/cart/hooks/useCart';
 import { useParams } from 'react-router-dom';
 import { useMemo } from 'react';
@@ -26,24 +27,29 @@ export function CartDropdown() {
   const navigate = useNavigate();
 
   const { data: cart } = useCartOrCreate(storeId!, user!.id);
+  const { data: cartsData } = useUserMergedCarts(user!.id);
   const { removeItem, updateItem } = useCartMutations(
     storeId!,
     user!.id,
     cart?.id
   );
 
+  const carts = cartsData?.data;
+
   const totalItems = useMemo(() => {
-    if (!cart) return 0;
-    return cart.items.reduce((sum, item) => sum + item.quantity, 0);
-  }, [cart]);
+    if (!carts) return 0;
+    return carts.reduce((sum, cart) => sum + cart.items.length, 0);
+  }, [carts]);
+
+  const items = carts?.flatMap((cart) => cart?.items);
 
   const totalPrice = useMemo(() => {
-    if (!cart) return 0;
-    return cart.items.reduce(
+    if (!cart || !items) return 0;
+    return items.reduce(
       (sum, item) => sum + item.variant.price * item.quantity,
       0
     );
-  }, [cart]);
+  }, [cart, items]);
 
   const handleRemoveItem = (itemId: string) => {
     removeItem.mutate(itemId);
@@ -80,7 +86,7 @@ export function CartDropdown() {
         <div className="flex flex-col h-[calc(100vh-180px)] mt-4">
           {/* Cart Items */}
           <div className="flex-1 overflow-y-auto space-y-4">
-            {!cart || cart.items.length === 0 ? (
+            {!cart || items?.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center p-8">
                 <ShoppingCart className="h-16 w-16 text-muted-foreground mb-4" />
                 <p className="text-lg font-semibold text-foreground mb-2">
@@ -94,7 +100,7 @@ export function CartDropdown() {
                 </Button>
               </div>
             ) : (
-              cart.items.map((item) => (
+              items?.map((item) => (
                 <Card key={item.id}>
                   <CardContent className="p-4">
                     <div className="flex gap-4">
@@ -183,7 +189,7 @@ export function CartDropdown() {
           </div>
 
           {/* Footer */}
-          {cart && cart.items.length > 0 && (
+          {items && items.length > 0 && (
             <div className="border-t border-border pt-4 mt-4 space-y-4">
               <div className="flex items-center justify-between text-lg font-semibold">
                 <span>Total:</span>

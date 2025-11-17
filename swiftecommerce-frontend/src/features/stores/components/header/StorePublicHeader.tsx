@@ -7,12 +7,16 @@ import {
   Share2,
   Star,
   Package,
+  NewspaperIcon,
 } from 'lucide-react';
-import { StoreDto } from '../types/store.types';
 import {
   formatCurrency,
   formatLargeNumber,
 } from '@/shared/utils/statsCalculators';
+import { Link } from '@/shared/components/ui/Link.tsx';
+import { buildUrl } from '@/config/api.config.ts';
+import { ROUTES } from '@/app/routes/routes';
+import { StoreDto } from '@/features/stores/types/store.types.ts';
 
 interface StorePublicHeaderProps {
   store: StoreDto;
@@ -62,6 +66,12 @@ export function StorePublicHeader({ store }: StorePublicHeaderProps) {
                   <Button variant="outline" size="sm">
                     <Share2 className="h-4 w-4" />
                   </Button>
+                  <Link to={buildUrl(ROUTES.STORE_NEWS, { storeId: store.id })}>
+                    <Button variant="outline" size="sm">
+                      <NewspaperIcon className="h-4 w-4 mr-2" />
+                      News
+                    </Button>
+                  </Link>
                   <Button size="sm">
                     <Heart className="h-4 w-4 mr-2" />
                     Follow

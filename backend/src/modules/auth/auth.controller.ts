@@ -12,6 +12,7 @@ import {
   ValidationPipe,
   BadRequestException,
   Delete,
+  Redirect,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
@@ -130,6 +131,7 @@ export class AuthController {
    * Handles: account-verification, site-admin-role, store-admin-role, store-moderator-role
    */
   @Get('confirm/:type')
+  @Redirect('/')
   async confirmFromLink(
     @Param('type') typeParam: string,
     @Query('token') token: string

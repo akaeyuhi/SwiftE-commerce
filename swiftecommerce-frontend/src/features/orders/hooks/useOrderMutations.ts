@@ -54,7 +54,7 @@ export function useOrderMutations(storeId?: string) {
   const checkout = useMutation({
     mutationFn: (orderId: string) =>
       api.orders.updateOrderStatus(storeId!, orderId, {
-        orderStatus: 'processing',
+        status: 'processing',
       }),
     onSuccess: (_, orderId) => {
       queryClient.invalidateQueries({

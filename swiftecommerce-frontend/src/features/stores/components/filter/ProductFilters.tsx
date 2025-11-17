@@ -9,7 +9,7 @@ import {
 } from '@/shared/components/ui/select';
 import { Search } from 'lucide-react';
 import { Button } from '@/shared/components/ui/Button';
-import { CategoryDto } from '../../categories/types/categories.types';
+import { CategoryDto } from '@/features/categories/types/categories.types.ts';
 
 interface ProductFiltersProps {
   searchQuery: string;

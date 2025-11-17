@@ -8,7 +8,7 @@ import { StorePublicHeader } from '../components/header/StorePublicHeader';
 import { ProductFilters } from '../components/filter/ProductFilters';
 import { ProductGrid } from '../components/grid-list/ProductGrid';
 import { ErrorBoundary } from '@/shared/components/errors/ErrorBoundary';
-import { Product } from '@/features/products/types/product.types.ts';
+import { ProductListDto } from '@/features/products/types/product.types.ts';
 
 export function StorePublicPage() {
   const { storeId } = useParams<{ storeId: string }>();
@@ -25,7 +25,7 @@ export function StorePublicPage() {
   } = useStore(storeId!);
 
   const {
-    data: products,
+    data,
     isLoading: productsLoading,
     error: productsError,
   } = useProducts(storeId!, {
@@ -33,6 +33,8 @@ export function StorePublicPage() {
     categoryId: selectedCategory === 'all' ? undefined : selectedCategory,
     sortBy,
   });
+
+  const products = data?.data;
 
   if (storeError && !storeLoading) {
     return (
@@ -95,9 +97,7 @@ export function StorePublicPage() {
             error={productsError}
             loadingMessage="Loading products..."
           >
-            <ProductGrid
-              products={(products as unknown as any[]) || ([] as Product[])}
-            />
+            <ProductGrid products={products || ([] as ProductListDto[])} />
           </QueryLoader>
         </div>
       </div>

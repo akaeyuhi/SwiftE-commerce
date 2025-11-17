@@ -1,31 +1,29 @@
 import { useAuth } from '@/app/store';
-import { useUser } from '@/features/users/hooks/useUsers.ts';
+import { useMyProfile } from '@/features/users/hooks/useUsers.ts';
 import { MyStoresHeader } from '../components/header/MyStoresHeader';
 import { MyStoresStats } from '../components/stats/MyStoresStats';
 import { StoreList } from '../components/grid-list/StoreList';
 import { ErrorBoundary } from '@/shared/components/errors/ErrorBoundary';
 import { QueryLoader } from '@/shared/components/loaders/QueryLoader';
 import { Store } from '@/features/stores/types/store.types.ts';
+import { StoreRoles } from '@/lib/enums/store-roles.enum.ts';
 
 export function MyStoresPage() {
   const { user: authUser } = useAuth();
-  const { data: user, isLoading, error, refetch } = useUser(authUser!.id);
+  const { data: user, isLoading, error, refetch } = useMyProfile(authUser!.id);
 
   const ownedStores = user?.ownedStores || [];
-  const storeRoles = user?.roles?.filter((role) => role.isActive) || [];
+  const storeRoles = user?.roles || [];
 
   const allStores: Store[] = [
-    ...ownedStores.map((store) => ({
-      ...store,
-      accessType: 'owner' as const,
-      role: 'OWNER' as const,
-    })),
     ...storeRoles.map((role) => ({
       ...role.store,
-      accessType: 'team' as const,
+      accessType: role.roleName === StoreRoles.ADMIN ? 'Admin' : 'Team',
       role: role.roleName,
     })),
   ];
+
+  console.log(allStores);
 
   return (
     <ErrorBoundary title="My Stores Error">

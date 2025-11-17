@@ -46,7 +46,10 @@ export function useNewsPost(
 
 export function useStoreNews(
   storeId: string,
-  options?: Omit<UseQueryOptions<NewsPost[]>, 'queryKey' | 'queryFn'>
+  options?: Omit<
+    UseQueryOptions<PaginatedResponse<NewsPost>>,
+    'queryKey' | 'queryFn'
+  >
 ) {
   return useQuery({
     queryKey: [...queryKeys.news.list(storeId), 'store-all'],

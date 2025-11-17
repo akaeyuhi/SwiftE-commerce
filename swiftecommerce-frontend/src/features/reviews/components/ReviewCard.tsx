@@ -4,13 +4,14 @@ import { Button } from '@/shared/components/ui/Button';
 
 interface ReviewCardProps {
   id: string;
-  author: {
-    name: string;
+  user: {
+    firstName: string;
+    lastName: string;
     avatar?: string | null;
   };
   rating: number;
   date: string;
-  content: string;
+  comment: string;
   helpfulCount: number;
   verified: boolean;
   onMarkHelpful?: (id: string) => void;
@@ -18,10 +19,10 @@ interface ReviewCardProps {
 
 export function ReviewCard({
   id,
-  author,
+  user,
   rating,
   date,
-  content,
+  comment,
   helpfulCount,
   verified,
   onMarkHelpful,
@@ -33,12 +34,14 @@ export function ReviewCard({
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
             <span className="text-sm font-semibold text-primary">
-              {author.name.toUpperCase()}
+              {user.firstName[0]?.toUpperCase()}
             </span>
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <p className="font-semibold text-foreground">{author.name}</p>
+              <p className="font-semibold text-foreground">
+                {user.firstName} {user.lastName}
+              </p>
               {verified && (
                 <Badge variant="success" className="text-xs">
                   Verified Purchase
@@ -67,13 +70,13 @@ export function ReviewCard({
       </div>
 
       {/* Content */}
-      <p className="text-foreground mb-4">{content}</p>
+      <p className="text-foreground mb-4">{comment}</p>
 
       {/* Footer */}
       <div className="flex items-center justify-between">
         <Button variant="ghost" size="sm" onClick={() => onMarkHelpful?.(id)}>
           <ThumbsUp className="h-4 w-4 mr-2" />
-          Helpful ({helpfulCount})
+          Helpful {helpfulCount}
         </Button>
       </div>
     </div>

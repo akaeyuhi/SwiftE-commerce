@@ -20,7 +20,7 @@ type UseMyOrdersOptions = Omit<
     readonly unknown[],
     number
   >,
-  'queryKey' | 'queryFn' | 'initialPageParam' | 'getNextPageParam'
+  'queryKey' | 'queryFn' | 'initialPageParam' | 'getNextPageParam' | 'select'
 >;
 
 export function useOrders(
@@ -41,7 +41,7 @@ export function useOrders(
 }
 
 /**
- * Fetch user's orders with infinite scroll
+ * Fetch user's orders with infinite scroll - Returns flattened array
  */
 export function useMyOrders(
   params?: Record<string, any>,
@@ -58,6 +58,10 @@ export function useMyOrders(
     getPreviousPageParam: (firstPage) =>
       firstPage?.meta?.hasPreviousPage ? firstPage.meta.page - 1 : undefined,
     initialPageParam: 1,
+    select: (data) => ({
+      pages: data.pages.flatMap((page) => page.data || []),
+      pageParams: data.pageParams,
+    }),
     enabled: isAuthenticated,
     ...options,
   });

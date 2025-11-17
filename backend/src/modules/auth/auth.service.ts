@@ -124,7 +124,7 @@ export class AuthService {
     await this.emailQueueService.sendWelcomeEmail(
       user.email,
       user.firstName || 'User',
-      process.env.FRONTEND_URL || 'http://localhost:3000',
+      process.env.FRONTEND_URL || 'http://localhost:5173',
       process.env.SITE_NAME || 'Our Platform',
       { delay: 5 * 60 * 1000 }
     );

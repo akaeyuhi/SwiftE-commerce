@@ -14,6 +14,7 @@ export const variantSchema = z.object({
     .number()
     .int('Quantity must be a whole number')
     .min(0, 'Quantity cannot be negative'),
+  id: z.string().uuid().optional(),
 });
 
 export const productSchema = z.object({

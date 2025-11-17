@@ -7,28 +7,12 @@ import {
   UpdateProductDto,
 } from '@/features/products/types/dto.types.ts';
 
-const imagesToFormData = (data: any) => {
-  const formData = new FormData();
-  Object.entries(data).forEach(([key, value]) => {
-    if (key === 'images') {
-      (value as File[]).forEach((file) => {
-        formData.append('photos', file);
-      });
-    } else if (value !== undefined && value !== null) {
-      formData.append(key, value as string);
-    }
-  });
-  return formData;
-};
-
 export function useProductMutations(storeId: string) {
   const queryClient = useQueryClient();
 
   const createProduct = useMutation({
-    mutationFn: (data: CreateProductDto) => {
-      const formData = imagesToFormData(data);
-      return api.products.createProduct(storeId, formData as any);
-    },
+    mutationFn: (data: CreateProductDto) =>
+      api.products.createProduct(storeId, data),
     onSuccess: () => {
       queryClient.invalidateQueries(invalidateFeature.products(storeId));
       toast.success('Product created successfully');
@@ -39,10 +23,8 @@ export function useProductMutations(storeId: string) {
   });
 
   const updateProduct = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateProductDto }) => {
-      const formData = imagesToFormData(data);
-      return api.products.updateProduct(storeId, id, formData as any);
-    },
+    mutationFn: ({ id, data }: { id: string; data: UpdateProductDto }) =>
+      api.products.updateProduct(storeId, id, data),
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.products.detail(storeId, id),

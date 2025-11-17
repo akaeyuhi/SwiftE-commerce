@@ -147,12 +147,8 @@ export class CartService extends BaseService<
    * @param pagination
    * @returns array of ShoppingCart (with store and items relations loaded by repository)
    */
-  async getUserMergedCarts(
-    userId: string,
-    pagination?: PaginationParams
-  ): Promise<{ userId: string; result: [ShoppingCart[], number] }> {
-    const result = await this.cartRepo.findAllByUser(userId, pagination);
-    return { userId, result };
+  async getUserMergedCarts(userId: string, pagination?: PaginationParams) {
+    return this.cartRepo.findAllByUser(userId, pagination);
   }
 
   async addToCart(cart: ShoppingCart, item: CartItem) {

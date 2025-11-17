@@ -1,22 +1,22 @@
 /**
- * Token Management - Store in memory for security
+ * Token Management - Using Zustand Store
  */
-let accessToken: string | null = null;
-let refreshToken: string | null = null;
+import { useStore } from '@/app/store';
 
-export const getAccessToken = (): string | null => accessToken;
+export const getAccessToken = (): string | null =>
+  useStore.getState().accessToken || null;
 
 export const setAccessToken = (token: string): void => {
-  accessToken = token;
+  useStore.getState().setAccessToken(token);
 };
 
-export const getRefreshToken = (): string | null => refreshToken;
+export const getRefreshToken = (): string | null =>
+  useStore.getState().refreshToken;
 
 export const setRefreshToken = (token: string): void => {
-  refreshToken = token;
+  useStore.getState().setRefreshToken?.(token);
 };
 
 export const clearTokens = (): void => {
-  accessToken = null;
-  refreshToken = null;
+  useStore.getState().clearTokens();
 };

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { faker } from '@faker-js/faker';
 import * as bcrypt from 'bcrypt';
 
@@ -17,6 +17,10 @@ import { Review } from 'src/entities/store/review.entity';
 import { NewsPost } from 'src/entities/store/news-post.entity';
 import { AdminRoles } from 'src/common/enums/admin.enum';
 import { OrderStatus } from 'src/common/enums/order-status.enum';
+import { Admin } from 'src/entities/user/authentication/admin.entity';
+import { StoreRole } from 'src/entities/user/authentication/store-role.entity';
+import { StoreRoles } from 'src/common/enums/store-roles.enum';
+import { ProductPhoto } from 'src/entities/store/product/product-photo.entity';
 
 @Injectable()
 export class SeedService {
@@ -39,7 +43,14 @@ export class SeedService {
     @InjectRepository(Review)
     private readonly reviewRepository: Repository<Review>,
     @InjectRepository(NewsPost)
-    private readonly newsPostRepository: Repository<NewsPost>
+    private readonly newsPostRepository: Repository<NewsPost>,
+    @InjectRepository(Admin)
+    private readonly adminRepository: Repository<Admin>,
+    @InjectRepository(StoreRole)
+    private readonly storeRoleRepository: Repository<StoreRole>,
+    @InjectRepository(ProductPhoto)
+    private readonly productPhotoRepository: Repository<ProductPhoto>,
+    @InjectDataSource() private readonly dataSource: DataSource
   ) {}
 
   async seed() {
@@ -56,13 +67,19 @@ export class SeedService {
     const stores = await this.seedStores(users, 10);
     console.log(`🌱 Seeded ${stores.length} stores`);
 
+    // Create store roles
+    const storeRoles = await this.seedStoreRoles(users, stores);
+    console.log(`🌱 Seeded ${storeRoles.length} store roles`);
+
     // Create categories for each store
     const categories = await this.seedCategories(stores);
     console.log(`🌱 Seeded ${categories.length} categories`);
 
     // Create products for each store
     const products = await this.seedProducts(stores, categories);
-    console.log(`🌱 Seeded ${products.length} products with variants`);
+    console.log(
+      `🌱 Seeded ${products.length} products with variants, inventory, and photos`
+    );
 
     // Create orders
     const orders = await this.seedOrders(users, stores, products);
@@ -79,19 +96,30 @@ export class SeedService {
     console.log('✅ Database seeding completed successfully!');
   }
 
-  private async clearDatabase() {
-    // Delete in reverse order of creation to respect FK constraints
-    await this.newsPostRepository.delete({});
-    await this.reviewRepository.delete({});
-    await this.orderItemRepository.delete({});
-    await this.orderRepository.delete({});
-    await this.inventoryRepository.delete({});
-    await this.variantRepository.delete({});
-    await this.productRepository.delete({});
-    await this.categoryRepository.delete({});
-    await this.storeRepository.delete({});
-    await this.userRepository.delete({});
-    console.log('🧹 Cleared existing data');
+  async clearDatabase(): Promise<void> {
+    if (!this.dataSource?.isInitialized) {
+      throw new Error('DataSource is not initialized');
+    }
+
+    try {
+      const entities = this.dataSource.entityMetadatas;
+
+      // Disable foreign key checks temporarily
+      await this.dataSource.query('SET session_replication_role = replica;');
+
+      // Truncate all tables
+      for (const entity of entities) {
+        await this.dataSource.query(
+          `TRUNCATE TABLE "${entity.tableName}" RESTART IDENTITY CASCADE`
+        );
+      }
+
+      // Re-enable foreign key checks
+      await this.dataSource.query('SET session_replication_role = DEFAULT;');
+    } catch (error) {
+      console.error('❌ Error clearing database:', error.message);
+      throw error;
+    }
   }
 
   private async seedUsers(count: number): Promise<User[]> {
@@ -112,7 +140,7 @@ export class SeedService {
     }
 
     // Create a default admin user
-    const admin = this.userRepository.create({
+    const adminUser = this.userRepository.create({
       email: 'admin@swiftecommerce.com',
       firstName: 'Admin',
       lastName: 'User',
@@ -121,30 +149,89 @@ export class SeedService {
       isActive: true,
       siteRole: AdminRoles.ADMIN,
     });
-    users.push(admin);
+    users.push(adminUser);
+    const savedUsers = await this.userRepository.save(users);
 
-    return this.userRepository.save(users);
+    const admin = this.adminRepository.create({
+      userId: savedUsers.find((u) => u.email === 'admin@swiftecommerce.com')!
+        .id,
+      isActive: true,
+    });
+    await this.adminRepository.save(admin);
+    console.log('👑 Seeded site admin');
+
+    return savedUsers;
   }
 
   private async seedStores(users: User[], count: number): Promise<Store[]> {
     const stores: Store[] = [];
-    const availableUsers = [...users];
+    const availableUsers = [
+      ...users.filter((u) => u.siteRole !== AdminRoles.ADMIN),
+    ];
 
     for (let i = 0; i < count; i++) {
-      const owner = availableUsers.splice(
-        faker.number.int({ min: 0, max: availableUsers.length - 1 }),
-        1
-      )[0];
-
-      const store = this.storeRepository.create({
-        name: faker.company.name(),
-        description: faker.company.catchPhrase(),
-        ownerId: owner.id,
-        logoUrl: faker.image.avatar(),
+      const ownerIndex = faker.number.int({
+        min: 0,
+        max: availableUsers.length - 1,
       });
-      stores.push(store);
+      const owner = availableUsers.splice(ownerIndex, 1)[0];
+
+      if (owner) {
+        const store = this.storeRepository.create({
+          name: faker.company.name(),
+          description: faker.company.catchPhrase(),
+          ownerId: owner.id,
+          logoUrl: faker.image.avatar(),
+        });
+        stores.push(store);
+      }
     }
     return this.storeRepository.save(stores);
+  }
+
+  private async seedStoreRoles(
+    users: User[],
+    stores: Store[]
+  ): Promise<StoreRole[]> {
+    const roles: StoreRole[] = [];
+    for (const store of stores) {
+      // Assign Owner
+      roles.push(
+        this.storeRoleRepository.create({
+          storeId: store.id,
+          userId: store.ownerId,
+          roleName: StoreRoles.ADMIN,
+        })
+      );
+
+      // Assign a store admin
+      const storeAdmin = faker.helpers.arrayElement(
+        users.filter((u) => u.id !== store.ownerId)
+      );
+      roles.push(
+        this.storeRoleRepository.create({
+          storeId: store.id,
+          userId: storeAdmin.id,
+          roleName: StoreRoles.ADMIN,
+        })
+      );
+
+      // Assign a few staff members
+      const staffUsers = faker.helpers.arrayElements(
+        users.filter((u) => u.id !== store.ownerId && u.id !== storeAdmin.id),
+        { min: 1, max: 3 }
+      );
+      for (const staff of staffUsers) {
+        roles.push(
+          this.storeRoleRepository.create({
+            storeId: store.id,
+            userId: staff.id,
+            roleName: StoreRoles.MODERATOR,
+          })
+        );
+      }
+    }
+    return this.storeRoleRepository.save(roles);
   }
 
   private async seedCategories(stores: Store[]): Promise<Category[]> {
@@ -178,10 +265,24 @@ export class SeedService {
             min: 1,
             max: 3,
           }),
-          mainPhotoUrl: faker.image.url(),
         });
 
         const savedProduct = await this.productRepository.save(product);
+
+        // Create Photos
+        const photos: ProductPhoto[] = [];
+        for (let k = 0; k < faker.number.int({ min: 2, max: 5 }); k++) {
+          photos.push(
+            this.productPhotoRepository.create({
+              product: savedProduct,
+              url: faker.image.urlLoremFlickr({ category: 'technics' }),
+              isMain: k === 0,
+            })
+          );
+        }
+        await this.productPhotoRepository.save(photos);
+        savedProduct.mainPhotoUrl = photos[0].url;
+        await this.productRepository.save(savedProduct);
 
         // Create variants
         const variants: ProductVariant[] = [];
@@ -307,9 +408,13 @@ export class SeedService {
   ): Promise<NewsPost[]> {
     const newsPosts: NewsPost[] = [];
     for (const store of stores) {
-      const storeUsers = users.filter((u) =>
-        u.ownedStores?.some((s) => s.id === store.id)
-      );
+      // Find users with roles in this store
+      const storeRoles = await this.storeRoleRepository.find({
+        where: { storeId: store.id },
+        relations: ['user'],
+      });
+      const storeUsers = storeRoles.map((role) => role.user);
+
       if (storeUsers.length === 0) continue;
 
       for (let i = 0; i < faker.number.int({ min: 2, max: 5 }); i++) {

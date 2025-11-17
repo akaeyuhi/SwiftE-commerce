@@ -14,7 +14,10 @@ export function OrderStats({ orders }: OrderStatsProps) {
     const deliveredOrders = orders.filter(
       (o) => o.status === 'delivered'
     ).length;
-    const totalRevenue = orders.reduce((sum, o) => sum + o.totalAmount, 0);
+    const totalRevenue = orders.reduce(
+      (sum, o) => sum + parseInt(String(o.totalAmount)),
+      0
+    );
 
     return [
       {
@@ -40,7 +43,7 @@ export function OrderStats({ orders }: OrderStatsProps) {
       },
       {
         title: 'Total Revenue',
-        value: `$${totalRevenue.toFixed(2)}`,
+        value: `$${totalRevenue}`,
         icon: DollarSign,
         color: 'text-info',
         bgColor: 'bg-info/10',

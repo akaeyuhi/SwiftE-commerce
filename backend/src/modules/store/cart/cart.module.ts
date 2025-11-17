@@ -5,10 +5,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ShoppingCart } from 'src/entities/store/cart/cart.entity';
 import { CartItemModule } from 'src/modules/store/cart/cart-item/cart-item.module';
 import { CartRepository } from 'src/modules/store/cart/cart.repository';
+import { PublicCartController } from 'src/modules/store/cart/cart-public.controller';
 
 @Module({
   imports: [TypeOrmModule.forFeature([ShoppingCart]), CartItemModule],
-  controllers: [CartController],
+  controllers: [CartController, PublicCartController],
   providers: [CartService, CartRepository],
 })
 export class CartModule {}

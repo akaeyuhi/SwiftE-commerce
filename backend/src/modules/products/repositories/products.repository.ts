@@ -15,7 +15,7 @@ export class ProductRepository extends BaseRepository<Product> {
   async findAllByStore(storeId: string): Promise<Product[]> {
     return this.find({
       where: { storeId },
-      relations: ['photos', 'categories'],
+      relations: ['photos', 'categories', 'variants'],
     });
   }
 
@@ -25,7 +25,9 @@ export class ProductRepository extends BaseRepository<Product> {
   async findWithRelations(id: string): Promise<Product | null> {
     return this.createQueryBuilder('p')
       .leftJoinAndSelect('p.photos', 'photos')
+      .leftJoinAndSelect('p.store', 'store')
       .leftJoinAndSelect('p.variants', 'variants')
+      .leftJoinAndSelect('variants.inventory', 'inventory')
       .leftJoinAndSelect('p.categories', 'categories')
       .leftJoinAndSelect('p.reviews', 'reviews')
       .where('p.id = :id', { id })

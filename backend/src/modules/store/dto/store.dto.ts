@@ -15,6 +15,9 @@ export class StoreDto {
   ownerId: string;
   owner: UserDto;
 
+  logoUrl?: string;
+  bannerUrl?: string;
+
   // Cached statistics (automatically maintained by DB triggers)
   productCount?: number;
   followerCount?: number;

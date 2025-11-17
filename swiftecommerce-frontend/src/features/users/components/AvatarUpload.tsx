@@ -23,7 +23,7 @@ export const AvatarUpload = () => {
         onFileSelect={setAvatarFile}
         maxSizeMb={2}
         aspectRatio="square"
-        initialImageUrl={user?.avatar || null}
+        initialImageUrl={user?.avatarUrl || null}
         className="w-32 h-32"
       />
       <Button

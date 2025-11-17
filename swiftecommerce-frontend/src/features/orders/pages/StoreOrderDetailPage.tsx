@@ -41,7 +41,7 @@ export function StoreOrderDetailPage() {
   const handleUpdateStatus = (newStatus: OrderStatus) => {
     updateStatus.mutate({
       orderId: orderId!,
-      data: { orderStatus: newStatus },
+      data: { status: newStatus },
     });
   };
 

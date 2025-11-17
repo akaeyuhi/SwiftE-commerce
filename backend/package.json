@@ -31,7 +31,7 @@
     "migration:run": "npm run typeorm -- migration:run -d ./data-source.ts",
     "migration:revert": "npm run typeorm -- migration:revert -d ./data-source.ts",
     "migration:show": "npm run typeorm -- migration:show -d ./data-source.ts",
-    "seed": "ts-node -r tsconfig-paths/register src/database/seeders/seeding.ts"
+    "seed": "ts-node -r tsconfig-paths/register src/modules/infrastructure/seeders/seeding.ts"
   },
   "dependencies": {
     "@huggingface/inference": "^4.11.3",

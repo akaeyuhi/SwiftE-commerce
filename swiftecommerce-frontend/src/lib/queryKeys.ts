@@ -13,6 +13,7 @@ export const queryKeys = {
     details: () => [...queryKeys.products.all, 'detail'] as const,
     detail: (storeId: string, id: string) =>
       [...queryKeys.products.details(), storeId, id] as const,
+    public: (id: string) => [...queryKeys.products.details(), id] as const,
     variants: (storeId: string, productId: string) =>
       [...queryKeys.products.detail(storeId, productId), 'variants'] as const,
     reviews: (storeId: string, productId: string) =>
@@ -53,6 +54,7 @@ export const queryKeys = {
     all: ['cart'] as const,
     detail: (storeId: string, userId: string) =>
       [...queryKeys.cart.all, storeId, userId] as const,
+    merged: (userId: string) => [...queryKeys.cart.all, userId] as const,
     items: (storeId: string, userId: string, cartId: string) =>
       [...queryKeys.cart.detail(storeId, userId), 'items', cartId] as const,
   },

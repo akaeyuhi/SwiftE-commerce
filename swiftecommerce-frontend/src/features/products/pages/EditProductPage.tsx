@@ -6,14 +6,15 @@ import { useNavigate } from '@/shared/hooks/useNavigate';
 import { ArrowLeft } from 'lucide-react';
 import { ProductForm } from '../components/form/ProductForm';
 import { ProductFormData } from '@/lib/validations/product.schemas';
-import { useProduct } from '../hooks/useProducts';
+import { useDetailedProduct } from '../hooks/useProducts';
 import { useProductMutations } from '../hooks/useProductMutations';
 import { ErrorBoundary } from '@/shared/components/errors/ErrorBoundary';
 import { QueryLoader } from '@/shared/components/loaders/QueryLoader';
 import { useStore } from '@/features/stores/hooks/useStores.ts';
 import { useVariantMutations } from '../hooks/useVariants';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { UpdateProductDto } from '../types/dto.types';
+import { useCategories } from '@/features/categories/hooks/useCategories.ts';
 
 export function EditProductPage() {
   const { storeId, productId } = useParams<{
@@ -26,11 +27,14 @@ export function EditProductPage() {
     isLoading,
     error,
     refetch,
-  } = useProduct(storeId!, productId!);
+  } = useDetailedProduct(storeId!, productId!);
   const { data: store } = useStore(storeId!);
+  const { data: categoriesData } = useCategories(storeId!);
   const { updateProduct } = useProductMutations(storeId!);
   const { deleteVariant } = useVariantMutations(storeId!, productId!);
   const [deletedVariantIds, setDeletedVariantIds] = useState<string[]>([]);
+
+  const categories = useMemo(() => categoriesData?.data, [categoriesData]);
 
   const handleRemoveVariant = (variantId: string) => {
     setDeletedVariantIds((prev) => [...prev, variantId]);
@@ -113,7 +117,7 @@ export function EditProductPage() {
         >
           {product && store && (
             <ProductForm
-              availableCategories={store.categories!}
+              availableCategories={categories!}
               onSubmit={handleSubmit}
               isLoading={updateProduct.isPending || deleteVariant.isPending}
               defaultValues={defaultValues}

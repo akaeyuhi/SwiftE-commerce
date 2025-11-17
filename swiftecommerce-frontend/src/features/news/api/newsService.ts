@@ -16,7 +16,7 @@ export class NewsService extends BaseService {
     storeId: string,
     filters?: NewsFilters
   ): Promise<PaginatedResponse<NewsPost>> {
-    const url = buildUrl(API_ENDPOINTS.NEWS.LIST, { storeId });
+    const url = buildUrl(API_ENDPOINTS.NEWS.LIST_ALL, { storeId });
     const urlWithParams = this.buildQueryUrl(url, filters as any);
     const response = await this.client.get<any>(urlWithParams);
     return this.handlePaginatedResponse<NewsPost>(response);
@@ -25,12 +25,12 @@ export class NewsService extends BaseService {
   /**
    * Get all store news (admin view)
    */
-  async getAllStoreNews(storeId: string): Promise<NewsPost[]> {
+  async getAllStoreNews(storeId: string): Promise<PaginatedResponse<NewsPost>> {
     const url = buildUrl(API_ENDPOINTS.NEWS.LIST_ALL, { storeId });
-    return this.client.get<NewsPost[]>(url);
+    return this.client.get<PaginatedResponse<NewsPost>>(url);
   }
 
-  /**
+  /*
    * Get single news article
    */
   async getNewsPost(storeId: string, articleId: string): Promise<NewsPost> {
@@ -71,7 +71,7 @@ export class NewsService extends BaseService {
   ): Promise<NewsPost> {
     const url = buildUrl(API_ENDPOINTS.NEWS.UPDATE, { storeId, id: articleId });
     const formData = this.mapToFormData(data);
-    return this.client.patch<NewsPost>(url, formData);
+    return this.client.put<NewsPost>(url, formData);
   }
 
   /**

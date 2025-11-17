@@ -76,6 +76,7 @@ export function CategoryFormDialog({
 
   const onSubmit = (data: CategoryFormData) => {
     if (category) {
+      console.log(data);
       updateCategory.mutate(
         { id: category.id, data },
         {
@@ -96,9 +97,7 @@ export function CategoryFormDialog({
   };
 
   const parentOptions = useMemo(
-    () =>
-      // TODO: Improve this to filter out children and grandchildren
-      categories.filter((c) => c.id !== category?.id),
+    () => categories?.filter((c) => c.id !== category?.id),
     [categories, category]
   );
 
@@ -150,7 +149,7 @@ export function CategoryFormDialog({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">None (Root Category)</SelectItem>
-                {parentOptions.map((cat) => (
+                {parentOptions?.map((cat) => (
                   <SelectItem key={cat.id} value={cat.id}>
                     {cat.name}
                   </SelectItem>

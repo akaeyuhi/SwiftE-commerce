@@ -57,7 +57,7 @@ export class Order implements UserOwnedEntity, StoreOwnedEntity {
   billing?: OrderInfo;
 
   @OneToMany(() => OrderItem, (item) => item.order, {
-    cascade: ['update', 'remove'],
+    cascade: ['update', 'remove', 'insert'],
   })
   items: OrderItem[];
 

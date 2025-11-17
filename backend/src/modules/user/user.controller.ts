@@ -70,6 +70,11 @@ export class UserController extends BaseController<
     return this.userService.create(dto);
   }
 
+  @Get(':id/dashboard')
+  async getDashboard(@Param('id') id: string): Promise<User | null> {
+    return this.userService.getDashboardUser(id);
+  }
+
   /**
    * Get current user's profile
    */

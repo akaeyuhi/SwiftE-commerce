@@ -175,7 +175,11 @@ export class ProductsService extends PaginatedService<
     );
   }
 
-  async update(id: string, dto: UpdateProductDto): Promise<ProductDto> {
+  async updateProduct(
+    id: string,
+    dto: UpdateProductDto,
+    photos?: Express.Multer.File[]
+  ): Promise<ProductDto> {
     const product = await this.findProductWithRelations(id);
     if (!product)
       throw new NotFoundException(`Product with id ${id} not found`);
@@ -194,6 +198,11 @@ export class ProductsService extends PaginatedService<
         product.id,
         dto.categoryIds?.pop() ?? dto.categoryId!
       );
+    }
+
+    if (photos && photos.length > 0) {
+      const savePhotos = [...photos];
+      await this.addPhotos(product.id, product.storeId, savePhotos);
     }
 
     await super.update(id, dto);
@@ -427,9 +436,9 @@ export class ProductsService extends PaginatedService<
    * Search products by name and description with relevance scoring
    */
   async searchProducts(
-    storeId: string,
     query: string,
     limit: number = 20,
+    storeId?: string,
     options?: ProductSearchOptions
   ): Promise<ProductListDto[]> {
     if (!query || query.trim().length === 0) {
@@ -440,10 +449,10 @@ export class ProductsService extends PaginatedService<
     const searchTerms = normalizedQuery.split(/\s+/);
 
     const results = await this.productSearchRepo.searchProducts(
-      storeId,
       normalizedQuery,
       limit,
       searchTerms,
+      storeId,
       options
     );
 
@@ -459,6 +468,7 @@ export class ProductsService extends PaginatedService<
       viewCount: product.viewCount || 0,
       totalSales: product.totalSales || 0,
       mainPhotoUrl: product.mainPhotoUrl,
+      variants: product.variants,
       minPrice: product.minPrice ? Number(product.minPrice) : undefined,
       maxPrice: product.maxPrice ? Number(product.maxPrice) : undefined,
     }));
@@ -550,10 +560,10 @@ export class ProductsService extends PaginatedService<
     filters: ProductSearchOptions
   ): Promise<ProductListDto[]> {
     return await this.productSearchRepo.searchProducts(
-      storeId,
       filters.query || '',
       filters.limit || 20,
       (filters.query || '').trim().toLowerCase().split(/\s+/),
+      storeId,
       filters
     );
   }

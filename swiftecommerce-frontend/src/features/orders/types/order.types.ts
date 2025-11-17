@@ -31,7 +31,8 @@ export type OrderStatus =
 export interface OrderInfo {
   firstName?: string;
   lastName?: string;
-  address?: string;
+  addressLine1?: string;
+  addressLine2?: string;
   city?: string;
   postalCode?: string;
   country?: string;
@@ -73,5 +74,5 @@ export interface CreateOrderItemDto {
 }
 
 export interface UpdateOrderStatusDto {
-  orderStatus: OrderStatus;
+  status: OrderStatus;
 }

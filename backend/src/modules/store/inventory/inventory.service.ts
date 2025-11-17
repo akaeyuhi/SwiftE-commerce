@@ -101,6 +101,7 @@ export class InventoryService extends BaseService<Inventory> {
         quantity: qty,
       });
     }
+
     return await this.update(inventory.id, { quantity: qty });
   }
 
@@ -166,8 +167,6 @@ export class InventoryService extends BaseService<Inventory> {
     }))!;
     const currentQuantity = updatedInv.quantity;
     const product = updatedInv.variant.product;
-
-    console.log(currentQuantity, previousQuantity);
 
     // Out of stock (highest priority)
     if (

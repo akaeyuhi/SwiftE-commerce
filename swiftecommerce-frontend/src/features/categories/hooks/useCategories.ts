@@ -12,10 +12,14 @@ import {
   CreateCategoryDto,
   UpdateCategoryDto,
 } from '@/features/categories/types/categories.types.ts';
+import { PaginatedResponse } from '@/shared/types/common.types.ts';
 
 export function useCategories(
   storeId: string,
-  options?: Omit<UseQueryOptions<CategoryDto[]>, 'queryKey' | 'queryFn'>
+  options?: Omit<
+    UseQueryOptions<PaginatedResponse<CategoryDto>>,
+    'queryKey' | 'queryFn'
+  >
 ) {
   return useQuery({
     queryKey: queryKeys.categories.list(storeId),

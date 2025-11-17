@@ -5,13 +5,16 @@ export interface AuthSlice {
   user: User | null;
   isAuthenticated: boolean;
   accessToken: string | null;
+  refreshToken: string | null;
 
   // Actions
   setUser: (user: User | null) => void;
   setAccessToken: (token: string | null) => void;
-  login: (user: User, token: string) => void;
+  setRefreshToken: (refreshToken: string | null) => void;
+  login: (user: User, token: string, refreshToken?: string) => void;
   logout: () => void;
   updateUser: (updates: Partial<User>) => void;
+  clearTokens: () => void;
 
   // Computed selectors
   isStoreOwner: () => boolean;
@@ -24,6 +27,7 @@ export const createAuthSlice: SliceCreator<AuthSlice> = (set, get) => ({
   user: null,
   isAuthenticated: false,
   accessToken: null,
+  refreshToken: null,
 
   // Actions
   setUser: (user) =>
@@ -31,12 +35,15 @@ export const createAuthSlice: SliceCreator<AuthSlice> = (set, get) => ({
 
   setAccessToken: (token) =>
     set({ accessToken: token }, false, 'auth/setAccessToken'),
+  setRefreshToken: (token) =>
+    set({ refreshToken: token }, false, 'auth/setRefreshToken'),
 
-  login: (user, token) =>
+  login: (user, token, refreshToken) =>
     set(
       {
         user,
         accessToken: token,
+        refreshToken,
         isAuthenticated: true,
       },
       false,
@@ -62,6 +69,9 @@ export const createAuthSlice: SliceCreator<AuthSlice> = (set, get) => ({
       false,
       'auth/updateUser'
     ),
+
+  clearTokens: () =>
+    set({ accessToken: null, refreshToken: null }, false, 'auth/clearTokens'),
 
   // Computed selectors
   isStoreOwner: () => get().user?.siteRole === 'SITE_ADMIN',

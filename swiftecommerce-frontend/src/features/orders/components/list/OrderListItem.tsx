@@ -22,10 +22,17 @@ export function OrderListItem({ order, storeId }: OrderListItemProps) {
   const { updateStatus } = useOrderMutations(storeId);
 
   const handleUpdateStatus = (newStatus: OrderStatus) => {
-    updateStatus.mutate({
-      orderId: order.id,
-      data: { orderStatus: newStatus },
-    });
+    updateStatus.mutate(
+      {
+        orderId: order.id,
+        data: { status: newStatus },
+      },
+      {
+        onSuccess: () => {
+          order.status = newStatus;
+        },
+      }
+    );
   };
 
   return (
@@ -48,7 +55,7 @@ export function OrderListItem({ order, storeId }: OrderListItemProps) {
           </div>
           <div className="mt-4 md:mt-0">
             <p className="text-2xl font-bold text-foreground">
-              ${order.totalAmount.toFixed(2)}
+              ${parseFloat(String(order.totalAmount))}
             </p>
           </div>
         </div>
@@ -65,7 +72,7 @@ export function OrderListItem({ order, storeId }: OrderListItemProps) {
                 </p>
               </div>
               <p className="font-semibold text-foreground">
-                ${item.lineTotal.toFixed(2)}
+                ${parseFloat(String(item.lineTotal)).toFixed(2)}
               </p>
             </div>
           ))}
@@ -75,8 +82,8 @@ export function OrderListItem({ order, storeId }: OrderListItemProps) {
           <div className="text-sm text-muted-foreground mb-4 p-3 bg-muted/50 rounded">
             <p className="font-medium text-foreground mb-1">Ship to:</p>
             <p>
-              {order.shipping.address}, {order.shipping.city},{' '}
-              {order.shipping.postalCode}
+              {order.shipping.addressLine1}, {order.shipping.addressLine2 ?? ''}
+              {order.shipping.city}, {order.shipping.postalCode}
             </p>
           </div>
         )}

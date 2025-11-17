@@ -5,6 +5,7 @@ import {
   ManyToOne,
   CreateDateColumn,
   UpdateDateColumn,
+  JoinColumn,
 } from 'typeorm';
 import { Store } from 'src/entities/store/store.entity';
 import { User } from 'src/entities/user/user.entity';
@@ -22,9 +23,11 @@ export class NewsPost implements UserOwnedEntity, StoreOwnedEntity {
   store: Store;
 
   @Column({ name: 'store_id', type: 'uuid' })
+  @JoinColumn({ name: 'store_id', referencedColumnName: 'id' })
   storeId: string;
 
   @ManyToOne(() => User, (user) => user.newsPosts, { onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'author_id', referencedColumnName: 'id' })
   author: User;
 
   @Column({ name: 'author_id', type: 'uuid' })

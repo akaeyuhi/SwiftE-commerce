@@ -39,6 +39,19 @@ export function useUser(
   });
 }
 
+export function useMyProfile(
+  userId: string,
+  options?: Omit<UseQueryOptions<User>, 'queryKey' | 'queryFn'>
+) {
+  return useQuery({
+    queryKey: queryKeys.user.detail(userId),
+    queryFn: () => api.users.getMyProfile(),
+    enabled: !!userId,
+    staleTime: 5 * 60 * 1000,
+    ...options,
+  });
+}
+
 export function useUserStoreRoles(
   userId: string,
   options?: Omit<UseQueryOptions<StoreRole[]>, 'queryKey' | 'queryFn'>

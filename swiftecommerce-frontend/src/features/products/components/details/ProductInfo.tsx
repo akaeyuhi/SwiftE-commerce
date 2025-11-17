@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/shared/components/ui/Button';
 import { toast } from 'sonner';
 import { useCart } from '@/app/store';
-import { Product } from '../types/product.types';
 import {
   Star,
   ShoppingCart,
@@ -13,6 +12,7 @@ import {
   Package,
 } from 'lucide-react';
 import { ProductVariant } from '@/features/products/types/variant.types.ts';
+import { Product } from '@/features/products/types/product.types.ts';
 
 interface ProductInfoProps {
   product: Product;

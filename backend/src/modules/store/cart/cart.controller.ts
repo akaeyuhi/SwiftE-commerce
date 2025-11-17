@@ -34,6 +34,7 @@ import {
   Pagination,
   PaginationParams,
 } from 'src/common/decorators/pagination.decorator';
+import { PaginatedResponse } from 'src/common/decorators/paginated-response.decorator';
 
 /**
  * CartController
@@ -85,7 +86,7 @@ export class CartController extends BaseController<
    * @param dto - CartItemDto containing cartId, variantId, quantity
    * @returns created or updated CartItem
    */
-  @Post(':cartId/add-item')
+  @Post('add-item')
   @RecordEvent({
     eventType: AnalyticsEventType.ADD_TO_CART,
     productId: 'body.productId',
@@ -94,11 +95,10 @@ export class CartController extends BaseController<
     value: 'body.quantity',
     when: 'after',
   })
-  @EntityOwner({ serviceToken: CartService, idParam: 'cartId' })
   async addOrIncrement(
     @Param('storeId', new ParseUUIDPipe()) storeId: string,
     @Param('userId', new ParseUUIDPipe()) userId: string,
-    @Body() dto: CartItemDto
+    @Body() dto: CartItemDto,
   ): Promise<CartItem> {
     return this.cartService.addItemToUserCart(userId, storeId, dto);
   }
@@ -190,27 +190,13 @@ export class CartController extends BaseController<
    * @returns array of ShoppingCart (each includes store relation)
    */
   @Get('merged')
+  @PaginatedResponse(ShoppingCart)
   async getUserMergedCarts(
     @Param('storeId', new ParseUUIDPipe()) _storeId: string,
     @Param('userId', new ParseUUIDPipe()) userId: string,
     @Pagination() pagination: PaginationParams
-  ): Promise<{
-    userId: string;
-    data: ShoppingCart[];
-    total: number;
-    page: number;
-    limit: number;
-  }> {
-    const {
-      result: [data, total],
-    } = await this.cartService.getUserMergedCarts(userId, pagination);
-    return {
-      userId,
-      data,
-      total,
-      page: pagination.page,
-      limit: pagination.limit,
-    };
+  ) {
+    return this.cartService.getUserMergedCarts(userId, pagination);
   }
 
   @Patch('sync')

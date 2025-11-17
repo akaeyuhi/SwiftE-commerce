@@ -15,7 +15,11 @@ export function NewsManagementPage() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
 
-  const { data: news, isLoading, error, refetch } = useStoreNews(storeId!);
+  const { data: newsData, isLoading, error, refetch } = useStoreNews(storeId!);
+
+  console.log(newsData);
+
+  const news = newsData?.data || [];
 
   const filteredNews = news?.filter(
     (post) =>

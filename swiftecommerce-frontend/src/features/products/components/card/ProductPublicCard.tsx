@@ -3,15 +3,11 @@ import { Package, ShoppingCart, Star } from 'lucide-react';
 import { Button } from '@/shared/components/ui/Button';
 import { Badge } from '@/shared/components/ui/Badge';
 import { useNavigate } from '@/shared/hooks/useNavigate';
-import { MockProduct } from '@/shared/mocks/products.mock';
 import { useCart } from '@/app/store';
-import {
-  Product,
-  ProductListDto,
-} from '@/features/products/types/product.types.ts';
+import { ProductListDto } from '@/features/products/types/product.types.ts';
 
 interface ProductPublicCardProps {
-  product: MockProduct | Product | ProductListDto;
+  product: ProductListDto;
 }
 
 export const ProductPublicCard: React.FC<ProductPublicCardProps> = ({
@@ -20,24 +16,26 @@ export const ProductPublicCard: React.FC<ProductPublicCardProps> = ({
   const navigate = useNavigate();
   const { addItem } = useCart();
 
-  const minPrice = Math.min(...product.variants.map((v) => v.price));
-  const maxPrice = Math.max(...product.variants.map((v) => v.price));
+  if (!product) return;
+
+  const minPrice = product.minPrice;
+  const maxPrice = product.maxPrice;
   const hasMultiplePrices = minPrice !== maxPrice;
 
-  const inStock = product.variants.some((v) => v.inventory.quantity > 0);
+  const inStock = product?.variants?.some((v) => v.inventory.quantity > 0);
 
   return (
     <Card
       className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-      onClick={() => navigate.toProduct(product.id)}
+      onClick={() => navigate.toProduct(product?.id)}
     >
       <CardContent className="p-0">
         {/* Product Image */}
         <div className="aspect-square bg-muted flex items-center justify-center relative">
-          {product.mainPhotoUrl ? (
+          {product?.mainPhotoUrl ? (
             <img
-              src={product.mainPhotoUrl}
-              alt={product.name}
+              src={product?.mainPhotoUrl}
+              alt={product?.name}
               className="w-full h-full object-cover"
             />
           ) : (
@@ -55,12 +53,12 @@ export const ProductPublicCard: React.FC<ProductPublicCardProps> = ({
         <div className="p-4">
           {/* Product Name */}
           <h3 className="font-semibold text-foreground mb-1 line-clamp-1">
-            {product.name}
+            {product?.name}
           </h3>
 
           {/* Description */}
           <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
-            {product.description}
+            {product?.description}
           </p>
 
           {/* Rating & Reviews - ✅ FIXED */}
@@ -68,15 +66,15 @@ export const ProductPublicCard: React.FC<ProductPublicCardProps> = ({
             <div className="flex items-center gap-1">
               <Star className="h-4 w-4 fill-warning text-warning" />
               <span className="text-sm font-medium">
-                {product.averageRating}
+                {product?.averageRating}
               </span>
               <span className="text-xs text-muted-foreground">
-                ({product.reviewCount})
+                ({product?.reviewCount})
               </span>
             </div>
             <span className="text-xs text-muted-foreground">•</span>
             <span className="text-xs text-muted-foreground">
-              {product.totalSales} sold
+              {product?.totalSales} sold
             </span>
           </div>
 
@@ -84,11 +82,11 @@ export const ProductPublicCard: React.FC<ProductPublicCardProps> = ({
             <div>
               {hasMultiplePrices ? (
                 <p className="text-lg font-bold text-foreground">
-                  ${minPrice.toFixed(2)} - ${maxPrice.toFixed(2)}
+                  ${minPrice?.toFixed(2)} - ${maxPrice?.toFixed(2)}
                 </p>
               ) : (
                 <p className="text-lg font-bold text-foreground">
-                  ${minPrice.toFixed(2)}
+                  ${minPrice?.toFixed(2)}
                 </p>
               )}
             </div>

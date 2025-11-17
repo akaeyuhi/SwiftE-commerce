@@ -13,7 +13,7 @@ export interface Product {
   totalSales: number;
   likeCount: number;
   viewCount: number;
-  mainPhotoUrl: string;
+  mainPhotoUrl?: string;
   variants: ProductVariant[];
   photos: ProductPhoto[];
   reviews: Review[];
@@ -27,6 +27,11 @@ export interface Product {
 export interface ProductListDto {
   id: string;
   name: string;
+  storeId: string;
+  photos: ProductPhoto[];
+  reviews: Review[];
+  createdAt: Date;
+  updatedAt: Date;
   description?: string;
   averageRating?: number;
   reviewCount: number;

@@ -26,6 +26,7 @@ import { UserStatsDto } from './dto/user-stats.dto';
 import { Order } from 'src/entities/store/product/order.entity';
 import { Review } from 'src/entities/store/review.entity';
 import { Like } from 'src/entities/user/like.entity';
+import { Store } from 'src/entities/store/store.entity';
 
 @Injectable()
 export class UserService extends BaseService<
@@ -101,6 +102,10 @@ export class UserService extends BaseService<
 
   async findUser(id: string): Promise<User | null> {
     return this.userRepo.findById(id);
+  }
+
+  async getDashboardUser(id: string): Promise<User | null> {
+    return this.userRepo.getDashboardUser(id);
   }
 
   async update(id: string, dto: UpdateUserDto): Promise<UserDto> {
@@ -274,14 +279,13 @@ export class UserService extends BaseService<
     lastName?: string;
     isEmailVerified: boolean;
     emailVerifiedAt?: Date;
-    storeRoles?: any[];
+    ownedStores: Store[];
+    roles?: any[];
     createdAt: Date;
     updatedAt?: Date;
   } | null> {
-    const user = await this.getEntityById(userId);
+    const user = await this.findOneWithRelations(userId);
     if (!user) throw new NotFoundException('User not found');
-
-    const storeRoles = await this.getUserStoreRoles(userId);
 
     return {
       id: user.id,
@@ -290,8 +294,10 @@ export class UserService extends BaseService<
       lastName: user.lastName,
       isEmailVerified: user.isEmailVerified || false,
       emailVerifiedAt: user.emailVerifiedAt,
-      storeRoles: storeRoles.map((role) => ({
+      ownedStores: user.ownedStores,
+      roles: user.roles.map((role) => ({
         storeId: role.store.id,
+        store: role.store,
         storeName: role.store.name,
         roleName: role.roleName,
         assignedAt: role.assignedAt,
@@ -321,9 +327,9 @@ export class UserService extends BaseService<
     userId: string,
     pagination: any
   ): Promise<[Order[], number]> {
-    const { skip, take, ...where } = pagination;
+    const { skip, take } = pagination;
     return this.orderRepository.findAndCount({
-      where: { userId, ...where },
+      where: { userId },
       relations: ['store', 'items'],
       skip,
       take,

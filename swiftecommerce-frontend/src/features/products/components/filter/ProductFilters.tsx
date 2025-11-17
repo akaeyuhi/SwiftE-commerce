@@ -28,18 +28,22 @@ export function ProductFilters({
             onChange={(e) => onSearchChange(e.target.value)}
           />
           <div className="flex gap-2 overflow-x-auto">
-            {categories.map((category) => (
-              <Button
-                key={category.id}
-                variant={
-                  selectedCategory === category.name ? 'primary' : 'outline'
-                }
-                size="sm"
-                onClick={() => onCategoryChange(category)}
-              >
-                {category.name}
-              </Button>
-            ))}
+            {categories.length ? (
+              categories.map((category) => (
+                <Button
+                  key={category.id}
+                  variant={
+                    selectedCategory === category.name ? 'primary' : 'outline'
+                  }
+                  size="sm"
+                  onClick={() => onCategoryChange(category)}
+                >
+                  {category.name}
+                </Button>
+              ))
+            ) : (
+              <></>
+            )}
           </div>
         </div>
       </CardContent>

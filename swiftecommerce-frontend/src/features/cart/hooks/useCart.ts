@@ -12,6 +12,7 @@ import {
   CreateCartDto,
   ShoppingCart,
 } from '@/features/cart/types/cart.types.ts';
+import {PaginatedResponse} from "@/shared/types/common.types.ts";
 
 export function useCartOrCreate(
   storeId: string,
@@ -22,6 +23,22 @@ export function useCartOrCreate(
     queryKey: queryKeys.cart.detail(storeId, userId),
     queryFn: () => api.cart.getOrCreateCart(storeId, userId),
     enabled: !!storeId && !!userId,
+    staleTime: 60 * 1000,
+    ...options,
+  });
+}
+
+export function useUserMergedCarts(
+  userId: string,
+  options?: Omit<
+    UseQueryOptions<PaginatedResponse<ShoppingCart>>,
+    'queryKey' | 'queryFn'
+  >
+) {
+  return useQuery({
+    queryKey: queryKeys.cart.merged(userId),
+    queryFn: () => api.cart.getUserMergedCarts(userId),
+    enabled: !!userId,
     staleTime: 60 * 1000,
     ...options,
   });

@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { DatabaseModule } from 'src/database/database.module';
-import { SeedService } from './seed.service';
+import { SeedService } from 'src/modules/infrastructure/seeders/seed.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from 'src/entities/user/user.entity';
 import { Store } from 'src/entities/store/store.entity';
@@ -13,6 +13,9 @@ import { OrderItem } from 'src/entities/store/product/order-item.entity';
 import { Review } from 'src/entities/store/review.entity';
 import { NewsPost } from 'src/entities/store/news-post.entity';
 import { ConfigModule } from '@nestjs/config';
+import { Admin } from 'src/entities/user/authentication/admin.entity';
+import { StoreRole } from 'src/entities/user/authentication/store-role.entity';
+import { ProductPhoto } from 'src/entities/store/product/product-photo.entity';
 
 @Module({
   imports: [
@@ -29,6 +32,9 @@ import { ConfigModule } from '@nestjs/config';
       OrderItem,
       Review,
       NewsPost,
+      Admin,
+      StoreRole,
+      ProductPhoto,
     ]),
   ],
   providers: [SeedService],

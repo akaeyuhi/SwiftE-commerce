@@ -13,7 +13,7 @@ import { Column } from 'typeorm';
  */
 export class OrderInfo {
   /** Recipient first name */
-  @Column({ type: 'varchar', length: 100 })
+  @Column({ type: 'varchar', length: 100, nullable: true })
   firstName: string;
 
   /** Recipient last name (optional) */
@@ -25,7 +25,7 @@ export class OrderInfo {
   company?: string;
 
   /** Primary address line (street, house number) */
-  @Column({ type: 'varchar', length: 255 })
+  @Column({ type: 'varchar', length: 255, nullable: true })
   addressLine1: string;
 
   /** Secondary address line (apt, suite) */
@@ -33,7 +33,7 @@ export class OrderInfo {
   addressLine2?: string;
 
   /** City / locality */
-  @Column({ type: 'varchar', length: 100 })
+  @Column({ type: 'varchar', length: 100, nullable: true })
   city: string;
 
   /** State / region / province (optional) */
@@ -41,11 +41,11 @@ export class OrderInfo {
   state?: string;
 
   /** Postal / ZIP code */
-  @Column({ type: 'varchar', length: 30 })
+  @Column({ type: 'varchar', length: 30, nullable: true })
   postalCode: string;
 
   /** ISO country code or full country string */
-  @Column({ type: 'varchar', length: 100 })
+  @Column({ type: 'varchar', length: 100, nullable: true })
   country: string;
 
   /** Contact phone number for shipping carrier */

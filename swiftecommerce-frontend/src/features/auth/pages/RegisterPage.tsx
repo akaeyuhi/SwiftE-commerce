@@ -15,7 +15,6 @@ import { useNavigate } from '@/shared/hooks/useNavigate';
 import { CheckCircle2 } from 'lucide-react';
 import { useAuthMutations } from '../hooks/useAuthMutations';
 import { useAuth } from '@/app/store';
-import { toast } from 'sonner';
 
 export function RegisterPage() {
   const { register: registerMutation } = useAuthMutations();
@@ -58,26 +57,8 @@ export function RegisterPage() {
   const passwordStrength = getPasswordStrength(password);
 
   const onSubmit = async (data: RegisterFormData) => {
-    registerMutation.mutate(data, {
-      onSuccess: () => {
-        navigate.toDashboard();
-      },
-    });
-    login(
-      {
-        id: '1',
-        email: data.email,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        isEmailVerified: false,
-        isActive: true,
-        siteRole: 'SITE_ADMIN',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      'mock-token'
-    );
-    toast.success('Account created successfully! Please verify your email.');
+    const result = await registerMutation.mutateAsync(data);
+    login(result.user, result.accessToken, result.refreshToken);
     navigate.toDashboard();
   };
 

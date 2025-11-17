@@ -1,11 +1,11 @@
 import { ProductPublicCard } from '../card/ProductPublicCard';
-import { Product } from '../types/product.types';
 import { Card } from '@/shared/components/ui/Card';
 import { Package } from 'lucide-react';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
+import { ProductListDto } from '@/features/products/types/product.types.ts';
 
 interface ProductGridProps {
-  products: Product[];
+  products: ProductListDto[];
 }
 
 export function ProductGrid({ products }: ProductGridProps) {

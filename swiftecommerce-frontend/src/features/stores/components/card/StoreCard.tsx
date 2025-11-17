@@ -40,6 +40,17 @@ export function StoreCard({ store }: StoreCardProps) {
     }
   };
 
+  const getRoleName = (role: string) => {
+    switch (role) {
+      case StoreRoles.ADMIN:
+        return 'Admin';
+      case StoreRoles.MODERATOR:
+        return 'Moderator';
+      default:
+        return 'Guest';
+    }
+  };
+
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
       case StoreRoles.ADMIN:
@@ -67,7 +78,7 @@ export function StoreCard({ store }: StoreCardProps) {
             <Badge variant={getRoleBadgeVariant(storeRole!) as any}>
               <span className="flex items-center gap-1">
                 {getRoleIcon(storeRole!)}
-                {storeRole}
+                {getRoleName(storeRole!)}
               </span>
             </Badge>
           </div>
@@ -97,7 +108,7 @@ export function StoreCard({ store }: StoreCardProps) {
             </div>
             <div className="text-center">
               <p className="text-2xl font-bold text-foreground">
-                ${store.totalRevenue?.toFixed(0) || 0}
+                ${store.totalRevenue || 0}
               </p>
               <p className="text-xs text-muted-foreground">Revenue</p>
             </div>

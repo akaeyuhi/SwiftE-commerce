@@ -1,6 +1,6 @@
 import { useQuery, UseQueryOptions } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
-import { Product } from '../types/product.types';
+import { Product, ProductListDto } from '../types/product.types';
 import { PaginatedResponse } from '@/lib/api/types';
 import { api } from '@/lib/api';
 import { TopProductsParams } from '@/features/products/api/productsService.ts';
@@ -9,7 +9,7 @@ import { ProductFilters } from '@/shared/types/filters.types.ts';
 export function useAllProducts(
   filters?: ProductFilters,
   options?: Omit<
-    UseQueryOptions<PaginatedResponse<Product>>,
+    UseQueryOptions<PaginatedResponse<ProductListDto>>,
     'queryKey' | 'queryFn'
   >
 ) {
@@ -28,7 +28,7 @@ export function useProducts(
   storeId: string,
   filters?: ProductFilters,
   options?: Omit<
-    UseQueryOptions<PaginatedResponse<Product>>,
+    UseQueryOptions<PaginatedResponse<ProductListDto>>,
     'queryKey' | 'queryFn'
   >
 ) {
@@ -52,6 +52,39 @@ export function useProduct(
     queryKey: queryKeys.products.detail(storeId, productId),
     queryFn: () => api.products.getProduct(storeId, productId),
     enabled: !!productId && !!storeId,
+    staleTime: 5 * 60 * 1000,
+    ...options,
+  });
+}
+
+/**
+ * Fetch single product
+ */
+export function usePublicProduct(
+  productId: string,
+  options?: Omit<UseQueryOptions<Product>, 'queryKey' | 'queryFn'>
+) {
+  return useQuery({
+    queryKey: queryKeys.products.public(productId),
+    queryFn: () => api.products.getPublicProduct(productId),
+    enabled: !!productId,
+    staleTime: 5 * 60 * 1000,
+    ...options,
+  });
+}
+
+/**
+ * Fetch single product
+ */
+export function useDetailedProduct(
+  storeId: string,
+  productId: string,
+  options?: Omit<UseQueryOptions<Product>, 'queryKey' | 'queryFn'>
+) {
+  return useQuery({
+    queryKey: queryKeys.products.detail(storeId, productId),
+    queryFn: () => api.products.getProductDetailed(storeId, productId),
+    enabled: !!productId,
     staleTime: 5 * 60 * 1000,
     ...options,
   });

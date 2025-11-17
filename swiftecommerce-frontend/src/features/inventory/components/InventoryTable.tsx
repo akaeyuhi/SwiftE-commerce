@@ -73,8 +73,8 @@ export function InventoryTable({
                   <Badge variant={status.variant}>{status.label}</Badge>
                 </td>
                 <td className="p-4 text-sm text-muted-foreground">
-                  {item.lastRestocked
-                    ? new Date(item.lastRestocked).toLocaleDateString()
+                  {item.updatedAt
+                    ? new Date(item.updatedAt).toLocaleDateString()
                     : 'Never'}
                 </td>
                 <td className="p-4 text-right">

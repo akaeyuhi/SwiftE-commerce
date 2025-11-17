@@ -15,7 +15,7 @@ import {
 } from '@/shared/components/ui/select';
 import { MessageSquare, Star, TrendingUp, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
-import { useProducts } from '@/features/products/hooks/useProducts';
+import { useProduct, useProducts } from '@/features/products/hooks/useProducts';
 import { useReviews } from '../hooks/useReviews';
 import { QueryLoader } from '@/shared/components/loaders/QueryLoader';
 import { Product } from '@/features/products/types/product.types';
@@ -42,6 +42,7 @@ export function ReviewManagementPage() {
   } = useReviews(storeId!, selectedProductId!, {
     enabled: !!selectedProductId,
   });
+  const { data: selectedProduct } = useProduct(storeId!, selectedProductId!);
   const reviews = reviewsData?.data || [];
 
   const filteredReviews = reviews.filter((review) => {
@@ -166,17 +167,18 @@ export function ReviewManagementPage() {
               <Card key={review.id} className="p-6">
                 <div className="mb-4">
                   <p className="text-sm font-medium text-foreground mb-1">
-                    Product: {review.product.name}
+                    Product: {selectedProduct?.name}
                   </p>
                 </div>
                 <ReviewCard
                   id={review.id}
-                  author={{
-                    name: `${review.user.firstName} ${review.user.lastName}`,
+                  user={{
+                    firstName: review.user.firstName,
+                    lastName: review.user.lastName,
                   }}
                   rating={review.rating}
                   date={review.createdAt.toString()}
-                  content={review.comment || ''}
+                  comment={review.comment || ''}
                   helpfulCount={0}
                   verified={true}
                   onMarkHelpful={() => toast.success('Marked as helpful')}

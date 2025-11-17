@@ -41,9 +41,7 @@ function RecentOrderRow({ order }: { order: Order }) {
         </div>
       </div>
       <div className="text-right">
-        <p className="font-semibold text-foreground">
-          ${order.totalAmount.toFixed(2)}
-        </p>
+        <p className="font-semibold text-foreground">${order.totalAmount}</p>
         <Badge
           variant={
             order.status === 'delivered'

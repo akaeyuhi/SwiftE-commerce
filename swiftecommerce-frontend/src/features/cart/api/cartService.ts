@@ -7,6 +7,7 @@ import {
   ShoppingCart as Cart,
   UpdateCartItemQuantityDto,
 } from '@/features/cart/types/cart.types.ts';
+import { PaginatedResponse } from '@/shared/types/common.types.ts';
 
 export class CartService extends BaseService {
   /**
@@ -18,6 +19,13 @@ export class CartService extends BaseService {
       userId,
     });
     return this.client.post<Cart>(url);
+  }
+
+  async getUserMergedCarts(userId: string): Promise<PaginatedResponse<Cart>> {
+    const url = this.buildUrl(API_ENDPOINTS.CART.MERGED_CARTS, {
+      userId,
+    });
+    return this.client.get<PaginatedResponse<Cart>>(url);
   }
 
   /**

@@ -24,9 +24,17 @@ export function OrderItems({ items }: OrderItemsProps) {
             key={item.id}
             className="flex items-center gap-4 pb-4 border-b border-border last:border-0"
           >
-            <div className="h-20 w-20 bg-muted rounded flex items-center justify-center">
-              <Package className="h-8 w-8 text-muted-foreground" />
-            </div>
+            {item.product ? (
+              <img
+                src={item.product?.mainPhotoUrl}
+                className="h-20 w-20 bg-muted rounded flex items-center justify-center"
+                alt={item.productName}
+              />
+            ) : (
+              <div className="h-20 w-20 bg-muted rounded flex items-center justify-center">
+                <Package className="h-8 w-8 text-muted-foreground" />
+              </div>
+            )}
             <div className="flex-1">
               <h3 className="font-semibold text-foreground">
                 {item.productName}
@@ -47,7 +55,7 @@ export function OrderItems({ items }: OrderItemsProps) {
               )}
             </div>
             <p className="font-semibold text-foreground">
-              ${item.lineTotal.toFixed(2)}
+              ${parseFloat(String(item.lineTotal)).toFixed(2)}
             </p>
           </div>
         ))}

@@ -6,7 +6,7 @@ import {
   Review,
   UpdateReviewDto,
 } from '../types/reviews.types';
-import { ReviewFilters } from '@/types/filters.types.ts';
+import { ReviewFilters } from '@/shared/types/filters.types.ts';
 
 export class ReviewsService extends BaseService {
   /**

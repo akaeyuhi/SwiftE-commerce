@@ -36,6 +36,14 @@ export class UserRepository extends BaseRepository<User> {
     });
   }
 
+  async getDashboardUser(id: string): Promise<User | null> {
+    if (!id) return null;
+    return this.findOne({
+      where: { id },
+      relations: ['orders', 'ownedStores', 'roles', 'reviews', 'likes'],
+    });
+  }
+
   async findOneWithRoles(id: string): Promise<User | null> {
     return this.findOne({ where: { id }, relations: ['roles'] });
   }
@@ -49,6 +57,7 @@ export class UserRepository extends BaseRepository<User> {
   }
 
   async addRoleToUser(user: User, role: StoreRole) {
+    console.log(user, role);
     return this.save({ ...user, roles: [...user.roles, role] });
   }
 

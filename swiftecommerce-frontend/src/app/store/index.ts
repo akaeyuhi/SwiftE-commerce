@@ -78,11 +78,14 @@ export const useAuth = () =>
     user: state.user,
     isAuthenticated: state.isAuthenticated,
     accessToken: state.accessToken,
+    setAccessToken: state.setAccessToken,
+    setRefreshToken: state.setRefreshToken,
     login: state.login,
     logout: state.logout,
     updateUser: state.updateUser,
     isStoreOwner: state.isStoreOwner,
     isAdmin: state.isAdmin,
+    clearTokens: state.clearTokens,
   }));
 
 export const useUI = () =>

@@ -9,7 +9,7 @@ import {
   ManyToMany,
   JoinTable,
   Index,
-  DeleteDateColumn,
+  DeleteDateColumn, JoinColumn,
 } from 'typeorm';
 import { Store } from 'src/entities/store/store.entity';
 import { Category } from 'src/entities/store/product/category.entity';
@@ -35,6 +35,7 @@ export class Product implements StoreOwnedEntity {
     type: () => Store,
     required: false,
   })
+  @JoinColumn({ name: 'store_id', referencedColumnName: 'id' })
   store: Store;
 
   @ManyToMany(() => Category, (category) => category.products, {

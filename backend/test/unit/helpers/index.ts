@@ -271,7 +271,7 @@ import { BaseQueueService } from 'src/common/abstracts/infrastucture/base.queue.
  */
 export function createMockAnalyticsQueue(): jest.Mocked<AnalyticsQueueService> {
   const mockJobId = () =>
-    `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    `job_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
   return {
     // Core queue methods
@@ -349,7 +349,7 @@ export function createMockAnalyticsQueue(): jest.Mocked<AnalyticsQueueService> {
  */
 export function createMockEmailQueue(): jest.Mocked<EmailQueueService> {
   const mockJobId = () =>
-    `email_job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    `email_job_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
   return {
     // User-related emails
@@ -429,7 +429,7 @@ export function createMockBaseQueue<
   T extends BaseQueueService<any>,
 >(): jest.Mocked<T> {
   const mockJobId = () =>
-    `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    `job_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
   return {
     scheduleJob: jest.fn().mockResolvedValue(mockJobId()),

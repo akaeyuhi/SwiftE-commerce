@@ -21,7 +21,8 @@ export function OrderShippingInfo({ shipping }: OrderShippingInfoProps) {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <p className="text-foreground">{shipping.address}</p>
+        <p className="text-foreground">{shipping.addressLine1}</p>
+        <p className="text-foreground">{shipping.addressLine2}</p>
         <p className="text-foreground">
           {shipping.city}, {shipping.postalCode}
         </p>

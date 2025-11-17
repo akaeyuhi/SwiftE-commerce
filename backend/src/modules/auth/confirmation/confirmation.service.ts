@@ -229,7 +229,7 @@ export class ConfirmationService {
   }
 
   private buildConfirmationUrl(token: string, type: ConfirmationType): string {
-    const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000/api';
     const typeParam = type.toLowerCase().replace(/_/g, '-');
     return `${baseUrl}/auth/confirm/${typeParam}?token=${token}`;
   }

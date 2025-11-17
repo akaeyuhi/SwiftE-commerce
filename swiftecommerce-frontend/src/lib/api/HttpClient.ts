@@ -5,11 +5,6 @@ import axios, {
 } from 'axios';
 import { apiConfig } from '@/config/api.config';
 import {
-  getAccessToken,
-  setAccessToken,
-  clearTokens,
-} from '@/lib/auth/tokenManager';
-import {
   HttpClient,
   RequestConfig,
   ApiResponse,
@@ -18,6 +13,12 @@ import {
   UploadProgressCallback,
 } from './types';
 import { toast } from 'sonner';
+import {
+  clearTokens,
+  getAccessToken,
+  getRefreshToken,
+  setAccessToken,
+} from '@/lib/auth/tokenManager.ts';
 
 /**
  * Custom API Error class
@@ -119,9 +120,10 @@ export class HttpClientImpl implements HttpClient {
           originalRequest._retry = true;
 
           try {
+            const refreshToken = getRefreshToken();
             const { data } = await axios.post(
               `${apiConfig.baseURL}/auth/refresh`,
-              {},
+              { refreshToken },
               { withCredentials: true }
             );
 
@@ -134,11 +136,10 @@ export class HttpClientImpl implements HttpClient {
             return this.client(originalRequest);
           } catch (refreshError) {
             clearTokens();
-            window.location.href = '/login';
+            //window.location.href = '/login';
             return Promise.reject(refreshError);
           }
         }
-
         // Handle errors
         if (!originalRequest.skipErrorHandler) {
           this.handleError(error);
@@ -180,7 +181,7 @@ export class HttpClientImpl implements HttpClient {
    */
   async get<T = any>(url: string, config?: RequestConfig): Promise<T> {
     const response = await this.client.get<ApiResponse<T>>(url, config);
-    return response.data.data as T;
+    return response.data as T;
   }
 
   /**
@@ -192,7 +193,7 @@ export class HttpClientImpl implements HttpClient {
     config?: RequestConfig<D>
   ): Promise<T> {
     const response = await this.client.post<ApiResponse<T>>(url, data, config);
-    return response.data.data as T;
+    return response.data as T;
   }
 
   /**
@@ -204,7 +205,7 @@ export class HttpClientImpl implements HttpClient {
     config?: RequestConfig<D>
   ): Promise<T> {
     const response = await this.client.put<ApiResponse<T>>(url, data, config);
-    return response.data.data as T;
+    return response.data as T;
   }
 
   /**
@@ -216,7 +217,7 @@ export class HttpClientImpl implements HttpClient {
     config?: RequestConfig<D>
   ): Promise<T> {
     const response = await this.client.patch<ApiResponse<T>>(url, data, config);
-    return response.data.data as T;
+    return response.data as T;
   }
 
   /**
@@ -224,7 +225,7 @@ export class HttpClientImpl implements HttpClient {
    */
   async delete<T = any>(url: string, config?: RequestConfig): Promise<T> {
     const response = await this.client.delete<ApiResponse<T>>(url, config);
-    return response.data.data as T;
+    return response.data as T;
   }
 
   /**
@@ -232,7 +233,7 @@ export class HttpClientImpl implements HttpClient {
    */
   async request<T = any, D = any>(config: RequestConfig<D>): Promise<T> {
     const response = await this.client.request<ApiResponse<T>>(config);
-    return response.data.data as T;
+    return response.data as T;
   }
 
   /**
@@ -249,7 +250,7 @@ export class HttpClientImpl implements HttpClient {
       },
       onUploadProgress: onProgress,
     });
-    return response.data.data as T;
+    return response.data as T;
   }
 
   /**

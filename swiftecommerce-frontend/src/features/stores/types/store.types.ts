@@ -24,6 +24,8 @@ export interface Store {
   followerCount: number;
   totalRevenue: number;
   orderCount: number;
+  city: string;
+  country: string;
   createdAt: Date;
   updatedAt: Date;
   deletedAt?: Date;

@@ -12,10 +12,9 @@ interface OrderSummaryProps {
 }
 
 export function OrderSummary({ order }: OrderSummaryProps) {
-  // Assuming tax and shipping are not available in the order object,
-  // we can calculate a subtotal. For a real app, these should come from the API.
-  const subtotal = order.items.reduce((acc, item) => acc + item.lineTotal, 0);
-  const tax = order.totalAmount - subtotal; // A rough estimation
+  const subtotal = order.totalAmount;
+  const tax = parseFloat(String(subtotal * 0.1)); // A rough estimation
+  const total = parseFloat(String(subtotal + tax));
 
   return (
     <Card>
@@ -28,7 +27,7 @@ export function OrderSummary({ order }: OrderSummaryProps) {
       <CardContent className="space-y-2">
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">Subtotal:</span>
-          <span className="font-medium">${subtotal.toFixed(2)}</span>
+          <span className="font-medium">${subtotal}</span>
         </div>
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">Tax & Fees:</span>
@@ -38,7 +37,7 @@ export function OrderSummary({ order }: OrderSummaryProps) {
           <div className="flex justify-between">
             <span className="font-semibold text-foreground">Total:</span>
             <span className="font-bold text-foreground text-lg">
-              ${order.totalAmount.toFixed(2)}
+              ${total.toFixed(2)}
             </span>
           </div>
         </div>

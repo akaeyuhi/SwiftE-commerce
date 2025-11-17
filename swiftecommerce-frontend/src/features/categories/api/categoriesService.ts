@@ -5,14 +5,15 @@ import {
   CreateCategoryDto,
   UpdateCategoryDto,
 } from '../types/categories.types';
+import { PaginatedResponse } from '@/shared/types/common.types.ts';
 
 export class CategoriesService extends BaseService {
   /**
    * Get all categories for a store
    */
-  async getCategories(storeId: string): Promise<Category[]> {
+  async getCategories(storeId: string): Promise<PaginatedResponse<Category>> {
     const url = buildUrl(API_ENDPOINTS.CATEGORIES.LIST, { storeId });
-    return this.client.get<Category[]>(url);
+    return this.client.get<PaginatedResponse<Category>>(url);
   }
 
   /**
@@ -57,7 +58,7 @@ export class CategoriesService extends BaseService {
       storeId,
       id: categoryId,
     });
-    return this.client.patch<Category>(url, data);
+    return this.client.put<Category>(url, data);
   }
 
   /**

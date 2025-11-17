@@ -78,6 +78,12 @@ export function CartPage() {
     updateItem.mutate({ itemId, data: { quantity } });
   };
 
+  // TODO FIX CART
+  // TODO FIX WISHLIST
+  // TODO CREATE NEWS PAGE
+  // TODO FIX ANALYTICS
+  // TODO FIX AI
+
   if (!cart || cart.items.length === 0) {
     return (
       <div className="container mx-auto px-4 py-12">

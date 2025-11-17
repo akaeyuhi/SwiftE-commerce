@@ -70,6 +70,8 @@ export function ErrorState({
     description ||
     (error ? 'An unexpected error occurred. Please try again.' : '');
 
+  console.error(error);
+
   const content = (
     <div
       className={cn('flex flex-col items-center gap-4 text-center', className)}

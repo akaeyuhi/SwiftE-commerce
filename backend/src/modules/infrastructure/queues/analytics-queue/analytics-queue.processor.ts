@@ -1,13 +1,20 @@
 import { Processor, Process } from '@nestjs/bull';
 import { Job } from 'bull';
 import { Injectable, Logger } from '@nestjs/common';
-import { ModuleRef } from '@nestjs/core';
+import { LazyModuleLoader, ModuleRef } from '@nestjs/core';
 import {
   AnalyticsEventType,
   AnalyticsJobData,
   AnalyticsJobPayload,
   AnalyticsJobType,
 } from './types/analytics-queue.types';
+import { EmailModule } from 'src/modules/email/email.module';
+import { EmailService } from 'src/modules/email/email.service';
+import { AnalyticsModule } from 'src/modules/analytics/analytics.module';
+import { AnalyticsEventRepository } from 'src/modules/analytics/repositories/analytics-event.repository';
+import { StoreDailyStatsRepository } from 'src/modules/analytics/repositories/store-daily-stats.repository';
+import { ProductDailyStatsRepository } from 'src/modules/analytics/repositories/product-daily-stats.repository';
+import { AnalyticsService } from 'src/modules/analytics/analytics.service';
 
 /**
  * AnalyticsQueueProcessor
@@ -21,7 +28,7 @@ import {
 export class AnalyticsQueueProcessor {
   private readonly logger = new Logger(AnalyticsQueueProcessor.name);
 
-  constructor(private readonly moduleRef: ModuleRef) {}
+  constructor(private readonly lazyLoaderModule: LazyModuleLoader) {}
 
   @Process(AnalyticsJobType.RECORD_SINGLE)
   async handleRecordSingle(job: Job<AnalyticsJobData>) {
@@ -400,10 +407,8 @@ export class AnalyticsQueueProcessor {
 
   private async getAnalyticsEventRepository() {
     try {
-      const { AnalyticsEventRepository } = await import(
-        'src/modules/analytics/repositories/analytics-event.repository'
-      );
-      return this.moduleRef.get(AnalyticsEventRepository, { strict: false });
+      const moduleRef = await this.lazyLoaderModule.load(() => AnalyticsModule);
+      return moduleRef.get(AnalyticsEventRepository, { strict: false });
     } catch (error) {
       this.logger.error('Failed to load AnalyticsEventRepository:', error);
       throw new Error(
@@ -414,10 +419,8 @@ export class AnalyticsQueueProcessor {
 
   private async getStoreStatsRepository() {
     try {
-      const { StoreDailyStatsRepository } = await import(
-        'src/modules/analytics/repositories/store-daily-stats.repository'
-      );
-      return this.moduleRef.get(StoreDailyStatsRepository, { strict: false });
+      const moduleRef = await this.lazyLoaderModule.load(() => AnalyticsModule);
+      return moduleRef.get(StoreDailyStatsRepository, { strict: false });
     } catch (error) {
       this.logger.error('Failed to load StoreDailyStatsRepository:', error);
       throw new Error('StoreDailyStatsRepository not available');
@@ -426,10 +429,8 @@ export class AnalyticsQueueProcessor {
 
   private async getProductStatsRepository() {
     try {
-      const { ProductDailyStatsRepository } = await import(
-        'src/modules/analytics/repositories/product-daily-stats.repository'
-      );
-      return this.moduleRef.get(ProductDailyStatsRepository, { strict: false });
+      const moduleRef = await this.lazyLoaderModule.load(() => AnalyticsModule);
+      return moduleRef.get(ProductDailyStatsRepository, { strict: false });
     } catch (error) {
       this.logger.error('Failed to load ProductDailyStatsRepository:', error);
       throw new Error('ProductDailyStatsRepository not available');
@@ -441,10 +442,8 @@ export class AnalyticsQueueProcessor {
    */
   private async getAnalyticsService() {
     try {
-      const { AnalyticsService } = await import(
-        'src/modules/analytics/analytics.service'
-      );
-      return this.moduleRef.get(AnalyticsService, { strict: false });
+      const moduleRef = await this.lazyLoaderModule.load(() => AnalyticsModule);
+      return moduleRef.get(AnalyticsService, { strict: false });
     } catch (error) {
       this.logger.warn('AnalyticsService not available:', error);
       return null;

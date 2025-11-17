@@ -9,32 +9,34 @@ export function DashboardStats() {
   const { user } = useAuth();
   const { data, isLoading, error, refetch } = useDashboardStats(user!.id);
 
+  console.log(data);
+
   const stats = data
     ? [
         {
           title: 'My Orders',
-          value: data.orders,
+          value: data.orders?.length,
           icon: ShoppingCart,
           color: 'text-primary',
           bgColor: 'bg-primary/10',
         },
         {
           title: 'Wishlist',
-          value: data.wishlist,
+          value: data.wishlist?.length,
           icon: Heart,
           color: 'text-error',
           bgColor: 'bg-error/10',
         },
         {
           title: 'My Stores',
-          value: data.stores,
+          value: data.stores.length,
           icon: Store,
           color: 'text-info',
           bgColor: 'bg-info/10',
         },
         {
           title: 'Reviews',
-          value: data.reviews,
+          value: data.reviews?.length,
           icon: TrendingUp,
           color: 'text-success',
           bgColor: 'bg-success/10',

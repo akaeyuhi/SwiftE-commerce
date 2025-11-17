@@ -35,7 +35,10 @@ export function InventoryManagementPage() {
   const { inventoryItems, isLoading, error, isFetching } = useInventory(
     storeId!
   );
-  const { setInventory } = useVariantMutations(storeId!, ''); // ProductId is not needed for setInventory
+  const { setInventory } = useVariantMutations(
+    storeId!,
+    updatingItem?.id ?? ''
+  );
 
   const totalStock = useMemo(
     () => inventoryItems.reduce((sum, item) => sum + item.quantity, 0),
@@ -120,7 +123,7 @@ export function InventoryManagementPage() {
       },
       {
         onSuccess: () => {
-          toast.success('Inventory updated successfully');
+          updatingItem.quantity = quantity;
           setUpdatingItem(null);
         },
         onError: () => {

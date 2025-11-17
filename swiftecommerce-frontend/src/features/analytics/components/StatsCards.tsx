@@ -19,7 +19,7 @@ export function StatsCards({ timeRange }: { timeRange: TimePeriod }) {
       {
         title: 'Total Revenue',
         value: `$${(data.totalRevenue || 0).toFixed(2)}`,
-        change: `${data.revenueChange >= 0 ? '+' : ''}${data.revenueChange.toFixed(1)}%`,
+        change: `${data.revenueChange >= 0 ? '+' : ''}${data.revenueChange}%`,
         trend: data.revenueChange >= 0 ? 'up' : 'down',
         icon: DollarSign,
         color: 'text-success',
@@ -28,7 +28,7 @@ export function StatsCards({ timeRange }: { timeRange: TimePeriod }) {
       {
         title: 'Total Orders',
         value: data.totalOrders,
-        change: `${data.ordersChange >= 0 ? '+' : ''}${data.ordersChange.toFixed(1)}%`,
+        change: `${data.ordersChange >= 0 ? '+' : ''}${data.ordersChange}%`,
         trend: data.ordersChange >= 0 ? 'up' : 'down',
         icon: ShoppingCart,
         color: 'text-primary',
@@ -37,7 +37,7 @@ export function StatsCards({ timeRange }: { timeRange: TimePeriod }) {
       {
         title: 'Customers',
         value: data.totalCustomers,
-        change: `${data.customersChange >= 0 ? '+' : ''}${data.customersChange.toFixed(1)}%`,
+        change: `${data.customersChange >= 0 ? '+' : ''}${data.customersChange}%`,
         trend: data.customersChange >= 0 ? 'up' : 'down',
         icon: Users,
         color: 'text-info',
@@ -45,8 +45,8 @@ export function StatsCards({ timeRange }: { timeRange: TimePeriod }) {
       },
       {
         title: 'Conversion Rate',
-        value: `${(data.conversionRate || 0).toFixed(2)}%`,
-        change: `${data.conversionChange >= 0 ? '+' : ''}${data.conversionChange.toFixed(1)}%`,
+        value: `${data.conversionRate || 0}%`,
+        change: `${data.conversionChange >= 0 ? '+' : ''}${data.conversionChange}%`,
         trend: data.conversionChange >= 0 ? 'up' : 'down',
         icon: TrendingUp,
         color: 'text-warning',

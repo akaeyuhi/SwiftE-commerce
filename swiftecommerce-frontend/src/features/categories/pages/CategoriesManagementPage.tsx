@@ -24,17 +24,14 @@ export function CategoriesManagementPage() {
     categoryId: string | null;
   }>({ open: false, categoryId: null });
 
-  const {
-    data: categories = [],
-    isLoading,
-    error,
-    isFetching,
-  } = useCategories(storeId!);
+  const { data, isLoading, error, isFetching } = useCategories(storeId!);
   const { deleteCategory } = useCategoryMutations(storeId!);
+
+  const categories = data?.data;
 
   const filteredCategories = useMemo(
     () =>
-      categories.filter((category) =>
+      categories?.filter((category) =>
         category.name.toLowerCase().includes(searchQuery.toLowerCase())
       ),
     [categories, searchQuery]
@@ -58,6 +55,8 @@ export function CategoriesManagementPage() {
     setEditingCategory(null);
     setIsFormOpen(true);
   };
+
+  //TODO category pagination
 
   return (
     <div className="space-y-6">
@@ -85,7 +84,7 @@ export function CategoriesManagementPage() {
       </Card>
 
       <QueryLoader isLoading={isLoading} isFetching={isFetching} error={error}>
-        {filteredCategories.length === 0 ? (
+        {filteredCategories?.length === 0 ? (
           <Card>
             <EmptyState
               icon={Tag}
@@ -107,7 +106,7 @@ export function CategoriesManagementPage() {
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredCategories.map((category) => (
+            {filteredCategories?.map((category) => (
               <CategoryCard
                 key={category.id}
                 id={category.id}
@@ -130,7 +129,7 @@ export function CategoriesManagementPage() {
         open={isFormOpen}
         onOpenChange={setIsFormOpen}
         category={editingCategory}
-        categories={categories}
+        categories={categories!}
         storeId={storeId!}
         onSuccess={() => {
           setIsFormOpen(false);

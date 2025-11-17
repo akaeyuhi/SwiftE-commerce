@@ -9,7 +9,7 @@ export interface InventoryItem {
   sku: string;
   quantity: number;
   price: number;
-  lastRestocked?: string;
+  updatedAt?: string;
 }
 
 export function useInventory(storeId: string) {
@@ -26,7 +26,7 @@ export function useInventory(storeId: string) {
         sku: variant.sku,
         quantity: variant.inventory.quantity,
         price: variant.price,
-        lastRestocked: variant.inventory.lastRestockedAt?.toString(),
+        updatedAt: variant.inventory.updatedAt?.toString(),
       }))
     );
   }, [productsData]);

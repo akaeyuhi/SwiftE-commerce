@@ -225,6 +225,21 @@ export class StoreController extends BaseController<
     return this.getStoreStats(id);
   }
 
+  @Get(':id/overview')
+  @StoreRole(StoreRoles.ADMIN, StoreRoles.MODERATOR)
+  async getStoreOverview(@Param('id', ParseUUIDPipe) id: string) {
+    return this.storeService.getStoreOverview(id);
+  }
+
+  @Get(':id/recent-orders')
+  @StoreRole(StoreRoles.ADMIN, StoreRoles.MODERATOR)
+  async getRecentOrders(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query('limit') limit: number
+  ) {
+    return this.storeService.getRecentOrders(id, limit);
+  }
+
   // ===============================
   // Leaderboards & Rankings
   // ===============================

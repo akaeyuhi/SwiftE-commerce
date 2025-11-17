@@ -3,10 +3,16 @@ import { StatsGrid } from '@/shared/components/ui/StatsGrid';
 import { Heart, ShoppingCart, Star, Store } from 'lucide-react';
 import { useMemo } from 'react';
 import { useUserProfileStats } from '../../hooks/useUsers';
+import { QueryLoader } from '@/shared/components/loaders/QueryLoader.tsx';
 
 export function ProfileStatsGrid() {
   const { user } = useAuth();
-  const { data: statsData, isLoading } = useUserProfileStats({
+  const {
+    data: statsData,
+    isLoading,
+    refetch,
+    error,
+  } = useUserProfileStats({
     enabled: !!user,
   });
 
@@ -44,24 +50,16 @@ export function ProfileStatsGrid() {
     ];
   }, [statsData]);
 
-  if (isLoading) {
-    return (
-      <div className="mb-8">
-        <StatsGrid
-          stats={[...Array(4)].map(() => ({
-            title: '',
-            value: '',
-            icon: Heart,
-          }))}
-          columns={4}
-        />
-      </div>
-    );
-  }
-
   return (
-    <div className="mb-8">
-      <StatsGrid stats={stats} columns={4} />
-    </div>
+    <QueryLoader
+      isLoading={isLoading}
+      error={error}
+      refetch={refetch}
+      loadingMessage="Loading profile details..."
+    >
+      <div className="mb-8">
+        <StatsGrid stats={stats} columns={4} />
+      </div>
+    </QueryLoader>
   );
 }

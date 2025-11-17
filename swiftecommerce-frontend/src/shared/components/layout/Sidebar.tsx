@@ -51,7 +51,7 @@ export function Sidebar() {
   const bottomNavigation = [
     {
       name: 'Settings',
-      href: `/users/${user?.id}/settings`,
+      href: `/settings`,
       icon: Settings,
     },
     {

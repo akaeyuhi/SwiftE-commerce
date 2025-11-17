@@ -2,18 +2,13 @@ import { useQuery, UseQueryOptions } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
 import { api } from '@/lib/api';
 import { Order } from '@/features/orders/types/order.types.ts';
-import { Store } from '@/features/stores/types/store.types.ts';
+import { Store, StoreRole } from '@/features/stores/types/store.types.ts';
 
-export const getDashboardStats = async (userId: string) => {
-  const userData = await api.users.getUser(userId);
-
-  return {
-    orders: userData.orders?.length,
-    wishlist: userData.likes?.length,
-    stores: userData.ownedStores?.length,
-    reviews: userData.reviews?.length,
-  };
-};
+const getOwnedOrModerated = (storeRoles: StoreRole[]) => [
+  ...storeRoles.map((role) => ({
+    ...role.store,
+  })),
+];
 
 export function useDashboardStats(
   userId: string,
@@ -21,7 +16,15 @@ export function useDashboardStats(
 ) {
   return useQuery({
     queryKey: queryKeys.dashboard.stats(),
-    queryFn: () => getDashboardStats(userId),
+    queryFn: async () => {
+      const data = await api.users.getUserDashboard(userId);
+      return {
+        wishlist: data.likes,
+        orders: data.orders,
+        stores: getOwnedOrModerated(data.roles!),
+        reviews: data.reviews,
+      };
+    },
     staleTime: 5 * 60 * 1000, // 5 minutes
     ...options,
   });
@@ -50,8 +53,8 @@ export function useMyStores(
   return useQuery({
     queryKey: queryKeys.dashboard.myStores(limit),
     queryFn: async () => {
-      const response = await api.users.getUser(userId);
-      return response.ownedStores!.slice(0, limit);
+      const response = await api.users.getUserDashboard(userId);
+      return getOwnedOrModerated(response.roles!).slice(0, limit);
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     ...options,
