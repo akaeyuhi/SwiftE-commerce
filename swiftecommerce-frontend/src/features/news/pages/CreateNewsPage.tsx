@@ -26,7 +26,7 @@ export function CreateNewsPage() {
   };
 
   const onGenerate = () => {
-    console.log('generate');
+    navigate.to(`/store/${storeId}/ai`);
   };
 
   return (

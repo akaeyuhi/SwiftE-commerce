@@ -6,7 +6,9 @@ import {
   GenerateCustomRequest,
   GenerateDescriptionRequest,
   GenerateIdeasRequest,
+  GenerateImageRequest,
   GenerateNamesRequest,
+  GeneratePostRequest,
 } from '@/features/ai/types/ai-generator.types.ts';
 
 export function useTrendingProducts(
@@ -61,18 +63,18 @@ export function usePredictDemand(storeId: string) {
   });
 }
 
-export function useGenerateWholeProduct(storeId: string) {
+export function useGenerateImage(storeId: string) {
   return useMutation({
-    mutationFn: (data: { idea: string }) =>
-      api.ai.generator.generateWholeProduct(storeId, data),
-    onError: () => toast.error('Failed to generate product'),
+    mutationFn: (data: GenerateImageRequest) =>
+      api.ai.generator.generateImage(storeId, data),
+    onError: () => toast.error('Failed to generate image'),
   });
 }
 
-export function useGenerateImage(storeId: string) {
+export function useGeneratePost(storeId: string) {
   return useMutation({
-    mutationFn: (data: { prompt: string }) =>
-      api.ai.generator.generateImage(storeId, data),
-    onError: () => toast.error('Failed to generate image'),
+    mutationFn: (data: GeneratePostRequest) =>
+      api.ai.generator.generatePost(storeId, data),
+    onError: () => toast.error('Failed to generate post'),
   });
 }

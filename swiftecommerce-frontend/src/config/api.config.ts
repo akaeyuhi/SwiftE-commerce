@@ -336,6 +336,7 @@ export const API_ENDPOINTS = {
     GENERATE_IDEAS: '/stores/:storeId/ai/generator/ideas',
     GENERATE_WHOLE_PRODUCT: '/stores/:storeId/ai/generator/whole-product',
     GENERATE_IMAGE: '/stores/:storeId/ai/generator/image',
+    GENERATE_POST: '/stores/:storeId/ai/generator/posts',
     GENERATE_CUSTOM: '/stores/:storeId/ai/generator/custom',
     GET_TYPES: '/stores/:storeId/ai/generator/types',
     USAGE_STATS: '/stores/:storeId/ai/generator/usage',

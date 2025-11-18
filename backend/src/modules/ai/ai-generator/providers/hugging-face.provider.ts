@@ -7,17 +7,20 @@ import { AiAuditService } from '../../ai-audit/ai-audit.service';
 import {
   AiGenerateOptions,
   AiGenerateResult,
+  AiProvider,
 } from 'src/common/interfaces/ai/generator.interface';
 import { huggingFaceModelConfigs } from 'src/modules/ai/ai-generator/providers/configs';
 import { HttpService } from '@nestjs/axios';
+import { GenerationRequest } from 'src/modules/ai/ai-generator/types';
+import { AiServiceRequest } from 'src/common/interfaces/ai/ai.interface';
 
 /**
  * HuggingFace Provider using InferenceClient
  *
- * Supports chat completions via Hugging Face Router with multiple providers
+ * Supports chat completions and image generation.
  */
 @Injectable()
-export class HuggingFaceProvider extends BaseAiProvider {
+export class HuggingFaceProvider extends BaseAiProvider implements AiProvider {
   private client: InferenceClient;
 
   protected readonly config: ProviderConfig = {} as ProviderConfig;
@@ -40,6 +43,11 @@ export class HuggingFaceProvider extends BaseAiProvider {
         'https://router.huggingface.co/v1/',
       defaultModel:
         configService.get<string>('HF_DEFAULT_MODEL') || 'openai/gpt-oss-20b',
+      defaultImageModel:
+        configService.get<string>('HF_DEFAULT_IMAGE_MODEL') ||
+        'stabilityai/stable-diffusion-2-1',
+      defaultImageProvider:
+        configService.get<string>('HF_DEFAULT_IMAGE_PROVIDER') || 'nebius',
       defaultProvider:
         configService.get<string>('HF_DEFAULT_PROVIDER') || 'fireworks-ai',
       timeout: parseInt(configService.get<string>('HF_TIMEOUT') || '120000'),
@@ -47,6 +55,17 @@ export class HuggingFaceProvider extends BaseAiProvider {
     };
 
     this.client = new InferenceClient(this.config.apiKey);
+  }
+
+  async generate(
+    prompt: string,
+    options: AiGenerateOptions = {},
+    originalRequest: AiServiceRequest<GenerationRequest>
+  ): Promise<AiGenerateResult> {
+    if (originalRequest.data.type === 'image') {
+      return this.generateImage(prompt, options);
+    }
+    return super.generate(prompt, options, originalRequest);
   }
 
   protected async makeApiCall(
@@ -58,7 +77,6 @@ export class HuggingFaceProvider extends BaseAiProvider {
 
     try {
       const chatCompletion = await this.client.chatCompletion({
-        provider: provider as any, // e.g., 'fireworks-ai', 'together-ai', 'nebius'
         model,
         messages: [
           {
@@ -67,20 +85,56 @@ export class HuggingFaceProvider extends BaseAiProvider {
               options.systemPrompt ||
               'You are a helpful AI assistant for e-commerce product generation.',
           },
-          {
-            role: 'user',
-            content: prompt,
-          },
+          { role: 'user', content: prompt },
         ],
         temperature: options.temperature ?? 0.7,
-        stop: options.stop!,
+        stop: options.stop,
       });
 
       return this.parseResponse(chatCompletion);
     } catch (error) {
-      this.handleApiError(error, model, provider);
+      this.handleApiError(error, model, provider as string);
       throw error;
     }
+  }
+
+  private async generateImage(
+    prompt: string,
+    options: AiGenerateOptions
+  ): Promise<AiGenerateResult> {
+    const model = options.model || this.config.defaultImageModel!;
+    const provider = options.provider || this.config.defaultImageProvider;
+
+    try {
+      const imageBlob = (await this.client.textToImage({
+        model,
+        provider,
+        inputs: prompt,
+        parameters: {
+          outputType: 'blob',
+          // eslint-disable-next-line camelcase
+          negative_prompt: 'blurry',
+        },
+      })) as unknown as Blob;
+
+      const imageUrl = await this.blobToDataUrl(imageBlob);
+
+      return {
+        text: imageUrl,
+        raw: { prompt, imageUrl },
+        usage: { totalTokens: 0 },
+        finishReason: 'success',
+      };
+    } catch (error) {
+      this.handleApiError(error, model, 'text-to-image');
+      throw error;
+    }
+  }
+
+  private async blobToDataUrl(blob: Blob): Promise<string> {
+    const buffer = await blob.arrayBuffer();
+    const base64 = Buffer.from(buffer).toString('base64');
+    return `data:${blob.type};base64,${base64}`;
   }
 
   private parseResponse(chatCompletion: any): AiGenerateResult {
@@ -128,23 +182,14 @@ export class HuggingFaceProvider extends BaseAiProvider {
     }
   }
 
-  /**
-   * Get available models for this provider
-   */
   getAvailableModels(): string[] {
     return Array.from(this.modelConfigs.keys());
   }
 
-  /**
-   * Validate if a model is supported
-   */
   isModelSupported(model: string): boolean {
     return this.modelConfigs.has(model);
   }
 
-  /**
-   * Get available providers
-   */
   getAvailableProviders(): string[] {
     return ['fireworks-ai', 'together-ai', 'nebius', 'deepinfra', 'hyperbolic'];
   }

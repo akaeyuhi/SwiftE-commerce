@@ -78,7 +78,11 @@ export class AiGeneratorService extends BaseAiService<
     const { type, prompt, options } = request.data;
 
     // Validate generation type
-    if (!['name', 'description', 'ideas', 'custom', 'image'].includes(type)) {
+    if (
+      !['name', 'description', 'ideas', 'custom', 'image', 'post'].includes(
+        type
+      )
+    ) {
       throw new Error(`Invalid generation type: ${type}`);
     }
 
@@ -306,7 +310,6 @@ export class AiGeneratorService extends BaseAiService<
         description: parsed.description,
       };
     } catch (error) {
-      // ✅ Better error handling
       console.error('Description generation error:', error);
       throw new Error(
         `Description generation failed: ${error.message || 'Unknown error'}`
@@ -527,6 +530,38 @@ export class AiGeneratorService extends BaseAiService<
     return response.result.result;
   }
 
+  async generatePost(params: any): Promise<{ title: string; content: string }> {
+    const {
+      topic,
+      tone = 'informative and engaging',
+      length = 200,
+      options = {},
+      userId,
+      storeId,
+    } = params;
+
+    const request: AiServiceRequest<GenerationRequest> = {
+      feature: 'generatorPost',
+      provider: 'ai_generator',
+      data: {
+        type: 'post',
+        prompt: 'Generate a news post',
+        options,
+        context: { topic, tone, length },
+      },
+      userId,
+      storeId,
+    };
+
+    const response = await this.execute(request);
+
+    if (!response.success || !response.result) {
+      throw new Error(response.error || 'Post generation failed');
+    }
+
+    return response.result.result;
+  }
+
   // ===============================
   // Service Management Methods
   // ===============================
@@ -614,6 +649,11 @@ export class AiGeneratorService extends BaseAiService<
         description: 'Generate an image from a text prompt',
         defaultOptions: this.promptTemplates.get('image')!.defaultOptions,
       },
+      {
+        type: 'post',
+        description: 'Generate a news post for your store',
+        defaultOptions: this.promptTemplates.get('newsPost')!.defaultOptions,
+      },
     ];
   }
 
@@ -662,6 +702,8 @@ export class AiGeneratorService extends BaseAiService<
         '{{tone}}',
         context.tone || 'professional and engaging'
       );
+      prompt = prompt.replace('{{topic}}', context.topic || 'a new product');
+      prompt = prompt.replace('{{length}}', (context.length || 200).toString());
     }
 
     // Clean up extra whitespace
@@ -678,6 +720,7 @@ export class AiGeneratorService extends BaseAiService<
       ideas: 'productIdeas',
       custom: 'custom',
       image: 'image',
+      post: 'newsPost',
     };
 
     return typeToTemplateMap[type] || 'custom';

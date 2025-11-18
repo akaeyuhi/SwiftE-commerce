@@ -95,6 +95,7 @@ export const buildRoute = {
   storeAnalytics: (storeId: string) => `/store/${storeId}/analytics`,
   storeProducts: (storeId: string) => `/store/${storeId}/products`,
   storeProductCreate: (storeId: string) => `/store/${storeId}/products/create`,
+  storeNewsCreate: (storeId: string) => `/store/${storeId}/news/create`,
   storeProductEdit: (storeId: string, productId: string) =>
     `/store/${storeId}/products/${productId}/edit`,
   storeOrders: (storeId: string) => `/store/${storeId}/orders`,

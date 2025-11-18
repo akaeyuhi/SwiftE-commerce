@@ -47,4 +47,16 @@ Return as JSON array.`,
       defaultOptions: { maxTokens: 100, temperature: 0.7 },
     },
   ],
+  [
+    'newsPost',
+    {
+      template: `You are a content creator for an e-commerce store.
+Topic: {{topic}}
+Tone: {{tone}}
+Length: {{length}} words.
+Generate a news post for the store.
+Return JSON: {"title": "<post title>", "content": "<post content>"}.`,
+      defaultOptions: { maxTokens: 400, temperature: 0.75 },
+    },
+  ],
 ]);

@@ -4,7 +4,10 @@ import {
   GenerateCustomRequest,
   GenerateDescriptionRequest,
   GenerateIdeasRequest,
+  GenerateImageRequest,
   GenerateNamesRequest,
+  GeneratePostRequest,
+  GenerateResponse,
   UsageStats,
 } from '@/features/ai/types/ai-generator.types.ts';
 
@@ -19,7 +22,11 @@ export class AIGeneratorService extends BaseService {
     const url = buildUrl(API_ENDPOINTS.AI_GENERATOR.GENERATE_NAMES, {
       storeId,
     });
-    return this.client.post<string[]>(url, data);
+    const response = await this.client.post<{ data: { names: string[] } }>(
+      url,
+      data
+    );
+    return response.data.names;
   }
 
   /**
@@ -28,11 +35,14 @@ export class AIGeneratorService extends BaseService {
   async generateDescription(
     storeId: string,
     data: GenerateDescriptionRequest
-  ): Promise<string> {
+  ): Promise<{ title: string; description: string }> {
     const url = buildUrl(API_ENDPOINTS.AI_GENERATOR.GENERATE_DESCRIPTION, {
       storeId,
     });
-    return this.client.post<string>(url, data);
+    const response = await this.client.post<{
+      data: { result: { title: string; description: string } };
+    }>(url, data);
+    return response.data.result;
   }
 
   /**
@@ -41,11 +51,12 @@ export class AIGeneratorService extends BaseService {
   async generateIdeas(
     storeId: string,
     data: GenerateIdeasRequest
-  ): Promise<string[]> {
+  ): Promise<any> {
     const url = buildUrl(API_ENDPOINTS.AI_GENERATOR.GENERATE_IDEAS, {
       storeId,
     });
-    return this.client.post<string[]>(url, data);
+    const response = await this.client.post<{ data: any }>(url, data);
+    return response.data;
   }
 
   /**
@@ -58,33 +69,41 @@ export class AIGeneratorService extends BaseService {
     const url = buildUrl(API_ENDPOINTS.AI_GENERATOR.GENERATE_CUSTOM, {
       storeId,
     });
-    return this.client.post<string>(url, data);
+    const response = await this.client.post<{ data: { result: string } }>(
+      url,
+      data
+    );
+    return response.data.result;
   }
 
-  /**
-   * Generate whole product (name and description)
-   */
-  async generateWholeProduct(
-    storeId: string,
-    data: { idea: string }
-  ): Promise<{ name: string; description: string }> {
-    const url = buildUrl(API_ENDPOINTS.AI_GENERATOR.GENERATE_WHOLE_PRODUCT, {
-      storeId,
-    });
-    return this.client.post(url, data);
-  }
-
-  /**
-   * Generate image
-   */
   async generateImage(
     storeId: string,
-    data: { prompt: string }
+    data: GenerateImageRequest
   ): Promise<string> {
-    const url = buildUrl(API_ENDPOINTS.AI_GENERATOR.GENERATE_IMAGE, {
+    const url = this.buildUrl(API_ENDPOINTS.AI_GENERATOR.GENERATE_IMAGE, {
       storeId,
     });
-    return this.client.post<string>(url, data);
+    const response = await this.client.post<GenerateResponse<string>>(
+      url,
+      data
+    );
+    return response.data.result;
+  }
+
+  /**
+   * Generate a news post
+   */
+  async generatePost(
+    storeId: string,
+    data: GeneratePostRequest
+  ): Promise<{ title: string; content: string }> {
+    const url = buildUrl(API_ENDPOINTS.AI_GENERATOR.GENERATE_POST, {
+      storeId,
+    });
+    const response = await this.client.post<
+      GenerateResponse<{ title: string; content: string }>
+    >(url, data);
+    return response.data.result;
   }
 
   /**

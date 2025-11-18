@@ -19,6 +19,7 @@ export function CreateProductPage() {
   const { createProduct } = useProductMutations(storeId!);
 
   const aiGeneratedData = location.state?.aiGenerated;
+  console.log(aiGeneratedData);
   const defaultValues = aiGeneratedData
     ? {
         name: aiGeneratedData.name || '',

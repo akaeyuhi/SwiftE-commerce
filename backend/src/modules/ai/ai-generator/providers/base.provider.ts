@@ -20,6 +20,8 @@ export interface ProviderConfig {
   apiKey?: string;
   baseUrl: string;
   defaultModel: string;
+  defaultImageModel?: string;
+  defaultImageProvider?: string;
   timeout: number;
   maxRetries: number;
   defaultProvider?: string;

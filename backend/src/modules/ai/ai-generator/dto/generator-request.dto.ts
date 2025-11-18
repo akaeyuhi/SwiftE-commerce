@@ -130,3 +130,28 @@ export class GenerateImageDto {
   @IsString()
   prompt: string;
 }
+
+export class GeneratePostDto {
+  @IsString()
+  @MinLength(10)
+  topic: string;
+
+  @IsOptional()
+  @IsString()
+  tone?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(50)
+  @Max(500)
+  length?: number;
+
+  @IsOptional()
+  @IsString()
+  storeId?: string;
+
+  @IsOptional()
+  @IsObject()
+  options?: AiGenerateOptions;
+}

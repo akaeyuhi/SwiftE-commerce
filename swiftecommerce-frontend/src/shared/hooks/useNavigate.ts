@@ -40,6 +40,8 @@ export function useNavigate() {
       navigate(buildRoute.storeProductCreate(storeId), options),
     toStoreProductEdit: (storeId: string, productId: string) =>
       navigate(buildRoute.storeProductEdit(storeId, productId)),
+    toStoreNewsCreate: (storeId: string, options?: NavigateOptions) =>
+      navigate(buildRoute.storeNewsCreate(storeId), options),
     toStoreOrders: (storeId: string) =>
       navigate(buildRoute.storeOrders(storeId)),
     toStoreOrder: (storeId: string, orderId: string) =>

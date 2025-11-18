@@ -27,6 +27,7 @@ import {
   GenerateCustomDto,
   GenerationQueryDto,
   GenerateImageDto,
+  GeneratePostDto,
 } from './dto/generator-request.dto';
 import { AiTransform } from 'src/modules/ai/decorators/ai-transform.decorator';
 
@@ -59,6 +60,7 @@ export class AiGeneratorController {
     generateIdeas: { storeRoles: [StoreRoles.ADMIN, StoreRoles.MODERATOR] },
     generateCustom: { storeRoles: [StoreRoles.ADMIN, StoreRoles.MODERATOR] },
     generateImage: { storeRoles: [StoreRoles.ADMIN, StoreRoles.MODERATOR] },
+    generatePost: { storeRoles: [StoreRoles.ADMIN, StoreRoles.MODERATOR] },
 
     // Analytics endpoints
     getUsageStats: { storeRoles: [StoreRoles.ADMIN] },
@@ -247,6 +249,44 @@ export class AiGeneratorController {
           generatedAt: new Date().toISOString(),
           userId: user.id,
           storeId,
+        },
+      },
+    };
+  }
+
+  /**
+   * POST /ai/generator/posts
+   * Generate a news post
+   */
+  @Post('posts')
+  @HttpCode(HttpStatus.OK)
+  async generatePost(
+    @Param('storeId', new ParseUUIDPipe()) storeId: string,
+    @Body() dto: GeneratePostDto,
+    @Req() req: Request
+  ) {
+    const user = this.extractUser(req);
+
+    const post = await this.generatorService.generatePost({
+      topic: dto.topic,
+      tone: dto.tone,
+      length: dto.length,
+      options: dto.options || {},
+      userId: user.id,
+      storeId: dto.storeId || storeId,
+    });
+
+    return {
+      success: true,
+      data: {
+        result: post,
+        metadata: {
+          topic: dto.topic,
+          tone: dto.tone,
+          length: dto.length,
+          generatedAt: new Date().toISOString(),
+          userId: user.id,
+          storeId: dto.storeId || storeId,
         },
       },
     };

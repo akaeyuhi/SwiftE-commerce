@@ -7,7 +7,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/shared/components/ui/Card';
-import { Textarea } from '@/shared/components/forms/Textarea';
 import { Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -15,12 +14,26 @@ import {
   useGenerateDescription,
   useGenerateIdeas,
   useGenerateCustom,
-  useGenerateWholeProduct,
   useGenerateImage,
+  useGeneratePost,
 } from '../hooks/useAi';
 import { AIFeature, aiFeatures } from './AiFeatureSelection';
 import { AiResult } from './AiResult';
 import { useNavigate } from '@/shared/hooks/useNavigate.ts';
+import { GenerateDescriptionForm } from './forms/GenerateDescriptionForm';
+import { GenerateNamesForm } from './forms/GenerateNamesForm';
+import { GenerateIdeasForm } from './forms/GenerateIdeasForm';
+import { GenerateImageForm } from './forms/GenerateImageForm';
+import { GenerateCustomForm } from './forms/GenerateCustomForm';
+import { GeneratePostForm } from './forms/GeneratePostForm';
+import {
+  GenerateCustomRequest,
+  GenerateDescriptionRequest,
+  GenerateIdeasRequest,
+  GenerateImageRequest,
+  GenerateNamesRequest,
+  GeneratePostRequest,
+} from '../types/ai-generator.types';
 
 interface AiGeneratorProps {
   selectedFeature: AIFeature;
@@ -29,7 +42,6 @@ interface AiGeneratorProps {
 export function AiGenerator({ selectedFeature }: AiGeneratorProps) {
   const { storeId } = useParams<{ storeId: string }>();
   const navigate = useNavigate();
-  const [inputText, setInputText] = useState('');
   const [result, setResult] = useState<string | string[] | any | null>(null);
   const [selectedIdea, setSelectedIdea] = useState<any | null>(null);
 
@@ -37,23 +49,18 @@ export function AiGenerator({ selectedFeature }: AiGeneratorProps) {
   const generateDescription = useGenerateDescription(storeId!);
   const generateIdeas = useGenerateIdeas(storeId!);
   const generateCustom = useGenerateCustom(storeId!);
-  const generateWholeProduct = useGenerateWholeProduct(storeId!);
   const generateImage = useGenerateImage(storeId!);
+  const generatePost = useGeneratePost(storeId!);
 
   const generating =
     generateNames.isPending ||
     generateDescription.isPending ||
     generateIdeas.isPending ||
     generateCustom.isPending ||
-    generateWholeProduct.isPending ||
-    generateImage.isPending;
+    generateImage.isPending ||
+    generatePost.isPending;
 
-  const handleGenerate = async () => {
-    if (!inputText.trim() && selectedFeature !== 'whole-product') {
-      toast.error('Please enter some text');
-      return;
-    }
-
+  const handleGenerate = async (data: any) => {
     setResult(null);
     setSelectedIdea(null);
 
@@ -62,43 +69,39 @@ export function AiGenerator({ selectedFeature }: AiGeneratorProps) {
 
       switch (selectedFeature) {
         case 'description':
-          generatedResult = await generateDescription.mutateAsync({
-            name: inputText,
-            productSpec: '',
-          });
+          generatedResult = await generateDescription.mutateAsync(
+            data as GenerateDescriptionRequest
+          );
           break;
 
         case 'name':
-          generatedResult = await generateNames.mutateAsync({
-            seed: inputText,
-            storeStyle: 'modern and minimalist',
-          });
+          generatedResult = await generateNames.mutateAsync(
+            data as GenerateNamesRequest
+          );
           break;
 
         case 'news':
-          generatedResult = await generateIdeas.mutateAsync({
-            seed: inputText,
-            storeStyle: 'modern and minimalist',
-          });
-          break;
-
-        case 'custom':
-          generatedResult = await generateCustom.mutateAsync({
-            prompt: inputText,
-          });
+          generatedResult = await generatePost.mutateAsync(
+            data as GeneratePostRequest
+          );
           break;
 
         case 'whole-product':
-          generatedResult = await generateIdeas.mutateAsync({
-            seed: inputText,
-            storeStyle: 'modern and minimalist',
-          });
+          generatedResult = await generateIdeas.mutateAsync(
+            data as GenerateIdeasRequest
+          );
+          break;
+
+        case 'custom':
+          generatedResult = await generateCustom.mutateAsync(
+            data as GenerateCustomRequest
+          );
           break;
 
         case 'image-generator':
-          generatedResult = await generateImage.mutateAsync({
-            prompt: inputText,
-          });
+          generatedResult = await generateImage.mutateAsync(
+            data as GenerateImageRequest
+          );
           break;
       }
 
@@ -116,19 +119,53 @@ export function AiGenerator({ selectedFeature }: AiGeneratorProps) {
     }
 
     try {
-      const result = await generateWholeProduct.mutateAsync({
-        idea: selectedIdea.concept,
-      });
       navigate.toStoreProductCreate(storeId!, {
         state: {
           aiGenerated: {
-            name: result.name,
-            description: result.description,
+            name: selectedIdea.name,
+            description: selectedIdea.concept,
           },
         },
       });
     } catch (error) {
       toast.error(`Failed to generate product: ${error}`);
+    }
+  };
+
+  const renderForm = () => {
+    switch (selectedFeature) {
+      case 'description':
+        return (
+          <GenerateDescriptionForm
+            onSubmit={handleGenerate}
+            isLoading={generating}
+          />
+        );
+      case 'name':
+        return (
+          <GenerateNamesForm onSubmit={handleGenerate} isLoading={generating} />
+        );
+      case 'news':
+        return (
+          <GeneratePostForm onSubmit={handleGenerate} isLoading={generating} />
+        );
+      case 'whole-product':
+        return (
+          <GenerateIdeasForm onSubmit={handleGenerate} isLoading={generating} />
+        );
+      case 'image-generator':
+        return (
+          <GenerateImageForm onSubmit={handleGenerate} isLoading={generating} />
+        );
+      case 'custom':
+        return (
+          <GenerateCustomForm
+            onSubmit={handleGenerate}
+            isLoading={generating}
+          />
+        );
+      default:
+        return <p>Select a feature to get started.</p>;
     }
   };
 
@@ -141,92 +178,44 @@ export function AiGenerator({ selectedFeature }: AiGeneratorProps) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div>
-          <label className="text-sm font-medium text-foreground mb-2 block">
-            Input{' '}
-            {selectedFeature === 'description'
-              ? '(Product name or keywords)'
-              : selectedFeature === 'name'
-                ? '(Product idea or specifications)'
-                : selectedFeature === 'news'
-                  ? '(News topic or announcement)'
-                  : selectedFeature === 'whole-product'
-                    ? '(Product idea or keywords)'
-                    : selectedFeature === 'image-generator'
-                      ? '(Image prompt)'
-                      : '(Your custom prompt)'}
-          </label>
-          <Textarea
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-            placeholder={
-              selectedFeature === 'description'
-                ? 'Enter product name or keywords...'
-                : selectedFeature === 'name'
-                  ? 'Enter a seed word for name generation...'
-                  : selectedFeature === 'news'
-                    ? 'Enter news topic or announcement...'
-                    : selectedFeature === 'whole-product'
-                      ? 'e.g., "A smart water bottle that tracks hydration"'
-                      : selectedFeature === 'image-generator'
-                        ? 'e.g., "A futuristic product render"'
-                        : 'Enter your custom prompt...'
-            }
-            rows={4}
-          />
-        </div>
+        {renderForm()}
 
-        <Button
-          onClick={handleGenerate}
-          loading={generating}
-          disabled={
-            generating ||
-            (!inputText.trim() && selectedFeature !== 'whole-product')
-          }
-        >
-          <Sparkles className="h-4 w-4 mr-2" />
-          {generating
-            ? 'Generating...'
-            : selectedFeature === 'whole-product'
-              ? 'Generate Ideas'
-              : 'Generate with AI'}
-        </Button>
-
-        {selectedFeature === 'whole-product' && result && (
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Select an Idea</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {result.ideas.map((idea: any, index: number) => (
-                <Card
-                  key={index}
-                  className={`cursor-pointer ${
-                    selectedIdea?.name === idea.name
-                      ? 'border-primary'
-                      : 'border-border'
-                  }`}
-                  onClick={() => setSelectedIdea(idea)}
-                >
-                  <CardHeader>
-                    <CardTitle>{idea.name}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p>{idea.concept}</p>
-                    <p className="text-sm text-muted-foreground mt-2">
-                      {idea.rationale}
-                    </p>
-                  </CardContent>
-                </Card>
-              ))}
+        {selectedFeature === 'whole-product' &&
+          result &&
+          result.ideas.length && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Select an Idea</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {result.ideas?.map((idea: any, index: number) => (
+                  <Card
+                    key={index}
+                    className={`cursor-pointer ${
+                      selectedIdea?.name === idea.name
+                        ? 'border-primary'
+                        : 'border-border'
+                    }`}
+                    onClick={() => setSelectedIdea(idea)}
+                  >
+                    <CardHeader>
+                      <CardTitle>{idea.name}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p>{idea.concept}</p>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        {idea.rationale}
+                      </p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+              <Button
+                onClick={handleGenerateWholeProduct}
+                disabled={!selectedIdea || generating}
+              >
+                Generate Product from Idea
+              </Button>
             </div>
-            <Button
-              onClick={handleGenerateWholeProduct}
-              disabled={!selectedIdea || generating}
-              loading={generating}
-            >
-              Generate Product from Idea
-            </Button>
-          </div>
-        )}
+          )}
 
         {selectedFeature !== 'whole-product' && result && (
           <AiResult

@@ -2,7 +2,7 @@ import { AiGenerateOptions } from 'src/common/interfaces/ai/generator.interface'
 import { ProductSpecDto } from 'src/modules/ai/ai-generator/dto/generator-request.dto';
 
 export interface GenerationRequest {
-  type: 'name' | 'description' | 'ideas' | 'custom' | 'image';
+  type: 'name' | 'description' | 'ideas' | 'custom' | 'image' | 'post';
   prompt: string;
   options: AiGenerateOptions;
   context?: {
@@ -12,6 +12,8 @@ export interface GenerationRequest {
     seed?: string;
     productName?: string;
     count?: number;
+    topic?: string;
+    length?: number;
   };
 }
 
@@ -53,6 +55,13 @@ export type IdeasGenerationParams = NameGenerationParams;
 export interface CustomGenerationParams extends GenerationParams {
   prompt: string;
 }
+
+export interface PostGenerationParams extends GenerationParams {
+  topic: string;
+  tone?: string;
+  length?: number;
+}
+
 
 export interface GenerationResult<T> {
   success: boolean;
