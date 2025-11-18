@@ -182,6 +182,7 @@ export class SeedService {
           description: faker.company.catchPhrase(),
           ownerId: owner.id,
           logoUrl: faker.image.avatar(),
+          bannerUrl: faker.image.url(),
         });
         stores.push(store);
       }
@@ -201,6 +202,8 @@ export class SeedService {
           storeId: store.id,
           userId: store.ownerId,
           roleName: StoreRoles.ADMIN,
+          isActive: true,
+          assignedBy: store.ownerId,
         })
       );
 
@@ -213,6 +216,8 @@ export class SeedService {
           storeId: store.id,
           userId: storeAdmin.id,
           roleName: StoreRoles.ADMIN,
+          isActive: true,
+          assignedBy: store.ownerId,
         })
       );
 
@@ -275,7 +280,7 @@ export class SeedService {
           photos.push(
             this.productPhotoRepository.create({
               product: savedProduct,
-              url: faker.image.urlLoremFlickr({ category: 'technics' }),
+              url: faker.image.urlPicsumPhotos(),
               isMain: k === 0,
             })
           );
@@ -290,6 +295,7 @@ export class SeedService {
           const variant = this.variantRepository.create({
             productId: savedProduct.id,
             sku: faker.string.alphanumeric(8).toUpperCase(),
+            productName: savedProduct.name,
             price: parseFloat(faker.commerce.price()),
             attributes: {
               color: faker.color.human(),

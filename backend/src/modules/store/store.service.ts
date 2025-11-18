@@ -58,6 +58,13 @@ export class StoreService extends PaginatedService<
     return [storeDtos, total];
   }
 
+  async findOneWithTeam(id: string): Promise<Store | null> {
+    return this.storeRepo.findOne({
+      where: { id },
+      relations: ['storeRoles', 'storeRoles.user'],
+    });
+  }
+
   async uploadFiles(
     storeId: string,
     logoFile?: Express.Multer.File,
@@ -150,7 +157,7 @@ export class StoreService extends PaginatedService<
   async getRecentOrders(storeId: string, limit = 5): Promise<Order[]> {
     const store = await this.storeRepo.findOne({
       where: { id: storeId },
-      relations: ['orders'],
+      relations: ['orders', 'orders.items'],
       order: { id: 'DESC' },
     });
     if (!store) {

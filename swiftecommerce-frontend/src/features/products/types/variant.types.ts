@@ -4,7 +4,9 @@ import { Inventory } from '@/features/inventory/types/inventory.types.ts';
 export interface ProductVariant {
   id: string;
   productId: string;
+  storeId: string;
   product: Product;
+  productName: string;
   sku: string;
   price: number;
   attributes?: Record<string, any>;

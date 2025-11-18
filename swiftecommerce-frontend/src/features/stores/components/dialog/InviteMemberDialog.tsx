@@ -40,7 +40,7 @@ export function InviteMemberDialog({
   onOpenChange,
   onSuccess,
 }: InviteMemberDialogProps) {
-  const { assignRole } = useUserMutations();
+  const { assignStoreRole } = useUserMutations();
 
   const {
     register,
@@ -63,7 +63,7 @@ export function InviteMemberDialog({
         return;
       }
 
-      await assignRole.mutateAsync(
+      await assignStoreRole.mutateAsync(
         {
           userId: checkUser.id,
           roleData: {
@@ -182,11 +182,11 @@ export function InviteMemberDialog({
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
-              disabled={assignRole.isPending}
+              disabled={assignStoreRole.isPending}
             >
               Cancel
             </Button>
-            <Button type="submit" loading={assignRole.isPending}>
+            <Button type="submit" loading={assignStoreRole.isPending}>
               Send Invitation
             </Button>
           </DialogFooter>

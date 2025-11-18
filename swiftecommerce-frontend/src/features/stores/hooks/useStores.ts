@@ -6,8 +6,8 @@ import {
   StoreStatsDto,
 } from '@/features/stores/types/store.types.ts';
 import { api } from '@/lib/api';
-import { StoreHealthDto } from '@/features/stores/api/storesService.ts';
 import { StoreFilters } from '@/shared/types/filters.types.ts';
+import { StoreHealthData } from '@/features/stores/types/store-health.types.ts';
 
 export function useStores(
   filters?: StoreFilters,
@@ -28,6 +28,19 @@ export function useStore(
   return useQuery({
     queryKey: queryKeys.stores.detail(storeId),
     queryFn: () => api.stores.findOne(storeId),
+    enabled: !!storeId,
+    staleTime: 5 * 60 * 1000,
+    ...options,
+  });
+}
+
+export function useStoreTeam(
+  storeId: string,
+  options?: Omit<UseQueryOptions<StoreDto>, 'queryKey' | 'queryFn'>
+) {
+  return useQuery({
+    queryKey: queryKeys.stores.detail(storeId),
+    queryFn: () => api.stores.findStoreWithRoles(storeId),
     enabled: !!storeId,
     staleTime: 5 * 60 * 1000,
     ...options,
@@ -128,7 +141,7 @@ export function useTopStoresByFollowers(
 
 export function useStoreHealth(
   storeId: string,
-  options?: Omit<UseQueryOptions<StoreHealthDto>, 'queryKey' | 'queryFn'>
+  options?: Omit<UseQueryOptions<StoreHealthData>, 'queryKey' | 'queryFn'>
 ) {
   return useQuery({
     queryKey: queryKeys.stores.health(storeId),

@@ -1,10 +1,11 @@
 import { Badge } from '@/shared/components/ui/Badge';
 import { Minus, Plus, ShoppingCart, Trash2 } from 'lucide-react';
+import { CartItem } from '@/features/cart/types/cart.types.ts';
 
 interface CartItemCardProps {
-  item: any;
-  onRemove: (itemId: string) => void;
-  onUpdateQuantity: (itemId: string, quantity: number) => void;
+  item: CartItem;
+  onRemove: (item: CartItem) => void;
+  onUpdateQuantity: (item: CartItem, quantity: number) => void;
 }
 
 export function CartItemCard({
@@ -17,12 +18,21 @@ export function CartItemCard({
       key={item.id}
       className="flex gap-4 p-4 border border-border rounded-lg"
     >
-      <div
-        className="h-24 w-24 bg-muted rounded-lg
+      {item.variant.product.mainPhotoUrl ? (
+        <img
+          src={item.variant.product.mainPhotoUrl}
+          alt={item.variant.product.name}
+          className="h-24 w-24 bg-muted rounded-lg
                         flex items-center justify-center flex-shrink-0"
-      >
-        <ShoppingCart className="h-10 w-10 text-muted-foreground" />
-      </div>
+        />
+      ) : (
+        <div
+          className="h-24 w-24 bg-muted rounded-lg
+                        flex items-center justify-center flex-shrink-0"
+        >
+          <ShoppingCart className="h-10 w-10 text-muted-foreground" />
+        </div>
+      )}
 
       <div className="flex-1">
         <div className="flex items-start justify-between mb-2">
@@ -35,7 +45,7 @@ export function CartItemCard({
             </p>
           </div>
           <button
-            onClick={() => onRemove(item.id)}
+            onClick={() => onRemove(item)}
             className="text-muted-foreground hover:text-error p-2"
           >
             <Trash2 className="h-5 w-5" />
@@ -57,13 +67,13 @@ export function CartItemCard({
           <p className="text-lg font-bold text-foreground">
             ${(item.variant.price * item.quantity).toFixed(2)}
             <span className="text-sm font-normal text-muted-foreground ml-2">
-              ${item.variant.price.toFixed(2)} each
+              ${parseFloat(String(item.variant.price)).toFixed(2)} each
             </span>
           </p>
 
           <div className="flex items-center gap-3">
             <button
-              onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
+              onClick={() => onUpdateQuantity(item, item.quantity - 1)}
               disabled={item.quantity <= 1}
               className="h-8 w-8 rounded border border-border flex items-center
                                 justify-center hover:bg-muted disabled:opacity-50
@@ -75,7 +85,7 @@ export function CartItemCard({
               {item.quantity}
             </span>
             <button
-              onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
+              onClick={() => onUpdateQuantity(item, item.quantity + 1)}
               className="h-8 w-8 rounded border border-border flex items-center
                                 justify-center hover:bg-muted disabled:opacity-50
                                 disabled:cursor-not-allowed"

@@ -12,6 +12,7 @@ export interface Product {
   reviewCount: number;
   totalSales: number;
   likeCount: number;
+  storeName: string;
   viewCount: number;
   mainPhotoUrl?: string;
   variants: ProductVariant[];

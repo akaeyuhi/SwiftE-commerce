@@ -54,7 +54,7 @@ export const TeamMemberList: React.FC<TeamMemberListProps> = ({
                   flex items-center justify-center"
           >
             <span className="text-sm font-semibold text-primary">
-              {member.name.toUpperCase()}
+              {member.name.toUpperCase()[0]}
             </span>
           </div>
           <div>

@@ -310,23 +310,32 @@ export class CleanupSchedulerService extends BaseSchedulerService<CleanupContext
     const expiryDate = new Date();
     expiryDate.setDate(expiryDate.getDate() - this.CONFIRMATION_EXPIRY_DAYS);
 
-    const query = this.confirmationRepo
-      .createQueryBuilder('conf')
-      .where('conf.expiresAt < :now', { now: new Date() })
-      .orWhere('conf.isUsed = :isUsed AND conf.usedAt < :expiryDate', {
-        isUsed: true,
-        expiryDate,
-      });
-
     if (dryRun) {
-      const count = await query.getCount();
+      // For dry run, use SELECT query with alias
+      const count = await this.confirmationRepo
+        .createQueryBuilder('conf')
+        .where('conf.expiresAt < :now', { now: new Date() })
+        .orWhere('conf.isUsed = :isUsed AND conf.usedAt < :expiryDate', {
+          isUsed: true,
+          expiryDate,
+        })
+        .getCount();
+
       console.log(`[DRY RUN] Would delete ${count} expired confirmations`);
       return { deleted: 0, errors: 0 };
     }
 
-    const result = await query.delete().execute();
-    console.log(`Deleted ${result.affected} expired confirmations`);
+    const result = await this.confirmationRepo
+      .createQueryBuilder()
+      .delete()
+      .where('expiresAt < :now', { now: new Date() })
+      .orWhere('isUsed = :isUsed AND usedAt < :expiryDate', {
+        isUsed: true,
+        expiryDate,
+      })
+      .execute();
 
+    console.log(`Deleted ${result.affected} expired confirmations`);
     return { deleted: result.affected || 0, errors: 0 };
   }
 

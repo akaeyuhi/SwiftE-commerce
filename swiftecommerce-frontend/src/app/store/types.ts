@@ -33,18 +33,6 @@ export interface User {
   aiLogs?: AiLog[];
   likes?: Like[];
 }
-/**
- * Cart item type
- */
-export interface CartItem {
-  variantId: string;
-  productId: string;
-  name: string;
-  price: number;
-  quantity: number;
-  image?: string;
-  attributes?: Record<string, string>;
-}
 
 /**
  * Theme type

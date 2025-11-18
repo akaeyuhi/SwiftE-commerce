@@ -5,10 +5,10 @@ import { useProducts } from '@/features/products/hooks/useProducts';
 import { QueryLoader } from '@/shared/components/loaders/QueryLoader';
 import { ErrorState } from '@/shared/components/errors/ErrorState';
 import { StorePublicHeader } from '../components/header/StorePublicHeader';
-import { ProductFilters } from '../components/filter/ProductFilters';
 import { ProductGrid } from '../components/grid-list/ProductGrid';
 import { ErrorBoundary } from '@/shared/components/errors/ErrorBoundary';
 import { ProductListDto } from '@/features/products/types/product.types.ts';
+import { ProductFilters } from '@/features/products/components/filter/ProductFilters.tsx';
 
 export function StorePublicPage() {
   const { storeId } = useParams<{ storeId: string }>();

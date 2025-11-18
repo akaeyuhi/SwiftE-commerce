@@ -139,7 +139,7 @@ export function ProductForm({
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2">
-              {availableCategories.map((category) => (
+              {availableCategories?.map((category) => (
                 <Badge
                   key={category.id}
                   variant={

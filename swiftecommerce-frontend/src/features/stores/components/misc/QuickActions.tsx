@@ -8,8 +8,13 @@ import {
 import { Link } from '@/shared/components/ui/Link';
 import { ROUTES } from '@/app/routes/routes';
 import { Package, ShoppingCart, TrendingUp } from 'lucide-react';
+import { buildUrl } from '@/config/api.config.ts';
 
-export function QuickActions() {
+interface QuickActionsProps {
+  storeId: string;
+}
+
+export function QuickActions({ storeId }: QuickActionsProps) {
   return (
     <Card>
       <CardHeader>
@@ -19,7 +24,7 @@ export function QuickActions() {
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Link
-            to={ROUTES.STORE_PRODUCTS_CREATE}
+            to={buildUrl(ROUTES.STORE_PRODUCTS_CREATE, { storeId })}
             className="flex items-center gap-3 p-4 border border-border
                 rounded-lg hover:bg-muted/50 transition-colors"
           >
@@ -38,7 +43,7 @@ export function QuickActions() {
           </Link>
 
           <Link
-            to={ROUTES.STORE_ORDERS}
+            to={buildUrl(ROUTES.STORE_ORDERS, { storeId })}
             className="flex items-center gap-3 p-4 border border-border
                 rounded-lg hover:bg-muted/50 transition-colors"
           >
@@ -52,7 +57,7 @@ export function QuickActions() {
           </Link>
 
           <Link
-            to={ROUTES.STORE_ANALYTICS}
+            to={buildUrl(ROUTES.STORE_ANALYTICS, { storeId })}
             className="flex items-center gap-3 p-4 border border-border
                 rounded-lg hover:bg-muted/50 transition-colors"
           >

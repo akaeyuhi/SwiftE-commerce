@@ -88,7 +88,14 @@ export class PolicyService {
         ur.storeId === storeId;
 
       const storeCheck = await this.storeService.hasUserStoreRole(ur);
-      if (hasRoleName && sameStore && storeCheck) return true;
+      if (
+        hasRoleName &&
+        sameStore &&
+        storeCheck &&
+        ur.isActive &&
+        !ur.revokedAt
+      )
+        return true;
     }
 
     return false;

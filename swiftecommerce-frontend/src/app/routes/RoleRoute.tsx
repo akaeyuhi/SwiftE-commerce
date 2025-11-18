@@ -4,6 +4,7 @@ import { ROUTES } from './routes';
 import { ReactNode, useMemo } from 'react';
 import { StoreRoles } from '@/lib/enums/store-roles.enum.ts';
 import { AdminRoles } from '@/lib/enums/site-roles.enum.ts';
+import { useUserProfile } from '@/features/users/hooks/useUsers.ts';
 
 interface RoleRouteProps {
   allowedSiteRoles?: Array<AdminRoles>;
@@ -18,13 +19,18 @@ export function RoleRoute({
   requireStoreAccess = false,
   children,
 }: RoleRouteProps) {
-  const { user, isAuthenticated } = useAuth();
   const params = useParams();
+  const { isAuthenticated } = useAuth();
   const storeId = params.storeId;
+
+  const { data: user, isLoading, error } = useUserProfile();
+
+  if (isLoading || error) return;
 
   if (!isAuthenticated || !user) {
     return <Navigate to={ROUTES.LOGIN} replace />;
   }
+
 
   // Check site-level role
   if (allowedSiteRoles && !allowedSiteRoles.includes(user.siteRole)) {

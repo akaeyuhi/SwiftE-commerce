@@ -1,9 +1,11 @@
 import { StatsGrid } from '@/shared/components/ui/StatsGrid';
 import { Package, Layers, Eye } from 'lucide-react';
-import { Product } from '@/features/products/types/product.types.ts';
+import {
+  ProductListDto,
+} from '@/features/products/types/product.types.ts';
 
 interface StoreProductsStatsProps {
-  products: Product[];
+  products: ProductListDto[];
 }
 
 export function StoreProductsStats({ products }: StoreProductsStatsProps) {

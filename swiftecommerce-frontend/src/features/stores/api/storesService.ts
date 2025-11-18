@@ -10,6 +10,7 @@ import {
   UpdateStoreDto,
 } from '../types/store.types';
 import { Order } from '@/features/orders/types/order.types.ts';
+import { StoreHealthData } from '@/features/stores/types/store-health.types.ts';
 
 export interface StoreHealthDto {
   isHealthy: boolean;
@@ -31,6 +32,11 @@ export class StoreService extends BaseService {
 
   async findOne(id: string): Promise<StoreDto> {
     const url = this.buildUrl(API_ENDPOINTS.STORES.FIND_ONE, { id });
+    return this.client.get<StoreDto>(url);
+  }
+
+  async findStoreWithRoles(id: string): Promise<StoreDto> {
+    const url = this.buildUrl(API_ENDPOINTS.STORES.FIND_ONE_WITH_TEAM, { id });
     return this.client.get<StoreDto>(url);
   }
 
@@ -125,9 +131,9 @@ export class StoreService extends BaseService {
     return this.client.post<{ updated: number }>(url);
   }
 
-  async getHealth(id: string): Promise<StoreHealthDto> {
+  async getHealth(id: string): Promise<StoreHealthData> {
     const url = this.buildUrl(API_ENDPOINTS.STORES.HEALTH, { id });
-    return this.client.get<StoreHealthDto>(url);
+    return this.client.get<StoreHealthData>(url);
   }
 
   async uploadStoreFiles(

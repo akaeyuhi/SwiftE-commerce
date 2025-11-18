@@ -36,7 +36,6 @@ export class StoreRole implements UserOwnedEntity {
   @ManyToOne(() => Store, (store) => store.storeRoles, {
     nullable: true,
     onDelete: 'SET NULL',
-    eager: true,
   })
   @JoinColumn({ name: 'store_id', referencedColumnName: 'id' })
   store: Store;

@@ -437,7 +437,7 @@ export class ProductsService extends PaginatedService<
    */
   async searchProducts(
     query: string,
-    limit: number = 20,
+    limit: number,
     storeId?: string,
     options?: ProductSearchOptions
   ): Promise<ProductListDto[]> {
@@ -558,14 +558,23 @@ export class ProductsService extends PaginatedService<
   async findAllByStoreWithFilters(
     storeId: string,
     filters: ProductSearchOptions
-  ): Promise<ProductListDto[]> {
-    return await this.productSearchRepo.searchProducts(
+  ): Promise<[ProductListDto[], number]> {
+    const items = await this.productSearchRepo.searchProducts(
       filters.query || '',
-      filters.limit || 20,
+      filters.limit,
       (filters.query || '').trim().toLowerCase().split(/\s+/),
       storeId,
       filters
     );
+
+    const total = await this.productSearchRepo.countProducts(
+      filters.query || '',
+      (filters.query || '').trim().toLowerCase().split(/\s+/),
+      storeId,
+      filters
+    );
+
+    return [items, total]; // ✅ Return as tuple
   }
 
   /**
@@ -594,6 +603,7 @@ export class ProductsService extends PaginatedService<
     for (const dto of dtos) {
       if (!dto.productId) {
         dto.productId = product.id;
+        dto.productName = product.name;
       }
     }
     return this.variantsService.createMultiple(dtos);

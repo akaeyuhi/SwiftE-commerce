@@ -108,6 +108,13 @@ export class StoreController extends BaseController<
     }
   }
 
+  @Get(':id/team')
+  async findOneWithTeam(
+    @Param('id', ParseUUIDPipe) id: string
+  ): Promise<Store | null> {
+    return this.storeService.findOneWithTeam(id);
+  }
+
   /**
    * GET /stores/search
    * Basic search stores by name with stats

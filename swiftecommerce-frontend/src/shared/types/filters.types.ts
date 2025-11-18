@@ -5,6 +5,7 @@ export interface ProductFilters {
   pageSize?: number;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
+  limit?: number;
   categoryId?: string;
   minPrice?: number;
   maxPrice?: number;

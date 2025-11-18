@@ -5,10 +5,10 @@ import { QueryLoader } from '@/shared/components/loaders/QueryLoader';
 import { ProductImageGallery } from '../components/details/ProductImageGallery';
 import { ProductInfo } from '../components/details/ProductInfo';
 import { ProductDescription } from '../components/details/ProductDescription';
-import { ProductDetails } from '../components/details/ProductDetails';
 import { CustomerReviews } from '../components/details/CustomerReviews';
 import { Button } from '@/shared/components/ui/Button';
 import { useNavigate } from '@/shared/hooks/useNavigate';
+import { ProductDetails } from '@/features/products/components/details/ProductDetails.tsx';
 
 export function ProductDetailPage() {
   const { productId } = useParams<{
@@ -21,8 +21,6 @@ export function ProductDetailPage() {
     error,
     refetch,
   } = usePublicProduct(productId!);
-
-  //TODO FIX THE ATTRIBUTES SYSTEM
 
   return (
     <ErrorBoundary title="Product Detail Error">

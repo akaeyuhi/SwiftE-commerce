@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Param,
+  ParseIntPipe,
   Query,
   UseGuards,
   UseInterceptors,
@@ -16,6 +17,9 @@ import {
 import { RecordEventInterceptor } from 'src/modules/infrastructure/interceptors/record-event/record-event.interceptor';
 import { RecordEvents } from 'src/common/decorators/record-event.decorator';
 import { AnalyticsEventType } from 'src/entities/infrastructure/analytics/analytics-event.entity';
+import { PaginatedResponse } from 'src/common/decorators/paginated-response.decorator';
+import { Pagination } from 'src/common/decorators/pagination.decorator';
+import { PaginationDto } from 'src/common/dtos/pagination.dto';
 
 @Controller('/products')
 @UseGuards(JwtAuthGuard, StoreRolesGuard)
@@ -36,9 +40,11 @@ export class ProductsSearchController {
    * Search products in a store with basic query
    */
   @Get('/search')
+  @PaginatedResponse(ProductListDto)
   async searchProducts(
+    @Pagination() pagination: PaginationDto,
     @Query('search') query?: string,
-    @Query('limit') limit?: string,
+    @Query('limit', new ParseIntPipe()) limit?: string,
     @Query('sortBy')
     sortBy?: 'relevance' | 'views' | 'sales' | 'rating' | 'price' | 'recent'
   ): Promise<ProductListDto[]> {

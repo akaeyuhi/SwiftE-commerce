@@ -5,9 +5,11 @@ import { Order } from '@/features/orders/types/order.types.ts';
 import { Store, StoreRole } from '@/features/stores/types/store.types.ts';
 
 const getOwnedOrModerated = (storeRoles: StoreRole[]) => [
-  ...storeRoles.map((role) => ({
-    ...role.store,
-  })),
+  ...storeRoles
+    .filter((role) => role.isActive)
+    .map((role) => ({
+      ...role.store,
+    })),
 ];
 
 export function useDashboardStats(
@@ -47,7 +49,7 @@ export function useRecentOrders(
 
 export function useMyStores(
   userId: string,
-  limit = 3,
+  limit = 5,
   options?: Omit<UseQueryOptions<Store[]>, 'queryKey' | 'queryFn'>
 ) {
   return useQuery({

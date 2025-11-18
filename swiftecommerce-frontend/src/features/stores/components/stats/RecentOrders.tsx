@@ -11,20 +11,22 @@ import { ErrorState } from '@/shared/components/errors/ErrorState';
 import { SkeletonLoader } from '@/shared/components/loaders/SkeletonLoader';
 import { Badge } from '@/shared/components/ui/Badge';
 import { formatCurrency } from '@/shared/utils/statsCalculators';
-import { useRecentOrders } from '@/features/stores/hooks/useStoreOverview.ts';
 import { buildUrl } from '@/config/api.config.ts';
+import { Order } from '@/features/orders/types/order.types.ts';
 
 interface RecentOrdersProps {
   storeId: string;
+  error: Error | null;
+  isLoading: boolean;
+  orders: Order[];
 }
 
-export function RecentOrders({ storeId }: RecentOrdersProps) {
-  const {
-    data: recentOrders = [],
-    isLoading,
-    error,
-  } = useRecentOrders(storeId, 3);
-
+export function RecentOrders({
+  storeId,
+  error,
+  isLoading,
+  orders,
+}: RecentOrdersProps) {
   const getStatusBadge = (status: string) => {
     const variants: Record<string, any> = {
       completed: 'success',
@@ -72,13 +74,13 @@ export function RecentOrders({ storeId }: RecentOrdersProps) {
           />
         ) : isLoading ? (
           <SkeletonLoader variant="card" count={3} />
-        ) : recentOrders.length === 0 ? (
+        ) : orders?.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             <p>No orders yet</p>
           </div>
         ) : (
           <div className="space-y-4">
-            {recentOrders.map((order: any) => (
+            {orders?.map((order: any) => (
               <div
                 key={order.id}
                 className="flex items-center justify-between p-4 bg-muted/50
@@ -89,7 +91,10 @@ export function RecentOrders({ storeId }: RecentOrdersProps) {
                     {order.shipping.firstName + ' ' + order.shipping.lastName}
                   </p>
                   <p className="text-sm text-muted-foreground mb-2">
-                    {order.productName}
+                    {order.items[0].productName}{' '}
+                    {order.items.length > 1
+                      ? `and ${order.items.length - 1} more`
+                      : ''}
                   </p>
                   <div className="flex items-center gap-2">
                     <Badge variant={getStatusBadge(order.status) as any}>

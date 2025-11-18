@@ -42,6 +42,13 @@ export function ShippingForm() {
         <FormField label="Street Address" error={errors.addressLine1} required>
           <Input {...register('addressLine1')} error={!!errors.addressLine1} />
         </FormField>
+        <FormField
+          label="Building address"
+          error={errors.addressLine2}
+          required
+        >
+          <Input {...register('addressLine2')} error={!!errors.addressLine2} />
+        </FormField>
         <div className="grid grid-cols-2 gap-4">
           <FormField label="City" error={errors.city} required>
             <Input {...register('city')} error={!!errors.city} />

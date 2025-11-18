@@ -57,7 +57,7 @@ export interface StoreDto {
   updatedAt: Date;
   products?: ProductListDto[];
   categories?: CategoryDto[];
-  roles?: StoreRole[];
+  storeRoles?: StoreRole[];
   logoUrl: string;
   bannerUrl: string;
 }

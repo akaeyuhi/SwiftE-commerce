@@ -48,10 +48,21 @@ export class ProductsService extends BaseService {
     storeId: string,
     filters?: ProductFilters
   ): Promise<PaginatedResponse<ProductListDto>> {
+    const url = buildUrl(API_ENDPOINTS.PRODUCTS.LIST_FILTERED, { storeId });
+    const urlWithParams = this.buildQueryUrl(url, filters as any);
+    return this.client.get<any>(urlWithParams);
+  }
+
+  /**
+   * Get all products for a store
+   */
+  async getAllProductsByStore(
+    storeId: string,
+    filters?: ProductFilters
+  ): Promise<PaginatedResponse<ProductListDto>> {
     const url = buildUrl(API_ENDPOINTS.PRODUCTS.LIST_BY_STORE, { storeId });
     const urlWithParams = this.buildQueryUrl(url, filters as any);
-    const response = await this.client.get<any>(urlWithParams);
-    return this.handlePaginatedResponse<ProductListDto>(response);
+    return this.client.get<any>(urlWithParams);
   }
 
   /**

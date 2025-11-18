@@ -13,7 +13,7 @@ export function MyStoresPage() {
   const { data: user, isLoading, error, refetch } = useMyProfile(authUser!.id);
 
   const ownedStores = user?.ownedStores || [];
-  const storeRoles = user?.roles || [];
+  const storeRoles = user?.roles?.filter((role) => role.isActive) || [];
 
   const allStores: Store[] = [
     ...storeRoles.map((role) => ({
@@ -22,8 +22,6 @@ export function MyStoresPage() {
       role: role.roleName,
     })),
   ];
-
-  console.log(allStores);
 
   return (
     <ErrorBoundary title="My Stores Error">

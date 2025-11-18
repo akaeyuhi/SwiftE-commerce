@@ -26,6 +26,9 @@ export class ProductVariant implements BaseEntity {
   @JoinColumn({ name: 'product_id', referencedColumnName: 'id' })
   product: Product;
 
+  @Column({ type: 'varchar' })
+  productName: string;
+
   @Column({ type: 'varchar', length: 255, unique: true })
   sku: string;
 

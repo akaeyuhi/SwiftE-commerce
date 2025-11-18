@@ -11,7 +11,7 @@ import { PaginatedResponse } from '@/shared/types/common.types.ts';
 
 export class CartService extends BaseService {
   /**
-   * Get or create cart
+   * Get or create a cart for a specific user and store.
    */
   async getOrCreateCart(storeId: string, userId: string): Promise<Cart> {
     const url = this.buildUrl(API_ENDPOINTS.CART.GET_OR_CREATE, {
@@ -21,6 +21,9 @@ export class CartService extends BaseService {
     return this.client.post<Cart>(url);
   }
 
+  /**
+   * Get all carts for a user, merged across stores.
+   */
   async getUserMergedCarts(userId: string): Promise<PaginatedResponse<Cart>> {
     const url = this.buildUrl(API_ENDPOINTS.CART.MERGED_CARTS, {
       userId,
@@ -29,87 +32,39 @@ export class CartService extends BaseService {
   }
 
   /**
-   * Add item to cart
+   * Add an item to a user's cart for a specific store.
    */
   async addItem(
     storeId: string,
     userId: string,
     data: CartItemDto
-  ): Promise<Cart> {
+  ): Promise<CartItem> {
     const url = this.buildUrl(API_ENDPOINTS.CART.ADD_OR_INCREMENT, {
       storeId,
       userId,
     });
-    return this.client.post<Cart>(url, data);
+    console.log(url);
+    return this.client.post<CartItem>(url, data);
   }
 
   /**
-   * Add item to cart
+   * Synchronize the backend cart with a list of items from the client.
    */
   async syncCart(
     storeId: string,
     userId: string,
-    cartId: string,
     data: CreateCartDto
   ): Promise<Cart> {
     const url = this.buildUrl(API_ENDPOINTS.CART.SYNC_ITEMS, {
       storeId,
       userId,
-      cartId,
-    });
-    return this.client.post<Cart>(url, data);
-  }
-
-  /**
-   * Update cart item quantity
-   */
-  async updateItem(
-    storeId: string,
-    userId: string,
-    cartId: string,
-    itemId: string,
-    data: UpdateCartItemQuantityDto
-  ): Promise<Cart> {
-    const url = this.buildUrl(API_ENDPOINTS.CART_ITEMS.UPDATE, {
-      storeId,
-      userId,
-      cartId,
-      itemId,
     });
     return this.client.patch<Cart>(url, data);
   }
 
   /**
-   * Remove item from cart
+   * Update the quantity of a specific item in a cart.
    */
-  async removeItem(
-    storeId: string,
-    userId: string,
-    cartId: string,
-    itemId: string
-  ): Promise<Cart> {
-    const url = this.buildUrl(API_ENDPOINTS.CART_ITEMS.DELETE, {
-      storeId,
-      userId,
-      cartId,
-      itemId,
-    });
-    return this.client.delete<Cart>(url);
-  }
-
-  /**
-   * Clear cart
-   */
-  async clearCart(
-    storeId: string,
-    userId: string,
-    cartId: string
-  ): Promise<void> {
-    return this.client.delete<void>(
-      `/stores/${storeId}/${userId}/cart/${cartId}`
-    );
-  }
-
   async updateQuantity(
     storeId: string,
     userId: string,
@@ -124,6 +79,35 @@ export class CartService extends BaseService {
       itemId,
     });
     return this.client.put<CartItem>(url, data);
+  }
+
+  /**
+   * Remove a specific item from a cart.
+   */
+  async removeItem(
+    storeId: string,
+    userId: string,
+    cartId: string,
+    itemId: string
+  ): Promise<void> {
+    const url = this.buildUrl(API_ENDPOINTS.CART_ITEMS.DELETE, {
+      storeId,
+      userId,
+      cartId,
+      itemId,
+    });
+    return this.client.delete<void>(url);
+  }
+
+  /**
+   * Clear all items from a user's cart in a specific store.
+   */
+  async clearCart(
+    storeId: string,
+    userId: string
+  ): Promise<{ success: boolean }> {
+    const url = this.buildUrl(API_ENDPOINTS.CART.CLEAR, { storeId, userId });
+    return this.client.delete<{ success: boolean }>(url);
   }
 }
 

@@ -14,4 +14,5 @@ export class CreateVariantDto {
   @IsOptional() stock?: number;
   @IsOptional() initialQuantity?: number = 0;
   @IsOptional() @IsUUID() storeId?: string;
+  @IsOptional() @IsString() productName?: string;
 }

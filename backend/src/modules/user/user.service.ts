@@ -279,6 +279,7 @@ export class UserService extends BaseService<
     lastName?: string;
     isEmailVerified: boolean;
     emailVerifiedAt?: Date;
+    avatarUrl?: string;
     ownedStores: Store[];
     roles?: any[];
     createdAt: Date;
@@ -295,9 +296,11 @@ export class UserService extends BaseService<
       isEmailVerified: user.isEmailVerified || false,
       emailVerifiedAt: user.emailVerifiedAt,
       ownedStores: user.ownedStores,
+      avatarUrl: user.avatarUrl,
       roles: user.roles.map((role) => ({
         storeId: role.store.id,
         store: role.store,
+        isActive: role.isActive,
         storeName: role.store.name,
         roleName: role.roleName,
         assignedAt: role.assignedAt,

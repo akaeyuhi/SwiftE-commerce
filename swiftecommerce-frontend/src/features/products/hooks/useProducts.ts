@@ -40,6 +40,22 @@ export function useProducts(
   });
 }
 
+export function useAllProductsByStore(
+  storeId: string,
+  filters?: ProductFilters,
+  options?: Omit<
+    UseQueryOptions<PaginatedResponse<ProductListDto>>,
+    'queryKey' | 'queryFn'
+  >
+) {
+  return useQuery({
+    queryKey: queryKeys.products.list(storeId, filters),
+    queryFn: () => api.products.getAllProductsByStore(storeId, filters),
+    staleTime: 2 * 60 * 1000,
+    ...options,
+  });
+}
+
 /**
  * Fetch single product
  */

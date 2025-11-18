@@ -9,16 +9,17 @@ import { useNavigate } from '@/shared/hooks/useNavigate';
 import { ArrowRight, Store, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { CartItemCard } from './CartItemCard';
+import { CartItem } from '@/features/cart/types/cart.types.ts';
 
 interface StoreCartProps {
   store: {
     id: string;
     name: string;
-    items: any[];
+    items: CartItem[];
   };
   onClear: (storeId: string) => void;
-  onRemoveItem: (itemId: string) => void;
-  onUpdateQuantity: (itemId: string, quantity: number) => void;
+  onRemoveItem: (item: CartItem) => void;
+  onUpdateQuantity: (item: CartItem, quantity: number) => void;
 }
 
 export function StoreCart({
@@ -42,7 +43,12 @@ export function StoreCart({
             <Store className="h-5 w-5 text-primary" />
             <CardTitle>{store.name}</CardTitle>
           </div>
-          <Button variant="ghost" size="sm" onClick={() => onClear(store.id)}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onClear(store.id)}
+            aria-label={`Clear all items from ${store.name}`}
+          >
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>

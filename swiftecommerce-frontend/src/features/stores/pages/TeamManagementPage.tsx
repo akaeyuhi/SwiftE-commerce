@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { useStore } from '@/features/stores/hooks/useStores.ts';
+import { useStoreTeam } from '@/features/stores/hooks/useStores.ts';
 import { useUserMutations } from '@/features/users/hooks/useUsersMutations.ts';
 import { toast } from 'sonner';
 import { TeamMemberList } from '@/features/stores/components/grid-list/TeamMemberList.tsx';
@@ -11,6 +11,7 @@ import { ErrorBoundary } from '@/shared/components/errors/ErrorBoundary';
 import { QueryLoader } from '@/shared/components/loaders/QueryLoader';
 import { StoreRole } from '../types/store.types';
 import { StoreRoles } from '@/lib/enums/store-roles.enum.ts';
+import { useAuth } from '@/app/store';
 
 export interface TeamMember {
   id: string;
@@ -27,27 +28,33 @@ const mapUserRoleToMember = (role: StoreRole): TeamMember => ({
   name: role.user.firstName + ' ' + role.user.lastName,
   role: role.roleName,
   isActive: role.isActive,
-  assignedAt: role.assignedAt.toLocaleDateString(),
+  assignedAt:
+    /*role.assignedAt?.toLocaleDateString() ??*/ new Date().toLocaleDateString(),
 });
 
 export function TeamManagementPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { storeId } = useParams<{ storeId: string }>();
-  const { data: store, isLoading, error, refetch } = useStore(storeId!);
-  const { revokeRole } = useUserMutations();
+  const { user } = useAuth();
+  const { data: store, isLoading, error, refetch } = useStoreTeam(storeId!);
+  const { revokeStoreRole } = useUserMutations();
 
-  const teamMembers = store?.roles?.map(mapUserRoleToMember) || [];
+  const teamMembers =
+    store?.storeRoles
+      ?.map(mapUserRoleToMember)
+      .filter((member) => member.isActive) || [];
 
   const handleRemoveMember = async (memberId: string) => {
     try {
-      await revokeRole.mutateAsync(
+      if (memberId === user?.id)
+        return toast.error(`You can't remove yourself`);
+      await revokeStoreRole.mutateAsync(
         {
           userId: memberId,
           storeId: store?.id as string,
         },
         {
           onSuccess: () => {
-            toast.success('Team member removed');
             refetch();
           },
         }
@@ -70,6 +77,8 @@ export function TeamManagementPage() {
     }
   };
 
+  console.log(store);
+
   return (
     <ErrorBoundary title="Team Management Error">
       <div className="space-y-6">
@@ -91,7 +100,10 @@ export function TeamManagementPage() {
           storeId={storeId!}
           open={isDialogOpen}
           onOpenChange={setIsDialogOpen}
-          onSuccess={() => refetch()}
+          onSuccess={() => {
+            setIsDialogOpen(false);
+            refetch();
+          }}
         />
       </div>
     </ErrorBoundary>

@@ -28,8 +28,6 @@ export const updateStoreSchema = z.object({
 
 export const assignRoleSchema = z.object({
   email: z.string().min(1, 'Email is required').email('Invalid email address'),
-  firstName: z.string().min(1, 'First name is required'),
-  lastName: z.string().min(1, 'Last name is required'),
   role: z.enum(['STORE_ADMIN', 'STORE_MODERATOR', 'STORE_GUEST'], {
     // eslint-disable-next-line camelcase
     required_error: 'Please select a role',

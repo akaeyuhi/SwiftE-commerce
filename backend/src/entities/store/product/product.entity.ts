@@ -9,7 +9,8 @@ import {
   ManyToMany,
   JoinTable,
   Index,
-  DeleteDateColumn, JoinColumn,
+  DeleteDateColumn,
+  JoinColumn,
 } from 'typeorm';
 import { Store } from 'src/entities/store/store.entity';
 import { Category } from 'src/entities/store/product/category.entity';

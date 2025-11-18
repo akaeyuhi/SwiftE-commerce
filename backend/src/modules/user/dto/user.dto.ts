@@ -7,6 +7,7 @@ export class UserDto implements BaseEntity {
   firstName: string;
   isEmailVerified: boolean;
   lastName: string;
+  avatarUrl?: string;
   createdAt: Date;
   updatedAt: Date;
   siteRole: AdminRoles;

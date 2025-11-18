@@ -5,93 +5,105 @@ import { useNavigate } from '@/shared/hooks/useNavigate';
 import { ShoppingCart, Trash2 } from 'lucide-react';
 import { ConfirmDialog } from '@/shared/components/dialogs/ConfirmDialog';
 import { toast } from 'sonner';
-import { useCartOrCreate, useCartMutations } from '../hooks/useCart';
+import { useUserMergedCarts, useCartMutations } from '../hooks/useCart';
 import { useAuth } from '@/app/store';
 import { QueryLoader } from '@/shared/components/loaders/QueryLoader';
-import { useParams } from 'react-router-dom';
 import { StoreCart } from '../components/StoreCart';
 import { OrderSummary } from '../components/OrderSummary';
 import { Card } from '@/shared/components/ui/Card.tsx';
+import { CartItem } from '@/features/cart/types/cart.types.ts';
 
 export function CartPage() {
-  const { storeId } = useParams<{ storeId: string }>();
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  const [clearDialog, setClearDialog] = useState(false);
+  const [clearAllDialog, setClearAllDialog] = useState(false);
   const [clearStoreDialog, setClearStoreDialog] = useState<string | null>(null);
 
-  const { data: cart, isLoading, error } = useCartOrCreate(storeId!, user!.id);
-  const { clearCart, removeItem, updateItem } = useCartMutations(
-    storeId!,
-    user!.id,
-    cart?.id
+  const {
+    data: cartsData,
+    isLoading,
+    error,
+  } = useUserMergedCarts(user?.id ?? '', { enabled: isAuthenticated });
+  const { clearCart, removeItem, updateQuantity } = useCartMutations(
+    user?.id ?? ''
   );
 
-  const stores = useMemo(() => {
-    if (!cart) return [];
-    const storeMap = new Map<
-      string,
-      { id: string; name: string; items: any[] }
-    >();
-    cart.items.forEach((item) => {
-      if (!storeMap.has(cart.store.id)) {
-        storeMap.set(cart.store.id, {
-          id: cart.store.id,
-          name: cart.store.name,
-          items: [],
-        });
-      }
-      storeMap.get(cart.store.id)!.items.push(item);
-    });
-    return Array.from(storeMap.values());
-  }, [cart]);
+  const carts = useMemo(() => cartsData?.data ?? [], [cartsData]);
+  const allItems = useMemo(
+    () =>
+      carts.flatMap((cart) =>
+        cart.items.map((item) => ({
+          ...item,
+          store: cart.store,
+        }))
+      ),
+    [carts]
+  );
+  const totalItemsCount = useMemo(
+    () => allItems.reduce((sum, item) => sum + item.quantity, 0),
+    [allItems]
+  );
 
-  const totalPrice = useMemo(() => {
-    if (!cart) return 0;
-    return cart.items.reduce(
-      (sum, item) => sum + item.variant.price * item.quantity,
-      0
-    );
-  }, [cart]);
+  const totalPrice = useMemo(
+    () =>
+      allItems.reduce(
+        (sum, item) => sum + item.variant.price * item.quantity,
+        0
+      ),
+    [allItems]
+  );
 
-  const handleClearCart = () => {
-    clearCart.mutate(undefined, {
-      onSuccess: () => {
-        setClearDialog(false);
-        toast.success('Cart cleared');
-      },
+  const handleClearAllCarts = () => {
+    const promises = carts.map((cart) => clearCart.mutateAsync(cart.store.id));
+    toast.promise(Promise.all(promises), {
+      loading: 'Clearing all items from your carts...',
+      success: 'All carts have been cleared.',
+      error: 'Failed to clear all carts.',
+      finally: () => setClearAllDialog(false),
     });
   };
 
   const handleClearStoreCart = (storeId: string) => {
-    // This logic needs to be implemented in the backend
-    console.log('Clearing cart for store:', storeId);
-    setClearStoreDialog(null);
-    toast.info('Clearing individual store carts is not yet supported.');
+    clearCart.mutate(storeId, {
+      onSuccess: () => {
+        toast.success('Store cart cleared.');
+        setClearStoreDialog(null);
+      },
+      onError: () => {
+        toast.error('Failed to clear store cart.');
+      },
+    });
   };
 
-  const handleRemoveItem = (itemId: string) => {
-    removeItem.mutate(itemId);
+  const handleRemoveItem = (item: CartItem) => {
+    removeItem.mutate({
+      storeId: item.cart.store.id,
+      cartId: item.cart.id,
+      itemId: item.id,
+    });
   };
 
-  const handleUpdateQuantity = (itemId: string, quantity: number) => {
-    updateItem.mutate({ itemId, data: { quantity } });
+  const handleUpdateQuantity = (item: CartItem, quantity: number) => {
+    if (quantity < 1) {
+      handleRemoveItem(item);
+      return;
+    }
+    updateQuantity.mutate({
+      storeId: item.cart.store.id,
+      cartId: item.cart.id,
+      itemId: item.id,
+      quantity,
+    });
   };
 
-  // TODO FIX CART
-  // TODO FIX WISHLIST
-  // TODO CREATE NEWS PAGE
-  // TODO FIX ANALYTICS
-  // TODO FIX AI
-
-  if (!cart || cart.items.length === 0) {
+  if (!allItems.length) {
     return (
       <div className="container mx-auto px-4 py-12">
         <Card>
           <EmptyState
             icon={ShoppingCart}
             title="Your cart is empty"
-            description="Start shopping to add items to your cart"
+            description="Start shopping to add items to your cart."
             action={{
               label: 'Browse Products',
               onClick: () => navigate.toProducts(),
@@ -112,22 +124,26 @@ export function CartPage() {
                 Shopping Cart
               </h1>
               <p className="text-muted-foreground">
-                {cart.items.length} items from {stores.length} store(s)
+                {totalItemsCount} items from {carts.length} store(s)
               </p>
             </div>
-            <Button variant="outline" onClick={() => setClearDialog(true)}>
+            <Button variant="outline" onClick={() => setClearAllDialog(true)}>
               <Trash2 className="h-4 w-4 mr-2" />
-              Clear Cart
+              Clear All Carts
             </Button>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
-              {stores.map((store) => (
+              {carts.map((cart) => (
                 <StoreCart
-                  key={store.id}
-                  store={store}
-                  onClear={() => setClearStoreDialog(store.id)}
+                  key={cart.store.id}
+                  store={{
+                    id: cart.store.id,
+                    name: cart.store.name,
+                    items: cart.items,
+                  }}
+                  onClear={() => setClearStoreDialog(cart.store.id)}
                   onRemoveItem={handleRemoveItem}
                   onUpdateQuantity={handleUpdateQuantity}
                 />
@@ -140,14 +156,14 @@ export function CartPage() {
           </div>
 
           <ConfirmDialog
-            open={clearDialog}
-            onOpenChange={setClearDialog}
-            title="Clear entire cart?"
-            description="This will remove all items from all stores
-          in your cart. This action cannot be undone."
-            confirmText="Clear Cart"
+            open={clearAllDialog}
+            onOpenChange={setClearAllDialog}
+            title="Clear all carts?"
+            description="This will remove all items from all stores in your cart.
+          This action cannot be undone."
+            confirmText="Clear All"
             variant="danger"
-            onConfirm={handleClearCart}
+            onConfirm={handleClearAllCarts}
             loading={clearCart.isPending}
           />
 
@@ -161,6 +177,7 @@ export function CartPage() {
             onConfirm={() =>
               clearStoreDialog && handleClearStoreCart(clearStoreDialog)
             }
+            loading={clearCart.isPending}
           />
         </div>
       </div>

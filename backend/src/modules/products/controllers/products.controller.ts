@@ -129,12 +129,11 @@ export class ProductsController extends BaseController<
   async searchProducts(
     @Param('storeId', ParseUUIDPipe) storeId: string,
     @Query('q') query: string,
-    @Query('limit') limit?: string,
+    @Query('limit') limit?: number,
     @Query('sortBy')
     sortBy?: 'relevance' | 'views' | 'sales' | 'rating' | 'price' | 'recent'
   ): Promise<ProductListDto[]> {
-    const maxLimit = limit ? Math.min(parseInt(limit), 50) : 20;
-    return await this.productsService.searchProducts(query, maxLimit, storeId, {
+    return await this.productsService.searchProducts(query, limit!, storeId, {
       sortBy,
     });
   }
@@ -233,10 +232,12 @@ export class ProductsController extends BaseController<
   }
 
   @Get('filtered')
+  @PaginatedResponse(ProductListDto)
   async findAllByStoreWithFilters(
     @Param('storeId', ParseUUIDPipe) storeId: string,
+    @Pagination() pagination: PaginationDto,
     @Query() filters: ProductSearchOptions
-  ): Promise<ProductListDto[]> {
+  ): Promise<[ProductListDto[], number]> {
     return this.productsService.findAllByStoreWithFilters(storeId, filters);
   }
 

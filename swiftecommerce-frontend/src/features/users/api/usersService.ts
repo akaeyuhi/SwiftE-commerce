@@ -23,7 +23,7 @@ export class UsersService extends BaseService {
   }
 
   async getUserByEmail(email: string): Promise<User> {
-    const url = this.buildQueryUrl(API_ENDPOINTS.USERS.FIND_BY_EMAIL, {
+    const url = this.buildUrl(API_ENDPOINTS.USERS.FIND_BY_EMAIL, {
       email,
     });
     return this.client.get<User>(url);
@@ -167,8 +167,9 @@ export class UsersService extends BaseService {
    * Assign site admin role
    */
   async assignSiteAdmin(userId: string): Promise<void> {
-    const url = buildUrl(API_ENDPOINTS.USERS.ASSIGN_SITE_ADMIN, { id: userId });
-    return this.client.post<void>(url);
+    return this.client.post<void>(API_ENDPOINTS.USERS.ASSIGN_SITE_ADMIN, {
+      userId,
+    });
   }
 
   /**
@@ -190,21 +191,35 @@ export class UsersService extends BaseService {
   /**
    * Assign role to user
    */
-  async assignRole(
+  async assignStoreRole(
     userId: string,
     storeId: string,
     role: string
   ): Promise<void> {
-    const url = buildUrl(API_ENDPOINTS.USERS.ASSIGN_ROLE, { id: userId });
-    return this.client.post<void>(url, { storeId, role });
+    return this.client.post<void>(API_ENDPOINTS.USERS.ASSIGN_STORE_ROLE, {
+      userId,
+      storeId,
+      role,
+    });
   }
 
   /**
    * Revoke store role
    */
   async revokeStoreRole(userId: string, storeId: string): Promise<void> {
-    const url = buildUrl(API_ENDPOINTS.USERS.REVOKE_STORE_ROLE, { id: userId });
-    return this.client.delete<void>(url, { data: { storeId } });
+    return this.client.post<void>(API_ENDPOINTS.USERS.REVOKE_STORE_ROLE, {
+      userId,
+      storeId,
+    });
+  }
+
+  /**
+   * Revoke site admib
+   */
+  async revokeSiteAdmin(userId: string): Promise<void> {
+    return this.client.post<void>(API_ENDPOINTS.USERS.REVOKE_SITE_ADMIN, {
+      userId,
+    });
   }
 
   /**

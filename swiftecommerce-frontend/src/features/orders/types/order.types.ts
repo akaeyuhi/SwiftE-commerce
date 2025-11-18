@@ -60,6 +60,9 @@ export interface CreateOrderDto {
   items: CreateOrderItemDto[];
   shipping: OrderInfo;
   billing?: OrderInfo;
+  storeId: string;
+  userId: string;
+  totalAmount: number;
 }
 
 export type UpdateOrderDto = Partial<CreateOrderDto>;

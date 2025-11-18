@@ -90,6 +90,7 @@ export class Store implements UserOwnedEntity {
 
   @OneToMany(() => Category, (category) => category.store, {
     cascade: ['update', 'remove'],
+    eager: true,
   })
   @ApiProperty({
     type: () => [Category],

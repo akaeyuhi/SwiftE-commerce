@@ -35,7 +35,7 @@ export const API_ENDPOINTS = {
 
   USERS: {
     LIST: '/users',
-    FIND_BY_EMAIL: '/users/:email',
+    FIND_BY_EMAIL: '/users/by-email/:email',
     CREATE: '/users',
     FIND_ONE: '/users/:id',
     UPDATE: '/users/:id',
@@ -53,14 +53,15 @@ export const API_ENDPOINTS = {
     IS_STORE_ADMIN: '/users/:id/stores/:storeId/admin/check',
     GET_STORE_ROLES: '/users/:id/store-roles',
     IS_SITE_ADMIN: '/users/:id/site-admin/check',
-    ASSIGN_SITE_ADMIN: '/users/:id/site-admin',
+    ASSIGN_SITE_ADMIN: 'auth/assign-site-admin',
+    REVOKE_SITE_ADMIN: '/auth/revoke-site-admin',
+    CANCEL_ROLE_ASSIGNMENT: '/auth/cancel-role-assignment',
     DEACTIVATE: '/users/:id/deactivate',
     REACTIVATE: '/users/:id/reactivate',
-    ASSIGN_ROLE: '/users/:id/roles',
-    REVOKE_ROLE: '/users/:id/roles',
     CREATE_STORE: '/users/:id/stores',
     CHECK_STORE_ROLE: '/users/:id/stores/:storeId/roles/:roleName/check',
-    REVOKE_STORE_ROLE: '/users/:id/roles',
+    ASSIGN_STORE_ROLE: '/auth/assign-store-role',
+    REVOKE_STORE_ROLE: '/auth/revoke-store-role',
   },
 
   // Stores
@@ -68,6 +69,7 @@ export const API_ENDPOINTS = {
     LIST: '/stores',
     CREATE: '/stores',
     FIND_ONE: '/stores/:id',
+    FIND_ONE_WITH_TEAM: '/stores/:id/team',
     UPDATE: '/stores/:id',
     DELETE: '/stores/:id',
     OVERVIEW: '/stores/:id/overview',
@@ -91,6 +93,7 @@ export const API_ENDPOINTS = {
   PRODUCTS: {
     LIST: '/stores/:storeId/products',
     LIST_BY_STORE: '/stores/:storeId/products/byStore',
+    LIST_FILTERED: '/stores/:storeId/products/filtered',
     LIST_ALL: '/products/search',
     CREATE: '/stores/:storeId/products',
     FIND_ONE: '/stores/:storeId/products/:id',
@@ -151,9 +154,8 @@ export const API_ENDPOINTS = {
     CLEAR: '/stores/:storeId/:userId/cart/clear',
     REMOVE_CART: '/stores/:storeId/:userId/cart',
     MERGED_CARTS: '/stores/:userId/cart/merged',
-    ADD_OR_INCREMENT: '/stores/:storeId/:userId/cart/:cartId/add-item',
+    ADD_OR_INCREMENT: '/stores/:storeId/:userId/cart/add-item',
     SYNC_ITEMS: '/stores/:storeId/:userId/cart/sync',
-    ADD_ITEM: '/stores/:storeId/:userId/cart/:cartId/add-item',
     GET_MERGED: '/stores/:storeId/:userId/cart/merged',
   },
 

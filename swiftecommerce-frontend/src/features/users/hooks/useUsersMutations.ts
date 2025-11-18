@@ -40,14 +40,15 @@ export function useUserMutations() {
     onError: () => toast.error('Failed to reactivate user'),
   });
 
-  const assignRole = useMutation({
+  const assignStoreRole = useMutation({
     mutationFn: ({
       userId,
       roleData,
     }: {
       userId: string;
       roleData: { storeId: string; roleName: string };
-    }) => api.users.assignRole(userId, roleData.storeId, roleData.roleName),
+    }) =>
+      api.users.assignStoreRole(userId, roleData.storeId, roleData.roleName),
     onSuccess: (_, { userId }) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.user.roles(userId) });
       toast.success('Role assigned successfully');
@@ -55,7 +56,7 @@ export function useUserMutations() {
     onError: () => toast.error('Failed to assign role'),
   });
 
-  const revokeRole = useMutation({
+  const revokeStoreRole = useMutation({
     mutationFn: ({ userId, storeId }: { userId: string; storeId: string }) =>
       api.users.revokeStoreRole(userId, storeId),
     onSuccess: (_, { userId }) => {
@@ -76,16 +77,16 @@ export function useUserMutations() {
     onError: () => toast.error('Failed to assign site admin'),
   });
 
-  // const revokeSiteAdmin = useMutation({
-  //   mutationFn: (userId: string) => api.users.(userId),
-  //   onSuccess: (_, userId) => {
-  //     queryClient.invalidateQueries({
-  //       queryKey: queryKeys.user.detail(userId),
-  //     });
-  //     toast.success('Site admin revoked successfully');
-  //   },
-  //   onError: () => toast.error('Failed to revoke site admin'),
-  // });
+  const revokeSiteAdmin = useMutation({
+    mutationFn: (userId: string) => api.users.revokeSiteAdmin(userId),
+    onSuccess: (_, userId) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.user.detail(userId),
+      });
+      toast.success('Site admin revoked successfully');
+    },
+    onError: () => toast.error('Failed to revoke site admin'),
+  });
 
   const markEmailVerified = useMutation({
     mutationFn: ({ userId, token }: { userId: string; token: string }) =>
@@ -103,10 +104,10 @@ export function useUserMutations() {
     updateProfile,
     deactivateUser,
     reactivateUser,
-    assignRole,
-    revokeRole,
+    assignStoreRole,
+    revokeStoreRole,
     assignSiteAdmin,
-    /*revokeSiteAdmin,*/
+    revokeSiteAdmin,
     markEmailVerified,
   };
 }

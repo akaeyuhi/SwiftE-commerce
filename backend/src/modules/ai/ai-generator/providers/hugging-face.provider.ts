@@ -37,7 +37,7 @@ export class HuggingFaceProvider extends BaseAiProvider {
       apiKey: this.configService.get<string>('HF_API_KEY'),
       baseUrl:
         this.configService.get<string>('HF_BASE_URL') ||
-        'https://router.huggingface.co/v1/chat/completions',
+        'https://router.huggingface.co/v1/',
       defaultModel:
         configService.get<string>('HF_DEFAULT_MODEL') || 'openai/gpt-oss-20b',
       defaultProvider:

@@ -16,10 +16,11 @@ import { EmailModule } from 'src/modules/email/email.module';
 import { ConfirmationService } from 'src/modules/auth/confirmation/confirmation.service';
 import { StoreRoleModule } from 'src/modules/store/store-role/store-role.module';
 import { UserModule } from 'src/modules/user/user.module';
+import { Store } from 'src/entities/store/store.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([RefreshToken]),
+    TypeOrmModule.forFeature([RefreshToken, Store]),
     ConfigModule,
     PassportModule,
     JwtModule.registerAsync({

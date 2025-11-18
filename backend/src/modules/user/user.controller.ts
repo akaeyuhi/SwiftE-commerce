@@ -70,6 +70,11 @@ export class UserController extends BaseController<
     return this.userService.create(dto);
   }
 
+  @Get('/by-email/:email')
+  async getByEmail(@Param('email') email: string) {
+    return this.userService.findByEmail(email);
+  }
+
   @Get(':id/dashboard')
   async getDashboard(@Param('id') id: string): Promise<User | null> {
     return this.userService.getDashboardUser(id);
@@ -227,7 +232,6 @@ export class UserController extends BaseController<
    */
   @Post(':id/roles')
   @StoreRole(StoreRoles.ADMIN)
-  @AdminRole(AdminRoles.ADMIN)
   async assignRole(
     @Param('id', new ParseUUIDPipe()) userId: string,
     @Body() dto: RoleDto
@@ -246,7 +250,6 @@ export class UserController extends BaseController<
    */
   @Delete(':id/roles')
   @StoreRole(StoreRoles.ADMIN)
-  @AdminRole(AdminRoles.ADMIN)
   async revokeStoreRole(
     @Param('id', new ParseUUIDPipe()) userId: string,
     @Body() dto: RoleDto

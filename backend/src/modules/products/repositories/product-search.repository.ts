@@ -11,6 +11,68 @@ export class ProductSearchRepository extends BaseRepository<Product> {
     super(Product, dataSource.createEntityManager());
   }
 
+  async countProducts(
+    query: string,
+    searchTerms: string[],
+    storeId?: string,
+    options?: ProductSearchOptions
+  ): Promise<number> {
+    const qb = this.createQueryBuilder('p')
+      .select('COUNT(DISTINCT p.id)', 'count')
+      .where('p.deletedAt IS NULL');
+
+    if (storeId) {
+      qb.andWhere('p.storeId = :storeId', { storeId });
+    }
+
+    // Apply same filters as search
+    if (searchTerms.length === 1 && query) {
+      qb.andWhere(
+        '(LOWER(p.name) LIKE :query OR LOWER(p.description) LIKE :query)',
+        { query: `%${query.toLowerCase()}%` }
+      );
+    } else if (searchTerms.length > 1) {
+      searchTerms.forEach((term, index) => {
+        qb.andWhere(
+          `(LOWER(p.name) LIKE :term${index} OR LOWER(p.description) LIKE :term${index})`,
+          { [`term${index}`]: `%${term.toLowerCase()}%` }
+        );
+      });
+    }
+
+    if (options?.categoryId) {
+      qb.leftJoin('p.categories', 'category').andWhere(
+        'category.id = :categoryId',
+        { categoryId: options.categoryId }
+      );
+    }
+
+    if (options?.minRating) {
+      qb.andWhere('p.averageRating >= :minRating', {
+        minRating: options.minRating,
+      });
+    }
+
+    // Price filters require joins
+    if (options?.minPrice || options?.maxPrice) {
+      qb.leftJoin('p.variants', 'variants');
+
+      if (options.minPrice) {
+        qb.andWhere('variants.price >= :minPrice', {
+          minPrice: options.minPrice,
+        });
+      }
+      if (options.maxPrice) {
+        qb.andWhere('variants.price <= :maxPrice', {
+          maxPrice: options.maxPrice,
+        });
+      }
+    }
+
+    const result = await qb.getRawOne();
+    return parseInt(result.count, 10) || 0;
+  }
+
   async searchProducts(
     query: string,
     limit = 20,

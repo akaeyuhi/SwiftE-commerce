@@ -32,7 +32,14 @@ export class UserRepository extends BaseRepository<User> {
     if (!id) return null;
     return this.findOne({
       where: { id },
-      relations: ['roles', 'carts', 'orders', 'aiLogs', 'ownedStores'],
+      relations: [
+        'roles',
+        'carts',
+        'orders',
+        'aiLogs',
+        'ownedStores',
+        'roles.store',
+      ],
     });
   }
 
@@ -40,7 +47,14 @@ export class UserRepository extends BaseRepository<User> {
     if (!id) return null;
     return this.findOne({
       where: { id },
-      relations: ['orders', 'ownedStores', 'roles', 'reviews', 'likes'],
+      relations: [
+        'orders',
+        'ownedStores',
+        'roles',
+        'reviews',
+        'likes',
+        'roles.store',
+      ],
     });
   }
 

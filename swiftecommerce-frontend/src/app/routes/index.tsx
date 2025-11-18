@@ -348,7 +348,7 @@ export const router = createBrowserRouter([
                 element: (
                   <RoleRoute
                     requireStoreAccess
-                    allowedStoreRoles={[StoreRoles.ADMIN]}
+                    allowedStoreRoles={[StoreRoles.ADMIN, StoreRoles.MODERATOR]}
                   >
                     <TeamManagementPage />
                   </RoleRoute>

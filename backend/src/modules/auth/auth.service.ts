@@ -26,6 +26,9 @@ import {
   JwtPayload,
 } from 'src/modules/auth/types';
 import { ConfigService } from '@nestjs/config';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Store } from 'src/entities/store/store.entity';
 
 @Injectable()
 export class AuthService {
@@ -37,7 +40,9 @@ export class AuthService {
     private confirmationService: ConfirmationService,
     private emailQueueService: EmailQueueService,
     private adminService: AdminService,
-    private storeRoleService: StoreRoleService
+    private storeRoleService: StoreRoleService,
+    @InjectRepository(Store)
+    private storeRepo: Repository<Store>
   ) {}
 
   private async validateUser(
@@ -419,6 +424,12 @@ export class AuthService {
       );
     }
 
+    const store = await this.storeRepo.findOneBy({ id: storeId });
+
+    if (!store) {
+      throw new NotFoundException('Store not found');
+    }
+
     await this.confirmationService.sendRoleConfirmation(
       targetUserId,
       targetUser.email,
@@ -426,6 +437,7 @@ export class AuthService {
       {
         storeId,
         role,
+        storeName: store.name,
         assignedBy: assignedByUserId,
         assignedAt: new Date().toISOString(),
       }

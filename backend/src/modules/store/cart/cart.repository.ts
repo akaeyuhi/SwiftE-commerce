@@ -47,7 +47,7 @@ export class CartRepository extends BaseRepository<ShoppingCart> {
     const { limit = 10, offset = 0 } = pagination || {};
     return this.findAndCount({
       where: { user: { id: userId } },
-      relations: ['store', 'items', 'items.variant'],
+      relations: ['store', 'items', 'items.variant', 'items.variant.product'],
       order: { updatedAt: 'DESC' },
       take: limit,
       skip: offset,

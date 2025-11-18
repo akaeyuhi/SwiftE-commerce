@@ -273,8 +273,8 @@ export class ConfirmationService {
           if (adminStoreId) {
             await this.userService.assignStoreRole(
               confirmation.userId,
-              adminStoreId,
               StoreRoles.ADMIN,
+              adminStoreId,
               adminAssignedBy
             );
           }

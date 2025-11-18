@@ -24,6 +24,7 @@ export class CartItem implements BaseEntity {
   cartId: string;
 
   @ManyToOne(() => ShoppingCart, (cart) => cart.items, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'cart_id' })
   cart: ShoppingCart;
 
   @Column({ name: 'variant_id', type: 'uuid' })

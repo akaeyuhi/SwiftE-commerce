@@ -1,24 +1,26 @@
-import { useCart } from '@/app/store';
+import { useMemo } from 'react';
+import { Button } from '@/shared/components/ui/Button';
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from '@/shared/components/ui/Card';
-import { Button } from '@/shared/components/ui/Button';
+import { CartItem } from '@/features/cart/types/cart.types';
+import { Loader2 } from 'lucide-react';
+import { Separator } from '@radix-ui/react-select';
 
 interface CheckoutSummaryProps {
+  items: CartItem[];
   isProcessing: boolean;
 }
 
-export function CheckoutSummary({ isProcessing }: CheckoutSummaryProps) {
-  const { getStores, getTotalPrice } = useCart();
-
-  const stores = getStores();
-  const subtotal = getTotalPrice();
-  const shipping = subtotal > 50 ? 0 : 9.99; // Example shipping logic
-  const tax = subtotal * 0.08; // Example 8% tax
-  const total = subtotal + shipping + tax;
+export function CheckoutSummary({ items, isProcessing }: CheckoutSummaryProps) {
+  const totalPrice = useMemo(
+    () =>
+      items.reduce((sum, item) => sum + item.variant.price * item.quantity, 0),
+    [items]
+  );
 
   return (
     <Card className="sticky top-20">
@@ -26,58 +28,65 @@ export function CheckoutSummary({ isProcessing }: CheckoutSummaryProps) {
         <CardTitle>Order Summary</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {stores.map((store) => (
-          <div key={store.id} className="pb-4 border-b border-border">
-            <p className="font-semibold text-foreground mb-2">{store.name}</p>
-            <div className="space-y-2">
-              {store.items.map((item) => (
-                <div key={item.id} className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">
-                    {item.productName} x{item.quantity}
-                  </span>
-                  <span className="font-medium">
-                    ${(item.price * item.quantity).toFixed(2)}
-                  </span>
+        <div className="space-y-3">
+          {items.map((item) => (
+            <div
+              key={item.id}
+              className="flex items-center justify-between text-sm"
+            >
+              <div className="flex items-center gap-2">
+                <img
+                  src={item.variant.product.mainPhotoUrl}
+                  alt={item.variant.product.name}
+                  className="h-10 w-10 rounded object-cover"
+                />
+                <div>
+                  <p className="font-medium text-foreground truncate max-w-[150px]">
+                    {item.variant.product.name}
+                  </p>
+                  <p className="text-muted-foreground">Qty: {item.quantity}</p>
                 </div>
-              ))}
+              </div>
+              <p className="font-medium">
+                ${(item.variant.price * item.quantity).toFixed(2)}
+              </p>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
+
+        <Separator />
 
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Subtotal:</span>
-            <span className="font-medium">${subtotal.toFixed(2)}</span>
+            <span className="text-muted-foreground">Subtotal</span>
+            <span className="font-medium">${totalPrice.toFixed(2)}</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Shipping:</span>
-            <span className="font-medium">
-              {shipping === 0 ? 'FREE' : `$${shipping.toFixed(2)}`}
-            </span>
+            <span className="text-muted-foreground">Shipping</span>
+            <span className="font-medium">FREE</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Tax:</span>
-            <span className="font-medium">${tax.toFixed(2)}</span>
+            <span className="text-muted-foreground">Tax</span>
+            <span className="font-medium">Calculated at next step</span>
           </div>
         </div>
 
-        <div className="border-t border-border pt-4">
-          <div className="flex justify-between text-lg font-bold mb-4">
-            <span>Total:</span>
-            <span>${total.toFixed(2)}</span>
-          </div>
-          <Button
-            type="submit"
-            size="lg"
-            className="w-full"
-            loading={isProcessing}
-          >
-            {isProcessing ? 'Processing...' : 'Place Order'}
-          </Button>
+        <Separator />
+
+        <div className="flex justify-between text-lg font-bold">
+          <span>Total</span>
+          <span>${totalPrice.toFixed(2)}</span>
         </div>
-        <div className="text-xs text-muted-foreground text-center">
-          🔒 Secure checkout • Your payment information is encrypted
-        </div>
+
+        <Button
+          size="lg"
+          className="w-full"
+          type="submit"
+          disabled={isProcessing}
+        >
+          {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          Place Order
+        </Button>
       </CardContent>
     </Card>
   );
