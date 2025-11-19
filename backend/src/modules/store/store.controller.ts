@@ -34,10 +34,6 @@ import { StoreRole } from 'src/common/decorators/store-role.decorator';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { AdvancedStoreSearchDto } from 'src/modules/store/dto/advanced-store-search.dto';
 import { AccessPolicies } from 'src/modules/authorization/policy/policy.types';
-import {
-  Pagination,
-  PaginationParams,
-} from 'src/common/decorators/pagination.decorator';
 import { PaginatedResponse } from 'src/common/decorators/paginated-response.decorator';
 import { UploadStoreFiles } from 'src/common/decorators/upload-store-files.decorator';
 import { RecordEvents } from 'src/common/decorators/record-event.decorator';
