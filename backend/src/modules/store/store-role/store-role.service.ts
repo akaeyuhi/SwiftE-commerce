@@ -62,7 +62,7 @@ export class StoreRoleService extends BaseService<
       userId,
       storeId,
       roleName,
-      assignedBy,
+      assignedBy: assignedBy ?? userId,
       assignedAt: new Date(),
       isActive: true,
     };

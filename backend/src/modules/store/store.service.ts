@@ -26,7 +26,7 @@ import { Repository } from 'typeorm';
 import { Product } from 'src/entities/store/product/product.entity';
 import { ProductVariant } from 'src/entities/store/product/variant.entity';
 import { Category } from 'src/entities/store/product/category.entity';
-import {OrderStatus} from "src/common/enums/order-status.enum";
+import { OrderStatus } from 'src/common/enums/order-status.enum';
 
 @Injectable()
 export class StoreService extends PaginatedService<

@@ -160,14 +160,12 @@ export class UserService extends BaseService<
     const exists = await this.storeRoleService.findByStoreUser(userId, storeId);
     if (exists) throw new BadRequestException('Role already assigned');
 
-    const userRole = await this.storeRoleService.assignStoreRole(
+    return await this.storeRoleService.assignStoreRole(
       userId,
       storeId,
       roleName,
       assignedBy
     );
-    await this.userRepo.addRoleToUser(user, userRole);
-    return userRole;
   }
 
   async revokeStoreRole(
@@ -200,8 +198,6 @@ export class UserService extends BaseService<
     });
 
     await this.assignStoreRole(owner.id, StoreRoles.ADMIN, store.id!);
-
-    await this.userRepo.addStoresToUser(owner, store);
 
     return store;
   }

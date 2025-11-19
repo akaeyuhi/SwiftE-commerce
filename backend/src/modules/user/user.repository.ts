@@ -72,7 +72,6 @@ export class UserRepository extends BaseRepository<User> {
   }
 
   async addRoleToUser(user: User, role: StoreRole) {
-    console.log(user, role);
     return this.save({ ...user, roles: [...user.roles, role] });
   }
 

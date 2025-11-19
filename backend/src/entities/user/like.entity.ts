@@ -5,7 +5,8 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   Unique,
-  Column, JoinColumn,
+  Column,
+  JoinColumn,
 } from 'typeorm';
 import { BaseEntity } from 'src/common/interfaces/crud/base-entity.interface';
 import { User } from 'src/entities/user/user.entity';

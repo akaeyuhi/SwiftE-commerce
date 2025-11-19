@@ -88,6 +88,8 @@ export function StorePublicHeader({
                   {store.name}
                 </h1>
                 <p className="text-muted-foreground">{store.description}</p>
+                <p className="text-muted-foreground">{store.country}</p>
+                <p className="text-muted-foreground">{store.city}</p>
               </div>
 
               {/* Action Buttons */}

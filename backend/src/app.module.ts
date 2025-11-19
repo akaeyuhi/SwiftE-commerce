@@ -18,12 +18,19 @@ import { NotificationsModule } from 'src/modules/infrastructure/notifications/no
 import { CleanupModule } from 'src/modules/infrastructure/cleanup/cleanup.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { SeedModule } from 'src/modules/infrastructure/seeders/seed.module';
+import { join } from 'path';
+import { ServeStaticModule } from '@nestjs/serve-static';
 
 @Module({
   imports: [
     ConfigModule.forRoot(),
     EventEmitterModule.forRoot({
       maxListeners: 20,
+    }),
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', '..', 'uploads'),
+      serveRoot: '/uploads',
+      exclude: ['/api/*path'],
     }),
     DatabaseModule,
     SeedModule,

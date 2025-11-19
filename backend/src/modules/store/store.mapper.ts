@@ -47,6 +47,8 @@ export class StoreMapper extends BaseMapper<Store, StoreDto> {
     store.name = dto.name!;
     store.description = dto.description;
     store.ownerId = dto.ownerId;
+    store.city = dto.city!;
+    store.country = dto.country!;
 
     // Don't manually set cached values - triggers handle them
     // But if you're creating from a DTO that has values, preserve them

@@ -105,7 +105,7 @@ export function StoreInfoForm({ store }: StoreInfoFormProps) {
             />
           </FormField>
           <FormField
-            label="Store Name"
+            label="Store city"
             error={errors.city}
             required
             hint="Specify in what city is yout store"

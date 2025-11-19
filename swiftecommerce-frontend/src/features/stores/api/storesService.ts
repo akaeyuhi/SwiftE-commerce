@@ -10,8 +10,8 @@ import {
   UpdateStoreDto,
 } from '../types/store.types';
 import { Order } from '@/features/orders/types/order.types.ts';
-import { StoreHealthData } from '@/features/stores/types/store-health.types.ts';
-import {PaginatedResponse} from "@/lib/api";
+import { PaginatedResponse } from '@/lib/api';
+import { StoreHealthResponse } from '@/features/stores/types/store-health.types.ts';
 
 export interface StoreHealthDto {
   isHealthy: boolean;
@@ -44,7 +44,7 @@ export class StoreService extends BaseService {
   async update(id: string, data: UpdateStoreDto): Promise<StoreDto> {
     const url = this.buildUrl(API_ENDPOINTS.STORES.UPDATE, { id });
     const { formData, headers } = this.mapToFormData(data);
-    return this.client.patch<StoreDto>(url, formData, { headers });
+    return this.client.put<StoreDto>(url, formData, { headers });
   }
 
   async delete(id: string): Promise<void> {
@@ -133,9 +133,9 @@ export class StoreService extends BaseService {
     return this.client.post<{ updated: number }>(url);
   }
 
-  async getHealth(id: string): Promise<StoreHealthData> {
+  async getHealth(id: string): Promise<StoreHealthResponse> {
     const url = this.buildUrl(API_ENDPOINTS.STORES.HEALTH, { id });
-    return this.client.get<StoreHealthData>(url);
+    return this.client.get<StoreHealthResponse>(url);
   }
 
   async uploadStoreFiles(
