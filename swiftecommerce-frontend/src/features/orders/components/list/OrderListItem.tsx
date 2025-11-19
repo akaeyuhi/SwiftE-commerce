@@ -50,12 +50,12 @@ export function OrderListItem({ order, storeId }: OrderListItemProps) {
               <OrderStatusBadge status={order.status} />
             </div>
             <p className="text-sm text-muted-foreground">
-              {new Date(order.createdAt).toLocaleDateString()}
+              {order.createdAt.toLocaleDateString()}
             </p>
           </div>
           <div className="mt-4 md:mt-0">
             <p className="text-2xl font-bold text-foreground">
-              ${parseFloat(String(order.totalAmount))}
+              ${order.totalAmount}
             </p>
           </div>
         </div>
@@ -72,7 +72,7 @@ export function OrderListItem({ order, storeId }: OrderListItemProps) {
                 </p>
               </div>
               <p className="font-semibold text-foreground">
-                ${parseFloat(String(item.lineTotal)).toFixed(2)}
+                ${item.lineTotal.toFixed(2)}
               </p>
             </div>
           ))}

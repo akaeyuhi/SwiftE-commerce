@@ -2,7 +2,10 @@ import { BaseService } from '@/lib/api/BaseService';
 import { API_ENDPOINTS, buildUrl } from '@/config/api.config';
 import { PaginatedResponse } from '@/lib/api/types';
 import { Product, ProductListDto } from '../types/product.types';
-import { ProductFilters } from '@/shared/types/filters.types.ts';
+import {
+  ProductFilters,
+  ProductSearchOptions,
+} from '@/shared/types/filters.types.ts';
 import {
   CreateProductDto,
   UpdateProductDto,
@@ -37,8 +40,17 @@ export class ProductsService extends BaseService {
       API_ENDPOINTS.PRODUCTS.LIST_ALL,
       filters
     );
-    const response = await this.client.get<any>(urlWithParams);
-    return this.handlePaginatedResponse<ProductListDto>(response);
+    return this.client.get<PaginatedResponse<ProductListDto>>(urlWithParams);
+  }
+
+  async searchProductsPublic(
+    filters?: ProductSearchOptions
+  ): Promise<PaginatedResponse<ProductListDto>> {
+    const urlWithParams = this.buildQueryUrl(
+      API_ENDPOINTS.PRODUCTS.SEARCH,
+      filters
+    );
+    return this.client.get<PaginatedResponse<ProductListDto>>(urlWithParams);
   }
 
   /**
@@ -50,7 +62,7 @@ export class ProductsService extends BaseService {
   ): Promise<PaginatedResponse<ProductListDto>> {
     const url = buildUrl(API_ENDPOINTS.PRODUCTS.LIST_FILTERED, { storeId });
     const urlWithParams = this.buildQueryUrl(url, filters as any);
-    return this.client.get<any>(urlWithParams);
+    return this.client.get<PaginatedResponse<ProductListDto>>(urlWithParams);
   }
 
   /**

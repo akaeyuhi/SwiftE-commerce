@@ -54,7 +54,7 @@ export class ProductsService extends PaginatedService<
     pagination: PaginationDto,
     filters: AdvancedSearchOptions
   ): Promise<[ProductListDto[], number]> {
-    const { products, total } = await this.productSearchRepo.advancedSearch({
+    const [products, total] = await this.productSearchRepo.advancedSearch({
       ...filters,
       limit: pagination.take,
       offset: pagination.skip,
@@ -456,6 +456,8 @@ export class ProductsService extends PaginatedService<
       options
     );
 
+    console.log(results);
+
     return results.map((product) => ({
       id: product.id,
       name: product.name,
@@ -479,7 +481,7 @@ export class ProductsService extends PaginatedService<
    */
   async advancedProductSearch(
     filters: AdvancedSearchOptions
-  ): Promise<{ products: ProductListDto[]; total: number }> {
+  ): Promise<[products: ProductListDto[], total: number]> {
     return await this.productSearchRepo.advancedSearch(filters);
   }
 
@@ -574,7 +576,7 @@ export class ProductsService extends PaginatedService<
       filters
     );
 
-    return [items, total]; // ✅ Return as tuple
+    return [items, total];
   }
 
   /**

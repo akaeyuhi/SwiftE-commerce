@@ -36,7 +36,7 @@ function RecentOrderRow({ order }: { order: Order }) {
         <div>
           <p className="font-medium text-foreground">#{order.id}</p>
           <p className="text-sm text-muted-foreground">
-            {new Date(order.createdAt).toLocaleDateString()}
+            {order.createdAt.toLocaleDateString()}
           </p>
         </div>
       </div>

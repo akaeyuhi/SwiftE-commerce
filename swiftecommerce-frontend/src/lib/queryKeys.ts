@@ -61,6 +61,8 @@ export const queryKeys = {
 
   analytics: {
     all: ['analytics'] as const,
+    detail: (storeId: string, type: string, params?: Record<string, any>) =>
+      [...queryKeys.analytics.all, storeId, type, params] as const,
     store: (storeId: string, params?: Record<string, any>) =>
       [...queryKeys.analytics.all, 'store', storeId, params] as const,
     product: (
@@ -191,7 +193,7 @@ export const invalidateFeature = {
 
   analytics: (storeId?: string) => ({
     queryKey: storeId
-      ? [...queryKeys.analytics.all, 'store', storeId]
+      ? ([...queryKeys.analytics.all, storeId] as const)
       : queryKeys.analytics.all,
   }),
 

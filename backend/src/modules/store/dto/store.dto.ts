@@ -24,6 +24,8 @@ export class StoreDto {
   followerCount?: number;
   totalRevenue?: number;
   orderCount?: number;
+  city?: string;
+  country?: string;
 
   createdAt: Date;
   updatedAt: Date;
@@ -51,6 +53,10 @@ export class StoreListDto {
   name: string;
   description: string;
   productCount: number;
+  city?: string;
+  country?: string;
+  logoUrl?: string;
+  bannerUrl?: string;
   followerCount: number;
   totalRevenue: number;
   orderCount: number;

@@ -29,10 +29,12 @@ export interface ProductListDto {
   id: string;
   name: string;
   storeId: string;
+  store?: Store;
   photos: ProductPhoto[];
   reviews: Review[];
   createdAt: Date;
   updatedAt: Date;
+  storeName: string;
   description?: string;
   averageRating?: number;
   reviewCount: number;

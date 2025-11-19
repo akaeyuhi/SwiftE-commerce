@@ -34,6 +34,12 @@ export class Store implements UserOwnedEntity {
   @Column({ type: 'text' })
   description: string;
 
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  city: string;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  country: string;
+
   @Column({ nullable: true })
   logoUrl?: string;
 

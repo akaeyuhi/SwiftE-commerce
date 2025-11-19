@@ -67,7 +67,7 @@ export class CartController extends BaseController<
 
     getOrCreateCart: { requireAuthenticated: true },
     getUserMergedCarts: { requireAuthenticated: true },
-    clearCart: { requireAuthenticated: true, storeRoles: [StoreRoles.ADMIN] },
+    clearCart: { requireAuthenticated: true },
     removeCart: { requireAuthenticated: true, storeRoles: [StoreRoles.ADMIN] },
   };
 

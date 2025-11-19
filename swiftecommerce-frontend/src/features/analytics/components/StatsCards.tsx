@@ -1,6 +1,6 @@
-import { TrendingUp, DollarSign, ShoppingCart, Users } from 'lucide-react';
+import { TrendingUp, DollarSign, ShoppingCart, Eye } from 'lucide-react';
 import { StatItem, StatsGrid } from '@/shared/components/ui/StatsGrid';
-import { useStoreQuickStats } from '../hooks/useAnalytics';
+import { useConversionMetrics } from '../hooks/useAnalytics';
 import { useParams } from 'react-router-dom';
 import { QueryLoader } from '@/shared/components/loaders/QueryLoader';
 import { useMemo } from 'react';
@@ -8,7 +8,7 @@ import { TimePeriod } from '@/features/analytics/types/analytics.types.ts';
 
 export function StatsCards({ timeRange }: { timeRange: TimePeriod }) {
   const { storeId } = useParams<{ storeId: string }>();
-  const { data, isLoading, error, refetch } = useStoreQuickStats(
+  const { data, isLoading, error, refetch } = useConversionMetrics(
     storeId!,
     timeRange
   );
@@ -18,36 +18,36 @@ export function StatsCards({ timeRange }: { timeRange: TimePeriod }) {
     return [
       {
         title: 'Total Revenue',
-        value: `$${(data.totalRevenue || 0).toFixed(2)}`,
-        change: `${data.revenueChange >= 0 ? '+' : ''}${data.revenueChange}%`,
-        trend: data.revenueChange >= 0 ? 'up' : 'down',
+        value: `$${(data.revenue || 0).toFixed(2)}`,
+        change: '+0%',
+        trend: 'neutral',
         icon: DollarSign,
         color: 'text-success',
         bgColor: 'bg-success/10',
       },
       {
-        title: 'Total Orders',
-        value: data.totalOrders,
-        change: `${data.ordersChange >= 0 ? '+' : ''}${data.ordersChange}%`,
-        trend: data.ordersChange >= 0 ? 'up' : 'down',
+        title: 'Purchases',
+        value: data.purchases?.toLocaleString() || '0',
+        change: '+0%',
+        trend: 'neutral',
         icon: ShoppingCart,
         color: 'text-primary',
         bgColor: 'bg-primary/10',
       },
       {
-        title: 'Customers',
-        value: data.totalCustomers,
-        change: `${data.customersChange >= 0 ? '+' : ''}${data.customersChange}%`,
-        trend: data.customersChange >= 0 ? 'up' : 'down',
-        icon: Users,
+        title: 'Views',
+        value: data.views?.toLocaleString() || '0',
+        change: '+0%',
+        trend: 'neutral',
+        icon: Eye,
         color: 'text-info',
         bgColor: 'bg-info/10',
       },
       {
         title: 'Conversion Rate',
-        value: `${data.conversionRate || 0}%`,
-        change: `${data.conversionChange >= 0 ? '+' : ''}${data.conversionChange}%`,
-        trend: data.conversionChange >= 0 ? 'up' : 'down',
+        value: `${(data.conversionRate * 100 || 0).toFixed(2)}%`,
+        change: '+0%',
+        trend: 'neutral',
         icon: TrendingUp,
         color: 'text-warning',
         bgColor: 'bg-warning/10',

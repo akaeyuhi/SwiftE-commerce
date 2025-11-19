@@ -4,7 +4,10 @@ import { Product, ProductListDto } from '../types/product.types';
 import { PaginatedResponse } from '@/lib/api/types';
 import { api } from '@/lib/api';
 import { TopProductsParams } from '@/features/products/api/productsService.ts';
-import { ProductFilters } from '@/shared/types/filters.types.ts';
+import {
+  ProductFilters,
+  ProductSearchOptions,
+} from '@/shared/types/filters.types.ts';
 
 export function useAllProducts(
   filters?: ProductFilters,
@@ -16,6 +19,21 @@ export function useAllProducts(
   return useQuery({
     queryKey: queryKeys.products.listAll(filters),
     queryFn: () => api.products.getAllProducts(filters),
+    staleTime: 2 * 60 * 1000,
+    ...options,
+  });
+}
+
+export function useProductSearch(
+  filters?: ProductSearchOptions,
+  options?: Omit<
+    UseQueryOptions<PaginatedResponse<ProductListDto>>,
+    'queryKey' | 'queryFn'
+  >
+) {
+  return useQuery({
+    queryKey: queryKeys.products.listAll(filters),
+    queryFn: () => api.products.searchProductsPublic(filters),
     staleTime: 2 * 60 * 1000,
     ...options,
   });

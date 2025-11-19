@@ -8,6 +8,7 @@ export const ROUTES = {
   // Stores (Public)
   STORES: '/stores',
   STORE_PUBLIC: '/stores/:storeId',
+  STORE_SEARCH: '/stores/search',
 
   // My Stores (Authenticated)
   MY_STORES: '/my-stores',
@@ -44,6 +45,7 @@ export const ROUTES = {
   STORE_ORDERS: '/store/:storeId/orders',
   STORE_ORDER_DETAIL: '/store/:storeId/orders/:orderId',
   STORE_NEWS: '/store/:storeId/news',
+  NEWS_POST: '/store/:storeId/news/:postId',
   STORE_NEWS_MANAGEMENT: '/store/:storeId/news/management',
   STORE_NEWS_CREATE: '/store/:storeId/news/create',
   STORE_NEWS_EDIT: '/store/:storeId/news/edit',

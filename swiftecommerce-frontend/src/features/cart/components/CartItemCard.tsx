@@ -67,7 +67,7 @@ export function CartItemCard({
           <p className="text-lg font-bold text-foreground">
             ${(item.variant.price * item.quantity).toFixed(2)}
             <span className="text-sm font-normal text-muted-foreground ml-2">
-              ${parseFloat(String(item.variant.price)).toFixed(2)} each
+              ${item.variant.price.toFixed(2)} each
             </span>
           </p>
 

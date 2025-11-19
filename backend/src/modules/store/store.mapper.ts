@@ -16,6 +16,8 @@ export class StoreMapper extends BaseMapper<Store, StoreDto> {
       description: entity.description,
       ownerId: entity.ownerId,
       owner: entity.owner,
+      city: entity.city,
+      country: entity.country,
 
       // Include cached stats
       productCount: entity.productCount,
@@ -63,9 +65,13 @@ export class StoreMapper extends BaseMapper<Store, StoreDto> {
       id: entity.id,
       name: entity.name,
       description: entity.description,
+      city: entity.city,
+      country: entity.country,
       productCount: entity.productCount || 0,
       followerCount: entity.followerCount || 0,
       totalRevenue: entity.totalRevenue || 0,
+      bannerUrl: entity.bannerUrl,
+      logoUrl: entity.logoUrl,
       orderCount: entity.orderCount || 0,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,

@@ -11,6 +11,7 @@ import {
 } from '../types/store.types';
 import { Order } from '@/features/orders/types/order.types.ts';
 import { StoreHealthData } from '@/features/stores/types/store-health.types.ts';
+import {PaginatedResponse} from "@/lib/api";
 
 export interface StoreHealthDto {
   isHealthy: boolean;
@@ -69,9 +70,10 @@ export class StoreService extends BaseService {
 
   async advancedSearch(
     searchParams: Record<string, any>
-  ): Promise<StoreSearchResultDto[]> {
+  ): Promise<PaginatedResponse<StoreDto>> {
     const url = API_ENDPOINTS.STORES.ADVANCED_SEARCH;
-    return this.client.post<StoreSearchResultDto[]>(url, searchParams);
+    const queryUrl = this.buildQueryUrl(url, searchParams);
+    return this.client.post<PaginatedResponse<StoreDto>>(queryUrl);
   }
 
   async autocomplete(query: string): Promise<string[]> {

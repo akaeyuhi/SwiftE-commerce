@@ -20,6 +20,7 @@ export interface TeamMember {
   role: StoreRoles;
   isActive: boolean;
   assignedAt: string;
+  assignedBy?: string;
 }
 
 const mapUserRoleToMember = (role: StoreRole): TeamMember => ({
@@ -28,8 +29,8 @@ const mapUserRoleToMember = (role: StoreRole): TeamMember => ({
   name: role.user.firstName + ' ' + role.user.lastName,
   role: role.roleName,
   isActive: role.isActive,
-  assignedAt:
-    /*role.assignedAt?.toLocaleDateString() ??*/ new Date().toLocaleDateString(),
+  assignedAt: role.assignedAt?.toLocaleDateString(),
+  assignedBy: role.assignedBy,
 });
 
 export function TeamManagementPage() {
@@ -76,8 +77,6 @@ export function TeamManagementPage() {
         return role;
     }
   };
-
-  console.log(store);
 
   return (
     <ErrorBoundary title="Team Management Error">

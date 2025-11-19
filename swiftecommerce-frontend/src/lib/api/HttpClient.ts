@@ -2,6 +2,7 @@ import axios, {
   AxiosInstance,
   AxiosError,
   InternalAxiosRequestConfig,
+  AxiosResponse,
 } from 'axios';
 import { apiConfig } from '@/config/api.config';
 import {
@@ -19,6 +20,13 @@ import {
   getRefreshToken,
   setAccessToken,
 } from '@/lib/auth/tokenManager.ts';
+
+/**
+ * ISO 8601 date regex pattern
+ */
+const ISO_DATETIME_REGEX =
+  /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?([+-]\d{2}:\d{2}|Z)?$/;
+const ISO_DATE_ONLY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
  * Custom API Error class
@@ -62,12 +70,138 @@ export class HttpClientImpl implements HttpClient {
   }
 
   /**
+   * Parse dates in object recursively
+   */
+  private parseDates(obj: any): any {
+    if (obj === null || obj === undefined) {
+      return obj;
+    }
+
+    if (obj instanceof Date) {
+      return obj;
+    }
+
+    if (typeof obj === 'string') {
+      if (ISO_DATETIME_REGEX.test(obj) || ISO_DATE_ONLY_REGEX.test(obj)) {
+        const date = new Date(obj);
+        if (!isNaN(date.getTime())) {
+          return date;
+        }
+      }
+      return obj;
+    }
+
+    if (Array.isArray(obj)) {
+      return obj.map((item) => this.parseDates(item));
+    }
+
+    if (
+      typeof obj === 'object' &&
+      obj.constructor === Object &&
+      !(obj instanceof Date)
+    ) {
+      const parsed: any = {};
+      for (const key in obj) {
+        if (Object.prototype.hasOwnProperty.call(obj, key)) {
+          parsed[key] = this.parseDates(obj[key]);
+        }
+      }
+      return parsed;
+    }
+    return obj;
+  }
+
+  /**
+   * Parse numeric strings to numbers (for specific fields)
+   */
+  private parseNumbers(obj: any): any {
+    if (obj === null || obj === undefined) {
+      return obj;
+    }
+
+    if (obj instanceof Date) {
+      return obj;
+    }
+
+    if (Array.isArray(obj)) {
+      return obj.map((item) => this.parseNumbers(item));
+    }
+
+    if (typeof obj === 'object' && obj.constructor === Object) {
+      const parsed: any = {};
+      for (const key in obj) {
+        if (Object.prototype.hasOwnProperty.call(obj, key)) {
+          const value = obj[key];
+
+          if (
+            typeof value === 'string' &&
+            /^-?\d+\.?\d*$/.test(value) &&
+            (key.toLowerCase().includes('price') ||
+              key.toLowerCase().includes('total') ||
+              key.toLowerCase().includes('amount') ||
+              key.toLowerCase().includes('average') ||
+              key.toLowerCase().includes('count') ||
+              key.toLowerCase().includes('quantity') ||
+              key.toLowerCase().includes('revenue') ||
+              key.toLowerCase().includes('rating'))
+          ) {
+            parsed[key] = parseFloat(value);
+          } else {
+            parsed[key] = this.parseNumbers(value);
+          }
+        }
+      }
+      return parsed;
+    }
+
+    return obj;
+  }
+
+  /**
+   * Serialize dates to ISO strings for request
+   */
+  private serializeDates(obj: any): any {
+    if (obj === null || obj === undefined) {
+      return obj;
+    }
+
+    if (obj instanceof Date) {
+      return obj.toISOString();
+    }
+
+    if (Array.isArray(obj)) {
+      return obj.map((item) => this.serializeDates(item));
+    }
+
+    if (typeof obj === 'object' && obj.constructor === Object) {
+      const serialized: any = {};
+      for (const key in obj) {
+        if (Object.prototype.hasOwnProperty.call(obj, key)) {
+          serialized[key] = this.serializeDates(obj[key]);
+        }
+      }
+      return serialized;
+    }
+
+    return obj;
+  }
+
+  /**
    * Setup request and response interceptors
    */
   private setupInterceptors(): void {
-    // Request interceptor
     this.client.interceptors.request.use(
       (config: InternalAxiosRequestConfig & { skipAuth?: boolean }) => {
+        // Serialize dates in request body
+        if (config.data && typeof config.data === 'object') {
+          config.data = this.serializeDates(config.data);
+        }
+
+        // Serialize dates in query params
+        if (config.params && typeof config.params === 'object') {
+          config.params = this.serializeDates(config.params);
+        }
+
         // Add auth token if not skipped
         if (!config.skipAuth) {
           const token = getAccessToken();
@@ -92,10 +226,13 @@ export class HttpClientImpl implements HttpClient {
       }
     );
 
-    // Response interceptor
     this.client.interceptors.response.use(
-      (response) => {
-        // Log response in development
+      (response: AxiosResponse) => {
+        if (response.data && typeof response.data === 'object') {
+          response.data = this.parseDates(response.data);
+          response.data = this.parseNumbers(response.data);
+        }
+
         if (import.meta.env.DEV) {
           console.log(
             `✅ ${response.config.method?.toUpperCase()} ${response.config.url}`,
@@ -110,6 +247,11 @@ export class HttpClientImpl implements HttpClient {
       },
       async (error: AxiosError<ApiErrorResponse>) => {
         const originalRequest = error.config as RequestConfig;
+
+        // Parse dates in error response too
+        if (error.response?.data) {
+          error.response.data = this.parseDates(error.response.data);
+        }
 
         // Handle 401 - Token refresh
         if (
@@ -140,6 +282,7 @@ export class HttpClientImpl implements HttpClient {
             return Promise.reject(refreshError);
           }
         }
+
         // Handle errors
         if (!originalRequest.skipErrorHandler) {
           this.handleError(error);
@@ -260,8 +403,7 @@ export class HttpClientImpl implements HttpClient {
     if (!params) return path;
 
     const queryString = Object.entries(params)
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      .filter(([_, value]) => value !== undefined && value !== null)
+      .filter(([, value]) => value !== undefined && value !== null)
       .map(
         ([key, value]) =>
           `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`

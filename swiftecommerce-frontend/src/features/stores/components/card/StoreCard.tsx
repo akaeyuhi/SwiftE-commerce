@@ -68,14 +68,37 @@ export function StoreCard({ store }: StoreCardProps) {
       className="overflow-hidden hover:shadow-lg transition-shadow"
     >
       <CardContent className="p-0">
-        {/* Store Header */}
-        <div
-          className="h-24 bg-gradient-to-br from-primary/20
-                  to-primary/5 flex items-center justify-center relative"
-        >
-          <StoreIcon className="h-10 w-10 text-primary/40" />
-          <div className="absolute top-3 right-3 flex gap-2">
-            <Badge variant={getRoleBadgeVariant(storeRole!) as any}>
+        {/* Store Header with Banner or Icon */}
+        <div className="h-32 relative overflow-hidden">
+          {store.bannerUrl ? (
+            // ✅ Show banner image with overlay
+            <>
+              <img
+                src={store.bannerUrl}
+                alt={`${store.name} banner`}
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+              {/* Dark overlay for better badge visibility */}
+              <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-black/40" />
+            </>
+          ) : (
+            // ✅ Fallback to gradient with icon
+            <>
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/5" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <StoreIcon className="h-12 w-12 text-primary/40" />
+              </div>
+            </>
+          )}
+
+          {/* Role Badge - Always visible on top */}
+          <div className="absolute top-3 right-3 z-10">
+            <Badge
+              variant={getRoleBadgeVariant(storeRole!) as any}
+              className={
+                store.bannerUrl ? 'bg-background/90 backdrop-blur-sm' : ''
+              }
+            >
               <span className="flex items-center gap-1">
                 {getRoleIcon(storeRole!)}
                 {getRoleName(storeRole!)}
@@ -108,7 +131,7 @@ export function StoreCard({ store }: StoreCardProps) {
             </div>
             <div className="text-center">
               <p className="text-2xl font-bold text-foreground">
-                ${store.totalRevenue || 0}
+                ${store.totalRevenue?.toFixed(2) || '0.00'}
               </p>
               <p className="text-xs text-muted-foreground">Revenue</p>
             </div>

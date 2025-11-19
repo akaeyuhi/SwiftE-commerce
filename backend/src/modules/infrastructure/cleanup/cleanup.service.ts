@@ -54,43 +54,36 @@ export class CleanupSchedulerService extends BaseSchedulerService<CleanupContext
   }
 
   protected registerTasks(): void {
-    // Run every day at 2 AM UTC
     this.addTask('cleanup-expired-carts', '0 2 * * *', {
       enabled: true,
       timezone: 'UTC',
     });
 
-    // Archive old analytics events weekly on Sunday at 3 AM
     this.addTask('archive-old-analytics', '0 3 * * 0', {
       enabled: true,
       timezone: 'UTC',
     });
 
-    // Archive old notification logs weekly on Sunday at 4 AM
     this.addTask('archive-old-notifications', '0 4 * * 0', {
       enabled: true,
       timezone: 'UTC',
     });
 
-    // Clean up expired confirmations daily at 1 AM
     this.addTask('cleanup-expired-confirmations', '0 1 * * *', {
       enabled: true,
       timezone: 'UTC',
     });
 
-    // Clean up old refresh tokens daily at 1:30 AM
     this.addTask('cleanup-old-refresh-tokens', '30 1 * * *', {
       enabled: true,
       timezone: 'UTC',
     });
 
-    // Clean up banned/invalid tokens every 6 hours
     this.addTask('cleanup-banned-tokens', '0 */6 * * *', {
       enabled: true,
       timezone: 'UTC',
     });
 
-    // Comprehensive cleanup weekly on Sunday at 5 AM
     this.addTask('comprehensive-cleanup', '0 5 * * 0', {
       enabled: this.configService.get('ENABLE_COMPREHENSIVE_CLEANUP', true),
       timezone: 'UTC',
@@ -144,24 +137,32 @@ export class CleanupSchedulerService extends BaseSchedulerService<CleanupContext
     const expiryDate = new Date();
     expiryDate.setDate(expiryDate.getDate() - this.CART_EXPIRY_DAYS);
 
-    const query = this.cartRepo
-      .createQueryBuilder('cart')
-      .where('cart.expiresAt < :expiryDate', { expiryDate })
-      .orWhere('cart.updatedAt < :expiryDate AND cart.expiresAt IS NULL', {
-        expiryDate,
-      });
-
     if (dryRun) {
-      const count = await query.getCount();
+      const count = await this.cartRepo
+        .createQueryBuilder('cart')
+        .where('cart.expiresAt < :expiryDate', { expiryDate })
+        .orWhere('cart.updatedAt < :expiryDate AND cart.expiresAt IS NULL', {
+          expiryDate,
+        })
+        .getCount();
+
       console.log(
         `[DRY RUN] Would delete ${count} expired carts older than ${this.CART_EXPIRY_DAYS} days`
       );
       return { deleted: 0, errors: 0 };
     }
 
-    const result = await query.delete().execute();
-    console.log(`Deleted ${result.affected} expired shopping carts`);
+    const result = await this.cartRepo
+      .createQueryBuilder()
+      .delete()
+      .from(ShoppingCart)
+      .where('expiresAt < :expiryDate', { expiryDate })
+      .orWhere('updatedAt < :expiryDate AND expiresAt IS NULL', {
+        expiryDate,
+      })
+      .execute();
 
+    console.log(`Deleted ${result.affected} expired shopping carts`);
     return { deleted: result.affected || 0, errors: 0 };
   }
 
@@ -172,12 +173,12 @@ export class CleanupSchedulerService extends BaseSchedulerService<CleanupContext
     const archiveDate = new Date();
     archiveDate.setDate(archiveDate.getDate() - this.ANALYTICS_ARCHIVE_DAYS);
 
-    const query = this.analyticsRepo
-      .createQueryBuilder('event')
-      .where('event.createdAt < :archiveDate', { archiveDate });
-
     if (dryRun) {
-      const count = await query.getCount();
+      const count = await this.analyticsRepo
+        .createQueryBuilder('event')
+        .where('event.createdAt < :archiveDate', { archiveDate })
+        .getCount();
+
       console.log(
         `[DRY RUN] Would archive ${count} analytics events older than ${this.ANALYTICS_ARCHIVE_DAYS} days`
       );
@@ -185,18 +186,24 @@ export class CleanupSchedulerService extends BaseSchedulerService<CleanupContext
     }
 
     try {
-      // Archive to separate table (assumes you have analytics_events_archive table)
+      // Archive to separate table
       await this.analyticsRepo.manager.query(
         `
-        INSERT INTO analytics_events_archive 
-        SELECT * FROM analytics_events 
-        WHERE created_at < $1
-      `,
+              INSERT INTO analytics_events_archive
+              SELECT * FROM analytics_events
+              WHERE created_at < $1
+                  ON CONFLICT DO NOTHING
+          `,
         [archiveDate]
       );
 
-      // Delete archived records
-      const result = await query.delete().execute();
+      const result = await this.analyticsRepo
+        .createQueryBuilder()
+        .delete()
+        .from(AnalyticsEvent)
+        .where('createdAt < :archiveDate', { archiveDate })
+        .execute();
+
       console.log(
         `Archived and deleted ${result.affected} old analytics events`
       );
@@ -228,6 +235,7 @@ export class CleanupSchedulerService extends BaseSchedulerService<CleanupContext
     const inventoryResult = await this.archiveNotificationTable(
       this.inventoryNotifRepo,
       'inventory_notification_logs',
+      InventoryNotificationLog,
       archiveDate,
       dryRun
     );
@@ -238,6 +246,7 @@ export class CleanupSchedulerService extends BaseSchedulerService<CleanupContext
     const newsResult = await this.archiveNotificationTable(
       this.newsNotifRepo,
       'news_notification_logs',
+      NewsNotificationLog,
       archiveDate,
       dryRun
     );
@@ -248,6 +257,7 @@ export class CleanupSchedulerService extends BaseSchedulerService<CleanupContext
     const orderResult = await this.archiveNotificationTable(
       this.orderNotifRepo,
       'order_notification_logs',
+      OrderNotificationLog,
       archiveDate,
       dryRun
     );
@@ -267,16 +277,17 @@ export class CleanupSchedulerService extends BaseSchedulerService<CleanupContext
   private async archiveNotificationTable(
     repo: Repository<any>,
     tableName: string,
+    entity: any, // ✅ Added entity parameter
     archiveDate: Date,
     dryRun: boolean
   ): Promise<CleanupResult> {
-    const query = repo
-      .createQueryBuilder('log')
-      .where('log.createdAt < :archiveDate', { archiveDate })
-      .andWhere(`log.status = 'DELIVERED'`);
-
     if (dryRun) {
-      const count = await query.getCount();
+      const count = await repo
+        .createQueryBuilder('log')
+        .where('log.createdAt < :archiveDate', { archiveDate })
+        .andWhere(`log.status = 'DELIVERED'`)
+        .getCount();
+
       console.log(`[DRY RUN] Would archive ${count} records from ${tableName}`);
       return { deleted: 0, errors: 0 };
     }
@@ -285,15 +296,22 @@ export class CleanupSchedulerService extends BaseSchedulerService<CleanupContext
       // Archive to separate table
       await repo.manager.query(
         `
-        INSERT INTO ${tableName}_archive 
-        SELECT * FROM ${tableName} 
-        WHERE created_at < $1 AND status = 'DELIVERED'
-      `,
+              INSERT INTO ${tableName}_archive
+              SELECT * FROM ${tableName}
+              WHERE created_at < $1 AND status = 'DELIVERED'
+                  ON CONFLICT DO NOTHING
+          `,
         [archiveDate]
       );
 
-      // Delete archived records
-      const result = await query.delete().execute();
+      const result = await repo
+        .createQueryBuilder()
+        .delete()
+        .from(entity)
+        .where('createdAt < :archiveDate', { archiveDate })
+        .andWhere(`status = 'DELIVERED'`)
+        .execute();
+
       return { deleted: result.affected || 0, errors: 0 };
     } catch (error) {
       console.error(`Error archiving ${tableName}:`, error);
@@ -309,12 +327,12 @@ export class CleanupSchedulerService extends BaseSchedulerService<CleanupContext
   ): Promise<CleanupResult> {
     const expiryDate = new Date();
     expiryDate.setDate(expiryDate.getDate() - this.CONFIRMATION_EXPIRY_DAYS);
+    const now = new Date();
 
     if (dryRun) {
-      // For dry run, use SELECT query with alias
       const count = await this.confirmationRepo
         .createQueryBuilder('conf')
-        .where('conf.expiresAt < :now', { now: new Date() })
+        .where('conf.expiresAt < :now', { now })
         .orWhere('conf.isUsed = :isUsed AND conf.usedAt < :expiryDate', {
           isUsed: true,
           expiryDate,
@@ -325,10 +343,12 @@ export class CleanupSchedulerService extends BaseSchedulerService<CleanupContext
       return { deleted: 0, errors: 0 };
     }
 
+    // ✅ Fixed: Proper delete with FROM
     const result = await this.confirmationRepo
       .createQueryBuilder()
       .delete()
-      .where('expiresAt < :now', { now: new Date() })
+      .from(Confirmation)
+      .where('expiresAt < :now', { now })
       .orWhere('isUsed = :isUsed AND usedAt < :expiryDate', {
         isUsed: true,
         expiryDate,
@@ -348,22 +368,31 @@ export class CleanupSchedulerService extends BaseSchedulerService<CleanupContext
     const expiryDate = new Date();
     expiryDate.setDate(expiryDate.getDate() - this.REFRESH_TOKEN_EXPIRY_DAYS);
 
-    const query = this.refreshTokenRepo
-      .createQueryBuilder('token')
-      .where('token.lastUsedAt < :expiryDate', { expiryDate })
-      .orWhere('token.createdAt < :expiryDate AND token.lastUsedAt IS NULL', {
-        expiryDate,
-      });
-
     if (dryRun) {
-      const count = await query.getCount();
+      const count = await this.refreshTokenRepo
+        .createQueryBuilder('token')
+        .where('token.lastUsedAt < :expiryDate', { expiryDate })
+        .orWhere('token.createdAt < :expiryDate AND token.lastUsedAt IS NULL', {
+          expiryDate,
+        })
+        .getCount();
+
       console.log(`[DRY RUN] Would delete ${count} old refresh tokens`);
       return { deleted: 0, errors: 0 };
     }
 
-    const result = await query.delete().execute();
-    console.log(`Deleted ${result.affected} old refresh tokens`);
+    // ✅ Fixed: Proper delete with FROM
+    const result = await this.refreshTokenRepo
+      .createQueryBuilder()
+      .delete()
+      .from(RefreshToken)
+      .where('lastUsedAt < :expiryDate', { expiryDate })
+      .orWhere('createdAt < :expiryDate AND lastUsedAt IS NULL', {
+        expiryDate,
+      })
+      .execute();
 
+    console.log(`Deleted ${result.affected} old refresh tokens`);
     return { deleted: result.affected || 0, errors: 0 };
   }
 
@@ -371,19 +400,25 @@ export class CleanupSchedulerService extends BaseSchedulerService<CleanupContext
    * Clean up banned or invalid tokens immediately
    */
   private async cleanupBannedTokens(dryRun: boolean): Promise<CleanupResult> {
-    const query = this.refreshTokenRepo
-      .createQueryBuilder('token')
-      .where('token.isBanned = :isBanned', { isBanned: true });
-
     if (dryRun) {
-      const count = await query.getCount();
+      const count = await this.refreshTokenRepo
+        .createQueryBuilder('token')
+        .where('token.isBanned = :isBanned', { isBanned: true })
+        .getCount();
+
       console.log(`[DRY RUN] Would delete ${count} banned tokens`);
       return { deleted: 0, errors: 0 };
     }
 
-    const result = await query.delete().execute();
-    console.log(`Deleted ${result.affected} banned refresh tokens`);
+    // ✅ Fixed: Proper delete with FROM
+    const result = await this.refreshTokenRepo
+      .createQueryBuilder()
+      .delete()
+      .from(RefreshToken)
+      .where('isBanned = :isBanned', { isBanned: true })
+      .execute();
 
+    console.log(`Deleted ${result.affected} banned refresh tokens`);
     return { deleted: result.affected || 0, errors: 0 };
   }
 
@@ -444,22 +479,13 @@ export class CleanupSchedulerService extends BaseSchedulerService<CleanupContext
     );
   }
 
-  /**
-   * Override to add custom success metrics
-   */
   protected async onTaskSuccess(
     taskName: string,
     duration: number
   ): Promise<void> {
     await super.onTaskSuccess(taskName, duration);
-
-    // Could send to monitoring service
-    // await this.metricsService.recordTaskSuccess(taskName, duration);
   }
 
-  /**
-   * Override to add custom error alerting
-   */
   protected async onTaskError(
     taskName: string,
     error: Error,
@@ -467,9 +493,8 @@ export class CleanupSchedulerService extends BaseSchedulerService<CleanupContext
   ): Promise<void> {
     await super.onTaskError(taskName, error, duration);
 
-    // Send alert for critical failures
     if (taskName === 'comprehensive-cleanup') {
-      // await this.alertService.sendCleanupFailureAlert(taskName, error);
+      // Alert for critical failures
     }
   }
 }

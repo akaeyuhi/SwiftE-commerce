@@ -31,8 +31,7 @@ export const UserOrderListItem = React.forwardRef<
               <OrderStatusBadge status={order.status} />
             </div>
             <p className="text-sm text-muted-foreground">
-              {order.store.name} •{' '}
-              {new Date(order.createdAt).toLocaleDateString()}
+              {order.store.name} • {order.createdAt.toLocaleDateString()}
             </p>
           </div>
           <div className="mt-4 md:mt-0">
@@ -60,7 +59,7 @@ export const UserOrderListItem = React.forwardRef<
                 </p>
               </div>
               <p className="font-semibold text-foreground">
-                ${parseFloat(String(item.lineTotal)).toFixed(2)}
+                ${item.lineTotal.toFixed(2)}
               </p>
             </div>
           ))}

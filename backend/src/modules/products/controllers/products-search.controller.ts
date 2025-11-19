@@ -2,7 +2,6 @@ import {
   Controller,
   Get,
   Param,
-  ParseIntPipe,
   Query,
   UseGuards,
   UseInterceptors,
@@ -18,8 +17,6 @@ import { RecordEventInterceptor } from 'src/modules/infrastructure/interceptors/
 import { RecordEvents } from 'src/common/decorators/record-event.decorator';
 import { AnalyticsEventType } from 'src/entities/infrastructure/analytics/analytics-event.entity';
 import { PaginatedResponse } from 'src/common/decorators/paginated-response.decorator';
-import { Pagination } from 'src/common/decorators/pagination.decorator';
-import { PaginationDto } from 'src/common/dtos/pagination.dto';
 
 @Controller('/products')
 @UseGuards(JwtAuthGuard, StoreRolesGuard)
@@ -36,27 +33,42 @@ import { PaginationDto } from 'src/common/dtos/pagination.dto';
 export class ProductsSearchController {
   constructor(private readonly productsService: ProductsService) {}
   /**
-   * GET /stores/:storeId/products/search
+   * GET /stores/products/search
    * Search products in a store with basic query
    */
   @Get('/search')
   @PaginatedResponse(ProductListDto)
-  async searchProducts(
-    @Pagination() pagination: PaginationDto,
-    @Query('search') query?: string,
-    @Query('limit', new ParseIntPipe()) limit?: string,
-    @Query('sortBy')
-    sortBy?: 'relevance' | 'views' | 'sales' | 'rating' | 'price' | 'recent'
-  ): Promise<ProductListDto[]> {
-    const maxLimit = limit ? Math.min(parseInt(limit), 50) : 20;
-    return await this.productsService.searchProducts(
-      query ?? '',
-      maxLimit,
-      undefined,
-      {
-        sortBy,
-      }
-    );
+  async advancedSearch(
+    @Query('storeId') storeId: string,
+    @Query('query') query?: string,
+    @Query('categoryIds') categoryIds?: string, // Comma-separated IDs
+    @Query('minPrice') minPrice?: string,
+    @Query('maxPrice') maxPrice?: string,
+    @Query('minRating') minRating?: string,
+    @Query('maxRating') maxRating?: string,
+    @Query('inStock') inStock?: string,
+    @Query('sortBy') sortBy?: 'recent' | 'price' | 'rating' | 'views' | 'sales',
+    @Query('sortOrder') sortOrder?: 'ASC' | 'DESC',
+    @Query('limit') limit?: string,
+    @Query('offset') offset?: string
+  ): Promise<[ProductListDto[], number]> {
+    const parsedLimit = limit ? Math.min(parseInt(limit), 50) : 20;
+    const parsedOffset = offset ? parseInt(offset) : 0;
+
+    return await this.productsService.advancedProductSearch({
+      storeId,
+      query: query?.trim(),
+      categoryIds: categoryIds ? categoryIds.split(',') : undefined,
+      minPrice: minPrice ? parseFloat(minPrice) : undefined,
+      maxPrice: maxPrice ? parseFloat(maxPrice) : undefined,
+      minRating: minRating ? parseFloat(minRating) : undefined,
+      maxRating: maxRating ? parseFloat(maxRating) : undefined,
+      inStock: inStock === 'true',
+      sortBy: sortBy || 'recent',
+      sortOrder: sortOrder || 'DESC',
+      limit: parsedLimit,
+      offset: parsedOffset,
+    });
   }
 
   @Get('/:id')

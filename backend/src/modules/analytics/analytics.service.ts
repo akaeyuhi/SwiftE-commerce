@@ -126,6 +126,10 @@ export class AnalyticsService extends BaseAnalyticsService<RecordEventDto> {
     return this.conversionAnalytics.getProductStats(productId, from, to);
   }
 
+  async getCategorySales(storeId: string, from?: string, to?: string) {
+    return this.conversionAnalytics.getCategorySales(storeId, from, to);
+  }
+
   // ===============================
   // Rating Analytics (Delegation)
   // ===============================

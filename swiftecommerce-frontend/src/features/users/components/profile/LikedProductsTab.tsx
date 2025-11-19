@@ -12,7 +12,7 @@ export function LikedProductsTab() {
   const { data: likes, isLoading, error } = useLikes(user!.id);
 
   const likedProducts = useMemo(
-    () => likes?.filter((like) => !!like.product) || [],
+    () => likes?.filter((like) => !!like.productId) || [],
     [likes]
   );
 

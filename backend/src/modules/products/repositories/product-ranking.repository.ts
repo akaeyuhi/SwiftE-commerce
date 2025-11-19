@@ -55,7 +55,6 @@ export class ProductRankingRepository extends BaseRepository<Product> {
       .addSelect('MAX(variants.price)', 'maxPrice')
       .where('p.storeId = :storeId', { storeId })
       .andWhere('p.deletedAt IS NULL')
-      .andWhere('p.totalSales > 0')
       .groupBy('p.id')
       .addGroupBy('photos.url')
       .orderBy('p.totalSales', 'DESC')

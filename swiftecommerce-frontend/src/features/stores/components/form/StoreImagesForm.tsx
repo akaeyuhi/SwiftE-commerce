@@ -75,15 +75,15 @@ export function StoreImagesForm({ store }: StoreImagesFormProps) {
           className="w-96"
           initialImageUrl={store?.bannerUrl}
         />
+        <Button
+          onClick={handleUpload}
+          disabled={imageUpload.isPending}
+          loading={imageUpload.isPending}
+        >
+          <Save className="h-4 w-4 mr-2" />
+          Upload new images
+        </Button>
       </CardContent>
-      <Button
-        onClick={handleUpload}
-        disabled={imageUpload.isPending}
-        loading={imageUpload.isPending}
-      >
-        <Save className="h-4 w-4 mr-2" />
-        Upload new images
-      </Button>
     </Card>
   );
 }

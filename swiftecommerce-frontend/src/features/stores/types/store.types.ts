@@ -46,7 +46,7 @@ export interface StoreDto {
   name: string;
   description: string;
   ownerId: string;
-  owner?: UserDto;
+  owner?: UserDto | User;
   productCount: number;
   followerCount: number;
   totalRevenue: number;
@@ -67,6 +67,8 @@ export interface CreateStoreDto {
   description: string;
   ownerId: string;
   logo?: File;
+  country?: string;
+  city?: string;
   banner?: File;
 }
 

@@ -5,7 +5,7 @@ import {
   StoreSearchResultDto,
   StoreStatsDto,
 } from '@/features/stores/types/store.types.ts';
-import { api } from '@/lib/api';
+import {api, PaginatedResponse} from '@/lib/api';
 import { StoreFilters } from '@/shared/types/filters.types.ts';
 import { StoreHealthData } from '@/features/stores/types/store-health.types.ts';
 
@@ -73,7 +73,7 @@ export function useStoreQuickStats(
   });
 }
 
-export function useStoreSearch(
+export function useStoreBasicSearch(
   query: string,
   filters?: StoreFilters,
   options?: Omit<
@@ -85,6 +85,21 @@ export function useStoreSearch(
     queryKey: [...queryKeys.stores.all, 'search', query, filters],
     queryFn: () => api.stores.search(query, filters),
     enabled: query.length > 0,
+    staleTime: 60 * 1000,
+    ...options,
+  });
+}
+
+export function useStoreSearch(
+  searchParams: Record<string, any>,
+  options?: Omit<
+    UseQueryOptions<PaginatedResponse<StoreDto>>,
+    'queryKey' | 'queryFn'
+  >
+) {
+  return useQuery({
+    queryKey: [...queryKeys.stores.all, 'advanced-search', searchParams],
+    queryFn: () => api.stores.advancedSearch(searchParams),
     staleTime: 60 * 1000,
     ...options,
   });

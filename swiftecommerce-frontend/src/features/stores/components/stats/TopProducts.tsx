@@ -6,19 +6,23 @@ import {
   CardTitle,
 } from '@/shared/components/ui/Card';
 import { Link } from '@/shared/components/ui/Link';
-import { ROUTES } from '@/app/routes/routes';
+import { buildRoute } from '@/app/routes/routes';
 import { SkeletonLoader } from '@/shared/components/loaders/SkeletonLoader';
-import { formatCurrency } from '@/shared/utils/statsCalculators';
-import { Product } from '@/features/products/types/product.types.ts';
 import { ErrorState } from '@/shared/components/errors/ErrorState.tsx';
+import { useTopProducts } from '@/features/stores/hooks/useStores.ts';
 
 interface TopProductsProps {
-  products: Product[];
-  error: Error | null;
-  isLoading: boolean;
+  storeId: string;
 }
 
-export function TopProducts({ products, isLoading, error }: TopProductsProps) {
+export function TopProducts({ storeId }: TopProductsProps) {
+  const {
+    data: topProductsData,
+    isLoading,
+    error,
+  } = useTopProducts(storeId, 8);
+
+  const products = topProductsData!;
   return (
     <Card>
       <CardHeader>
@@ -28,7 +32,7 @@ export function TopProducts({ products, isLoading, error }: TopProductsProps) {
             <CardDescription>Best performing products</CardDescription>
           </div>
           <Link
-            to={ROUTES.STORE_PRODUCTS}
+            to={buildRoute.storeProducts(storeId)}
             className="text-sm text-primary hover:underline"
           >
             View all
@@ -68,12 +72,9 @@ export function TopProducts({ products, isLoading, error }: TopProductsProps) {
                   <p className="font-medium text-foreground truncate">
                     {product.name}
                   </p>
-                  <p className="text-sm text-muted-foreground">
-                    {product.totalSales} sales
-                  </p>
                 </div>
                 <p className="font-semibold text-foreground">
-                  {formatCurrency(product.totalRevenue, 'USD')}
+                  {product.totalSales} sales
                 </p>
               </div>
             ))}

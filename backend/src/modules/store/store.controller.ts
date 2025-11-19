@@ -40,6 +40,8 @@ import {
 } from 'src/common/decorators/pagination.decorator';
 import { PaginatedResponse } from 'src/common/decorators/paginated-response.decorator';
 import { UploadStoreFiles } from 'src/common/decorators/upload-store-files.decorator';
+import { RecordEvents } from 'src/common/decorators/record-event.decorator';
+import { AnalyticsEventType } from 'src/entities/infrastructure/analytics/analytics-event.entity';
 
 /**
  * StoreController
@@ -53,6 +55,15 @@ import { UploadStoreFiles } from 'src/common/decorators/upload-store-files.decor
  */
 @Controller('stores')
 @UseGuards(JwtAuthGuard, AdminGuard, StoreRolesGuard)
+@RecordEvents({
+  findOne: {
+    eventType: AnalyticsEventType.VIEW,
+    storeId: 'params.storeId',
+    userId: 'user.id',
+    invokedOn: 'store',
+    when: 'after',
+  },
+})
 export class StoreController extends BaseController<
   Store,
   CreateStoreDto,
@@ -161,12 +172,8 @@ export class StoreController extends BaseController<
   @Post('advanced-search')
   @PaginatedResponse(StoreSearchResultDto)
   @HttpCode(HttpStatus.OK)
-  @StoreRole(StoreRoles.ADMIN, StoreRoles.MODERATOR)
-  async advancedSearch(
-    @Body() searchDto: AdvancedStoreSearchDto,
-    @Pagination() pagination: PaginationParams
-  ) {
-    return this.storeService.paginate(pagination, searchDto);
+  async advancedSearch(@Query() searchDto: AdvancedStoreSearchDto) {
+    return this.storeService.paginate(searchDto);
   }
 
   /**

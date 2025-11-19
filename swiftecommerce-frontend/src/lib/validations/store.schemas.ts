@@ -11,6 +11,14 @@ export const createStoreSchema = z.object({
     .min(1, 'Description is required')
     .min(10, 'Description must be at least 10 characters')
     .max(500, 'Description must be less than 500 characters'),
+  city: z
+    .string()
+    .min(3, 'City must be at least 3 characters')
+    .max(50, 'City must be less than 50 characters'),
+  country: z
+    .string()
+    .min(3, 'Country must be at least 3 characters')
+    .max(50, 'Country must be less than 50 characters'),
 });
 
 export const updateStoreSchema = z.object({
@@ -23,6 +31,16 @@ export const updateStoreSchema = z.object({
     .string()
     .min(10, 'Description must be at least 10 characters')
     .max(500, 'Description must be less than 500 characters')
+    .optional(),
+  city: z
+    .string()
+    .min(3, 'City must be at least 3 characters')
+    .max(50, 'City must be less than 50 characters')
+    .optional(),
+  country: z
+    .string()
+    .min(3, 'Country must be at least 3 characters')
+    .max(50, 'Country must be less than 50 characters')
     .optional(),
 });
 

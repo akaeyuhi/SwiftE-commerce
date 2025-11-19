@@ -3,8 +3,9 @@ import { Package, ShoppingCart, Star } from 'lucide-react';
 import { Button } from '@/shared/components/ui/Button';
 import { Badge } from '@/shared/components/ui/Badge';
 import { useNavigate } from '@/shared/hooks/useNavigate';
-import { useCart } from '@/app/store';
+import { useAuth } from '@/app/store';
 import { ProductListDto } from '@/features/products/types/product.types.ts';
+import { useCartMutations } from '@/features/cart/hooks/useCart.ts';
 
 interface ProductPublicCardProps {
   product: ProductListDto;
@@ -14,7 +15,8 @@ export const ProductPublicCard: React.FC<ProductPublicCardProps> = ({
   product,
 }) => {
   const navigate = useNavigate();
-  const { addItem } = useCart();
+  const { user } = useAuth();
+  const { addItem } = useCartMutations(user!.id);
 
   if (!product) return;
 
@@ -94,7 +96,13 @@ export const ProductPublicCard: React.FC<ProductPublicCardProps> = ({
               size="sm"
               onClick={(e) => {
                 e.stopPropagation();
-                addItem(product as any);
+                addItem.mutate({
+                  storeId: product?.storeId,
+                  item: {
+                    variantId: product.variants[0]!.id,
+                    quantity: 1,
+                  },
+                });
               }}
               disabled={!inStock}
             >

@@ -226,6 +226,8 @@ export class StoreRepository extends BaseRepository<Store> {
       'store.description',
       'store.productCount',
       'store.followerCount',
+      'store.logoUrl',
+      'store.bannerUrl',
       'store.totalRevenue',
       'store.orderCount',
       'store.createdAt',

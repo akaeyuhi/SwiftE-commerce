@@ -1,4 +1,10 @@
-import { IsString, IsOptional, MinLength, IsUUID } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  MinLength,
+  IsUUID,
+  MaxLength,
+} from 'class-validator';
 
 export class CreateStoreDto {
   @IsString()
@@ -9,6 +15,18 @@ export class CreateStoreDto {
   @IsString()
   @MinLength(3)
   description?: string;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(3)
+  @MaxLength(50)
+  city?: string;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(3)
+  @MaxLength(50)
+  country?: string;
 
   @IsUUID()
   @IsOptional()

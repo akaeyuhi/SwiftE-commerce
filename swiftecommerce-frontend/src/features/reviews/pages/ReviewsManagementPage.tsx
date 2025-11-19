@@ -177,7 +177,7 @@ export function ReviewManagementPage() {
                     lastName: review.user.lastName,
                   }}
                   rating={review.rating}
-                  date={review.createdAt.toString()}
+                  createdAt={review.createdAt}
                   comment={review.comment || ''}
                   helpfulCount={0}
                   verified={true}

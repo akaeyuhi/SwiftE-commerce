@@ -18,6 +18,8 @@ import { RecordEventInterceptor } from 'src/modules/infrastructure/interceptors/
 import { AnalyticsEventType } from 'src/entities/infrastructure/analytics/analytics-event.entity';
 import { RecordEvent } from 'src/common/decorators/record-event.decorator';
 import { AdminGuard } from 'src/modules/authorization/guards/admin.guard';
+import { EntityOwner } from 'src/common/decorators/entity-owner.decorator';
+import { EntityOwnerGuard } from 'src/modules/authorization/guards/entity-owner.guard';
 
 /**
  * LikesController
@@ -29,8 +31,8 @@ import { AdminGuard } from 'src/modules/authorization/guards/admin.guard';
  * Requires authenticated user; ensures :userId === request.user.id
  */
 @Controller('users/:userId/likes')
-@UseGuards(JwtAuthGuard, AdminGuard)
-@UseInterceptors(RecordEventInterceptor) // interceptor reads @RecordEvent metadata
+@UseGuards(JwtAuthGuard, AdminGuard, EntityOwnerGuard)
+@UseInterceptors(RecordEventInterceptor)
 export class LikesController {
   constructor(private readonly likesService: LikesService) {}
 
@@ -46,16 +48,17 @@ export class LikesController {
     eventType: AnalyticsEventType.LIKE,
     invokedOn: 'product',
     when: 'after',
-    userId: 'userId',
+    userId: 'params.userId',
     productId: 'params.productId',
   })
   async addProductLike(
     @Param('userId', new ParseUUIDPipe()) userId: string,
+    @Param('productId', new ParseUUIDPipe()) productId: string,
     @Body() body: CreateLikeDto,
     @Req() req: any
   ) {
     this.assertOwnership(userId, req.user);
-    const dto = { ...body, userId };
+    const dto = { ...body, userId, productId };
     return this.likesService.create(dto);
   }
 
@@ -64,16 +67,17 @@ export class LikesController {
     eventType: AnalyticsEventType.LIKE,
     invokedOn: 'store',
     when: 'after',
-    userId: 'userId',
+    userId: 'params.userId',
     productId: 'params.storeId',
   })
   async addStoreLike(
     @Param('userId', new ParseUUIDPipe()) userId: string,
+    @Param('storeId', new ParseUUIDPipe()) storeId: string,
     @Body() body: CreateLikeDto,
     @Req() req: any
   ) {
     this.assertOwnership(userId, req.user);
-    const dto = { ...body, userId };
+    const dto = { ...body, userId, storeId };
     return this.likesService.create(dto);
   }
 
@@ -82,24 +86,26 @@ export class LikesController {
     eventType: AnalyticsEventType.UNLIKE,
     storeId: 'params.storeId',
     productId: 'params.productId',
-    userId: 'userId',
+    userId: 'params.userId',
+  })
+  @EntityOwner({
+    serviceToken: LikesService,
+    idParam: 'id',
+    allowMissingEntity: false,
   })
   async removeLike(
     @Param('userId', new ParseUUIDPipe()) userId: string,
-    @Param('id', new ParseUUIDPipe()) id: string,
-    @Req() req: any
+    @Param('id', new ParseUUIDPipe()) id: string
   ) {
-    this.assertOwnership(userId, req.user);
     await this.likesService.removeById(id);
     return { success: true };
   }
 
   @Get()
-  async listLikes(
-    @Param('userId', new ParseUUIDPipe()) userId: string,
-    @Req() req: any
-  ) {
-    this.assertOwnership(userId, req.user);
+  @EntityOwner({
+    allowMissingEntity: true,
+  })
+  async listLikes(@Param('userId', new ParseUUIDPipe()) userId: string) {
     return this.likesService.listForUser(userId);
   }
 }

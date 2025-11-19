@@ -8,6 +8,7 @@ import {
   MaxLength,
   IsArray,
 } from 'class-validator';
+import {ParseArray} from "src/common/decorators/parse-json.decorator";
 
 /**
  * DTO for creating a NewsPost.
@@ -36,6 +37,7 @@ export class CreateNewsDto {
   content: string;
 
   @IsOptional()
+  @ParseArray()
   @IsArray()
   @IsString({ each: true })
   tags?: string[];

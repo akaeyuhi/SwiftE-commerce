@@ -55,7 +55,7 @@ export function OrderItems({ items }: OrderItemsProps) {
               )}
             </div>
             <p className="font-semibold text-foreground">
-              ${parseFloat(String(item.lineTotal)).toFixed(2)}
+              ${item.lineTotal.toFixed(2)}
             </p>
           </div>
         ))}

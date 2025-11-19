@@ -36,6 +36,8 @@ export function StoreInfoForm({ store }: StoreInfoFormProps) {
     defaultValues: {
       name: store?.name,
       description: store?.description,
+      city: store?.city,
+      country: store?.country,
     },
   });
 
@@ -89,10 +91,35 @@ export function StoreInfoForm({ store }: StoreInfoFormProps) {
               error={!!errors.description}
             />
           </FormField>
+          <FormField
+            label="Store country"
+            error={errors.country}
+            required
+            hint="Specify where your store is located"
+          >
+            <Input
+              {...register('country')}
+              placeholder="USA"
+              error={!!errors.name}
+              autoFocus
+            />
+          </FormField>
+          <FormField
+            label="Store Name"
+            error={errors.city}
+            required
+            hint="Specify in what city is yout store"
+          >
+            <Input
+              {...register('city')}
+              placeholder="New-York"
+              error={!!errors.name}
+              autoFocus
+            />
+          </FormField>
           <div className="flex items-center justify-between pt-4">
             <p className="text-sm text-muted-foreground">
-              Store created on{' '}
-              {new Date(store?.createdAt ?? 0).toLocaleDateString()}
+              Store created on {store?.createdAt.toLocaleDateString()}
             </p>
             <Button
               type="submit"

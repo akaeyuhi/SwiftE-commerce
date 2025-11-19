@@ -1,90 +1,98 @@
 import { BaseService } from '@/lib/api/BaseService';
 import { API_ENDPOINTS, buildUrl } from '@/config/api.config';
 import {
-  StoreAnalytics,
-  ConversionMetrics,
-  FunnelAnalysis,
-  CohortAnalysis,
-  UserJourney,
-  PeriodComparison,
-  ProductPerformance,
   AnalyticsEvent,
   AnalyticsParams,
-  TopProductsParams,
   CompareStoresParams,
+  FunnelAnalysis,
+  PeriodComparison,
+  ProductConversionMetrics,
+  ProductQuickStats,
+  StoreConversionMetrics,
+  StoreQuickStats,
+  TimeSeriesData,
+  TopProductResult,
 } from '../types/analytics.types';
 
 export class AnalyticsService extends BaseService {
+  // ================== STORE-LEVEL ANALYTICS ==================
+
   /**
-   * Get store analytics
+   * Fetches quick, cached stats for a store.
+   * @param storeId - The ID of the store.
+   * @returns `StoreQuickStats` from denormalized columns on the Store entity.
    */
-  async getStoreAnalytics(
-    storeId: string,
-    params?: AnalyticsParams
-  ): Promise<StoreAnalytics> {
-    const url = buildUrl(API_ENDPOINTS.ANALYTICS.STORE, { storeId });
-    const urlWithParams = this.buildQueryUrl(url, params);
-    return this.client.get<StoreAnalytics>(urlWithParams);
+  async getStoreQuickStats(storeId: string): Promise<StoreQuickStats> {
+    const url = buildUrl(API_ENDPOINTS.ANALYTICS.STORE_QUICK_STATS, {
+      storeId,
+    });
+    return this.client.get(url);
   }
 
   /**
-   * Get store conversion metrics
+   * Computes detailed conversion metrics for a store over a period.
+   * @param storeId - The ID of the store.
+   * @param params - Optional date range (`from`, `to`).
+   * @returns `StoreConversionMetrics` calculated from daily stats or raw events.
    */
-  async getStoreConversion(
+  async getStoreConversionMetrics(
     storeId: string,
     params?: AnalyticsParams
-  ): Promise<ConversionMetrics> {
+  ): Promise<StoreConversionMetrics> {
     const url = buildUrl(API_ENDPOINTS.ANALYTICS.STORE_CONVERSION, { storeId });
-    const urlWithParams = this.buildQueryUrl(url, params);
-    return this.client.get<ConversionMetrics>(urlWithParams);
-  }
-
-  /**
-   * Get store ratings analytics
-   */
-  async getStoreRatings(
-    storeId: string,
-    params?: AnalyticsParams
-  ): Promise<any> {
-    const url = buildUrl(API_ENDPOINTS.ANALYTICS.STORE_RATINGS, { storeId });
     const urlWithParams = this.buildQueryUrl(url, params);
     return this.client.get(urlWithParams);
   }
 
   /**
-   * Get store quick stats
+   * Retrieves revenue and order trends over a period.
+   * @param storeId - The ID of the store.
+   * @param params - Optional date range.
+   * @returns An array of `TimeSeriesData`.
    */
-  async getStoreQuickStats(
+  async getRevenueTrends(
     storeId: string,
     params?: AnalyticsParams
-  ): Promise<any> {
-    const url = buildUrl(API_ENDPOINTS.ANALYTICS.STORE_QUICK_STATS, {
+  ): Promise<TimeSeriesData[]> {
+    const url = buildUrl(API_ENDPOINTS.ANALYTICS.REVENUE_TRENDS, { storeId });
+    const urlWithParams = this.buildQueryUrl(url, params);
+    return this.client.get(urlWithParams);
+  }
+
+  /**
+   * Retrieves sales data aggregated by category.
+   * @param storeId - The ID of the store.
+   * @param params - Optional date range.
+   */
+  async getCategorySales(
+    storeId: string,
+    params?: AnalyticsParams
+  ): Promise<{ name: string; revenue: number }[]> {
+    const url = buildUrl(API_ENDPOINTS.ANALYTICS.CATEGORY_SALES, { storeId });
+    const urlWithParams = this.buildQueryUrl(url, params);
+    return this.client.get(urlWithParams);
+  }
+
+  /**
+   * Retrieves top-performing products by conversion rate.
+   * @param storeId - The ID of the store.
+   * @param params - Optional date range and limit.
+   */
+  async getTopPerformingProducts(
+    storeId: string,
+    params?: AnalyticsParams
+  ): Promise<TopProductResult[]> {
+    const url = buildUrl(API_ENDPOINTS.ANALYTICS.TOP_PERFORMING_PRODUCTS, {
       storeId,
     });
     const urlWithParams = this.buildQueryUrl(url, params);
     return this.client.get(urlWithParams);
   }
 
-  async getCategorySales(
-    storeId: string,
-    params?: AnalyticsParams
-  ): Promise<any[]> {
-    const url = buildUrl(API_ENDPOINTS.ANALYTICS.CATEGORY_SALES, { storeId });
-    const urlWithParams = this.buildQueryUrl(url, params);
-    return this.client.get<any[]>(urlWithParams);
-  }
-
-  async getStoreInsights(
-    storeId: string,
-    params?: AnalyticsParams
-  ): Promise<any> {
-    const url = buildUrl(API_ENDPOINTS.ANALYTICS.STORE_INSIGHTS, { storeId });
-    const urlWithParams = this.buildQueryUrl(url, params);
-    return this.client.get(urlWithParams);
-  }
-
   /**
-   * Get funnel analysis
+   * Retrieves a sales funnel analysis.
+   * @param storeId - The ID of the store.
+   * @param params - Optional date range and productId.
    */
   async getFunnelAnalysis(
     storeId: string,
@@ -92,249 +100,99 @@ export class AnalyticsService extends BaseService {
   ): Promise<FunnelAnalysis> {
     const url = buildUrl(API_ENDPOINTS.ANALYTICS.FUNNEL, { storeId });
     const urlWithParams = this.buildQueryUrl(url, params);
-    return this.client.get<FunnelAnalysis>(urlWithParams);
+    return this.client.get(urlWithParams);
   }
 
   /**
-   * Get revenue trends
-   */
-  async getRevenueTrends(
-    storeId: string,
-    params?: AnalyticsParams
-  ): Promise<any[]> {
-    const url = buildUrl(API_ENDPOINTS.ANALYTICS.REVENUE_TRENDS, { storeId });
-    const urlWithParams = this.buildQueryUrl(url, params);
-    return this.client.get<any[]>(urlWithParams);
-  }
-
-  /**
-   * Get cohort analysis
-   */
-  async getCohortAnalysis(
-    storeId: string,
-    params?: AnalyticsParams
-  ): Promise<CohortAnalysis> {
-    const url = buildUrl(API_ENDPOINTS.ANALYTICS.COHORT_ANALYSIS, { storeId });
-    const urlWithParams = this.buildQueryUrl(url, params);
-    return this.client.get<CohortAnalysis>(urlWithParams);
-  }
-
-  /**
-   * Get user journey analysis
-   */
-  async getUserJourney(
-    storeId: string,
-    params?: AnalyticsParams
-  ): Promise<UserJourney> {
-    const url = buildUrl(API_ENDPOINTS.ANALYTICS.USER_JOURNEY, { storeId });
-    const urlWithParams = this.buildQueryUrl(url, params);
-    return this.client.get<UserJourney>(urlWithParams);
-  }
-
-  /**
-   * Get period comparison
+   * Compares performance between two periods.
+   * @param storeId - The ID of the store.
+   * @param params - Date range for the current period. The previous period is calculated automatically.
    */
   async getPeriodComparison(
     storeId: string,
-    params?: AnalyticsParams
+    params: AnalyticsParams
   ): Promise<PeriodComparison> {
     const url = buildUrl(API_ENDPOINTS.ANALYTICS.PERIOD_COMPARISON, {
       storeId,
     });
     const urlWithParams = this.buildQueryUrl(url, params);
-    return this.client.get<PeriodComparison>(urlWithParams);
-  }
-
-  /**
-   * Get top performing products
-   */
-  async getTopPerformingProducts(
-    storeId: string,
-    params?: TopProductsParams
-  ): Promise<ProductPerformance[]> {
-    const url = buildUrl(API_ENDPOINTS.ANALYTICS.TOP_PERFORMING_PRODUCTS, {
-      storeId,
-    });
-    const urlWithParams = this.buildQueryUrl(url, params);
-    return this.client.get<ProductPerformance[]>(urlWithParams);
-  }
-
-  /**
-   * Get underperforming products
-   */
-  async getUnderperformingProducts(
-    storeId: string,
-    params?: TopProductsParams
-  ): Promise<ProductPerformance[]> {
-    const url = buildUrl(API_ENDPOINTS.ANALYTICS.UNDERPERFORMING, { storeId });
-    const urlWithParams = this.buildQueryUrl(url, params);
-    return this.client.get<ProductPerformance[]>(urlWithParams);
-  }
-
-  // ==================== PRODUCT ANALYTICS ====================
-
-  /**
-   * Get product analytics
-   */
-  async getProductAnalytics(
-    storeId: string,
-    productId: string,
-    params?: AnalyticsParams
-  ): Promise<any> {
-    const url = buildUrl(API_ENDPOINTS.ANALYTICS.PRODUCT, {
-      storeId,
-      productId,
-    });
-    const urlWithParams = this.buildQueryUrl(url, params);
     return this.client.get(urlWithParams);
   }
 
-  /**
-   * Get product conversion
-   */
-  async getProductConversion(
-    storeId: string,
-    productId: string,
-    params?: AnalyticsParams
-  ): Promise<ConversionMetrics> {
-    const url = buildUrl(API_ENDPOINTS.ANALYTICS.PRODUCT_CONVERSION, {
-      storeId,
-      productId,
-    });
-    const urlWithParams = this.buildQueryUrl(url, params);
-    return this.client.get<ConversionMetrics>(urlWithParams);
-  }
+  // ================== PRODUCT-LEVEL ANALYTICS ==================
 
   /**
-   * Get product rating analytics
+   * Fetches quick, cached stats for a product.
+   * @param productId - The ID of the product.
+   * @returns `ProductQuickStats` from denormalized columns on the Product entity.
    */
-  async getProductRating(
-    storeId: string,
-    productId: string,
-    params?: AnalyticsParams
-  ): Promise<any> {
-    const url = buildUrl(API_ENDPOINTS.ANALYTICS.PRODUCT_RATING, {
-      storeId,
-      productId,
-    });
-    const urlWithParams = this.buildQueryUrl(url, params);
-    return this.client.get(urlWithParams);
-  }
-
-  /**
-   * Get product quick stats
-   */
-  async getProductQuickStats(productId: string): Promise<any> {
+  async getProductQuickStats(productId: string): Promise<ProductQuickStats> {
     const url = buildUrl(API_ENDPOINTS.ANALYTICS.PRODUCT_QUICK_STATS, {
       productId,
     });
     return this.client.get(url);
   }
 
-  // ==================== TOP PRODUCTS ====================
-
   /**
-   * Get top products
+   * Computes detailed conversion metrics for a product over a period.
+   * @param storeId - The ID of the store.
+   * @param productId - The ID of the product.
+   * @param params - Optional date range (`from`, `to`).
+   * @returns `ProductConversionMetrics` calculated from daily stats or raw events.
    */
-  async getTopProducts(
+  async getProductConversionMetrics(
     storeId: string,
-    params?: TopProductsParams
-  ): Promise<ProductPerformance[]> {
-    const url = buildUrl(API_ENDPOINTS.ANALYTICS.TOP_PRODUCTS, { storeId });
-    const urlWithParams = this.buildQueryUrl(url, params);
-    return this.client.get<ProductPerformance[]>(urlWithParams);
-  }
-
-  /**
-   * Get top products by views
-   */
-  async getTopProductsByViews(
-    storeId: string,
-    params?: TopProductsParams
-  ): Promise<ProductPerformance[]> {
-    const url = buildUrl(API_ENDPOINTS.ANALYTICS.TOP_BY_VIEWS, { storeId });
-    const urlWithParams = this.buildQueryUrl(url, params);
-    return this.client.get<ProductPerformance[]>(urlWithParams);
-  }
-
-  /**
-   * Get top products by conversion
-   */
-  async getTopProductsByConversion(
-    storeId: string,
-    params?: TopProductsParams
-  ): Promise<ProductPerformance[]> {
-    const url = buildUrl(API_ENDPOINTS.ANALYTICS.TOP_BY_CONVERSION, {
+    productId: string,
+    params?: AnalyticsParams
+  ): Promise<ProductConversionMetrics> {
+    const url = buildUrl(API_ENDPOINTS.ANALYTICS.PRODUCT_CONVERSION, {
       storeId,
+      productId,
     });
     const urlWithParams = this.buildQueryUrl(url, params);
-    return this.client.get<ProductPerformance[]>(urlWithParams);
+    return this.client.get(urlWithParams);
   }
 
-  // ==================== GLOBAL ANALYTICS ====================
+  // ================== GLOBAL & COMPARISON ANALYTICS ==================
 
   /**
-   * Get top performing stores
+   * Fetches top-performing stores globally.
+   * @param params - Optional limit.
    */
-  async getTopPerformingStores(params?: { limit?: number }): Promise<any[]> {
+  async getTopPerformingStores(params?: {
+    limit?: number;
+  }): Promise<StoreQuickStats[]> {
     const urlWithParams = this.buildQueryUrl(
       API_ENDPOINTS.ANALYTICS.TOP_PERFORMING_STORES,
       params
     );
-    return this.client.get<any[]>(urlWithParams);
+    return this.client.get(urlWithParams);
   }
 
   /**
-   * Get top stores by revenue
-   */
-  async getTopStoresByRevenue(params?: { limit?: number }): Promise<any[]> {
-    const urlWithParams = this.buildQueryUrl(
-      API_ENDPOINTS.ANALYTICS.TOP_STORES_BY_REVENUE,
-      params
-    );
-    return this.client.get<any[]>(urlWithParams);
-  }
-
-  /**
-   * Compare stores
+   * Compares metrics across multiple stores.
+   * @param params - `storeIds` and optional date range.
    */
   async compareStores(params: CompareStoresParams): Promise<any> {
     return this.client.post(API_ENDPOINTS.ANALYTICS.STORE_COMPARISON, params);
   }
 
-  /**
-   * Compare products
-   */
-  async compareProducts(productIds: string[]): Promise<any> {
-    return this.client.post(API_ENDPOINTS.ANALYTICS.PRODUCT_COMPARISON, {
-      productIds,
-    });
-  }
+  // ================== EVENT TRACKING ==================
 
   /**
-   * Get batch product stats
-   */
-  async getBatchProductStats(productIds: string[]): Promise<any[]> {
-    return this.client.post<any[]>(
-      API_ENDPOINTS.ANALYTICS.BATCH_PRODUCT_STATS,
-      {
-        productIds,
-      }
-    );
-  }
-
-  // ==================== EVENTS ====================
-
-  /**
-   * Record analytics event
+   * Records a single analytics event.
+   * @param storeId - The ID of the store where the event occurred.
+   * @param event - The event payload.
    */
   async recordEvent(storeId: string, event: AnalyticsEvent): Promise<void> {
     const url = buildUrl(API_ENDPOINTS.ANALYTICS.RECORD_EVENT, { storeId });
-    return this.client.post<void>(url, event);
+    return this.client.post(url, event);
   }
 
   /**
-   * Record batch events
+   * Records a batch of analytics events.
+   * @param storeId - The ID of the store.
+   * @param events - An array of event payloads.
    */
   async recordEventsBatch(
     storeId: string,
@@ -343,63 +201,7 @@ export class AnalyticsService extends BaseService {
     const url = buildUrl(API_ENDPOINTS.ANALYTICS.RECORD_EVENTS_BATCH, {
       storeId,
     });
-    return this.client.post<void>(url, { events });
-  }
-
-  // ==================== SYNC ====================
-
-  /**
-   * Sync product analytics
-   */
-  async syncProduct(productId: string): Promise<void> {
-    const url = buildUrl(API_ENDPOINTS.ANALYTICS.SYNC_PRODUCT, { productId });
-    return this.client.post<void>(url);
-  }
-
-  /**
-   * Sync store analytics
-   */
-  async syncStore(storeId: string): Promise<void> {
-    const url = buildUrl(API_ENDPOINTS.ANALYTICS.SYNC_STORE, { storeId });
-    return this.client.post<void>(url);
-  }
-
-  // ==================== SYSTEM ====================
-
-  /**
-   * Run aggregation
-   */
-  async runAggregation(params: any): Promise<any> {
-    return this.client.post(API_ENDPOINTS.ANALYTICS.AGGREGATION, params);
-  }
-
-  /**
-   * Get analytics health
-   */
-  async getHealth(): Promise<{ status: string }> {
-    return this.client.get(API_ENDPOINTS.ANALYTICS.HEALTH);
-  }
-
-  /**
-   * Get analytics stats
-   */
-  async getStats(): Promise<any> {
-    return this.client.get(API_ENDPOINTS.ANALYTICS.STATS);
-  }
-
-  /**
-   * Get aggregators list
-   */
-  async getAggregators(): Promise<string[]> {
-    return this.client.get<string[]>(API_ENDPOINTS.ANALYTICS.AGGREGATORS);
-  }
-
-  /**
-   * Get aggregator schema
-   */
-  async getAggregatorSchema(name: string): Promise<any> {
-    const url = buildUrl(API_ENDPOINTS.ANALYTICS.AGGREGATOR_SCHEMA, { name });
-    return this.client.get(url);
+    return this.client.post(url, { events });
   }
 }
 

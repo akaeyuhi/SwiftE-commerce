@@ -57,8 +57,8 @@ export class NewsService extends BaseService {
     data: CreateNewsDto
   ): Promise<NewsPost> {
     const url = buildUrl(API_ENDPOINTS.NEWS.CREATE_WITH_RELATIONS, { storeId });
-    const formData = this.mapToFormData(data);
-    return this.client.post<NewsPost>(url, formData);
+    const { formData, headers } = this.mapToFormData(data);
+    return this.client.post<NewsPost>(url, formData, { headers });
   }
 
   /**

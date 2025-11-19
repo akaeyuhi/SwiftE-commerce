@@ -27,7 +27,7 @@ export function CategorySalesChart({ timeRange }: { timeRange: TimePeriod }) {
     isLoading,
     error,
     refetch,
-  } = useCategorySales(storeId!, { period: timeRange });
+  } = useCategorySales(storeId!, timeRange);
 
   return (
     <Card>
@@ -61,7 +61,7 @@ export function CategorySalesChart({ timeRange }: { timeRange: TimePeriod }) {
                 cursor={{ fill: 'hsl(var(--primary-foreground))' }}
               />
               <Bar
-                dataKey="value"
+                dataKey="revenue"
                 fill="hsl(var(--muted-foreground))"
                 radius={[8, 8, 0, 0]}
                 name="Revenue ($)"

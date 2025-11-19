@@ -17,7 +17,7 @@ export function TopProductsList({ timeRange }: { timeRange: TimePeriod }) {
     isLoading,
     error,
     refetch,
-  } = useTopProductsByConversion(storeId!, { period: timeRange });
+  } = useTopProductsByConversion(storeId!, timeRange);
 
   console.log(topProducts);
 
@@ -52,7 +52,7 @@ export function TopProductsList({ timeRange }: { timeRange: TimePeriod }) {
                     {product.name}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    {product.sales} sales
+                    {product.purchases} sales
                   </p>
                 </div>
                 <div className="text-right">

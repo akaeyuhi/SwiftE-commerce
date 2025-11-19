@@ -109,4 +109,24 @@ export class ProductDailyStatsRepository extends BaseAnalyticsRepository<Product
   async getAggregateRange(productId: string, from?: string, to?: string) {
     return this.getAggregatedMetrics(productId, { from, to });
   }
+
+  async getCategorySales(storeId: string, options: DateRangeOptions = {}) {
+    const qb = this.createQueryBuilder('stats')
+      .innerJoin('products', 'p', 'p.id = stats.productId')
+      .innerJoin('product_categories', 'pc', 'pc.product_id = p.id')
+      .innerJoin('categories', 'c', 'c.id = pc.category_id')
+      .select('c.name', 'name')
+      .addSelect('SUM(stats.revenue)', 'revenue')
+      .where('p.storeId = :storeId', { storeId })
+      .groupBy('c.name')
+      .orderBy('revenue', 'DESC');
+
+    this.applyDateRange(qb, options, 'date');
+
+    const raw = await qb.getRawMany();
+    return raw.map((r) => ({
+      name: r.name,
+      revenue: parseFloat(r.revenue || '0'),
+    }));
+  }
 }

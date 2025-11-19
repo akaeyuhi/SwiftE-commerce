@@ -39,6 +39,7 @@ export class UserRepository extends BaseRepository<User> {
         'aiLogs',
         'ownedStores',
         'roles.store',
+        'likes',
       ],
     });
   }

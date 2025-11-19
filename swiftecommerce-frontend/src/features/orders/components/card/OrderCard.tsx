@@ -12,7 +12,7 @@ interface OrderCardProps {
   items: number;
   total: number;
   status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
-  date: string;
+  date: Date;
   onView: (id: string) => void;
 }
 
@@ -79,7 +79,7 @@ export function OrderCard({
             {customer.name} • {customer.email}
           </p>
           <p className="text-xs text-muted-foreground mt-1">
-            {new Date(date).toLocaleDateString()} • {items} items
+            {date.toLocaleDateString()} • {items} items
           </p>
         </div>
 

@@ -282,6 +282,7 @@ export class UserService extends BaseService<
     avatarUrl?: string;
     ownedStores: Store[];
     roles?: any[];
+    likes?: Like[];
     createdAt: Date;
     updatedAt?: Date;
   } | null> {
@@ -305,6 +306,7 @@ export class UserService extends BaseService<
         roleName: role.roleName,
         assignedAt: role.assignedAt,
       })),
+      likes: user.likes,
       updatedAt: user.updatedAt,
       createdAt: user.createdAt,
     };

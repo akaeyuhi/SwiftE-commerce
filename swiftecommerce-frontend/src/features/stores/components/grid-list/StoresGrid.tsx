@@ -103,7 +103,7 @@ export const StoresGrid: React.FC<StoresGridProps> = ({ stores }) => {
 
               {/* Rating & Followers */}
               <div className="flex items-center justify-between pt-4 border-t border-border">
-                {store.orderCount && (
+                {store.orderCount !== undefined && (
                   <div className="flex items-center gap-1">
                     <Star className="h-4 w-4 fill-warning text-warning" />
                     <span className="font-semibold text-foreground">

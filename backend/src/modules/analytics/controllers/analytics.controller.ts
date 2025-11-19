@@ -67,6 +67,7 @@ export class AnalyticsController {
     getProductConversion: { storeRoles: [StoreRoles.ADMIN] },
     getProductRating: { storeRoles: [StoreRoles.ADMIN] },
     getStoreRatings: { storeRoles: [StoreRoles.ADMIN] },
+    getCategorySales: { storeRoles: [StoreRoles.ADMIN] },
 
     // Leaderboards
     getTopProductsByViews: { storeRoles: [StoreRoles.ADMIN] },
@@ -243,6 +244,18 @@ export class AnalyticsController {
       from: query.from,
       to: query.to,
     });
+  }
+
+  @Get('stores/:storeId/sales-by-category')
+  async getCategorySales(
+    @Param('storeId', ParseUUIDPipe) storeId: string,
+    @Query(ValidationPipe) query: AnalyticsQueryDto,
+  ) {
+    return await this.analyticsService.getCategorySales(
+      storeId,
+      query.from,
+      query.to,
+    );
   }
 
   @Get('stores/:storeId/products/top/views')

@@ -5,7 +5,6 @@ import {
 } from '@nestjs/common';
 import { CreateStoreDto } from './dto/create-store.dto';
 import { UpdateStoreDto } from './dto/update-store.dto';
-import { PaginationParams } from 'src/common/decorators/pagination.decorator';
 import { AdvancedStoreSearchDto } from './dto/advanced-store-search.dto';
 import { Store } from 'src/entities/store/store.entity';
 import { StoreRepository } from 'src/modules/store/store.repository';
@@ -22,6 +21,12 @@ import { StoreFileService } from './store-file/store-file.service';
 import { PaginatedService } from 'src/common/abstracts/paginated.service';
 import { Order } from 'src/entities/store/product/order.entity';
 import { StoreSearchOptions } from 'src/modules/store/types';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Product } from 'src/entities/store/product/product.entity';
+import { ProductVariant } from 'src/entities/store/product/variant.entity';
+import { Category } from 'src/entities/store/product/category.entity';
+import {OrderStatus} from "src/common/enums/order-status.enum";
 
 @Injectable()
 export class StoreService extends PaginatedService<
@@ -34,16 +39,23 @@ export class StoreService extends PaginatedService<
   constructor(
     private readonly storeRepo: StoreRepository,
     protected readonly mapper: StoreMapper,
-    private readonly storeFileService: StoreFileService
+    private readonly storeFileService: StoreFileService,
+    @InjectRepository(Order)
+    private readonly orderRepo: Repository<Order>,
+    @InjectRepository(Product)
+    private readonly productRepo: Repository<Product>,
+    @InjectRepository(ProductVariant)
+    private readonly variantRepo: Repository<ProductVariant>,
+    @InjectRepository(Category)
+    private readonly categoryRepo: Repository<Category>
   ) {
     super(storeRepo, mapper);
   }
 
   async paginate(
-    options: PaginationParams,
-    searchDto?: AdvancedStoreSearchDto
+    searchDto: AdvancedStoreSearchDto
   ): Promise<[StoreSearchResultDto[], number]> {
-    const { limit, offset } = options;
+    const { limit, offset } = searchDto;
     const { stores, total } = await this.storeRepo.advancedStoreSearch({
       ...searchDto,
       limit,
@@ -215,25 +227,240 @@ export class StoreService extends PaginatedService<
   async checkStoreDataHealth(storeId: string) {
     const store = await this.storeRepo.findOne({
       where: { id: storeId },
-      relations: ['products'],
+      select: ['id', 'name', 'productCount', 'orderCount', 'totalRevenue'],
     });
 
     if (!store) throw new BadRequestException('Store not found');
 
-    const actualProductCount =
-      store.products?.filter((p) => !p.deletedAt).length || 0;
+    const [
+      actualProductCount,
+      productsWithoutVariants,
+      productsWithoutCategory,
+      categoryStats,
+      variantStats,
+      orderStats,
+    ] = await Promise.all([
+      this.productRepo.count({
+        where: { storeId },
+      }),
+
+      this.productRepo
+        .createQueryBuilder('p')
+        .leftJoin('p.variants', 'v')
+        .where('p.storeId = :storeId', { storeId })
+        .groupBy('p.id')
+        .having('COUNT(v.id) = 0')
+        .getCount(),
+
+      this.productRepo
+        .createQueryBuilder('p')
+        .leftJoin('p.categories', 'c')
+        .where('p.storeId = :storeId', { storeId })
+        .groupBy('p.id')
+        .having('COUNT(c.id) = 0')
+        .getCount(),
+
+      this.categoryRepo
+        .createQueryBuilder('cat')
+        .leftJoin('cat.products', 'p')
+        .where('cat.storeId = :storeId', { storeId })
+        .select('COUNT(DISTINCT cat.id)', 'total')
+        .addSelect(
+          'COUNT(DISTINCT CASE WHEN p.id IS NOT NULL AND p.deletedAt IS NULL THEN cat.id END)',
+          'withProducts'
+        )
+        .getRawOne(),
+
+      this.variantRepo
+        .createQueryBuilder('v')
+        .leftJoin('v.product', 'p')
+        .where('p.storeId = :storeId', { storeId })
+        .select('COUNT(v.id)', 'count')
+        .getRawOne(),
+
+      this.orderRepo
+        .createQueryBuilder('o')
+        .where('o.storeId = :storeId', { storeId })
+        .select('COUNT(o.id)', 'totalOrders')
+        .addSelect(
+          'COALESCE(SUM(CASE WHEN o.status IN (:...completedStatuses) ' +
+            'THEN o.totalAmount ELSE 0 END), 0)',
+          'totalRevenue'
+        )
+        .setParameter('completedStatuses', [
+          OrderStatus.DELIVERED,
+          OrderStatus.SHIPPED,
+        ])
+        .getRawOne(),
+    ]);
+
+    const totalCategories = parseInt(categoryStats?.total || '0', 10);
+    const categoriesWithProducts = parseInt(
+      categoryStats?.withProducts || '0',
+      10
+    );
+    const emptyCategoriesCount = totalCategories - categoriesWithProducts;
+    const totalVariants = parseInt(variantStats?.count || '0', 10);
+    const actualOrderCount = parseInt(orderStats?.totalOrders || '0', 10);
+    const actualTotalRevenue = parseFloat(orderStats?.totalRevenue || '0');
+
     const cachedProductCount = store.productCount || 0;
+    const cachedOrderCount = store.orderCount || 0;
+    const cachedTotalRevenue = parseFloat(
+      store.totalRevenue?.toString() || '0'
+    );
+
+    // ✅ Calculate health
+    const issues = [
+      cachedProductCount !== actualProductCount,
+      cachedOrderCount !== actualOrderCount,
+      Math.abs(cachedTotalRevenue - actualTotalRevenue) > 0.01,
+      productsWithoutVariants > 0,
+      productsWithoutCategory > 0,
+      emptyCategoriesCount > totalCategories * 0.3,
+    ];
+
+    const healthScore = Math.round(
+      ((issues.length - issues.filter(Boolean).length) / issues.length) * 100
+    );
+
+    let healthStatus: 'EXCELLENT' | 'GOOD' | 'WARNING' | 'CRITICAL';
+    if (healthScore >= 90) healthStatus = 'EXCELLENT';
+    else if (healthScore >= 75) healthStatus = 'GOOD';
+    else if (healthScore >= 50) healthStatus = 'WARNING';
+    else healthStatus = 'CRITICAL';
 
     return {
       storeId,
-      health: {
+      storeName: store.name,
+      healthScore,
+      healthStatus,
+      checkedAt: new Date(),
+
+      // ✅ Metrics with all counts
+      metrics: {
         productCount: {
           cached: cachedProductCount,
           actual: actualProductCount,
           match: cachedProductCount === actualProductCount,
+          difference: actualProductCount - cachedProductCount,
+        },
+        orderCount: {
+          cached: cachedOrderCount,
+          actual: actualOrderCount,
+          match: cachedOrderCount === actualOrderCount,
+          difference: actualOrderCount - cachedOrderCount,
+        },
+        totalRevenue: {
+          cached: cachedTotalRevenue,
+          actual: actualTotalRevenue,
+          match: Math.abs(cachedTotalRevenue - actualTotalRevenue) < 0.01,
+          difference: actualTotalRevenue - cachedTotalRevenue,
+        },
+        variantCount: {
+          actual: totalVariants,
+          cached: 0, // Not cached in store entity
+          match: true,
+          difference: 0,
+        },
+        categoryCount: {
+          actual: totalCategories,
+          cached: 0, // Not cached in store entity
+          match: true,
+          difference: 0,
         },
       },
-      needsRecalculation: cachedProductCount !== actualProductCount,
+
+      products: {
+        total: actualProductCount,
+        withoutVariants: productsWithoutVariants,
+        withoutCategory: productsWithoutCategory,
+        totalVariants,
+        avgVariantsPerProduct:
+          actualProductCount > 0
+            ? Math.round((totalVariants / actualProductCount) * 10) / 10
+            : 0,
+      },
+
+      categories: {
+        total: totalCategories,
+        withProducts: categoriesWithProducts,
+        empty: emptyCategoriesCount,
+        utilizationPercentage: Math.round(
+          (categoriesWithProducts / (totalCategories || 1)) * 100
+        ),
+      },
+
+      orders: {
+        total: actualOrderCount,
+        totalRevenue: actualTotalRevenue,
+        avgOrderValue:
+          actualOrderCount > 0
+            ? Math.round((actualTotalRevenue / actualOrderCount) * 100) / 100
+            : 0,
+      },
+
+      recommendations: [
+        ...(cachedProductCount !== actualProductCount
+          ? [
+              {
+                type: 'CRITICAL' as const,
+                message: `Product count mismatch (${Math.abs(actualProductCount - cachedProductCount)} difference)`,
+                action: 'Recalculate product count',
+              },
+            ]
+          : []),
+        ...(cachedOrderCount !== actualOrderCount
+          ? [
+              {
+                type: 'CRITICAL' as const,
+                message: `Order count mismatch (${Math.abs(actualOrderCount - cachedOrderCount)} difference)`,
+                action: 'Recalculate order count',
+              },
+            ]
+          : []),
+        ...(Math.abs(cachedTotalRevenue - actualTotalRevenue) > 0.01
+          ? [
+              {
+                type: 'CRITICAL' as const,
+                message: `Revenue mismatch ($${Math.abs(actualTotalRevenue - cachedTotalRevenue).toFixed(2)} difference)`,
+                action: 'Recalculate total revenue',
+              },
+            ]
+          : []),
+        ...(productsWithoutVariants > 0
+          ? [
+              {
+                type: 'WARNING' as const,
+                message: `${productsWithoutVariants} products without variants`,
+                action: 'Add variants',
+              },
+            ]
+          : []),
+        ...(productsWithoutCategory > 0
+          ? [
+              {
+                type: 'INFO' as const,
+                message: `${productsWithoutCategory} products without categories`,
+                action: 'Assign categories',
+              },
+            ]
+          : []),
+        ...(emptyCategoriesCount > 0
+          ? [
+              {
+                type: 'INFO' as const,
+                message: `${emptyCategoriesCount} empty categories`,
+                action: 'Add products or remove categories',
+              },
+            ]
+          : []),
+      ],
+
+      needsRecalculation:
+        cachedProductCount !== actualProductCount ||
+        cachedOrderCount !== actualOrderCount ||
+        Math.abs(cachedTotalRevenue - actualTotalRevenue) > 0.01,
     };
   }
 

@@ -6,7 +6,7 @@ import { Menu, X } from 'lucide-react';
 import { useState } from 'react';
 import { CartDropdown } from '@/shared/components/cart/CartDropdown';
 import { UserMenu } from '@/shared/components/header/UserMenu';
-import { SearchBar as HeaderSearchBar } from '@/shared/components/header/SearchBar';
+import { GlobalSearchBar } from '@/shared/components/header/GlobalSearchBar';
 import { MobileMenu } from '@/shared/components/header/MobileMenu';
 import { ThemeToggle } from '@/lib/theme/ThemeToggle.tsx';
 
@@ -28,7 +28,7 @@ export function Header() {
 
           {/* Search bar - Desktop */}
           <div className="hidden md:flex flex-1 max-w-2xl mx-8">
-            <HeaderSearchBar />
+            <GlobalSearchBar />
           </div>
 
           {/* Right side */}

@@ -118,6 +118,8 @@ export class AnalyticsEventRepository extends BaseAnalyticsRepository<AnalyticsE
 
     const qb = this.createQueryBuilder('e')
       .select('e.productId', 'productId')
+      // ✅ Add product name
+      .addSelect('p.name', 'productName')
       .addSelect(
         'SUM(CASE WHEN e.eventType = :view THEN 1 ELSE 0 END)',
         'views'
@@ -130,6 +132,7 @@ export class AnalyticsEventRepository extends BaseAnalyticsRepository<AnalyticsE
         'SUM(CASE WHEN e.eventType = :purchase THEN COALESCE(e.value,0) ELSE 0 END)',
         'revenue'
       )
+      .leftJoin('products', 'p', 'p.id = e.productId')
       .where('e.storeId = :storeId', { storeId })
       .andWhere('e.productId IS NOT NULL')
       .setParameters({
@@ -141,6 +144,7 @@ export class AnalyticsEventRepository extends BaseAnalyticsRepository<AnalyticsE
 
     const results = await qb
       .groupBy('e.productId')
+      .addGroupBy('p.name') // ✅ Add to GROUP BY
       .having('SUM(CASE WHEN e.eventType = :view THEN 1 ELSE 0 END) > 0')
       .orderBy(
         `(SUM(CASE WHEN e.eventType = :purchase THEN 1 ELSE 0 END)::float / NULLIF(SUM(CASE WHEN e.eventType = :view THEN 1 ELSE 0 END),0)::float)`,
@@ -155,6 +159,7 @@ export class AnalyticsEventRepository extends BaseAnalyticsRepository<AnalyticsE
 
       return {
         productId: r.productId,
+        name: r.productName || 'Unknown Product',
         views,
         purchases,
         revenue: Number(r.revenue || 0),

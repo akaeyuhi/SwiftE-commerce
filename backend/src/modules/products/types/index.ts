@@ -6,10 +6,11 @@ export interface ProductSearchOptions {
   categoryId?: string;
   query?: string;
   limit?: number;
+  offset?: number;
 }
 
 export interface AdvancedSearchOptions {
-  storeId: string;
+  storeId?: string;
   query?: string;
   categoryIds?: string[];
   minPrice?: number;

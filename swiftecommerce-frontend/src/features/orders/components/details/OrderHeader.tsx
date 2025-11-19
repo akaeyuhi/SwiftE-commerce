@@ -22,7 +22,7 @@ export function OrderHeader({ order }: OrderHeaderProps) {
             Order #{order.id.substring(0, 8)}
           </h1>
           <p className="text-muted-foreground">
-            Placed on {new Date(order.createdAt).toLocaleDateString()}
+            Placed on {order.createdAt.toLocaleDateString()}
           </p>
         </div>
         <OrderStatusBadge status={order.status} className="text-lg px-4 py-2" />

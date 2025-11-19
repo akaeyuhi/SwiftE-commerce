@@ -115,8 +115,9 @@ export class NewsController extends BaseController<
     files: { mainPhoto?: Express.Multer.File[]; photos?: Express.Multer.File[] }
   ): Promise<NewsPost | NewsPostDto> {
     const authorId = (req as any).user?.id;
-    const mainPhoto = files.mainPhoto?.[0];
+    const mainPhoto = files.mainPhoto?.[0] ?? files.photos?.[0];
     const photos = files.photos;
+    photos?.shift();
     const enriched = { ...dto, storeId, mainPhoto, photos };
     return this.newsService.createWithRelations(enriched, authorId);
   }
@@ -128,8 +129,9 @@ export class NewsController extends BaseController<
     @UploadedFiles()
     files: { mainPhoto?: Express.Multer.File[]; photos?: Express.Multer.File[] }
   ): Promise<NewsPost> {
-    const mainPhoto = files.mainPhoto?.[0];
+    const mainPhoto = files.mainPhoto?.[0] ?? files.photos?.[0];
     const photos = files.photos;
+    photos?.shift();
     return this.newsService.uploadFiles(id, mainPhoto, photos);
   }
 

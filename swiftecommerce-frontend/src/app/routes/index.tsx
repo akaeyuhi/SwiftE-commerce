@@ -12,6 +12,7 @@ import { StoreLayout } from '../layouts/StoreLayout';
 import { HomePage } from '@/features/home/pages/HomePage';
 import { StoresPage } from '@/features/stores/pages/StoresPage';
 import { StorePublicPage } from '@/features/stores/pages/StorePublicPage';
+import { StoreSearchPage } from '@/features/stores/pages/StoreSearchPage';
 import { ProductsPage } from '@/features/products/pages/ProductsPage';
 import { ProductDetailPage } from '@/features/products/pages/ProductDetailPage';
 
@@ -23,6 +24,7 @@ import { ForgotPasswordPage } from '@/features/auth/pages/ForgotPasswordPage';
 // User Store Pages
 import { MyStoresPage } from '@/features/stores/pages/MyStoresPage';
 import { CreateStorePage } from '@/features/stores/pages/CreateStorePage';
+import { NewsPostPage } from '@/features/news/pages/NewsPostPage.tsx';
 
 // Store Management Pages
 import { StoreOverviewPage } from '@/features/stores/pages/StoreOverviewPage';
@@ -170,6 +172,20 @@ export const router = createBrowserRouter([
         path: ROUTES.STORE_PUBLIC,
         element: <StorePublicPage />,
       },
+      {
+        path: ROUTES.NEWS_POST,
+        element: <NewsPostPage />,
+      },
+
+      // Store news
+      {
+        path: ROUTES.STORE_NEWS,
+        element: <StoreNewsPage />,
+      },
+      {
+        path: ROUTES.STORE_SEARCH,
+        element: <StoreSearchPage />,
+      },
 
       // Public Products
       {
@@ -281,12 +297,6 @@ export const router = createBrowserRouter([
               {
                 path: ROUTES.ORDER_DETAIL,
                 element: <OrderDetailPage />,
-              },
-
-              // Store news
-              {
-                path: ROUTES.STORE_NEWS,
-                element: <StoreNewsPage />,
               },
 
               {

@@ -9,8 +9,23 @@ export interface ProductFilters {
   categoryId?: string;
   minPrice?: number;
   maxPrice?: number;
-  search?: string;
+  query?: string;
   inStock?: boolean;
+  offset?: number;
+}
+
+export interface ProductSearchOptions {
+  query?: string;
+  categoryIds?: string[];
+  minPrice?: number;
+  maxPrice?: number;
+  minRating?: number;
+  maxRating?: number;
+  inStock?: boolean;
+  sortBy?: 'recent' | 'price' | 'rating' | 'views' | 'sales';
+  sortOrder?: 'ASC' | 'DESC';
+  limit?: number;
+  offset?: number;
 }
 
 export interface StoreFilters {

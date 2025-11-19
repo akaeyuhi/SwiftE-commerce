@@ -59,7 +59,7 @@ export function OrderTimeline({ order }: OrderTimelineProps) {
       <CardContent className="space-y-6">
         <div>
           <p className="text-sm text-muted-foreground mb-2">
-            Ordered on {new Date(order.createdAt).toLocaleDateString()}
+            Ordered on {order.createdAt.toLocaleDateString()}
           </p>
           <p className="font-semibold text-foreground">{order.store.name}</p>
         </div>

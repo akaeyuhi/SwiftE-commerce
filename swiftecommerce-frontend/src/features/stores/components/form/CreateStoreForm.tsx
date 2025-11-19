@@ -61,12 +61,8 @@ export function CreateStoreForm({ onSuccess }: CreateStoreFormProps) {
       toast.error('Please upload both banner and logo images');
       return;
     }
-    const formData = new FormData();
-    formData.append('banner', bannerFile);
-    formData.append('logo', logoFile);
-
     await createStore.mutateAsync(
-      { ...data, ...formData, ownerId: user!.id },
+      { ...data, ownerId: user!.id, banner: bannerFile, logo: logoFile },
       {
         onSuccess: () => {
           toast.success('Store created successfully!');
@@ -120,6 +116,32 @@ export function CreateStoreForm({ onSuccess }: CreateStoreFormProps) {
               placeholder="Describe your store, products, and what makes you unique..."
               rows={5}
               error={!!errors.description}
+            />
+          </FormField>
+          <FormField
+            label="Store country"
+            error={errors.country}
+            required
+            hint="Specify where your store is located"
+          >
+            <Input
+              {...register('country')}
+              placeholder="USA"
+              error={!!errors.name}
+              autoFocus
+            />
+          </FormField>
+          <FormField
+            label="Store Name"
+            error={errors.city}
+            required
+            hint="Specify in what city is yout store"
+          >
+            <Input
+              {...register('city')}
+              placeholder="New-York"
+              error={!!errors.name}
+              autoFocus
             />
           </FormField>
         </CardContent>

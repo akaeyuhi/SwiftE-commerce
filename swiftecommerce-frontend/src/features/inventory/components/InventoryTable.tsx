@@ -74,7 +74,7 @@ export function InventoryTable({
                 </td>
                 <td className="p-4 text-sm text-muted-foreground">
                   {item.updatedAt
-                    ? new Date(item.updatedAt).toLocaleDateString()
+                    ? item.updatedAt?.toLocaleDateString()
                     : 'Never'}
                 </td>
                 <td className="p-4 text-right">

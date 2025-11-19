@@ -4,11 +4,11 @@ import { Card, CardContent } from '@/shared/components/ui/Card';
 import { Badge } from '@/shared/components/ui/Badge';
 import { buildRoute } from '@/app/routes/routes';
 import { Like } from '@/features/likes/types/likes.types';
-import { useCart } from '@/app/store';
 import { toast } from 'sonner';
-import { ShoppingCart, Star, X } from 'lucide-react';
+import { Package, ShoppingCart, Star, X } from 'lucide-react';
 import { useLikeMutations } from '@/features/likes/hooks/useLikes';
 import { useAuth } from '@/app/store';
+import { useCartMutations } from '@/features/cart/hooks/useCart.ts';
 
 interface WishlistProductCardProps {
   like: Like;
@@ -16,13 +16,13 @@ interface WishlistProductCardProps {
 
 export function WishlistProductCard({ like }: WishlistProductCardProps) {
   const { user } = useAuth();
-  const { addItem } = useCart();
+  const { addItem } = useCartMutations(user!.id);
   const { removeLike } = useLikeMutations(user!.id);
 
   const product = like.product;
 
   if (!product) {
-    return null; // Or a placeholder for a missing product
+    return null;
   }
 
   const handleRemove = () => {
@@ -32,19 +32,13 @@ export function WishlistProductCard({ like }: WishlistProductCardProps) {
   const handleAddToCart = () => {
     if (product.variants && product.variants.length > 0) {
       const defaultVariant = product.variants[0]!;
-      addItem({
-        productId: product.id,
-        productName: product.name,
-        variantId: defaultVariant.id,
-        variantSku: defaultVariant.sku,
-        price: defaultVariant.price,
-        quantity: 1,
-        maxQuantity: defaultVariant.inventory.quantity,
+      addItem.mutate({
         storeId: product.storeId,
-        storeName: product.store?.name ?? 'Store',
-        imageUrl: product.mainPhotoUrl,
+        item: {
+          variantId: defaultVariant.id,
+          quantity: 1,
+        },
       });
-      toast.success('Added to cart!');
     } else {
       toast.error('This product has no variants to add.');
     }
@@ -67,15 +61,15 @@ export function WishlistProductCard({ like }: WishlistProductCardProps) {
       </button>
       <CardContent className="p-0">
         <Link to={buildRoute.productDetail(product.id)}>
-          <div className="aspect-square bg-muted flex items-center justify-center cursor-pointer">
-            {product.photos && product.photos.length > 0 ? (
+          <div className="aspect-square bg-muted flex items-center justify-center relative">
+            {product?.mainPhotoUrl ? (
               <img
-                src={product.mainPhotoUrl}
-                alt={product.name}
+                src={product?.mainPhotoUrl}
+                alt={product?.name}
                 className="w-full h-full object-cover"
               />
             ) : (
-              <div className="w-full h-full bg-gray-200" /> // Placeholder
+              <Package className="h-12 w-12 text-muted-foreground" />
             )}
           </div>
         </Link>

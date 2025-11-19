@@ -10,7 +10,7 @@ interface ReviewCardProps {
     avatar?: string | null;
   };
   rating: number;
-  date: string;
+  createdAt: Date;
   comment: string;
   helpfulCount: number;
   verified: boolean;
@@ -21,7 +21,7 @@ export function ReviewCard({
   id,
   user,
   rating,
-  date,
+  createdAt,
   comment,
   helpfulCount,
   verified,
@@ -49,7 +49,7 @@ export function ReviewCard({
               )}
             </div>
             <p className="text-sm text-muted-foreground">
-              {new Date(date).toLocaleDateString()}
+              {createdAt.toLocaleDateString()}
             </p>
           </div>
         </div>

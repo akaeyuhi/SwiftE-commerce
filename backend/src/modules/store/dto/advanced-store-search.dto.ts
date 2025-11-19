@@ -1,4 +1,3 @@
-// src/modules/store/dto/advanced-store-search.dto.ts
 import { IsOptional, IsString, IsNumber, IsEnum, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 

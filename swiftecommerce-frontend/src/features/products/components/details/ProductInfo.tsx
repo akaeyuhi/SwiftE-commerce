@@ -17,6 +17,7 @@ import { ROUTES } from '@/app/routes/routes.ts';
 import { Link } from '@/shared/components/ui/Link.tsx';
 import { toast } from 'sonner';
 import { buildUrl } from '@/config/api.config.ts';
+import { useLikeMutations, useLikes } from '@/features/likes/hooks/useLikes.ts';
 
 interface ProductInfoProps {
   product: Product;
@@ -32,6 +33,21 @@ export function ProductInfo({ product }: ProductInfoProps) {
   const [quantity, setQuantity] = useState(1);
   const { user } = useAuth();
   const { addItem } = useCartMutations(user?.id ?? '');
+  const { likeProduct, removeLike } = useLikeMutations(user?.id ?? '');
+
+  const { data: userLikes, isLoading: likesLoading } = useLikes(
+    user?.id ?? '',
+    {
+      enabled: !!user?.id,
+    }
+  );
+
+  const productLike = useMemo(
+    () => userLikes?.find((like) => like.productId === product.id),
+    [userLikes, product.id]
+  );
+
+  const isLiked = !!productLike;
 
   // Get all unique attribute keys and values
   const attributeOptions = useMemo(() => {
@@ -57,7 +73,6 @@ export function ProductInfo({ product }: ProductInfoProps) {
     );
   }, [product.variants]);
 
-  // Initialize with first available variant
   useEffect(() => {
     if (product.variants.length === 0) return;
 
@@ -88,41 +103,33 @@ export function ProductInfo({ product }: ProductInfoProps) {
     setSelectedVariant(matchingVariant || null);
   }, [selectedOptions, product.variants]);
 
-  // ✅ FIXED: More lenient availability check
   const isOptionAvailable = (attributeKey: string, attributeValue: string) =>
-    // An option is available if ANY variant has this attribute value
     product.variants.some(
       (variant) => variant.attributes?.[attributeKey] === attributeValue
     );
-  // ✅ NEW: Smart attribute selection that finds best match
+
   const handleAttributeSelect = (key: string, value: string) => {
-    // Create new selection with this attribute changed
     const newSelection = {
       ...selectedOptions,
       [key]: value,
     };
 
-    // Try to find exact match with all selected options
     let matchingVariant = product.variants.find((variant) =>
       Object.entries(newSelection).every(
         ([k, v]) => variant.attributes?.[k] === v
       )
     );
 
-    // If no exact match, find best partial match
     if (!matchingVariant) {
-      // Find variants that have the newly selected attribute
       const variantsWithNewAttribute = product.variants.filter(
         (v) => v.attributes?.[key] === value
       );
 
       if (variantsWithNewAttribute.length > 0) {
-        // Prefer variants with stock
         matchingVariant =
           variantsWithNewAttribute.find((v) => v.inventory?.quantity > 0) ||
           variantsWithNewAttribute[0];
 
-        // Update selection to match the found variant
         if (matchingVariant?.attributes) {
           setSelectedOptions(matchingVariant.attributes);
           return;
@@ -130,7 +137,6 @@ export function ProductInfo({ product }: ProductInfoProps) {
       }
     }
 
-    // Set the new selection
     setSelectedOptions(newSelection);
   };
 
@@ -165,6 +171,53 @@ export function ProductInfo({ product }: ProductInfoProps) {
       setQuantity(1);
     } catch (error) {
       toast.error(`Failed to add to cart: ${error}`);
+    }
+  };
+
+  const handleLike = async () => {
+    if (!user) {
+      toast.error('Please sign in to like products');
+      return;
+    }
+
+    try {
+      if (isLiked && productLike) {
+        // Unlike
+        await removeLike.mutateAsync(productLike.id);
+      } else {
+        // Like
+        await likeProduct.mutateAsync(product.id);
+      }
+    } catch (error: any) {
+      // Error already handled in mutation
+      console.error('Like action failed:', error);
+    }
+  };
+
+  const handleShare = async () => {
+    const productUrl = `${window.location.origin}${buildUrl(ROUTES.PRODUCT_DETAIL, { productId: product.id })}`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: product.name,
+          text: `Check out ${product.name}`,
+          url: productUrl,
+        });
+      } catch (error) {
+        // User cancelled or error occurred
+        if ((error as Error).name !== 'AbortError') {
+          console.error('Share failed:', error);
+        }
+      }
+    } else {
+      // Fallback: Copy to clipboard
+      try {
+        await navigator.clipboard.writeText(productUrl);
+        toast.success('Link copied to clipboard');
+      } catch (error) {
+        toast.error(`Failed to copy link: ${error}`);
+      }
     }
   };
 
@@ -326,13 +379,47 @@ export function ProductInfo({ product }: ProductInfoProps) {
           <ShoppingCart className="h-5 w-5 mr-2" />
           {addItem.isPending ? 'Adding...' : 'Add to Cart'}
         </Button>
-        <Button variant="outline" size="lg">
-          <Heart className="h-5 w-5" />
+
+        <Button
+          variant={isLiked ? 'primary' : 'outline'}
+          size="lg"
+          onClick={handleLike}
+          disabled={
+            !user ||
+            likeProduct.isPending ||
+            removeLike.isPending ||
+            likesLoading
+          }
+          className="relative"
+        >
+          <Heart
+            className={`h-5 w-5 transition-all ${
+              isLiked ? 'fill-current' : ''
+            }`}
+          />
+          {(likeProduct.isPending || removeLike.isPending) && (
+            <span className="absolute inset-0 flex items-center justify-center">
+              <span
+                className="animate-spin h-4 w-4 border-2
+              border-current border-t-transparent rounded-full"
+              />
+            </span>
+          )}
         </Button>
-        <Button variant="outline" size="lg">
+
+        <Button variant="outline" size="lg" onClick={handleShare}>
           <Share2 className="h-5 w-5" />
         </Button>
       </div>
+
+      {!user && (
+        <p className="text-xs text-muted-foreground text-center">
+          <Link to={ROUTES.LOGIN} className="text-primary hover:underline">
+            Sign in
+          </Link>{' '}
+          to save products to your wishlist
+        </p>
+      )}
 
       {/* Features */}
       <div className="grid grid-cols-3 gap-4 pt-6 border-t border-border">

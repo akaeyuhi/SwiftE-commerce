@@ -188,7 +188,6 @@ export class ConversionAnalyticsService {
       ])
       .where('p.deletedAt IS NULL')
       .andWhere('p.viewCount > :minViews', { minViews: 10 })
-      // ✅ Quote the column name properly
       .orderBy('("p"."totalSales"::float / NULLIF("p"."viewCount", 0))', 'DESC')
       .limit(limit);
 
@@ -238,6 +237,8 @@ export class ConversionAnalyticsService {
     }
 
     const products = await qb.getMany();
+
+    console.log(products);
 
     return products.map((p) => ({
       productId: p.id,
@@ -346,5 +347,9 @@ export class ConversionAnalyticsService {
     }
 
     return { productId, summary, series };
+  }
+
+  async getCategorySales(storeId: string, from?: string, to?: string) {
+    return this.productStatsRepo.getCategorySales(storeId, { from, to });
   }
 }

@@ -23,9 +23,10 @@ import { TimePeriod } from '@/features/analytics/types/analytics.types.ts';
 
 export function RevenueChart({ timeRange }: { timeRange: TimePeriod }) {
   const { storeId } = useParams<{ storeId: string }>();
-  const { data, isLoading, error, refetch } = useRevenueTrends(storeId!, {
-    period: timeRange,
-  });
+  const { data, isLoading, error, refetch } = useRevenueTrends(
+    storeId!,
+    timeRange
+  );
 
   return (
     <Card>

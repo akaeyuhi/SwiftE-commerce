@@ -5,7 +5,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   Unique,
-  Column,
+  Column, JoinColumn,
 } from 'typeorm';
 import { BaseEntity } from 'src/common/interfaces/crud/base-entity.interface';
 import { User } from 'src/entities/user/user.entity';
@@ -23,6 +23,7 @@ export class Like implements BaseEntity {
   userId: string;
 
   @ManyToOne(() => User, (u) => u.likes, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'user_id', referencedColumnName: 'id' })
   user: User;
 
   @Column({ name: 'product_id', nullable: true, type: 'uuid' })
@@ -32,6 +33,7 @@ export class Like implements BaseEntity {
     nullable: true,
     onDelete: 'CASCADE',
   })
+  @JoinColumn({ name: 'product_id', referencedColumnName: 'id' })
   product?: Product;
 
   @Column({ name: 'store_id', nullable: true, type: 'uuid' })
@@ -41,6 +43,7 @@ export class Like implements BaseEntity {
     nullable: true,
     onDelete: 'CASCADE',
   })
+  @JoinColumn({ name: 'store_id', referencedColumnName: 'id' })
   store?: Store;
 
   @CreateDateColumn()

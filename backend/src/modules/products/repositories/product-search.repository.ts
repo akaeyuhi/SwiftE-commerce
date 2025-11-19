@@ -92,10 +92,17 @@ export class ProductSearchRepository extends BaseRepository<Product> {
         'p.viewCount',
         'p.totalSales',
         'p.createdAt',
+        'variants.id',
+        'variants.price',
+        'variants.sku',
+        'inventory.quantity',
         'p.updatedAt',
       ])
       .leftJoin('p.photos', 'photos', 'photos.isMain = true')
       .leftJoin('p.variants', 'variants')
+      .leftJoin('variants.inventory', 'inventory')
+      .leftJoinAndSelect('p.categories', 'categories')
+      .leftJoinAndSelect('p.store', 'store')
       .addSelect('MAX(photos.url)', 'mainPhotoUrl')
       .addSelect('MIN(variants.price)', 'minPrice')
       .addSelect('MAX(variants.price)', 'maxPrice')
@@ -159,14 +166,23 @@ export class ProductSearchRepository extends BaseRepository<Product> {
       .setParameter('startsWithQuery', `${query.toLowerCase()}%`)
       .setParameter('query', `%${query.toLowerCase()}%`);
 
-    qb.groupBy('p.id');
+    qb.groupBy('p.id')
+      .addGroupBy('variants.id')
+      .addGroupBy('inventory.id')
+      .addGroupBy('inventory.quantity')
+      .addGroupBy('categories.id')
+      .addGroupBy('store.id');
 
     if (havingConditions.length > 0) {
       qb.having(havingConditions.join(' AND '));
     }
 
     this.applySorting(qb, options?.sortBy || 'relevance');
-    qb.limit(limit);
+
+    if (limit || options?.limit) {
+      const offset = options?.offset || 0;
+      qb.skip(offset).take(limit);
+    }
 
     const { entities, raw } = await qb.getRawAndEntities();
 
@@ -179,8 +195,6 @@ export class ProductSearchRepository extends BaseRepository<Product> {
     const productsWithVariants = await this.createQueryBuilder('p')
       .leftJoinAndSelect('p.variants', 'variants')
       .leftJoinAndSelect('variants.inventory', 'inventory')
-      .leftJoinAndSelect('p.photos', 'photos')
-      .leftJoinAndSelect('p.store', 'store')
       .whereInIds(productIds)
       .getMany();
 
@@ -213,12 +227,11 @@ export class ProductSearchRepository extends BaseRepository<Product> {
 
   async advancedSearch(
     filters: AdvancedSearchOptions
-  ): Promise<{ products: ProductListDto[]; total: number }> {
+  ): Promise<[ProductListDto[], number]> {
     const qb = this.createQueryBuilder('p')
-      .leftJoin('p.photos', 'photos', 'photos.isMain = true')
-      .leftJoin('p.variants', 'variants')
       .select([
         'p.id',
+        'p.storeId',
         'p.name',
         'p.description',
         'p.averageRating',
@@ -226,22 +239,21 @@ export class ProductSearchRepository extends BaseRepository<Product> {
         'p.likeCount',
         'p.viewCount',
         'p.totalSales',
+        'p.mainPhotoUrl',
         'p.createdAt',
       ])
-      .addSelect('photos.url', 'mainPhotoUrl')
-      .addSelect('MIN(variants.price)', 'minPrice')
-      .addSelect('MAX(variants.price)', 'maxPrice')
-      .where('p.storeId = :storeId', { storeId: filters.storeId })
-      .andWhere('p.deletedAt IS NULL');
+      .where('p.deletedAt IS NULL');
+
+    if (filters.storeId) {
+      qb.andWhere('p.storeId = :storeId', { storeId: filters.storeId });
+    }
 
     // Text search
     if (filters.query) {
       const normalizedQuery = filters.query.trim().toLowerCase();
       qb.andWhere(
         '(LOWER(p.name) LIKE :query OR LOWER(p.description) LIKE :query)',
-        {
-          query: `%${normalizedQuery}%`,
-        }
+        { query: `%${normalizedQuery}%` }
       );
     }
 
@@ -249,9 +261,7 @@ export class ProductSearchRepository extends BaseRepository<Product> {
     if (filters.categoryIds && filters.categoryIds.length > 0) {
       qb.leftJoin('p.categories', 'category').andWhere(
         'category.id IN (:...categoryIds)',
-        {
-          categoryIds: filters.categoryIds,
-        }
+        { categoryIds: filters.categoryIds }
       );
     }
 
@@ -267,45 +277,125 @@ export class ProductSearchRepository extends BaseRepository<Product> {
       });
     }
 
-    // In stock filter
+    if (filters.minPrice !== undefined || filters.maxPrice !== undefined) {
+      qb.andWhere((qb) => {
+        const subQuery = qb
+          .subQuery()
+          .select('v.productId')
+          .from('product_variants', 'v')
+          .where('1=1');
+
+        if (filters.minPrice !== undefined) {
+          subQuery.andWhere('v.price >= :minPrice', {
+            minPrice: filters.minPrice,
+          });
+        }
+        if (filters.maxPrice !== undefined) {
+          subQuery.andWhere('v.price <= :maxPrice', {
+            maxPrice: filters.maxPrice,
+          });
+        }
+
+        return `p.id IN ${subQuery.getQuery()}`;
+      });
+    }
+
+    // In stock filter using subquery
     if (filters.inStock) {
-      qb.leftJoin('variants.inventory', 'inventory').andWhere(
-        'inventory.quantity > 0'
-      );
+      qb.andWhere((qb) => {
+        const subQuery = qb
+          .subQuery()
+          .select('DISTINCT v2.productId')
+          .from('product_variants', 'v2')
+          .leftJoin('v2.inventory', 'inv', 'inv.variantId = v2.id')
+          .where('inv.quantity > 0')
+          .getQuery();
+
+        return `p.id IN ${subQuery}`;
+      });
     }
 
-    qb.groupBy('p.id').addGroupBy('photos.url');
-
-    // Price filters
-    const havingConditions: string[] = [];
-    if (filters.minPrice !== undefined) {
-      havingConditions.push('MIN(variants.price) >= :minPrice');
-      qb.setParameter('minPrice', filters.minPrice);
-    }
-    if (filters.maxPrice !== undefined) {
-      havingConditions.push('MAX(variants.price) <= :maxPrice');
-      qb.setParameter('maxPrice', filters.maxPrice);
-    }
-    if (havingConditions.length > 0) {
-      qb.having(havingConditions.join(' AND '));
-    }
-
-    // Count total
-    const countQb = qb.clone();
-    const total = await countQb.getCount();
+    // Get count
+    const total = await qb.getCount();
 
     // Sorting
     const sortBy = filters.sortBy || 'recent';
     const sortOrder = filters.sortOrder || 'DESC';
-    this.applySortingWithOrder(qb, sortBy, sortOrder);
+
+    switch (sortBy) {
+      case 'rating':
+        qb.orderBy('p.averageRating', sortOrder);
+        break;
+      case 'views':
+        qb.orderBy('p.viewCount', sortOrder);
+        break;
+      case 'sales':
+        qb.orderBy('p.totalSales', sortOrder);
+        break;
+      case 'recent':
+      default:
+        qb.orderBy('p.createdAt', sortOrder);
+        break;
+    }
 
     // Pagination
     const limit = filters.limit || 20;
     const offset = filters.offset || 0;
     qb.skip(offset).take(limit);
 
-    const results = await qb.getMany();
-    return { products: results, total };
+    const products = await qb.getMany();
+
+    if (products.length === 0) {
+      return [[], 0];
+    }
+
+    const productIds = products.map((p) => p.id);
+    const productsWithRelations = await this.createQueryBuilder('p')
+      .leftJoinAndSelect('p.variants', 'variants')
+      .leftJoinAndSelect('variants.inventory', 'inventory')
+      .leftJoinAndSelect('p.store', 'store')
+      .leftJoinAndSelect('p.categories', 'categories')
+      .where('p.id IN (:...productIds)', { productIds })
+      .getMany();
+
+    const relationsMap = new Map(
+      productsWithRelations.map((p) => [
+        p.id,
+        {
+          variants: p.variants || [],
+          store: p.store,
+          categories: p.categories || [],
+        },
+      ])
+    );
+
+    const productsWithData = products.map((product) => {
+      const relations = relationsMap.get(product.id);
+      const variants = relations?.variants || [];
+      const prices = variants.map((v) => v.price).filter((p) => p !== null);
+      const stocks = variants.map((v) => v.inventory?.quantity || 0);
+
+      return {
+        ...product,
+        variants,
+        store: relations?.store, // ✅ Add store
+        categories: relations?.categories || [], // ✅ Add categories
+        minPrice: prices.length > 0 ? Math.min(...prices) : 0,
+        maxPrice: prices.length > 0 ? Math.max(...prices) : 0,
+        totalStock: stocks.reduce((sum, qty) => sum + qty, 0),
+        inStock: stocks.some((qty) => qty > 0),
+      };
+    });
+
+    // Sort by price if needed
+    if (sortBy === 'price') {
+      productsWithData.sort((a, b) => {
+        const diff = a.minPrice - b.minPrice;
+        return sortOrder === 'ASC' ? diff : -diff;
+      });
+    }
+
+    return [productsWithData, total];
   }
 
   async autocompleteProducts(

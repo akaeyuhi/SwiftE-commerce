@@ -24,7 +24,7 @@ export class LikesRepository extends BaseRepository<Like> {
   async listByUser(userId: string) {
     return this.find({
       where: { userId } as any,
-      relations: ['product', 'store'],
+      relations: ['product', 'store', 'product.variants'],
       order: { createdAt: 'DESC' },
     });
   }

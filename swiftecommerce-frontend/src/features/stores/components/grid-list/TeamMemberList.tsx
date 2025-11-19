@@ -60,6 +60,17 @@ export const TeamMemberList: React.FC<TeamMemberListProps> = ({
           <div>
             <p className="font-medium text-foreground">{member.name}</p>
             <p className="text-sm text-muted-foreground">{member.email}</p>
+            {member.assignedAt && (
+              <p className="text-sm text-muted-foreground">
+                Assigned at: {member.assignedAt}
+              </p>
+            )}
+
+            {member.assignedBy && (
+              <p className="text-sm text-muted-foreground">
+                Assigned by: {member.assignedBy}
+              </p>
+            )}
           </div>
         </div>
 

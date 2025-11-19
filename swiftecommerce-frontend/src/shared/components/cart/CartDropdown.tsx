@@ -189,10 +189,7 @@ export function CartDropdown() {
                           {/* Price & Quantity */}
                           <div className="flex items-center justify-between">
                             <p className="font-semibold text-foreground">
-                              $
-                              {parseFloat(String(item.variant?.price)).toFixed(
-                                2
-                              )}
+                              ${item.variant?.price.toFixed(2)}
                             </p>
 
                             <div className="flex items-center gap-2">

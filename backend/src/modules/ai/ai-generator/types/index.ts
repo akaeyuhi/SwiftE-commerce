@@ -62,7 +62,6 @@ export interface PostGenerationParams extends GenerationParams {
   length?: number;
 }
 
-
 export interface GenerationResult<T> {
   success: boolean;
   data: {

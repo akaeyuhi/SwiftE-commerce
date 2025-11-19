@@ -13,8 +13,8 @@ interface OrderSummaryProps {
 
 export function OrderSummary({ order }: OrderSummaryProps) {
   const subtotal = order.totalAmount;
-  const tax = parseFloat(String(subtotal * 0.1)); // A rough estimation
-  const total = parseFloat(String(subtotal + tax));
+  const tax = subtotal * 0.1; // A rough estimation
+  const total = subtotal + tax;
 
   return (
     <Card>

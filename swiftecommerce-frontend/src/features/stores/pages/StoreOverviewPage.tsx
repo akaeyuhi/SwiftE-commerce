@@ -28,8 +28,6 @@ export function StoreOverviewPage() {
     return null;
   }
 
-  console.log(overviewData);
-
   return (
     <ErrorBoundary title="Store Overview Error">
       <div className="space-y-6">
@@ -54,11 +52,7 @@ export function StoreOverviewPage() {
             isLoading={overviewLoading}
             orders={overviewData?.recentOrders as any}
           />
-          <TopProducts
-            error={overviewError}
-            isLoading={overviewLoading}
-            products={overviewData?.topProducts as any}
-          />
+          <TopProducts storeId={storeId} />
         </div>
 
         <QuickActions storeId={storeId} />
