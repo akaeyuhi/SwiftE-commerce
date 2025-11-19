@@ -108,6 +108,7 @@ export class AuthService {
         id: user.id,
         email: user.email,
         firstName: user.firstName,
+        avatarUrl: user.avatarUrl,
         lastName: user.lastName,
         siteRole: user.siteRole,
         isEmailVerified: user.isEmailVerified || false,

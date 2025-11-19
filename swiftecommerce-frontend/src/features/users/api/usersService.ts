@@ -234,11 +234,9 @@ export class UsersService extends BaseService {
   async uploadAvatar(file: File) {
     const { formData, headers } = this.mapToFormData({ avatar: file });
 
-    const { data } = await this.client.post('/users/profile/avatar', formData, {
+    return await this.client.post('/users/profile/avatar', formData, {
       headers,
     });
-
-    return data;
   }
 }
 

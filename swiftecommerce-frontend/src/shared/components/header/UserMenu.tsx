@@ -34,13 +34,26 @@ export function UserMenu() {
           className="flex items-center gap-2 px-3 py-2
             hover:bg-muted rounded-lg transition-colors"
         >
-          <div
-            className="h-8 w-8 bg-primary text-primary-foreground rounded-full
+          {user?.avatarUrl ? (
+            <img
+              src={user.avatarUrl}
+              alt={user.firstName[0]}
+              className="h-8 w-8 bg-primary text-primary-foreground rounded-full
               flex items-center justify-center font-semibold"
-          >
-            {user?.firstName?.toUpperCase()[0] || 'U'}
-          </div>
-          <span className="font-medium text-foreground">{user?.firstName}</span>
+            />
+          ) : (
+            <>
+              <div
+                className="h-8 w-8 bg-primary text-primary-foreground rounded-full
+              flex items-center justify-center font-semibold"
+              >
+                {user?.firstName?.toUpperCase()[0] || 'U'}
+              </div>
+              <span className="font-medium text-foreground">
+                {user?.firstName}
+              </span>
+            </>
+          )}
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">

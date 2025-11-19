@@ -5,14 +5,16 @@ import { ImageUpload } from '@/shared/components/forms/ImageUpload';
 import { useAuth } from '@/app/store';
 
 export const AvatarUpload = () => {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
 
-  const { mutate: uploadAvatar, isPending } = useUploadAvatar();
+  const { mutateAsync: uploadAvatar, isPending } = useUploadAvatar();
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (avatarFile) {
-      uploadAvatar(avatarFile);
+      const result = await uploadAvatar(avatarFile);
+      console.log(result);
+      updateUser({ avatarUrl: result.avatarUrl });
     }
   };
 
