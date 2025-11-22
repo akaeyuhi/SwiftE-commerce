@@ -134,7 +134,7 @@ export class NewsNotificationsListener extends BaseNotificationListener<
           store: { id: storeId },
           emailNotifications: true,
         },
-        relations: ['user'],
+        relations: { user: true },
       });
 
       followers.forEach((follower) => {

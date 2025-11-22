@@ -20,10 +20,10 @@ export class NewsPost implements UserOwnedEntity, StoreOwnedEntity {
   @ManyToOne(() => Store, (store) => store.newsPosts, {
     onDelete: 'SET NULL',
   })
+  @JoinColumn({ name: 'store_id', referencedColumnName: 'id' })
   store: Store;
 
   @Column({ name: 'store_id', type: 'uuid' })
-  @JoinColumn({ name: 'store_id', referencedColumnName: 'id' })
   storeId: string;
 
   @ManyToOne(() => User, (user) => user.newsPosts, { onDelete: 'SET NULL' })

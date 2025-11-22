@@ -29,10 +29,12 @@ import {
 } from 'src/modules/auth/confirmation/dto/confirmation.dto';
 import { AdminGuard } from 'src/modules/authorization/guards/admin.guard';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
+import * as process from 'node:process';
 
 const REFRESH_COOKIE_NAME =
   process.env.REFRESH_TOKEN_COOKIE_NAME || 'refreshToken';
 const CSRF_COOKIE_NAME = process.env.CSRF_COOKIE_NAME || 'XSRF-TOKEN';
+const FRONTEND_URL = process.env.FRONTEND_URL;
 
 @Controller('auth')
 export class AuthController {
@@ -131,7 +133,7 @@ export class AuthController {
    * Handles: account-verification, site-admin-role, store-admin-role, store-moderator-role
    */
   @Get('confirm/:type')
-  @Redirect('/')
+  @Redirect(FRONTEND_URL)
   async confirmFromLink(
     @Param('type') typeParam: string,
     @Query('token') token: string

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { BaseService } from 'src/common/abstracts/base.service';
 import { PaginationParams } from 'src/common/decorators/pagination.decorator';
@@ -25,6 +25,8 @@ export class NewsService extends BaseService<
   UpdateNewsDto,
   NewsPostDto
 > {
+  protected readonly logger = new Logger(NewsService.name);
+
   constructor(
     private readonly newsRepo: NewsRepository,
     private readonly eventEmitter: EventEmitter2,
@@ -173,7 +175,7 @@ export class NewsService extends BaseService<
   private async emitNewsPublishedEvent(post: NewsPost): Promise<void> {
     try {
       if (!post.store) {
-        console.warn(
+        this.logger.warn(
           `Cannot emit event: post ${post.id} has no store relation`
         );
         return;
@@ -188,8 +190,8 @@ export class NewsService extends BaseService<
         this.getAuthorName(post.author),
         post.publishedAt || new Date(),
         this.generateNewsUrl(post.store.id, post.id),
-        undefined, // coverImageUrl - add if you have this field
-        undefined // category - add if you have this field
+        post.mainPhotoUrl,
+        post.tags[0] ?? undefined
       );
 
       const domainEvent = domainEventFactory<NewsPublishedEvent>(
@@ -200,9 +202,9 @@ export class NewsService extends BaseService<
 
       this.eventEmitter.emit('news.published', domainEvent);
 
-      console.log(`Emitted news.published event for post ${post.id}`);
+      this.logger.log(`Emitted news.published event for post ${post.id}`);
     } catch (error) {
-      console.error(
+      this.logger.error(
         `Failed to emit news.published event for post ${post.id}`,
         error
       );
@@ -247,6 +249,6 @@ export class NewsService extends BaseService<
    */
   private generateNewsUrl(storeId: string, newsId: string): string {
     const baseUrl = process.env.FRONTEND_URL || 'https://your-store.com';
-    return `${baseUrl}/stores/${storeId}/news/${newsId}`;
+    return `${baseUrl}store/${storeId}/news/${newsId}`;
   }
 }

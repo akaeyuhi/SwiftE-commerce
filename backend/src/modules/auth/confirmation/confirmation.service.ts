@@ -110,12 +110,15 @@ export class ConfirmationService {
     }
 
     if (confirmation.isUsed) {
-      console.error(`used, Confirmation token: ${confirmation}`, confirmation);
+      this.logger.error(
+        `used, Confirmation token: ${confirmation}`,
+        confirmation
+      );
       throw new BadRequestException('Confirmation token has already been used');
     }
 
     if (confirmation.expiresAt < new Date()) {
-      console.error(
+      this.logger.error(
         `exprired, Confirmation token: ${confirmation}`,
         confirmation
       );

@@ -522,7 +522,7 @@ export class OrdersService extends BaseService<
    */
   private generateOrderUrl(storeId: string, orderId: string): string {
     const baseUrl = process.env.FRONTEND_URL || 'https://your-store.com';
-    return `${baseUrl}/stores/${storeId}/orders/${orderId}`;
+    return `${baseUrl}store/${storeId}/orders/${orderId}`;
   }
 
   /**

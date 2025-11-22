@@ -609,6 +609,7 @@ export class EmailQueueService extends BaseQueueService<EmailJobData> {
             hasCategory: !!newsData.category,
             storeName: newsData.storeName,
             unsubscribeUrl: newsData.unsubscribeUrl,
+            year: new Date(newsData.publishedAt).getFullYear(),
           },
           priority: EmailPriority.NORMAL,
           tags: ['news', 'announcement'],

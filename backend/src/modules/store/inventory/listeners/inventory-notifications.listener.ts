@@ -152,7 +152,7 @@ export class InventoryNotificationsListener extends BaseNotificationListener<
         variantId: event.variantId,
         storeName: store.name,
         inventoryManagementUrl: this.generateUrl(
-          `/stores/${event.storeId}/products/${event.productId}/inventory`
+          `store/${event.storeId}/inventory`
         ),
         isCritical: event.currentStock <= Math.floor(event.threshold / 2),
       };

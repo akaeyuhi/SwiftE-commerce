@@ -61,6 +61,11 @@ export class EmailQueueProcessor {
     return this.processEmailJob(job, EmailJobType.NEWSLETTER);
   }
 
+  @Process(EmailJobType.NEWS_PUBLISHED)
+  async handleStoreNews(job: Job<EmailJobData>) {
+    return this.processEmailJob(job, EmailJobType.NEWS_PUBLISHED);
+  }
+
   @Process(EmailJobType.MARKETING)
   async handleMarketing(job: Job<EmailJobData>) {
     return this.processEmailJob(job, EmailJobType.MARKETING);
