@@ -1,13 +1,4 @@
-import {
-  Controller,
-  Get,
-  Param,
-  Query,
-  UseGuards,
-  UseInterceptors,
-} from '@nestjs/common';
-import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';
-import { StoreRolesGuard } from 'src/modules/authorization/guards/store-roles.guard';
+import { Controller, Get, Param, Query, UseInterceptors } from '@nestjs/common';
 import { ProductsService } from 'src/modules/products/services/products.service';
 import {
   ProductDetailDto,
