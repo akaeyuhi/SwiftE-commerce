@@ -1,5 +1,8 @@
 """
-Export features for model training from file - ADVANCED BATCH OPTIMIZATION
+Export features for model training from file
+Supports:
+- MLP/LightGBM (Wide format with rolling windows)
+- TFT (Long format time-series)
 """
 from __future__ import annotations
 import argparse
@@ -39,24 +42,30 @@ class BatchFeatureProcessor:
         storeStats: pd.DataFrame,
         variants: pd.DataFrame,
         inventory: pd.DataFrame,
-        reviews: pd.DataFrame
+        reviews: pd.DataFrame,
+        modelType: str = 'mlp',
+        globalMinDate: Optional[pd.Timestamp] = None
     ) -> List[Dict[str, Any]]:
-        """Process entire batch at once with vectorized operations"""
+        """Process entire batch based on model type"""
 
-        allRows: List[Dict[str, Any]] = []
+        # Pre-compute common index
+        # For MLP we need padding for windows, for TFT we just need the range
+        if modelType == 'mlp':
+            paddedStart = snapshotDates[0] - timedelta(days=featureConfig.paddingDays)
+        else:
+            paddedStart = snapshotDates[0]
 
-        # Pre-compute padding
-        paddedStart = snapshotDates[0] - timedelta(days=featureConfig.paddingDays)
         dateIndex = pd.date_range(start=paddedStart, end=snapshotDates[-1], freq='D')
         index_positions = {d: i for i, d in enumerate(dateIndex)}
 
-        # Filter data once per batch instead of per product
+        # Filter data once per batch
         batchProductIds = [pid for pid, _ in batchProducts]
         batchStoreIds = [sid for _, sid in batchProducts]
 
         prodStatsSubset = productStats[productStats['productId'].isin(batchProductIds)].copy()
         prodStatsSubset['date'] = pd.to_datetime(prodStatsSubset['date'], errors='coerce').dt.tz_localize(None).dt.normalize()
 
+        # Store stats are optional for TFT strict product view but useful for covariates
         storeStatsSubset = storeStats[storeStats['storeId'].isin(batchStoreIds)].copy()
         storeStatsSubset['date'] = pd.to_datetime(storeStatsSubset['date'], errors='coerce').dt.tz_localize(None).dt.normalize()
 
@@ -64,21 +73,34 @@ class BatchFeatureProcessor:
         inventorySubset = inventory[inventory['variantId'].isin(batchProductIds)].copy()
         reviewsSubset = reviews[reviews['productId'].isin(batchProductIds)].copy()
 
-        # Process all products in batch
+        allRows = []
+
+        # Dispatch based on model type
         for productId, storeId in batchProducts:
             try:
-                rows = self._buildProductFeaturesBatch(
-                    productId=productId,
-                    storeId=storeId,
-                    snapshotDates=snapshotDates,
-                    dateIndex=dateIndex,
-                    index_positions=index_positions,
-                    prodStatsSubset=prodStatsSubset,
-                    storeStatsSubset=storeStatsSubset,
-                    variantsSubset=variantsSubset,
-                    inventorySubset=inventorySubset,
-                    reviewsSubset=reviewsSubset
-                )
+                if modelType == 'tft':
+                    rows = self._buildProductFeaturesTFT(
+                        productId=productId,
+                        storeId=storeId,
+                        dateIndex=dateIndex,
+                        globalMinDate=globalMinDate,
+                        prodStatsSubset=prodStatsSubset,
+                        variantsSubset=variantsSubset,
+                        inventorySubset=inventorySubset
+                    )
+                else:
+                    rows = self._buildProductFeaturesMLP(
+                        productId=productId,
+                        storeId=storeId,
+                        snapshotDates=snapshotDates,
+                        dateIndex=dateIndex,
+                        index_positions=index_positions,
+                        prodStatsSubset=prodStatsSubset,
+                        storeStatsSubset=storeStatsSubset,
+                        variantsSubset=variantsSubset,
+                        inventorySubset=inventorySubset,
+                        reviewsSubset=reviewsSubset
+                    )
                 allRows.extend(rows)
             except Exception as e:
                 logger.error(f"Failed to process product {productId}: {e}")
@@ -86,7 +108,68 @@ class BatchFeatureProcessor:
 
         return allRows
 
-    def _buildProductFeaturesBatch(
+    def _buildProductFeaturesTFT(
+        self,
+        productId: str,
+        storeId: Optional[str],
+        dateIndex: pd.DatetimeIndex,
+        globalMinDate: pd.Timestamp,
+        prodStatsSubset: pd.DataFrame,
+        variantsSubset: pd.DataFrame,
+        inventorySubset: pd.DataFrame
+    ) -> List[Dict[str, Any]]:
+        """Build long-format time-series for TFT"""
+
+        # 1. Base Time Series
+        ts_df = pd.DataFrame({'date': dateIndex})
+        ts_df['productId'] = productId
+        ts_df['storeId'] = storeId or 'unknown'
+
+        # 2. Merge Sales/Stats
+        prodStats = prodStatsSubset[prodStatsSubset['productId'] == productId]
+        if not prodStats.empty:
+            ts_df = pd.merge(ts_df, prodStats[['date', 'purchases', 'views', 'revenue']], on='date', how='left')
+
+        # Fill NaNs with 0 for observed inputs
+        cols_to_fill = ['purchases', 'views', 'revenue']
+        for col in cols_to_fill:
+            if col not in ts_df.columns:
+                ts_df[col] = 0.0
+            ts_df[col] = ts_df[col].fillna(0)
+
+        # 3. Merge Inventory (Asof merge logic)
+        variants = variantsSubset[variantsSubset['productId'] == productId]
+        variantIds = variants['id'].tolist() if not variants.empty else []
+
+        # Reuse feature engineer logic or simple merge_asof
+        inventoryByDate = self.featureEngineer.computeInventoryByDate(
+            invDf=inventorySubset[inventorySubset['variantId'].isin(variantIds)],
+            variantIds=variantIds,
+            dateIndex=dateIndex
+        )
+        ts_df['inventoryQty'] = inventoryByDate.values
+
+        # 4. Calculate TFT Specific Features
+        # Time Index (days since global start)
+        ts_df['time_idx'] = (ts_df['date'] - globalMinDate).dt.days
+
+        # Temporal features
+        ts_df['dayOfWeek'] = ts_df['date'].dt.dayofweek
+        ts_df['dayOfMonth'] = ts_df['date'].dt.day
+        ts_df['month'] = ts_df['date'].dt.month
+        ts_df['isWeekend'] = ts_df['dayOfWeek'].apply(lambda x: 1 if x >= 5 else 0)
+
+        # Log transforms (stabilize training)
+        # FIX: Clip negative values (returns) to 0 to prevent log errors (nan/inf)
+        ts_df['log_purchases'] = np.log1p(ts_df['purchases'].clip(lower=0))
+        ts_df['log_views'] = np.log1p(ts_df['views'].clip(lower=0))
+
+        # Format date for CSV
+        ts_df['date'] = ts_df['date'].dt.strftime('%Y-%m-%d')
+
+        return ts_df.to_dict('records')
+
+    def _buildProductFeaturesMLP(
         self,
         productId: str,
         storeId: Optional[str],
@@ -99,7 +182,7 @@ class BatchFeatureProcessor:
         inventorySubset: pd.DataFrame,
         reviewsSubset: pd.DataFrame
     ) -> List[Dict[str, Any]]:
-        """Build features for single product using pre-filtered batch data"""
+        """Build wide-format windowed features for MLP/LightGBM"""
 
         # Product timeseries
         prodStats = prodStatsSubset[prodStatsSubset['productId'] == productId]
@@ -144,18 +227,17 @@ class BatchFeatureProcessor:
             dateIndex=dateIndex
         )
 
-        # Rolling windows (computed once per product)
+        # Rolling windows
         rollingWindows = self.featureEngineer.computeRollingWindows(ts)
 
         # Last restock
         lastRestockDate = inventory['updatedAt'].max() if not inventory.empty else None
 
-        # Vectorized row building for all snapshots at once
-        rows = self._buildFeatureRowsVectorized(
+        # Build Vectorized Rows
+        return self._buildFeatureRowsVectorized(
             productId=productId,
             storeId=storeId,
             snapshotDates=snapshotDates,
-            dateIndex=dateIndex,
             index_positions=index_positions,
             rollingWindows=rollingWindows,
             storeTs=storeTs,
@@ -167,14 +249,11 @@ class BatchFeatureProcessor:
             prodStats=prodStatsSubset[prodStatsSubset['productId'] == productId]
         )
 
-        return rows
-
     def _buildFeatureRowsVectorized(
         self,
         productId: str,
         storeId: Optional[str],
         snapshotDates: pd.DatetimeIndex,
-        dateIndex: pd.DatetimeIndex,
         index_positions: Dict,
         rollingWindows: Dict[str, pd.DataFrame],
         storeTs: pd.DataFrame,
@@ -185,7 +264,7 @@ class BatchFeatureProcessor:
         lastRestockDate: Optional[pd.Timestamp],
         prodStats: pd.DataFrame
     ) -> List[Dict[str, Any]]:
-        """Build all feature rows for a product using vectorized operations"""
+        """Build all feature rows for a product using vectorized operations (MLP logic)"""
 
         rows: List[Dict[str, Any]] = []
 
@@ -312,11 +391,12 @@ class FileFeatureExporter:
         self,
         inputFile: str,
         outputCsv: str,
+        modelType: str = 'mlp',
         productIds: Optional[List[str]] = None,
         batchSize: int = 200,
         maxWorkers: Optional[int] = None
     ) -> None:
-        logger.info(f"Starting feature export from {inputFile}")
+        logger.info(f"Starting feature export from {inputFile} for model: {modelType}")
 
         if maxWorkers is None:
             maxWorkers = os.cpu_count() or 4
@@ -434,7 +514,8 @@ class FileFeatureExporter:
                     variants=variants,
                     inventory=inventory,
                     reviews=reviews,
-                    featureConfig=featureConfig
+                    modelType=modelType,
+                    globalMinDate=start_ts
                 ): idx
                 for idx, batch in enumerate(batches)
             }
@@ -457,33 +538,44 @@ class FileFeatureExporter:
         logger.info("Converting to DataFrame and saving...")
         dfOut = pd.DataFrame(allRows)
 
-        columns = [
-            'productId', 'storeId', 'snapshotDate',
-            *featureConfig.featureColumns,
-            'futureSales14d', 'stockout14d'
-        ]
-        for col in columns:
-            if col not in dfOut.columns:
-                dfOut[col] = 0
+        # Column filtering differs by model type
+        if modelType == 'mlp':
+            columns = [
+                'productId', 'storeId', 'snapshotDate',
+                *featureConfig.featureColumns,
+                'futureSales14d', 'stockout14d'
+            ]
+            # Ensure cols exist
+            for col in columns:
+                if col not in dfOut.columns:
+                    dfOut[col] = 0
+            dfOut = dfOut[columns]
+            dfOut['snapshotDate'] = pd.to_datetime(dfOut['snapshotDate'], errors='coerce').dt.normalize().dt.strftime('%Y-%m-%d')
+        else:
+            # TFT Columns
+            logger.info("Ensuring time_idx continuity for TFT...")
+            # Sort for safety
+            if 'time_idx' in dfOut.columns:
+                dfOut = dfOut.sort_values(['productId', 'time_idx'])
 
-        dfOut['snapshotDate'] = pd.to_datetime(dfOut['snapshotDate'], errors='coerce').dt.normalize().dt.strftime('%Y-%m-%d')
-        dfOut = dfOut[columns]
         dfOut.to_csv(outputCsv, index=False)
 
-        logger.info(f"Successfully exported {len(dfOut)} feature rows to {outputCsv}")
-        self._logStatistics(dfOut)
+        logger.info(f"Successfully exported {len(dfOut)} rows to {outputCsv}")
+        self._logStatistics(dfOut, modelType)
 
-    def _logStatistics(self, df: pd.DataFrame) -> None:
+    def _logStatistics(self, df: pd.DataFrame, modelType: str) -> None:
         logger.info("Dataset Statistics:")
         logger.info(f"  Total rows: {len(df)}")
         logger.info(f"  Unique products: {df['productId'].nunique()}")
-        logger.info(f"  Date range: {df['snapshotDate'].min()} to {df['snapshotDate'].max()}")
 
-        if 'stockout14d' in df.columns:
-            stockoutRate = df['stockout14d'].mean()
-            logger.info(f"  Stockout rate: {stockoutRate:.2%}")
-            logger.info(f"  Stockout samples: {df['stockout14d'].sum()}")
-            logger.info(f"  Non-stockout samples: {(1 - df['stockout14d']).sum()}")
+        if modelType == 'mlp':
+            logger.info(f"  Date range: {df['snapshotDate'].min()} to {df['snapshotDate'].max()}")
+            if 'stockout14d' in df.columns:
+                stockoutRate = df['stockout14d'].mean()
+                logger.info(f"  Stockout rate: {stockoutRate:.2%}")
+        else:
+            logger.info(f"  Time idx range: {df['time_idx'].min()} to {df['time_idx'].max()}")
+            logger.info(f"  Features: {list(df.columns)}")
 
 
 def _processBatchStatic(
@@ -494,19 +586,22 @@ def _processBatchStatic(
     variants: pd.DataFrame,
     inventory: pd.DataFrame,
     reviews: pd.DataFrame,
-    featureConfig
+    modelType: str,
+    globalMinDate: pd.Timestamp
 ) -> List[Dict[str, Any]]:
     """Static function for multiprocessing (pickled execution)"""
     featureEngineer = FeatureEngineer()
     processor = BatchFeatureProcessor(featureEngineer)
     return processor.processBatch(
-        batch,
-        snapshotDates,
-        productStats,
-        storeStats,
-        variants,
-        inventory,
-        reviews
+        batchProducts=batch,
+        snapshotDates=snapshotDates,
+        productStats=productStats,
+        storeStats=storeStats,
+        variants=variants,
+        inventory=inventory,
+        reviews=reviews,
+        modelType=modelType,
+        globalMinDate=globalMinDate
     )
 
 
@@ -514,6 +609,7 @@ def main():
     parser = argparse.ArgumentParser(description='Export features for model training')
     parser.add_argument('--input', required=True, help='Input data file path')
     parser.add_argument('--out', default='data/features.csv', help='Output CSV path')
+    parser.add_argument('--model', default='mlp', choices=['mlp', 'tft'], help='Model type (mlp or tft)')
     parser.add_argument('--products', nargs='*', help='Optional product IDs to filter')
     parser.add_argument('--batch-size', type=int, default=200, help='Batch size for processing')
     parser.add_argument('--workers', type=int, default=None, help='Number of worker processes')
@@ -523,6 +619,7 @@ def main():
     exporter.exportFeatures(
         inputFile=args.input,
         outputCsv=args.out,
+        modelType=args.model,
         productIds=args.products,
         batchSize=args.batch_size,
         maxWorkers=args.workers

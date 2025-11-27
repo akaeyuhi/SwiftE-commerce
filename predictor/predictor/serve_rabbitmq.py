@@ -1,23 +1,23 @@
 """
-RabbitMQ prediction server with camelCase support
-
-Features:
-- Single and batch predictions
-- Automatic camelCase ↔ snake_case transformation
-- Authentication
-- Health checks
-- Metrics
+RabbitMQ prediction server supporting both MLP and TFT models.
 """
 from __future__ import annotations
-import os
 import logging
-from typing import Optional, Any
-from pathlib import Path
 import json
-
 import joblib
 import numpy as np
+import pandas as pd
 import pika
+from pathlib import Path
+
+# Conditional imports
+try:
+    import torch
+    import lightning.pytorch as pl
+    from pytorch_forecasting import TemporalFusionTransformer
+    HAS_TFT = True
+except ImportError:
+    HAS_TFT = False
 
 from .config import serverConfig
 from .case_transformer import CaseTransformer
@@ -29,183 +29,157 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Global model and scaler
 model = None
 scalerInfo = None
 modelType = None
 
 def startup():
-    """Load model and scaler on startup"""
     global model, scalerInfo, modelType
+    logger.info(f"Starting RabbitMQ worker with MODEL_TYPE={serverConfig.modelType}")
 
-    logger.info("Loading model and scaler...")
-
-    # Load scaler
-    if not Path(serverConfig.scalerPath).exists():
-        raise RuntimeError(f"Scaler not found: {serverConfig.scalerPath}")
-
-    scalerInfo = joblib.load(serverConfig.scalerPath)
-
-    if 'columns' not in scalerInfo:
-        raise RuntimeError("scaler.pkl missing 'columns' key")
-
-    logger.info(f"Loaded scaler with {len(scalerInfo['columns'])} features")
-
-    # Detect model type
-    if serverConfig.modelType:
-        modelType = serverConfig.modelType
+    if serverConfig.modelType == 'tft':
+        if not HAS_TFT: raise RuntimeError("TFT libs missing")
+        logger.info(f"Loading TFT model from {serverConfig.modelPath}")
+        model = TemporalFusionTransformer.load_from_checkpoint(
+            serverConfig.modelPath,
+            map_location=torch.device("cpu")
+        )
+        model.eval()
+        modelType = 'tft'
     else:
-        modelPath = Path(serverConfig.modelPath)
-        if modelPath.suffix == '.h5' or modelPath.is_dir():
-            modelType = 'keras'
-        else:
-            modelType = 'lightgbm'
-
-    logger.info(f"Detected model type: {modelType}")
-
-    # Load model
-    if modelType == 'lightgbm':
-        try:
-            import lightgbm as lgb
-            model = lgb.Booster(model_file=serverConfig.modelPath)
-            logger.info("LightGBM model loaded successfully")
-        except ImportError:
-            raise RuntimeError("LightGBM not installed")
-        except Exception as e:
-            raise RuntimeError(f"Failed to load LightGBM model: {e}")
-    else:
-        try:
+        logger.info(f"Loading Legacy model from {serverConfig.modelPath}")
+        scalerInfo = joblib.load(serverConfig.scalerPath)
+        if serverConfig.modelType == 'keras' or Path(serverConfig.modelPath).suffix == '.h5':
             import tensorflow as tf
             model = tf.keras.models.load_model(serverConfig.modelPath)
-            logger.info("Keras model loaded successfully")
-        except ImportError:
-            raise RuntimeError("TensorFlow not installed")
-        except Exception as e:
-            raise RuntimeError(f"Failed to load Keras model: {e}")
+            modelType = 'keras'
+        else:
+            import lightgbm as lgb
+            model = lgb.Booster(model_file=serverConfig.modelPath)
+            modelType = 'lightgbm'
 
-    logger.info("Startup complete")
+    logger.info(f"Model loaded: {modelType}")
 
+def _predict_tft_single(row):
+    history = row.get('history', [])
+    if not history: return 0.0, 'error', 0, 0, 0.0
 
-def buildFeatureArray(features: dict[str, Any]) -> np.ndarray:
-    """
-    Build feature array from dictionary
-    Handles both camelCase and snake_case keys
-    """
-    # Transform to snake_case for backward compatibility
-    featuresSnake = CaseTransformer.transformKeysToSnake(features)
+    df = pd.DataFrame(history)
+    df['date'] = pd.to_datetime(df['date'])
+    df['productId'] = str(row.get('productId', 'unknown'))
+    df['storeId'] = str(row.get('storeId', 'unknown'))
 
-    # Extract values in correct order
-    columns = scalerInfo['columns']
-    row = [featuresSnake.get(col, 0) for col in columns]
+    # FIX: Force float types
+    numeric_cols = ['purchases', 'views', 'revenue', 'inventoryQty']
+    for col in numeric_cols:
+        if col in df.columns:
+            df[col] = df[col].astype(float)
+        else:
+            df[col] = 0.0
 
-    # Convert to numpy array and scale
-    arr = np.array(row, dtype=np.float64).reshape(1, -1)
+    df = df.sort_values('date')
+    df['time_idx'] = (df['date'] - df['date'].min()).dt.days
+    df['dayOfWeek'] = df['date'].dt.dayofweek
+    df['dayOfMonth'] = df['date'].dt.day
+    df['isWeekend'] = df['dayOfWeek'].apply(lambda x: 1 if x >= 5 else 0)
 
-    # Apply scaling if available
-    if 'scaler' in scalerInfo and scalerInfo['scaler'] is not None:
+    df['log_purchases'] = np.log1p(df['purchases'])
+    df['log_views'] = np.log1p(df['views'])
+
+    df['productId'] = df['productId'].astype(str)
+    df['storeId'] = df['storeId'].astype(str)
+
+    with torch.no_grad():
+        raw = model.predict(df, mode="quantiles", return_x=False)
+
+        # Quantiles: [0.02, 0.1, 0.25, 0.5, 0.75, 0.9, 0.98]
+        p50 = raw[0, :, 3].sum().item() # Median
+        p10 = raw[0, :, 1].sum().item() # 0.1 (Optimistic)
+        p90 = raw[0, :, 5].sum().item() # 0.9 (Conservative) - Changed from 6 to 5 for standard P90
+
+        uncertainty_range = p90 - p10
+
+        # FIX: Add +1.0 to denominator to smooth confidence for low-volume items
+        # If forecast is 0 and uncertainty is 0.1, this ensures confidence stays high (~0.9)
+        rel_uncertainty = uncertainty_range / (p50 + 1.0)
+
+        model_confidence = max(0.0, 1.0 - rel_uncertainty)
+
+    current = float(history[-1].get('inventoryQty', 0))
+
+    label = 'low'
+    if p50 > current: label = 'high'
+    elif p90 > current: label = 'medium'
+
+    score = 0.1
+    if label == 'high': score = 0.95
+    elif label == 'medium': score = 0.55
+
+    return score, label, p50, p90, model_confidence
+
+def _predict_mlp_single(row):
+    feat = row.get('features')
+    if not feat: return 0.0, 'error', 0, 0, 0.0
+
+    fs = CaseTransformer.transformKeysToSnake(feat)
+    vec = [fs.get(c, 0) for c in scalerInfo['columns']]
+    arr = np.array(vec).reshape(1, -1)
+    if 'scaler' in scalerInfo:
         arr = scalerInfo['scaler'].transform(arr)
 
-    return arr
-
-
-def predict(features: dict[str, Any]) -> tuple[float, str]:
-    """Make single prediction"""
-    arr = buildFeatureArray(features)
-
     if modelType == 'lightgbm':
-        scores = model.predict(arr, num_iteration=model.best_iteration)
-        score = float(scores[0])
-    else:  # keras
-        scores = model.predict(arr, verbose=0)
-        score = float(scores[0][0])
-
-    # Determine label
-    if score > 0.7:
-        label = 'high'
-    elif score > 0.4:
-        label = 'medium'
+        score = float(model.predict(arr)[0])
     else:
-        label = 'low'
+        score = float(model.predict(arr)[0][0])
 
-    return score, label
-
-
-def predictBatch(request: dict) -> dict:
-    """Batch prediction endpoint"""
-    if not request.get('rows'):
-        raise ValueError("No rows provided")
-
-    if len(request['rows']) > 1000:
-        raise ValueError("Maximum 1000 rows per batch")
-
-    try:
-        # Build feature arrays
-        arrays = [buildFeatureArray(row['features']) for row in request['rows']]
-        X = np.vstack(arrays)
-
-        # Batch predict
-        if modelType == 'lightgbm':
-            scores = model.predict(X, num_iteration=model.best_iteration)
-        else:  # keras
-            scores = model.predict(X, verbose=0).flatten()
-
-        # Format results
-        results = []
-        for i, score in enumerate(scores):
-            score = float(score)
-
-            if score > 0.7:
-                label = 'high'
-            elif score > 0.4:
-                label = 'medium'
-            else:
-                label = 'low'
-
-            results.append({
-                'index': i,
-                'score': score,
-                'label': label,
-                'productId': request['rows'][i].get('productId'),
-                'storeId': request['rows'][i].get('storeId')
-            })
-
-        return {
-            'results': results,
-            'modelVersion': serverConfig.modelVersion,
-            'processedCount': len(results)
-        }
-
-    except Exception as e:
-        logger.exception("Batch prediction failed")
-        raise
-
+    label = 'high' if score > 0.7 else ('medium' if score > 0.4 else 'low')
+    return score, label, 0, 0, 0.0
 
 def on_message(ch, method, properties, body):
-    """Callback function to process incoming messages."""
-    logger.info("Received message")
     try:
-        request = json.loads(body)
-        data = request['data']
-        response = predictBatch(data)
-        ch.basic_publish(
-            exchange='',
-            routing_key=properties.reply_to,
-            properties=pika.BasicProperties(correlation_id=properties.correlation_id),
-            body=json.dumps(response)
-        )
+        req = json.loads(body)
+        rows = req.get('data', {}).get('rows', [])
+        results = []
+
+        for i, row in enumerate(rows):
+            try:
+                if modelType == 'tft':
+                    score, label, p50, p90, conf = _predict_tft_single(row)
+                else:
+                    score, label, p50, p90, conf = _predict_mlp_single(row)
+
+                results.append({
+                    'index': i,
+                    'score': score,
+                    'label': label,
+                    'forecast_p50': p50,
+                    'forecast_p90': p90,
+                    'model_confidence': conf,
+                    'productId': row.get('productId')
+                })
+            except Exception as e:
+                logger.error(f"Err {i}: {e}")
+                results.append({'index': i, 'error': str(e)})
+
+        resp = {'results': results, 'modelVersion': serverConfig.modelVersion}
+
+        if properties.reply_to:
+            ch.basic_publish(
+                exchange='',
+                routing_key=properties.reply_to,
+                properties=pika.BasicProperties(correlation_id=properties.correlation_id),
+                body=json.dumps(resp)
+            )
     except Exception as e:
-        logger.error(f"Error processing message: {e}")
+        logger.error(f"MQ Error: {e}")
     finally:
         ch.basic_ack(delivery_tag=method.delivery_tag)
 
-
 def main():
-    """Run server"""
     startup()
-    rabbitmq = RabbitMQ()
-    rabbitmq.connect()
-    rabbitmq.consume('prediction_requests', on_message)
-
+    mq = RabbitMQ()
+    mq.connect()
+    mq.consume('prediction_requests', on_message)
 
 if __name__ == "__main__":
     main()

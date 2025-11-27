@@ -46,9 +46,10 @@ class ServerConfig:
             logLevel: Optional[str] = None
     ):
         # Use provided values or fall back to environment or defaults
-        self.modelPath = modelPath or os.getenv('MODEL_PATH', './models/model.h5')
+        self.modelPath = modelPath or os.getenv('MODEL_PATH', './models/tft.ckpt')
+        #self.modelPath = modelPath or os.getenv('MODEL_PATH', './models/model.h5')
         self.scalerPath = scalerPath or os.getenv('SCALER_PATH', './models/scaler.pkl')
-        self.modelType = modelType or os.getenv('MODEL_TYPE', 'tensorflow')
+        self.modelType = modelType or os.getenv('MODEL_TYPE', 'tft') # lightgbm keras or tft
         self.authToken = authToken or os.getenv('PREDICTOR_AUTH_TOKEN', '')
         self.modelVersion = modelVersion or os.getenv('MODEL_VERSION', 'v1.0')
         self.host = host or os.getenv('HOST', '0.0.0.0')
