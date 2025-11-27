@@ -115,9 +115,9 @@ export class AiPredictorRabbitMQService
 
       if (typeof item === 'object') {
         const obj = item as any;
-        if (!obj.productId && !obj.features) {
+        if (!obj.productId && !obj.features && !obj.history) {
           throw new BadRequestException(
-            'Each item must have either productId or pre-built features'
+            'Each item must have either productId, pre-built features, or history'
           );
         }
       }
@@ -130,17 +130,23 @@ export class AiPredictorRabbitMQService
     >,
     userId?: string,
     contextStoreId?: string,
-    modelVersion?: string
+    modelVersion?: string,
+    modelType: 'mlp' | 'tft' = 'tft' // Added modelType parameter with 'tft' default
   ) {
     this.validateItems(items);
-    const preparedItems =
-      await this.featureService.preparePredictionItems(items);
+
+    // Use featureService to prepare items (fetches history for TFT or features for MLP)
+    const preparedItems = await this.featureService.preparePredictionItems(
+      items,
+      modelType
+    );
 
     return this.predictBatchAndPersist(
       preparedItems,
       modelVersion,
       userId,
-      contextStoreId
+      contextStoreId,
+      modelType
     );
   }
 
@@ -149,17 +155,41 @@ export class AiPredictorRabbitMQService
     startIndex: number,
     modelVersion?: string,
     userId?: string,
-    contextStoreId?: string
+    contextStoreId?: string,
+    modelType: 'mlp' | 'tft' = 'tft'
   ) {
-    const payload = {
-      rows: chunk.map((item) => ({
+    // Construct payload based on model type
+    const rows = chunk.map((item) => {
+      const base = {
         productId: item.productId,
         storeId: item.storeId,
-        features: CaseTransformer.transformKeysToSnake(item.features),
-      })),
-    };
+      };
 
-    const preparedPayload = CaseTransformer.transformKeysToSnake(payload);
+      if (modelType === 'tft') {
+        // TFT expects 'history' (DailyStat array).
+        // We DO NOT transform keys to snake_case here because the Python Pydantic model
+        // for DailyStat expects 'inventoryQty' (camelCase), matching our TS interface.
+        return {
+          ...base,
+          history: item.history,
+        };
+      } else {
+        // MLP/Legacy expects 'features' in snake_case
+        return {
+          ...base,
+          features: CaseTransformer.transformKeysToSnake(item.features),
+        };
+      }
+    });
+
+    const payload = { rows };
+
+    // Only apply global snake_case transformation for legacy MLP requests.
+    // TFT requests must preserve camelCase keys (e.g., inventoryQty) for the python side.
+    const preparedPayload =
+      modelType === 'tft'
+        ? payload
+        : CaseTransformer.transformKeysToSnake(payload);
 
     const result = this.client
       .send<PredictorResponseData>('predict', preparedPayload)
@@ -188,7 +218,8 @@ export class AiPredictorRabbitMQService
     normalized: Array<AiPredictRow & { meta: any }>,
     modelVersion?: string,
     userId?: string,
-    contextStoreId?: string
+    contextStoreId?: string,
+    modelType: 'mlp' | 'tft' = 'tft'
   ): Promise<[PredictionResult[], ErrorResult[]]> {
     const results: Array<any> = [];
     const errors: Array<any> = [];
@@ -202,7 +233,8 @@ export class AiPredictorRabbitMQService
           i,
           modelVersion,
           userId,
-          contextStoreId
+          contextStoreId,
+          modelType
         );
         results.push(...chunkResults);
       } catch (error) {

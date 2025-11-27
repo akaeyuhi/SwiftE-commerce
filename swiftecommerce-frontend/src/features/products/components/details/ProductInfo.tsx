@@ -31,7 +31,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
     null
   );
   const [quantity, setQuantity] = useState(1);
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const { addItem } = useCartMutations(user?.id ?? '');
   const { likeProduct, removeLike } = useLikeMutations(user?.id ?? '');
 
@@ -374,7 +374,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
           size="lg"
           className="flex-1"
           onClick={handleAddToCart}
-          disabled={!hasStock || addItem.isPending}
+          disabled={!hasStock || addItem.isPending || !isAuthenticated}
         >
           <ShoppingCart className="h-5 w-5 mr-2" />
           {addItem.isPending ? 'Adding...' : 'Add to Cart'}
@@ -417,7 +417,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
           <Link to={ROUTES.LOGIN} className="text-primary hover:underline">
             Sign in
           </Link>{' '}
-          to save products to your wishlist
+          to to order items and save products to your wishlist
         </p>
       )}
 

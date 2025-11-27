@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { AiPredictRow } from 'src/modules/ai/ai-predictor/dto/ai-predict.dto';
 import { ErrorResult, FeatureVector } from 'src/modules/ai/ai-predictor/types';
-import { subDays } from 'date-fns';
+import { eachDayOfInterval, format, isSameDay, subDays } from 'date-fns';
 import { StoreDailyStatsRepository } from 'src/modules/analytics/repositories/store-daily-stats.repository';
 import { ProductDailyStatsRepository } from 'src/modules/analytics/repositories/product-daily-stats.repository';
 import { IReviewsRepository } from 'src/common/contracts/reviews.contract';
@@ -9,6 +9,17 @@ import {
   IInventoryService,
   IVariantService,
 } from 'src/common/contracts/ai-predictor.contract';
+// FIX: Import TypeORM operator
+import { Between } from 'typeorm';
+
+// Interface for TFT History
+export interface DailyStat {
+  date: string;
+  purchases: number;
+  views: number;
+  revenue: number;
+  inventoryQty: number;
+}
 
 @Injectable()
 export class AiPredictorFeatureService {
@@ -23,42 +34,66 @@ export class AiPredictorFeatureService {
   ) {}
 
   protected readonly logger = new Logger(this.constructor.name);
+
   // Feature cache to avoid rebuilding features for same product/store combination
+  // Key now includes model type to separate static features from history
   private readonly featureCache = new Map<
     string,
     {
-      features: FeatureVector;
+      data: FeatureVector | DailyStat[];
       timestamp: number;
     }
   >();
   private readonly cacheTimeout = 5 * 60 * 1000; // 5 minutes
 
   /**
-   * Build comprehensive feature vector for a product with caching
-   * Returns features in camelCase format
+   * Main entry point: Prepares items based on the requested model type
    */
+  public async preparePredictionItems(
+    items: Array<
+      string | { productId: string; storeId?: string } | AiPredictRow
+    >,
+    modelType: 'mlp' | 'tft' | 'lightgbm' | 'keras' = 'mlp'
+  ): Promise<
+    Array<AiPredictRow & { meta: { productId?: string; storeId?: string } }>
+  > {
+    if (!items || items.length === 0) return [];
+
+    const normalized = await this.normalizeItems(items);
+
+    if (modelType === 'tft') {
+      await this.buildMissingHistory(normalized);
+    } else {
+      await this.buildMissingFeatures(normalized);
+    }
+
+    return normalized;
+  }
+
+  // ==========================================
+  //  MLP / LightGBM Logic (Static Features)
+  // ==========================================
+
   async buildFeatureVector(
     productId: string,
     storeId?: string
   ): Promise<FeatureVector> {
-    const cacheKey = `${productId}:${storeId || 'none'}`;
+    const cacheKey = `mlp:${productId}:${storeId || 'none'}`;
     const cached = this.featureCache.get(cacheKey);
 
     if (cached && Date.now() - cached.timestamp < this.cacheTimeout) {
-      return cached.features;
+      return cached.data as FeatureVector;
     }
 
     try {
       const features = await this.computeFeatureVector(productId, storeId);
 
       this.featureCache.set(cacheKey, {
-        features,
+        data: features,
         timestamp: Date.now(),
       });
 
-      if (this.featureCache.size > 1000) {
-        this.cleanupFeatureCache();
-      }
+      if (this.featureCache.size > 1000) this.cleanupFeatureCache();
 
       return features;
     } catch (error) {
@@ -70,19 +105,141 @@ export class AiPredictorFeatureService {
     }
   }
 
-  public async preparePredictionItems(
-    items: Array<
-      string | { productId: string; storeId?: string } | AiPredictRow
-    >
-  ): Promise<
-    Array<AiPredictRow & { meta: { productId?: string; storeId?: string } }>
-  > {
-    if (!items || items.length === 0) return [];
+  private async buildMissingFeatures(
+    normalized: Array<AiPredictRow & { meta: any }>
+  ): Promise<void> {
+    const promises: Promise<void>[] = [];
 
-    const normalized = await this.normalizeItems(items);
-    await this.buildMissingFeatures(normalized);
-    return normalized;
+    for (const item of normalized) {
+      if (this.hasValidFeatures(item)) continue;
+
+      const promise = (async () => {
+        if (!item.meta.productId) {
+          item.features = {} as any;
+          return;
+        }
+        try {
+          item.features = await this.buildFeatureVector(
+            item.meta.productId,
+            item.meta.storeId
+          );
+        } catch (e) {
+          item.features = {} as any;
+          (item as any).__buildError = e.message;
+        }
+      })();
+
+      promises.push(promise);
+    }
+
+    await Promise.allSettled(promises);
   }
+
+  // ==========================================
+  //  TFT Logic (Time Series History)
+  // ==========================================
+
+  async buildTimeHistory(
+    productId: string,
+    storeId?: string
+  ): Promise<DailyStat[]> {
+    const cacheKey = `tft:${productId}:${storeId || 'none'}`;
+    const cached = this.featureCache.get(cacheKey);
+
+    if (cached && Date.now() - cached.timestamp < this.cacheTimeout) {
+      return cached.data as DailyStat[];
+    }
+
+    try {
+      const history = await this.computeTimeHistory(productId);
+
+      this.featureCache.set(cacheKey, {
+        data: history,
+        timestamp: Date.now(),
+      });
+
+      if (this.featureCache.size > 1000) this.cleanupFeatureCache();
+
+      return history;
+    } catch (error) {
+      this.logger.error(`Failed to build history for ${productId}:`, error);
+      throw error;
+    }
+  }
+
+  private async buildMissingHistory(
+    normalized: Array<AiPredictRow & { meta: any }>
+  ): Promise<void> {
+    const promises: Promise<void>[] = [];
+
+    for (const item of normalized) {
+      // Check if history already exists
+      if (item.history && item.history.length > 0) continue;
+
+      const promise = (async () => {
+        if (!item.meta.productId) {
+          item.history = [];
+          return;
+        }
+        try {
+          item.history = await this.buildTimeHistory(
+            item.meta.productId,
+            item.meta.storeId
+          );
+        } catch (e) {
+          item.history = [];
+          (item as any).__buildError = e.message;
+        }
+      })();
+
+      promises.push(promise);
+    }
+
+    await Promise.allSettled(promises);
+  }
+
+  /**
+   * Generates 30 days of daily stats for TFT
+   */
+  private async computeTimeHistory(productId: string): Promise<DailyStat[]> {
+    const today = new Date();
+    const endDate = today;
+    const startDate = subDays(today, 29); // 30 days total (0-29)
+
+    // Get current inventory to backfill history (simplistic assumption for now)
+    const inventoryStats = await this.getInventoryStats(productId);
+    const currentQty = inventoryStats.quantity || 0;
+
+    const rawStats = await this.productStatsRepo.find({
+      where: {
+        productId,
+        date: Between(startDate.toISOString(), endDate.toISOString()),
+      },
+      order: { date: 'ASC' },
+    });
+
+    // Generate full date range to ensure no gaps (critical for TFT)
+    const dateRange = eachDayOfInterval({ start: startDate, end: endDate });
+
+    return dateRange.map((date) => {
+      const dateStr = format(date, 'yyyy-MM-dd');
+
+      // Find stat for this specific day
+      const dayStat = rawStats.find((s) => isSameDay(new Date(s.date), date));
+
+      return {
+        date: dateStr,
+        purchases: dayStat?.purchases || 0,
+        views: dayStat?.views || 0,
+        revenue: Number(dayStat?.revenue || 0),
+        inventoryQty: currentQty, // In a real scenario, you'd reconstruct historical inventory
+      };
+    });
+  }
+
+  // ==========================================
+  //  Shared / Helper Methods
+  // ==========================================
 
   private async normalizeItems(
     items: Array<
@@ -99,98 +256,28 @@ export class AiPredictorFeatureService {
           productId: item,
           storeId: undefined,
           features: {} as any,
+          history: [],
           meta: { productId: item, storeId: undefined },
         });
-      } else if (this.hasValidFeatures(item as AiPredictRow)) {
-        const row = item as AiPredictRow;
-        normalized.push({
-          ...row,
-          meta: { productId: row.productId, storeId: row.storeId },
-        });
       } else {
-        const obj = item as { productId: string; storeId?: string };
+        // Handle object or existing AiPredictRow
+        const obj = item as AiPredictRow;
         normalized.push({
           productId: obj.productId,
           storeId: obj.storeId,
-          features: {} as any,
+          features: obj.features || ({} as any),
+          history: obj.history || [],
           meta: { productId: obj.productId, storeId: obj.storeId },
         });
       }
     }
-
     return normalized;
   }
 
   private hasValidFeatures(row: AiPredictRow): boolean {
-    return row.features && Object.keys(row.features).length > 0;
+    return row.features! && Object.keys(row.features).length > 0;
   }
 
-  private async buildMissingFeatures(
-    normalized: Array<AiPredictRow & { meta: any }>
-  ): Promise<void> {
-    const featureBuildingPromises: Promise<void>[] = [];
-
-    for (const item of normalized) {
-      if (this.hasValidFeatures(item)) continue;
-
-      const promise = this.buildSingleItemFeatures(item);
-      featureBuildingPromises.push(promise);
-
-      if (featureBuildingPromises.length >= 10) {
-        await Promise.allSettled(featureBuildingPromises);
-        featureBuildingPromises.length = 0;
-      }
-    }
-
-    if (featureBuildingPromises.length > 0) {
-      await Promise.allSettled(featureBuildingPromises);
-    }
-  }
-
-  private async buildSingleItemFeatures(
-    item: AiPredictRow & { meta: any }
-  ): Promise<void> {
-    if (!item.productId) {
-      item.features = {} as any;
-      (item as any).__buildError = 'missing_product_id';
-      return;
-    }
-
-    try {
-      const features = await this.buildFeatureVector(
-        item.productId,
-        item.storeId
-      );
-      item.features = features as any;
-    } catch (error) {
-      item.features = {} as any;
-      (item as any).__buildError = error.message || String(error);
-      this.logger.warn(
-        `buildFeatureVector failed for ${item.productId}: ${error.message || error}`
-      );
-    }
-  }
-
-  private cleanupFeatureCache(): void {
-    const now = Date.now();
-    const keysToDelete: string[] = [];
-
-    this.featureCache.forEach((value, key) => {
-      if (now - value.timestamp > this.cacheTimeout) {
-        keysToDelete.push(key);
-      }
-    });
-
-    keysToDelete.forEach((key) => this.featureCache.delete(key));
-
-    this.logger.debug(
-      `Cleaned up ${keysToDelete.length} expired cache entries`
-    );
-  }
-
-  /**
-   * Compute feature vector in camelCase format
-   */
   private async computeFeatureVector(
     productId: string,
     storeId?: string
@@ -203,7 +290,6 @@ export class AiPredictorFeatureService {
     const start30 = formatDate(subDays(today, 29));
     const end = formatDate(today);
 
-    // Parallel data fetching
     const [
       agg7,
       agg14,
@@ -236,7 +322,6 @@ export class AiPredictorFeatureService {
       this.getInventoryStats(productId),
     ]);
 
-    // Calculate derived metrics
     const sales7 = agg7.purchases || 0;
     const sales14 = agg14.purchases || 0;
     const sales30 = agg30.purchases || 0;
@@ -252,11 +337,9 @@ export class AiPredictorFeatureService {
     const storeViews7 = storeAgg7?.views || 0;
     const storePurchases7 = storeAgg7?.purchases || 0;
 
-    // Temporal features
     const dow = today.getUTCDay();
     const isWeekend = dow === 0 || dow === 6 ? 1 : 0;
 
-    // Build feature vector in camelCase
     const features: FeatureVector = {
       sales7d: sales7,
       sales14d: sales14,
@@ -281,7 +364,6 @@ export class AiPredictorFeatureService {
       storePurchases7d: storePurchases7,
     };
 
-    // Ensure no NaN values
     Object.keys(features).forEach((key) => {
       const value = (features as any)[key];
       if (value === null || Number.isNaN(value)) {
@@ -300,6 +382,19 @@ export class AiPredictorFeatureService {
     return this.inventoryService.getInventoryStats(productId);
   }
 
+  private cleanupFeatureCache(): void {
+    const now = Date.now();
+    const keysToDelete: string[] = [];
+
+    this.featureCache.forEach((value, key) => {
+      if (now - value.timestamp > this.cacheTimeout) {
+        keysToDelete.push(key);
+      }
+    });
+
+    keysToDelete.forEach((key) => this.featureCache.delete(key));
+  }
+
   public createErrorResults(
     chunk: Array<AiPredictRow & { meta: any }>,
     startIndex: number,
@@ -312,6 +407,7 @@ export class AiPredictorFeatureService {
       productId: item.meta.productId,
       storeId: item.meta.storeId,
       features: item.features,
+      history: item.history,
       rawPrediction: null,
       error: `predictor_call_error: ${errorMessage}`,
     }));

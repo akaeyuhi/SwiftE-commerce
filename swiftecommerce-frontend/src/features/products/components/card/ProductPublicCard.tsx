@@ -15,8 +15,8 @@ export const ProductPublicCard: React.FC<ProductPublicCardProps> = ({
   product,
 }) => {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { addItem } = useCartMutations(user!.id);
+  const { user, isAuthenticated } = useAuth();
+  const { addItem } = useCartMutations(user?.id ?? '');
 
   if (!product) return;
 
@@ -63,7 +63,6 @@ export const ProductPublicCard: React.FC<ProductPublicCardProps> = ({
             {product?.description}
           </p>
 
-          {/* Rating & Reviews - ✅ FIXED */}
           <div className="flex items-center gap-2 mb-3">
             <div className="flex items-center gap-1">
               <Star className="h-4 w-4 fill-warning text-warning" />
@@ -92,22 +91,24 @@ export const ProductPublicCard: React.FC<ProductPublicCardProps> = ({
                 </p>
               )}
             </div>
-            <Button
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                addItem.mutate({
-                  storeId: product?.storeId,
-                  item: {
-                    variantId: product.variants[0]!.id,
-                    quantity: 1,
-                  },
-                });
-              }}
-              disabled={!inStock}
-            >
-              <ShoppingCart className="h-4 w-4" />
-            </Button>
+            {isAuthenticated && (
+              <Button
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  addItem.mutate({
+                    storeId: product?.storeId,
+                    item: {
+                      variantId: product.variants[0]!.id,
+                      quantity: 1,
+                    },
+                  });
+                }}
+                disabled={!inStock}
+              >
+                <ShoppingCart className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
       </CardContent>

@@ -19,7 +19,6 @@ import { AnalyticsEventType } from 'src/entities/infrastructure/analytics/analyt
 import { PaginatedResponse } from 'src/common/decorators/paginated-response.decorator';
 
 @Controller('/products')
-@UseGuards(JwtAuthGuard, StoreRolesGuard)
 @UseInterceptors(RecordEventInterceptor)
 @RecordEvents({
   getProductById: {

@@ -4,7 +4,8 @@
 export interface AiPredictRow {
   productId?: string | null;
   storeId?: string;
-  features: Record<string, any>;
+  features?: Record<string, any>;
+  history?: Record<string, any>[];
 }
 
 export interface AiPredictBatchRequest {

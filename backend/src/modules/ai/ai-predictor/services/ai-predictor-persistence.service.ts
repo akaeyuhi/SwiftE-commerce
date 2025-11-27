@@ -70,6 +70,7 @@ export class AiPredictorPersistenceService {
           productId: item.meta.productId,
           storeId: item.meta.storeId,
           features: item.features,
+          history: item.history,
           rawPrediction: null,
           error: `feature_build_error: ${buildError}`,
         };
@@ -84,6 +85,7 @@ export class AiPredictorPersistenceService {
           productId: item.meta.productId,
           storeId: item.meta.storeId,
           features: item.features,
+          history: item.history,
           rawPrediction: null,
           error: 'no_prediction_returned',
         };
@@ -102,7 +104,11 @@ export class AiPredictorPersistenceService {
         score,
         label,
         productId: item.meta.productId,
+        forecastP90: prediction.forecastP90,
+        forecastP50: prediction.forecastP50,
+        confidence: prediction.modelConfidence,
         storeId: item.meta.storeId,
+        history: item.history,
         features: item.features,
         rawPrediction: prediction,
       };

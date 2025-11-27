@@ -31,9 +31,8 @@ export function RoleRoute({
     return <Navigate to={ROUTES.LOGIN} replace />;
   }
 
-
   // Check site-level role
-  if (allowedSiteRoles && !allowedSiteRoles.includes(user.siteRole)) {
+  if (allowedSiteRoles && allowedSiteRoles.includes(user.siteRole)) {
     return <Navigate to={ROUTES.UNAUTHORIZED} replace />;
   }
 

@@ -13,30 +13,6 @@ export interface BatchPredictRequest {
   predictions: PredictDemandRequest[];
 }
 
-export interface TrendingProduct {
-  productId: string;
-  name: string;
-  trendScore: number;
-  predictedGrowth: number;
-}
-
-export interface PredictorStats {
-  totalPredictions: number;
-  accuracy: number;
-  averageConfidence: number;
-}
-
-export interface ModelComparison {
-  models: Array<{
-    name: string;
-    accuracy: number;
-    speed: number;
-    version: string;
-  }>;
-}
-
-// types/stock-predictor.types.ts
-
 export interface StockPredictionFeatures {
   sales7d: number;
   sales14d: number;
@@ -61,6 +37,14 @@ export interface StockPredictionFeatures {
   storePurchases7d: number;
 }
 
+export interface DailyStat {
+  date: string;
+  purchases: number;
+  views: number;
+  revenue: number;
+  inventoryQty: number;
+}
+
 export interface RawPrediction {
   index: number;
   score: number;
@@ -76,6 +60,10 @@ export interface ProductPrediction {
   productId: string;
   storeId: string;
   features: StockPredictionFeatures;
+  history?: DailyStat[];
+  forecastP50?: number;
+  forecastP90?: number;
+  confidence: number;
   rawPrediction: RawPrediction;
 }
 
@@ -100,9 +88,11 @@ export interface NormalizedPrediction {
   riskPercentage: number; // 0-100
   confidence: number; // 0-100
   inventoryLevel: number;
-  predictedDemand: number; // sales30dPerDay
+  predictedDemand: number; // sales30dPerDay or forecast_p50
+  peakDemand?: number; // forecast_p90
   recommendedReorder: number;
   daysUntilStockout: number | null;
-  features: StockPredictionFeatures;
+  features?: StockPredictionFeatures;
+  history?: DailyStat[]; // Added history support
   processedAt: Date;
 }

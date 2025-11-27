@@ -94,7 +94,7 @@ export class CartService extends BaseService {
       storeId,
       userId,
       cartId,
-      itemId,
+      id: itemId,
     });
     return this.client.delete<void>(url);
   }

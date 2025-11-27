@@ -48,7 +48,7 @@ export function useUserMergedCarts(
   return useQuery({
     queryKey: queryKeys.cart.merged(userId),
     queryFn: () => api.cart.getUserMergedCarts(userId),
-    enabled: !!userId,
+    enabled: !!userId.length,
     ...options,
   });
 }

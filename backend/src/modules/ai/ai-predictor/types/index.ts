@@ -36,7 +36,8 @@ export interface ChunkResult {
   label: string;
   productId: string;
   storeId: string;
-  features: Record<string, any>;
+  features?: Record<string, any>;
+  history?: Record<string, any>[];
   rawPrediction: string | null;
 }
 

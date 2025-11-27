@@ -34,7 +34,7 @@ import * as process from 'node:process';
 const REFRESH_COOKIE_NAME =
   process.env.REFRESH_TOKEN_COOKIE_NAME || 'refreshToken';
 const CSRF_COOKIE_NAME = process.env.CSRF_COOKIE_NAME || 'XSRF-TOKEN';
-const FRONTEND_URL = process.env.FRONTEND_URL;
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173/';
 
 @Controller('auth')
 export class AuthController {
