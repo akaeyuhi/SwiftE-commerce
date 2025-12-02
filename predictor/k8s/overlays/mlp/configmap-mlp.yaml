@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: predictor-config
+  name: predictor-config-mlp
   namespace: predictor
 data:
   # Model configuration

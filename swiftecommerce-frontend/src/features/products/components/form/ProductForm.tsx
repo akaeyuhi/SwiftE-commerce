@@ -193,7 +193,6 @@ export function ProductForm({
             size="lg"
             className="flex-1"
             loading={isLoading}
-            onClick={() => onSubmit(methods.getValues(), newImages)}
             disabled={isEdit && !isDirty}
           >
             <Package className="h-4 w-4 mr-2" />

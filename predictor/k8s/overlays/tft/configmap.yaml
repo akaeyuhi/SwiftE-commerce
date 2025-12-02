@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: predictor-config-tft
+  namespace: predictor
+data:
+  MODEL_TYPE: "tft"
+  MODEL_VERSION: "v1.0-tft"
+  LOG_LEVEL: "info"
+  HOST: "0.0.0.0"
+  PORT: "8080"
+  PGHOST: "postgres.database.svc.cluster.local"
+  PGPORT: "5432"
+  PGDATABASE: "analytics"

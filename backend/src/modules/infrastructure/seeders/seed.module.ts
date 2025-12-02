@@ -16,6 +16,9 @@ import { ConfigModule } from '@nestjs/config';
 import { Admin } from 'src/entities/user/authentication/admin.entity';
 import { StoreRole } from 'src/entities/user/authentication/store-role.entity';
 import { ProductPhoto } from 'src/entities/store/product/product-photo.entity';
+import { ProductDailyStats } from 'src/entities/infrastructure/analytics/product-daily-stats.entity';
+import { StoreDailyStats } from 'src/entities/infrastructure/analytics/store-daily-stats.entity';
+import { AnalyticsEvent } from 'src/entities/infrastructure/analytics/analytics-event.entity';
 
 @Module({
   imports: [
@@ -35,6 +38,9 @@ import { ProductPhoto } from 'src/entities/store/product/product-photo.entity';
       Admin,
       StoreRole,
       ProductPhoto,
+      ProductDailyStats,
+      StoreDailyStats,
+      AnalyticsEvent,
     ]),
   ],
   providers: [SeedService],

@@ -65,6 +65,12 @@ export class Store implements UserOwnedEntity {
   @Column({ type: 'int', default: 0 })
   orderCount: number;
 
+  @Column({ type: 'int', default: 0 })
+  viewCount: number;
+
+  @Column({ type: 'numeric', precision: 5, scale: 2, default: 0 })
+  conversionRate: number;
+
   @CreateDateColumn()
   createdAt: Date;
 

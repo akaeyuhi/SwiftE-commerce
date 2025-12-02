@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: predictor-serve
+spec:
+  template:
+    spec:
+      initContainers:
+        - name: wait-for-model
+          command:
+            - sh
+            - -c
+            - |
+              until [ -f /models/tft.ckpt ]; do
+                echo "Waiting for TFT model file (tft.ckpt)..."
+                sleep 5
+              done
+              echo "TFT model file found!"
+      containers:
+        - name: predictor
+          env:
+            - name: MODEL_PATH
+              value: "/models/tft.ckpt"
+            - name: SCALER_PATH
+              value: "" # Not used by TFT
+            - name: MODEL_TYPE
+              valueFrom:
+                configMapKeyRef:
+                  name: predictor-config-tft
+                  key: MODEL_TYPE

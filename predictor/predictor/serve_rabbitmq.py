@@ -37,6 +37,7 @@ def startup():
     global model, scalerInfo, modelType
     logger.info(f"Starting RabbitMQ worker with MODEL_TYPE={serverConfig.modelType}")
 
+
     if serverConfig.modelType == 'tft':
         if not HAS_TFT: raise RuntimeError("TFT libs missing")
         logger.info(f"Loading TFT model from {serverConfig.modelPath}")
@@ -89,23 +90,29 @@ def _predict_tft_single(row):
     df['productId'] = df['productId'].astype(str)
     df['storeId'] = df['storeId'].astype(str)
 
+    current = float(history[-1].get('inventoryQty', 0))
+
     with torch.no_grad():
+        # Predict
         raw = model.predict(df, mode="quantiles", return_x=False)
 
-        # Quantiles: [0.02, 0.1, 0.25, 0.5, 0.75, 0.9, 0.98]
+        # Summing predictions over the forecast horizon
         p50 = raw[0, :, 3].sum().item() # Median
-        p10 = raw[0, :, 1].sum().item() # 0.1 (Optimistic)
-        p90 = raw[0, :, 5].sum().item() # 0.9 (Conservative) - Changed from 6 to 5 for standard P90
+        p90 = raw[0, :, 5].sum().item() # P90
 
-        uncertainty_range = p90 - p10
+         # Confidence Calculation: Median / (Conservative_Max + epsilon)
+        model_confidence = p50 / (p90 + 1e-3)
+        model_confidence = min(max(model_confidence, 0.0), 1.0)
 
-        # FIX: Add +1.0 to denominator to smooth confidence for low-volume items
-        # If forecast is 0 and uncertainty is 0.1, this ensures confidence stays high (~0.9)
-        rel_uncertainty = uncertainty_range / (p50 + 1.0)
+          # Days Until Stockout Calculation
+        forecast_horizon_days = raw.shape[1]
+        daily_burn_rate = p50 / max(1.0, float(forecast_horizon_days))
 
-        model_confidence = max(0.0, 1.0 - rel_uncertainty)
+        if daily_burn_rate <= 0.01:
+            days_until_stockout = 999
+        else:
+            days_until_stockout = int(current / daily_burn_rate)
 
-    current = float(history[-1].get('inventoryQty', 0))
 
     label = 'low'
     if p50 > current: label = 'high'
@@ -115,7 +122,7 @@ def _predict_tft_single(row):
     if label == 'high': score = 0.95
     elif label == 'medium': score = 0.55
 
-    return score, label, p50, p90, model_confidence
+    return score, label, p50, p90, model_confidence, days_until_stockout
 
 def _predict_mlp_single(row):
     feat = row.get('features')
@@ -144,7 +151,7 @@ def on_message(ch, method, properties, body):
         for i, row in enumerate(rows):
             try:
                 if modelType == 'tft':
-                    score, label, p50, p90, conf = _predict_tft_single(row)
+                    score, label, p50, p90, conf, days_until_stockout = _predict_tft_single(row)
                 else:
                     score, label, p50, p90, conf = _predict_mlp_single(row)
 
@@ -155,6 +162,7 @@ def on_message(ch, method, properties, body):
                     'forecast_p50': p50,
                     'forecast_p90': p90,
                     'model_confidence': conf,
+                    'days_until_stockout': days_until_stockout,
                     'productId': row.get('productId')
                 })
             except Exception as e:

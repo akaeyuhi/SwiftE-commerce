@@ -56,7 +56,6 @@ export class StoreRepository extends BaseRepository<Store> {
 
   /**
    * Manually recalculate all cached statistics for a store
-   * REFACTORED: This method now uses a single query with subqueries to avoid N+1 issues.
    */
   async recalculateStats(storeId: string): Promise<void> {
     const stats = await this.manager
@@ -96,6 +95,14 @@ export class StoreRepository extends BaseRepository<Store> {
             .andWhere('o.status = :status', { status: OrderStatus.DELIVERED }),
         'totalRevenue'
       )
+      .addSelect(
+        (subQuery) =>
+          subQuery
+            .select('COUNT(sf.id)')
+            .from('StoreFollower', 'sf')
+            .where('sf.store.id = :storeId', { storeId }),
+        'followerCount'
+      )
       .where('s.id = :storeId', { storeId })
       .getRawOne();
 
@@ -106,6 +113,7 @@ export class StoreRepository extends BaseRepository<Store> {
     await this.update(storeId, {
       productCount: stats.productCount,
       followerCount: stats.followerCount,
+      conversionRate: stats.conversionRate,
       orderCount: stats.orderCount,
       totalRevenue: parseFloat(stats.totalRevenue || '0'),
     });
@@ -321,6 +329,7 @@ export class StoreRepository extends BaseRepository<Store> {
         'name',
         'productCount',
         'followerCount',
+        'conversionRate',
         'totalRevenue',
         'orderCount',
       ],
@@ -338,6 +347,7 @@ export class StoreRepository extends BaseRepository<Store> {
         'productCount',
         'followerCount',
         'totalRevenue',
+        'conversionRate',
         'orderCount',
       ],
     });
@@ -352,6 +362,7 @@ export class StoreRepository extends BaseRepository<Store> {
         'productCount',
         'followerCount',
         'totalRevenue',
+        'conversionRate',
         'orderCount',
         'createdAt',
         'updatedAt',

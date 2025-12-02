@@ -65,6 +65,7 @@ export interface ProductPrediction {
   forecastP90?: number;
   confidence: number;
   rawPrediction: RawPrediction;
+  daysUntilStockout: number;
 }
 
 export interface PredictionMetadata {

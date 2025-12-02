@@ -130,12 +130,12 @@ export class ConversionAnalyticsService {
         storeId,
         views: agg.views,
         purchases: agg.purchases,
-        addToCarts: agg.addToCarts,
+        addToCarts: agg.addtocarts,
         revenue: agg.revenue,
         checkouts: agg.checkouts,
         conversionRate: agg.views > 0 ? agg.purchases / agg.views : 0,
         addToCartRate: agg.views > 0 ? agg.addToCarts / agg.views : 0,
-        checkoutRate: agg.addToCarts > 0 ? agg.checkouts / agg.addToCarts : 0,
+        checkoutRate: agg.addtocarts > 0 ? agg.checkouts / agg.addtocarts : 0,
         source: 'aggregatedStats',
       };
     }

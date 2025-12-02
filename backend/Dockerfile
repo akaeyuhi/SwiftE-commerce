@@ -2,6 +2,17 @@
 # Multi-stage build for NestJS backend
 
 # -----------------------
+# Development stage
+# -----------------------
+FROM node:18-alpine AS development
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --no-audit --no-fund
+COPY . .
+EXPOSE 3000
+CMD ["npm", "run", "start:dev"]
+
+# -----------------------
 # Builder stage
 # -----------------------
 FROM node:18-alpine AS builder
@@ -46,4 +57,4 @@ ENV DATABASE_HOST=localhost
 EXPOSE 3000
 
 # Adjust entrypoint if your compiled nest output is elsewhere (dist/main.js or dist/src/main)
-CMD ["node", "dist/src/main"]
+CMD ["node", "dist/main.js"]

@@ -1,0 +1,45 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: predictor-retrain-tft
+  namespace: predictor
+spec:
+  # Run weekly on Sunday at 3 AM
+  schedule: "0 3 * * 0"
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: train-tft
+              image: swift-ecommerce-predictor:tft-latest # Assumes image is built with this tag
+              imagePullPolicy: IfNotPresent
+              command:
+                - "predictor-train"
+              args:
+                - "--in"
+                - "/data/features_tft.csv" # Assumes a different feature set for TFT
+                - "--model"
+                - "tft"
+                - "--out"
+                - "/models/tft.ckpt"
+              envFrom:
+                - configMapRef:
+                    name: predictor-config-tft
+                - secretRef:
+                    name: predictor-secret
+              volumeMounts:
+                - name: data
+                  mountPath: /data
+                - name: models
+                  mountPath: /models
+          volumes:
+            - name: data
+              persistentVolumeClaim:
+                claimName: predictor-data-pvc
+            - name: models
+              persistentVolumeClaim:
+                claimName: predictor-models-pvc

@@ -40,7 +40,7 @@ export class Product implements StoreOwnedEntity {
   store: Store;
 
   @ManyToMany(() => Category, (category) => category.products, {
-    onDelete: 'SET NULL',
+    onDelete: 'CASCADE',
   })
   @JoinTable({
     name: 'product_categories',
@@ -84,12 +84,12 @@ export class Product implements StoreOwnedEntity {
   variants: ProductVariant[];
 
   @OneToMany(() => ProductPhoto, (photo) => photo.product, {
-    cascade: ['update', 'remove'],
+    cascade: ['update', 'remove', 'insert'],
   })
   photos: ProductPhoto[];
 
   @OneToMany(() => Review, (review) => review.product, {
-    cascade: ['update', 'remove'],
+    cascade: ['update', 'remove', 'insert'],
   })
   reviews: Review[];
 

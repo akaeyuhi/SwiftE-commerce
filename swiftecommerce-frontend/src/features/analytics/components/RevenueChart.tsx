@@ -20,6 +20,7 @@ import { useParams } from 'react-router-dom';
 import { QueryLoader } from '@/shared/components/loaders/QueryLoader';
 import { CustomTooltip } from './CustomTooltip';
 import { TimePeriod } from '@/features/analytics/types/analytics.types.ts';
+import { useMemo } from 'react';
 
 export function RevenueChart({ timeRange }: { timeRange: TimePeriod }) {
   const { storeId } = useParams<{ storeId: string }>();
@@ -27,6 +28,16 @@ export function RevenueChart({ timeRange }: { timeRange: TimePeriod }) {
     storeId!,
     timeRange
   );
+
+  const chartData = useMemo(() => {
+    if (!data) return [];
+
+    return data.map((item: any) => ({
+      ...item,
+      date: new Date(item.date).toLocaleDateString(),
+      orders: item.transactions || 0,
+    }));
+  }, [data]);
 
   return (
     <Card>
@@ -44,7 +55,7 @@ export function RevenueChart({ timeRange }: { timeRange: TimePeriod }) {
           loadingMessage="Loading revenue trends..."
         >
           <ResponsiveContainer width="100%" height={350}>
-            <LineChart data={data}>
+            <LineChart data={chartData}>
               <CartesianGrid
                 strokeDasharray="3 3"
                 stroke="hsl(var(--border))"

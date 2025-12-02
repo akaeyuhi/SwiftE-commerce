@@ -66,7 +66,7 @@ export function TopProductsList({ timeRange }: { timeRange: TimePeriod }) {
                         : 'text-error'
                     }`}
                   >
-                    {product.conversionRate.toFixed(2)}% conv.
+                    {(product.conversionRate * 100).toFixed(2)}% conv.
                   </p>
                 </div>
               </div>

@@ -21,6 +21,8 @@ import {
   Grid3x3,
   FolderTree,
 } from 'lucide-react';
+import { useStoreMutations } from '@/features/stores/hooks/useStoreMutations.ts';
+import { Button } from '@/shared/components/ui/Button.tsx';
 
 interface StoreHealthProps {
   storeId: string;
@@ -35,6 +37,7 @@ interface HealthMetric {
 
 export function StoreHealth({ storeId }: StoreHealthProps) {
   const { data: storeHealth, isLoading } = useStoreHealth(storeId);
+  const { recalculateStats } = useStoreMutations();
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -94,11 +97,20 @@ export function StoreHealth({ storeId }: StoreHealthProps) {
                 {storeHealth.healthStatus} ({storeHealth.healthScore}%)
               </Badge>
             )}
+
             {storeHealth?.needsRecalculation && (
-              <Badge variant="error" className="flex items-center gap-1">
-                <RefreshCw className="h-3 w-3" />
-                Needs Sync
-              </Badge>
+              <>
+                <Badge variant="error" className="flex items-center gap-1">
+                  <RefreshCw className="h-3 w-3" />
+                  Needs Sync
+                </Badge>
+                <Button
+                  variant="primary"
+                  onClick={() => recalculateStats.mutate(storeId)}
+                >
+                  Recalculate
+                </Button>
+              </>
             )}
           </div>
         </div>

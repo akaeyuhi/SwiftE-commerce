@@ -118,7 +118,6 @@ export class AnalyticsEventRepository extends BaseAnalyticsRepository<AnalyticsE
 
     const qb = this.createQueryBuilder('e')
       .select('e.productId', 'productId')
-      // ✅ Add product name
       .addSelect('p.name', 'productName')
       .addSelect(
         'SUM(CASE WHEN e.eventType = :view THEN 1 ELSE 0 END)',

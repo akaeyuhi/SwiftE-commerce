@@ -129,13 +129,15 @@ export class RecordEventInterceptor implements NestInterceptor {
         const resolvedStoreId =
           (when === 'after' ? fromResult(opts.storeId) : undefined) ??
           fromReq(opts.storeId) ??
-          fromReq('params.storeId');
+          fromReq('params.id') ??
+          fromReq('params.storeId') ??
+          fromReq('body.productId');
 
         const resolvedProductId =
           (when === 'after' ? fromResult(opts.productId) : undefined) ??
           fromReq(opts.productId) ??
-          fromReq('params.productId') ??
           fromReq('params.id') ??
+          fromReq('params.productId') ??
           fromReq('body.productId');
 
         const resolvedUserId =
@@ -266,7 +268,6 @@ export class RecordEventInterceptor implements NestInterceptor {
     // default: after
     return next.handle().pipe(
       tap(async (result) => {
-        // attempt to use result for richer data
         await buildAndEnqueue(result);
       })
     );

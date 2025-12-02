@@ -24,6 +24,8 @@ export class StoreMapper extends BaseMapper<Store, StoreDto> {
       followerCount: entity.followerCount,
       totalRevenue: entity.totalRevenue,
       orderCount: entity.orderCount,
+      viewCount: entity.viewCount,
+      conversionRate: entity.conversionRate,
       logoUrl: entity.logoUrl,
       bannerUrl: entity.bannerUrl,
 
@@ -72,6 +74,8 @@ export class StoreMapper extends BaseMapper<Store, StoreDto> {
       productCount: entity.productCount || 0,
       followerCount: entity.followerCount || 0,
       totalRevenue: entity.totalRevenue || 0,
+      viewCount: entity.viewCount,
+      conversionRate: entity.conversionRate,
       bannerUrl: entity.bannerUrl,
       logoUrl: entity.logoUrl,
       orderCount: entity.orderCount || 0,
@@ -93,6 +97,7 @@ export class StoreMapper extends BaseMapper<Store, StoreDto> {
       productCount: entity.productCount || 0,
       followerCount: entity.followerCount || 0,
       totalRevenue: entity.totalRevenue || 0,
+      conversionRate: entity.conversionRate,
       orderCount: entity.orderCount || 0,
       averageOrderValue: Math.round(averageOrderValue * 100) / 100,
     };

@@ -107,6 +107,7 @@ export class AiPredictorPersistenceService {
         forecastP90: prediction.forecastP90,
         forecastP50: prediction.forecastP50,
         confidence: prediction.modelConfidence,
+        daysUntilStockout: prediction.daysUntilStockout,
         storeId: item.meta.storeId,
         history: item.history,
         features: item.features,

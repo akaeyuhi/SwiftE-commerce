@@ -27,6 +27,7 @@ import { Product } from 'src/entities/store/product/product.entity';
 import { ProductVariant } from 'src/entities/store/product/variant.entity';
 import { Category } from 'src/entities/store/product/category.entity';
 import { OrderStatus } from 'src/common/enums/order-status.enum';
+import { AnalyticsService } from 'src/modules/analytics/analytics.service';
 
 @Injectable()
 export class StoreService extends PaginatedService<
@@ -40,6 +41,7 @@ export class StoreService extends PaginatedService<
     private readonly storeRepo: StoreRepository,
     protected readonly mapper: StoreMapper,
     private readonly storeFileService: StoreFileService,
+    private readonly analyticsService: AnalyticsService,
     @InjectRepository(Order)
     private readonly orderRepo: Repository<Order>,
     @InjectRepository(Product)
@@ -195,7 +197,10 @@ export class StoreService extends PaginatedService<
    * NOTE: The N+1 problem in this method has been fixed in the StoreRepository.
    */
   async recalculateStoreStats(storeId: string): Promise<void> {
-    await this.storeRepo.recalculateStats(storeId);
+    await this.analyticsService.syncCachedStatsWithAnalytics(
+      undefined,
+      storeId
+    );
   }
 
   /**
@@ -287,10 +292,7 @@ export class StoreService extends PaginatedService<
             'THEN o.totalAmount ELSE 0 END), 0)',
           'totalRevenue'
         )
-        .setParameter('completedStatuses', [
-          OrderStatus.DELIVERED,
-          OrderStatus.SHIPPED,
-        ])
+        .setParameter('completedStatuses', [OrderStatus.DELIVERED])
         .getRawOne(),
     ]);
 
@@ -310,7 +312,6 @@ export class StoreService extends PaginatedService<
       store.totalRevenue?.toString() || '0'
     );
 
-    // ✅ Calculate health
     const issues = [
       cachedProductCount !== actualProductCount,
       cachedOrderCount !== actualOrderCount,

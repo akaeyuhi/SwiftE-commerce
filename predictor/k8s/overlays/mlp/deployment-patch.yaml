@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: predictor-serve
+spec:
+  template:
+    spec:
+      initContainers:
+        - name: wait-for-model
+          command:
+            - sh
+            - -c
+            - |
+              until [ -f /models/model.bin ] && [ -f /models/scaler.pkl ]; do
+                echo "Waiting for MLP model files (model.bin, scaler.pkl)..."
+                sleep 5
+              done
+              echo "MLP model files found!"
+      containers:
+        - name: predictor
+          env:
+            - name: MODEL_PATH
+              value: "/models/model.bin"
+            - name: SCALER_PATH
+              value: "/models/scaler.pkl"
+            - name: MODEL_TYPE
+              valueFrom:
+                configMapKeyRef:
+                  name: predictor-config-mlp
+                  key: MODEL_TYPE

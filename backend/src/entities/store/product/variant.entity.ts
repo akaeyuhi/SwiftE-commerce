@@ -38,7 +38,10 @@ export class ProductVariant implements BaseEntity {
   @Column({ type: 'jsonb', nullable: true })
   attributes?: Record<string, any>;
 
-  @OneToOne(() => Inventory, (inv) => inv.variant, { eager: true })
+  @OneToOne(() => Inventory, (inv) => inv.variant, {
+    eager: true,
+    cascade: true,
+  })
   inventory: Inventory;
 
   @CreateDateColumn()

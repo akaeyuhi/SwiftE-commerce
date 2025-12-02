@@ -17,6 +17,7 @@ export function normalizePredictionData(
       forecastP50, // Expected demand (14-day sum from TFT)
       forecastP90, // High confidence demand (14-day sum from TFT)
       confidence, // Confidence score from TFT (0-1)
+      daysUntilStockout,
     } = pred;
 
     // 1. Determine Inventory Level
@@ -56,17 +57,6 @@ export function normalizePredictionData(
       peakDemand = Math.round(forecastP90 / 14);
     }
 
-    // Days Until Stockout
-    let daysUntilStockout: number | null = null;
-
-    // FIX: Check for > 0.01 to avoid dividing by model noise (e.g., 1e-22)
-    // which results in massive numbers like 8.8e+22
-    if (dailyDemand > 0.01) {
-      daysUntilStockout = Math.floor(inventoryQty / dailyDemand);
-    } else if (inventoryQty === 0) {
-      daysUntilStockout = 0;
-    }
-
     // Recommended Reorder Quantity
     const reorderDemandRate =
       typeof forecastP90 === 'number' ? forecastP90 / 14 : dailyDemand;
@@ -77,6 +67,12 @@ export function normalizePredictionData(
       0,
       Math.ceil(reorderDemandRate * safetyDays - inventoryQty)
     );
+
+    let daysToStockout = daysUntilStockout;
+
+    if (daysUntilStockout === 999) {
+      daysToStockout = undefined as unknown as number;
+    }
 
     return {
       productId,
@@ -89,7 +85,7 @@ export function normalizePredictionData(
       predictedDemand,
       peakDemand,
       recommendedReorder,
-      daysUntilStockout,
+      daysUntilStockout: daysToStockout,
       features: features || {},
       history,
       processedAt: new Date(response.data.metadata.processedAt),

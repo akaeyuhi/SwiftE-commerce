@@ -15,6 +15,7 @@ export interface Product {
   storeName: string;
   viewCount: number;
   mainPhotoUrl?: string;
+  mainPhoto?: ProductPhoto;
   variants: ProductVariant[];
   photos: ProductPhoto[];
   reviews: Review[];

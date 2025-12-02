@@ -249,12 +249,12 @@ export class AnalyticsController {
   @Get('stores/:storeId/sales-by-category')
   async getCategorySales(
     @Param('storeId', ParseUUIDPipe) storeId: string,
-    @Query(ValidationPipe) query: AnalyticsQueryDto,
+    @Query(ValidationPipe) query: AnalyticsQueryDto
   ) {
     return await this.analyticsService.getCategorySales(
       storeId,
       query.from,
-      query.to,
+      query.to
     );
   }
 

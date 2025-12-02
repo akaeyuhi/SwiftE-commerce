@@ -11,7 +11,6 @@ from datetime import timedelta
 from typing import Optional, List, Dict, Any
 from concurrent.futures import ProcessPoolExecutor
 import os
-import pickle
 
 import pandas as pd
 import numpy as np
@@ -49,7 +48,6 @@ class BatchFeatureProcessor:
         """Process entire batch based on model type"""
 
         # Pre-compute common index
-        # For MLP we need padding for windows, for TFT we just need the range
         if modelType == 'mlp':
             paddedStart = snapshotDates[0] - timedelta(days=featureConfig.paddingDays)
         else:
@@ -60,12 +58,13 @@ class BatchFeatureProcessor:
 
         # Filter data once per batch
         batchProductIds = [pid for pid, _ in batchProducts]
-        batchStoreIds = [sid for _, sid in batchProducts]
 
+        # Product Stats: Now filtered by Product AND Store (Fixed Aggregation)
+        # We need to filter broadly first, then specific per row
         prodStatsSubset = productStats[productStats['productId'].isin(batchProductIds)].copy()
         prodStatsSubset['date'] = pd.to_datetime(prodStatsSubset['date'], errors='coerce').dt.tz_localize(None).dt.normalize()
 
-        # Store stats are optional for TFT strict product view but useful for covariates
+        batchStoreIds = [sid for _, sid in batchProducts]
         storeStatsSubset = storeStats[storeStats['storeId'].isin(batchStoreIds)].copy()
         storeStatsSubset['date'] = pd.to_datetime(storeStatsSubset['date'], errors='coerce').dt.tz_localize(None).dt.normalize()
 
@@ -103,7 +102,7 @@ class BatchFeatureProcessor:
                     )
                 allRows.extend(rows)
             except Exception as e:
-                logger.error(f"Failed to process product {productId}: {e}")
+                logger.error(f"Failed to process product {productId} at store {storeId}: {e}")
                 continue
 
         return allRows
@@ -122,11 +121,17 @@ class BatchFeatureProcessor:
 
         # 1. Base Time Series
         ts_df = pd.DataFrame({'date': dateIndex})
-        ts_df['productId'] = productId
-        ts_df['storeId'] = storeId or 'unknown'
+        ts_df['productId'] = str(productId)
+        ts_df['storeId'] = str(storeId) if storeId else 'unknown'
 
-        # 2. Merge Sales/Stats
-        prodStats = prodStatsSubset[prodStatsSubset['productId'] == productId]
+        # 2. Merge Sales/Stats (FIX: Merge on Date AND Store)
+        # Filter stats for this specific product AND store
+        stats_mask = (prodStatsSubset['productId'] == productId)
+        if storeId:
+            stats_mask &= (prodStatsSubset['storeId'] == storeId)
+
+        prodStats = prodStatsSubset[stats_mask]
+
         if not prodStats.empty:
             ts_df = pd.merge(ts_df, prodStats[['date', 'purchases', 'views', 'revenue']], on='date', how='left')
 
@@ -135,32 +140,32 @@ class BatchFeatureProcessor:
         for col in cols_to_fill:
             if col not in ts_df.columns:
                 ts_df[col] = 0.0
-            ts_df[col] = ts_df[col].fillna(0)
+            ts_df[col] = ts_df[col].fillna(0.0)
 
         # 3. Merge Inventory (Asof merge logic)
         variants = variantsSubset[variantsSubset['productId'] == productId]
         variantIds = variants['id'].tolist() if not variants.empty else []
 
-        # Reuse feature engineer logic or simple merge_asof
         inventoryByDate = self.featureEngineer.computeInventoryByDate(
             invDf=inventorySubset[inventorySubset['variantId'].isin(variantIds)],
             variantIds=variantIds,
             dateIndex=dateIndex
         )
-        ts_df['inventoryQty'] = inventoryByDate.values
+        ts_df['inventoryQty'] = inventoryByDate.values.astype(float)
 
-        # 4. Calculate TFT Specific Features
-        # Time Index (days since global start)
+        # 4. Calculate TFT Specific Features (FIX: CAST TO FLOAT)
+
+        # Time Index (Integer for indexing, but often cast to float in trainer for normalization)
         ts_df['time_idx'] = (ts_df['date'] - globalMinDate).dt.days
 
-        # Temporal features
-        ts_df['dayOfWeek'] = ts_df['date'].dt.dayofweek
-        ts_df['dayOfMonth'] = ts_df['date'].dt.day
-        ts_df['month'] = ts_df['date'].dt.month
-        ts_df['isWeekend'] = ts_df['dayOfWeek'].apply(lambda x: 1 if x >= 5 else 0)
+        # Temporal features as FLOAT for PyTorch
+        ts_df['dayOfWeek'] = ts_df['date'].dt.dayofweek.astype(float)
+        ts_df['dayOfMonth'] = ts_df['date'].dt.day.astype(float)
+        ts_df['month'] = ts_df['date'].dt.month.astype(float)
+        ts_df['isWeekend'] = ts_df['dayOfWeek'].apply(lambda x: 1.0 if x >= 5.0 else 0.0)
 
         # Log transforms (stabilize training)
-        # FIX: Clip negative values (returns) to 0 to prevent log errors (nan/inf)
+        # Clip negative values to 0 to prevent log errors
         ts_df['log_purchases'] = np.log1p(ts_df['purchases'].clip(lower=0))
         ts_df['log_views'] = np.log1p(ts_df['views'].clip(lower=0))
 
@@ -183,9 +188,14 @@ class BatchFeatureProcessor:
         reviewsSubset: pd.DataFrame
     ) -> List[Dict[str, Any]]:
         """Build wide-format windowed features for MLP/LightGBM"""
+        # (MLP logic remains largely the same, just ensuring aggregations are correct)
 
-        # Product timeseries
-        prodStats = prodStatsSubset[prodStatsSubset['productId'] == productId]
+        # Filter Stats for Product AND Store
+        stats_mask = (prodStatsSubset['productId'] == productId)
+        if storeId:
+            stats_mask &= (prodStatsSubset['storeId'] == storeId)
+        prodStats = prodStatsSubset[stats_mask]
+
         ts = self.featureEngineer.buildTimeseriesTable(prodStats, dateIndex)
 
         # Store timeseries
@@ -246,7 +256,7 @@ class BatchFeatureProcessor:
             reviewsCount=reviewsCount,
             reviewsAvg=reviewsAvg,
             lastRestockDate=lastRestockDate,
-            prodStats=prodStatsSubset[prodStatsSubset['productId'] == productId]
+            prodStats=prodStats
         )
 
     def _buildFeatureRowsVectorized(
@@ -334,7 +344,6 @@ class BatchFeatureProcessor:
             futureEnd = snap_norm + timedelta(days=14)
 
             mask = (
-                (prodStats['productId'] == productId) &
                 (prodStats['date'] >= futureStart) &
                 (prodStats['date'] <= futureEnd)
             )
@@ -420,13 +429,15 @@ class FileFeatureExporter:
         df['date'] = df['invoice_date'].dt.normalize()
         df['product_id'] = df['stock_code']
         df['store_id'] = df['country']
-        df = df.dropna(subset=['product_id', 'customer_id'])
+        # Don't dropNA aggressively on customer_id if using generic sales data, but typically required for UCI
+        df = df.dropna(subset=['product_id', 'store_id'])
 
         logger.info("Pre-computing global statistics...")
 
-        # Global aggregations
+        # FIX: Group by [Product, Store, Date] instead of [Product, Date]
+        # This prevents sales from Store A being attributed to Store B
         productStats = (
-            df.groupby(['product_id', 'date'])
+            df.groupby(['product_id', 'store_id', 'date'])
               .agg(
                   views=('invoice_no', 'nunique'),
                   purchases=('quantity', 'sum'),
@@ -434,7 +445,7 @@ class FileFeatureExporter:
                   revenue=('unit_price', lambda x: (x * df.loc[x.index, 'quantity']).sum())
               )
               .reset_index()
-              .rename(columns={'product_id': 'productId'})
+              .rename(columns={'product_id': 'productId', 'store_id': 'storeId'})
         )
         productStats['date'] = pd.to_datetime(productStats['date']).dt.tz_localize(None).dt.normalize()
 
@@ -475,6 +486,7 @@ class FileFeatureExporter:
         reviews['rating'] = 5
         reviews['id'] = reviews['productId']
 
+        # Get unique Product-Store combinations
         products = (
             df[['product_id', 'store_id']]
               .drop_duplicates()
@@ -487,14 +499,14 @@ class FileFeatureExporter:
             logger.warning("No products found")
             return
 
-        logger.info(f"Processing {len(products)} products in batches of {batchSize}")
+        logger.info(f"Processing {len(products)} product-store combinations in batches of {batchSize}")
 
         start_ts = pd.to_datetime(df['date'].min()).normalize()
         end_ts = pd.to_datetime(df['date'].max()).normalize()
         snapshotDates = pd.date_range(start=start_ts, end=end_ts, freq='D')
         logger.info(f"Generating features for {len(snapshotDates)} days")
 
-        # Create product batches
+        # Create batches of (productId, storeId)
         productList = [(row['id'], row['storeId']) for _, row in products.iterrows()]
         batches = [productList[i:i+batchSize] for i in range(0, len(productList), batchSize)]
 
@@ -545,18 +557,28 @@ class FileFeatureExporter:
                 *featureConfig.featureColumns,
                 'futureSales14d', 'stockout14d'
             ]
-            # Ensure cols exist
             for col in columns:
                 if col not in dfOut.columns:
                     dfOut[col] = 0
             dfOut = dfOut[columns]
             dfOut['snapshotDate'] = pd.to_datetime(dfOut['snapshotDate'], errors='coerce').dt.normalize().dt.strftime('%Y-%m-%d')
         else:
-            # TFT Columns
+            # TFT Columns matching the requested format
             logger.info("Ensuring time_idx continuity for TFT...")
-            # Sort for safety
+            tft_columns = [
+                'date', 'productId', 'storeId', 'purchases', 'views', 'revenue',
+                'inventoryQty', 'time_idx', 'dayOfWeek', 'dayOfMonth', 'month',
+                'isWeekend', 'log_purchases', 'log_views'
+            ]
+
+            # Ensure columns exist (inventoryQty is calculated, views/revenue from merge)
+            for col in tft_columns:
+                if col not in dfOut.columns:
+                    dfOut[col] = 0.0 if 'log' in col or col in ['dayOfWeek'] else 0
+
+            dfOut = dfOut[tft_columns]
             if 'time_idx' in dfOut.columns:
-                dfOut = dfOut.sort_values(['productId', 'time_idx'])
+                dfOut = dfOut.sort_values(['storeId', 'productId', 'time_idx'])
 
         dfOut.to_csv(outputCsv, index=False)
 

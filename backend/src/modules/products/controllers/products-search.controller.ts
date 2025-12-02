@@ -5,21 +5,12 @@ import {
   ProductListDto,
 } from 'src/modules/products/dto/product.dto';
 import { RecordEventInterceptor } from 'src/modules/infrastructure/interceptors/record-event/record-event.interceptor';
-import { RecordEvents } from 'src/common/decorators/record-event.decorator';
+import { RecordEvent } from 'src/common/decorators/record-event.decorator';
 import { AnalyticsEventType } from 'src/entities/infrastructure/analytics/analytics-event.entity';
 import { PaginatedResponse } from 'src/common/decorators/paginated-response.decorator';
 
 @Controller('/products')
 @UseInterceptors(RecordEventInterceptor)
-@RecordEvents({
-  getProductById: {
-    eventType: AnalyticsEventType.VIEW,
-    productId: 'params.id',
-    userId: 'user.id',
-    invokedOn: 'product',
-    when: 'after',
-  },
-})
 export class ProductsSearchController {
   constructor(private readonly productsService: ProductsService) {}
   /**
@@ -62,6 +53,13 @@ export class ProductsSearchController {
   }
 
   @Get('/:id')
+  @RecordEvent({
+    eventType: AnalyticsEventType.VIEW,
+    productId: 'params.id',
+    userId: 'user.id',
+    invokedOn: 'product',
+    when: 'after',
+  })
   async getProductById(@Param('id') id: string): Promise<ProductDetailDto> {
     return this.productsService.findProductDetail(id);
   }

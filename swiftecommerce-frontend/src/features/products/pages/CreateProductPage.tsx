@@ -19,7 +19,6 @@ export function CreateProductPage() {
   const { createProduct } = useProductMutations(storeId!);
 
   const aiGeneratedData = location.state?.aiGenerated;
-  console.log(aiGeneratedData);
   const defaultValues = aiGeneratedData
     ? {
         name: aiGeneratedData.name || '',
@@ -32,6 +31,7 @@ export function CreateProductPage() {
     : undefined;
 
   const handleSubmit = async (data: ProductFormData, newImages: File[]) => {
+    console.log(data, newImages);
     const mainPhoto = newImages.length > 0 ? newImages[0] : undefined;
     const otherPhotos = newImages.length > 1 ? newImages.slice(1) : [];
 

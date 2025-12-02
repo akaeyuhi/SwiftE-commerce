@@ -5,6 +5,8 @@ import { StoreProductCountSubscriber } from './store-product-count.subscriber';
 import { StoreRevenueSubscriber } from './store-revenue.subscriber';
 import { AnalyticsSyncSubscriber } from './analytics-sync.subscriber';
 import { FollowerSubscriber } from 'src/database/subscribers/follower.subscriber';
+import { StoreConversionRateSubscriber } from './store-conversion-rate.subscriber';
+import { SeedingContextService } from 'src/database/subscribers/seeding-context.service';
 
 @Module({
   providers: [
@@ -14,6 +16,8 @@ import { FollowerSubscriber } from 'src/database/subscribers/follower.subscriber
     StoreProductCountSubscriber,
     StoreRevenueSubscriber,
     AnalyticsSyncSubscriber,
+    StoreConversionRateSubscriber,
+    SeedingContextService,
   ],
   exports: [
     ProductStatsSubscriber,
@@ -22,6 +26,8 @@ import { FollowerSubscriber } from 'src/database/subscribers/follower.subscriber
     StoreProductCountSubscriber,
     StoreRevenueSubscriber,
     AnalyticsSyncSubscriber,
+    SeedingContextService,
+    StoreConversionRateSubscriber,
   ],
 })
 export class SubscribersModule {}

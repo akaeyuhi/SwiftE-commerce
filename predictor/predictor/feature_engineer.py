@@ -4,7 +4,7 @@ Feature engineering with optimized computations and vectorization
 from __future__ import annotations
 import logging
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Optional, List, Dict, Any
 import pandas as pd
 import numpy as np
 
@@ -37,8 +37,15 @@ class FeatureEngineer:
 
         # Ensure correct types
         for col in ['views', 'purchases', 'addToCarts']:
-            ts[col] = ts[col].astype(np.int64)
-        ts['revenue'] = ts['revenue'].astype(np.float64)
+            if col in ts.columns:
+                ts[col] = ts[col].astype(np.int64)
+            else:
+                ts[col] = 0
+
+        if 'revenue' in ts.columns:
+            ts['revenue'] = ts['revenue'].astype(np.float64)
+        else:
+            ts['revenue'] = 0.0
 
         return ts[['views', 'purchases', 'addToCarts', 'revenue']]
 
@@ -71,6 +78,11 @@ class FeatureEngineer:
         # Process per variant (vectorized within each variant)
         for variantId in invSub['variantId'].unique():
             variantRows = invSub[invSub['variantId'] == variantId].copy()
+
+            # If this came from UCI raw data (negative/positive quantities), we need cumulative sum
+            # But if it came from your DB snapshots (absolute quantity), we use asof
+            # Assuming absolute snapshots here based on "updatedAt" column name context
+
             variantRows = variantRows[['updatedAt', 'quantity']].drop_duplicates('updatedAt')
             variantRows = variantRows.sort_values('updatedAt')
             variantRows = variantRows.rename(columns={'updatedAt': 'ts', 'quantity': 'qty'})
@@ -84,6 +96,8 @@ class FeatureEngineer:
             )
 
             merged['qty'] = merged['qty'].fillna(0).astype(np.int64)
+            # Ensure inventory doesn't go below zero if data is messy
+            merged['qty'] = merged['qty'].clip(lower=0)
             totalQty += merged['qty'].values
 
         return totalQty
@@ -144,7 +158,7 @@ class FeatureEngineer:
         reviewsAvg: pd.Series,
         lastRestockDate: Optional[datetime]
     ) -> dict[str, any]:
-        """Build a single feature row for given snapshot"""
+        """Build a single feature row for given snapshot (MLP logic)"""
 
         ro7 = rollingWindows['7d'].iloc[dateIndex]
         ro14 = rollingWindows['14d'].iloc[dateIndex]
@@ -240,89 +254,6 @@ class FeatureEngineer:
         }
 
     def prepare_time_series_data(
-            self,
-            product_stats: pd.DataFrame,
-            inventory_df: pd.DataFrame,
-            product_ids: list[str],
-            start_date: datetime,
-            end_date: datetime
-        ) -> pd.DataFrame:
-            """
-            Generates a full time-series DataFrame for all products.
-            """
-            logger.info("Generating time-series data for TFT...")
-
-            # 1. Create full date range index
-            date_range = pd.date_range(start=start_date, end=end_date, freq='D')
-
-            # 2. Build template: All Products x All Dates
-            # This ensures we have no gaps in time (critical for TFT)
-            template_data = []
-            for pid in product_ids:
-                for date in date_range:
-                    template_data.append({
-                        'productId': pid,
-                        'date': date
-                    })
-
-            df_ts = pd.DataFrame(template_data)
-
-            # 3. Merge Sales/Views Data
-            # Ensure stats has date as datetime
-            if not product_stats.empty:
-                product_stats['date'] = pd.to_datetime(product_stats['date'])
-                # Aggregate if multiple entries per day
-                stats_agg = product_stats.groupby(['productId', 'date']).agg({
-                    'purchases': 'sum',
-                    'views': 'sum',
-                    'addToCarts': 'sum',
-                    'revenue': 'sum'
-                }).reset_index()
-
-                df_ts = pd.merge(df_ts, stats_agg, on=['productId', 'date'], how='left')
-
-            # Fill missing daily stats with 0
-            fill_cols = ['purchases', 'views', 'addToCarts', 'revenue']
-            for col in fill_cols:
-                if col not in df_ts.columns:
-                    df_ts[col] = 0.0
-                df_ts[col] = df_ts[col].fillna(0)
-
-            # 4. Merge Inventory Data (Forward Fill - inventory stays same until changed)
-            # We assume inventory_df has columns [productId, updatedAt, quantity]
-            if not inventory_df.empty:
-                inv_clean = inventory_df.sort_values('updatedAt').copy()
-                inv_clean['date'] = pd.to_datetime(inv_clean['updatedAt']).dt.floor('D')
-
-                # Using merge_asof logic or simpler groupby resample
-                # Ideally use the optimized merge_asof from your previous code here
-                # For brevity, assuming we map it efficiently:
-                df_ts = self._merge_inventory_state(df_ts, inv_clean)
-            else:
-                df_ts['inventoryQty'] = 0
-
-            # 5. Add Temporal Features
-            df_ts['dayOfWeek'] = df_ts['date'].dt.dayofweek
-            df_ts['dayOfMonth'] = df_ts['date'].dt.day
-            df_ts['month'] = df_ts['date'].dt.month
-            df_ts['isWeekend'] = df_ts['dayOfWeek'].apply(lambda x: 1 if x >= 5 else 0)
-
-            # 6. Add Time Index (Critical for TFT)
-            # time_idx must be a continuous integer sequence for each group
-            df_ts['time_idx'] = (df_ts['date'] - df_ts['date'].min()).dt.days
-
-            # 7. Add Log-transformed features (helps optimization)
-            df_ts['log_views'] = np.log1p(df_ts['views'])
-            df_ts['log_purchases'] = np.log1p(df_ts['purchases'])
-
-            # 8. Target Generation (Simulated for this example)
-            # For demand prediction, the target is 'purchases' (shifted in training)
-            # But for compatibility, we ensure 'purchases' is clean
-
-            logger.info(f"Prepared TimeSeries with {len(df_ts)} rows.")
-            return df_ts
-
-    def prepare_time_series_data(
         self,
         product_stats: pd.DataFrame,
         inventory_df: pd.DataFrame,
@@ -331,7 +262,10 @@ class FeatureEngineer:
         end_date: datetime
     ) -> pd.DataFrame:
         """
-        Generates a full time-series DataFrame for all products.
+        Generates a full time-series DataFrame for all products for TFT training.
+        Matches columns: date, productId, storeId, purchases, views, revenue,
+                         inventoryQty, time_idx, dayOfWeek, dayOfMonth, month,
+                         isWeekend, log_purchases, log_views
         """
         logger.info("Generating time-series data for TFT...")
 
@@ -341,94 +275,139 @@ class FeatureEngineer:
         # 2. Build template: All Products x All Dates
         # This ensures we have no gaps in time (critical for TFT)
         template_data = []
-        for pid in product_ids:
-            for date in date_range:
-                template_data.append({
-                    'productId': pid,
-                    'date': date
-                })
 
-        df_ts = pd.DataFrame(template_data)
+        # Optimization: Create a dataframe directly from product/store pairs
+        # Assuming product_ids contains tuples or we extract them from stats
+        # If product_ids is just a list of IDs, we assume single store or need store mapping
+
+        # Extract unique product-store combinations from stats to be safe
+        unique_pairs = product_stats[['productId', 'storeId']].drop_duplicates()
+
+        if unique_pairs.empty:
+             # Fallback if stats empty but IDs provided (unlikely to be useful but safe)
+             unique_pairs = pd.DataFrame({'productId': product_ids, 'storeId': 'unknown'})
+
+        # Vectorized template creation
+        # Repeat date range for each product-store pair
+        n_dates = len(date_range)
+        n_pairs = len(unique_pairs)
+
+        dates_tiled = np.tile(date_range, n_pairs)
+        pids_repeated = np.repeat(unique_pairs['productId'].values, n_dates)
+        sids_repeated = np.repeat(unique_pairs['storeId'].values, n_dates)
+
+        df_ts = pd.DataFrame({
+            'date': dates_tiled,
+            'productId': pids_repeated,
+            'storeId': sids_repeated
+        })
 
         # 3. Merge Sales/Views Data
-        # Ensure stats has date as datetime
         if not product_stats.empty:
             product_stats['date'] = pd.to_datetime(product_stats['date'])
-            # Aggregate if multiple entries per day
-            stats_agg = product_stats.groupby(['productId', 'date']).agg({
+            # Aggregate if multiple entries per day (defensive)
+            stats_agg = product_stats.groupby(['productId', 'storeId', 'date']).agg({
                 'purchases': 'sum',
                 'views': 'sum',
-                'addToCarts': 'sum',
                 'revenue': 'sum'
             }).reset_index()
 
-            df_ts = pd.merge(df_ts, stats_agg, on=['productId', 'date'], how='left')
+            df_ts = pd.merge(df_ts, stats_agg, on=['productId', 'storeId', 'date'], how='left')
 
         # Fill missing daily stats with 0
-        fill_cols = ['purchases', 'views', 'addToCarts', 'revenue']
+        fill_cols = ['purchases', 'views', 'revenue']
         for col in fill_cols:
             if col not in df_ts.columns:
                 df_ts[col] = 0.0
-            df_ts[col] = df_ts[col].fillna(0)
+            df_ts[col] = df_ts[col].fillna(0.0)
 
-        # 4. Merge Inventory Data (Forward Fill - inventory stays same until changed)
-        # We assume inventory_df has columns [productId, updatedAt, quantity]
+        # 4. Merge Inventory Data
         if not inventory_df.empty:
-            inv_clean = inventory_df.sort_values('updatedAt').copy()
-            inv_clean['date'] = pd.to_datetime(inv_clean['updatedAt']).dt.floor('D')
+            inv_clean = inventory_df.rename(columns={'updatedAt': 'date'}).copy()
+            inv_clean['date'] = pd.to_datetime(inv_clean['date']).dt.floor('D')
+            # Ensure we have storeId or map it (assuming inventory variantId maps to productId)
+            # If inventory doesn't have storeId, this merge logic needs to be adjusted based on your schema
+            # Assuming inventory tracks by productId (variantId) here for simplicity of the example
 
-            # Using merge_asof logic or simpler groupby resample
-            # Ideally use the optimized merge_asof from your previous code here
-            # For brevity, assuming we map it efficiently:
+            # We use the helper to merge properly with forward fill logic
             df_ts = self._merge_inventory_state(df_ts, inv_clean)
         else:
-            df_ts['inventoryQty'] = 0
+            df_ts['inventoryQty'] = 0.0
 
-        # 5. Add Temporal Features
-        df_ts['dayOfWeek'] = df_ts['date'].dt.dayofweek
-        df_ts['dayOfMonth'] = df_ts['date'].dt.day
-        df_ts['month'] = df_ts['date'].dt.month
-        df_ts['isWeekend'] = df_ts['dayOfWeek'].apply(lambda x: 1 if x >= 5 else 0)
+        # 5. Add Temporal Features (Vectorized)
+        # Cast to float immediately to satisfy TFT requirements
+        df_ts['dayOfWeek'] = df_ts['date'].dt.dayofweek.astype(float)
+        df_ts['dayOfMonth'] = df_ts['date'].dt.day.astype(float)
+        df_ts['month'] = df_ts['date'].dt.month.astype(float)
+        df_ts['isWeekend'] = (df_ts['dayOfWeek'] >= 5).astype(float)
 
         # 6. Add Time Index (Critical for TFT)
-        # time_idx must be a continuous integer sequence for each group
-        df_ts['time_idx'] = (df_ts['date'] - df_ts['date'].min()).dt.days
+        # Calculate global min date once
+        global_min_date = df_ts['date'].min()
+        df_ts['time_idx'] = (df_ts['date'] - global_min_date).dt.days
 
         # 7. Add Log-transformed features (helps optimization)
-        df_ts['log_views'] = np.log1p(df_ts['views'])
-        df_ts['log_purchases'] = np.log1p(df_ts['purchases'])
+        # Clip negative values to 0 to prevent errors
+        df_ts['log_views'] = np.log1p(df_ts['views'].clip(lower=0))
+        df_ts['log_purchases'] = np.log1p(df_ts['purchases'].clip(lower=0))
 
-        # 8. Target Generation (Simulated for this example)
-        # For demand prediction, the target is 'purchases' (shifted in training)
-        # But for compatibility, we ensure 'purchases' is clean
+        # 8. Final Column Ordering and Typing
+        final_cols = [
+            'date', 'productId', 'storeId', 'purchases', 'views', 'revenue',
+            'inventoryQty', 'time_idx', 'dayOfWeek', 'dayOfMonth', 'month',
+            'isWeekend', 'log_purchases', 'log_views'
+        ]
+
+        # Ensure all are present
+        for col in final_cols:
+            if col not in df_ts.columns:
+                df_ts[col] = 0.0
 
         logger.info(f"Prepared TimeSeries with {len(df_ts)} rows.")
-        return df_ts
+        return df_ts[final_cols]
 
     def _merge_inventory_state(self, ts_df: pd.DataFrame, inv_updates: pd.DataFrame) -> pd.DataFrame:
-        """Helper to merge inventory state properly using asof merge"""
+        """
+        Helper to merge inventory state properly using asof merge.
+        This assumes inv_updates has snapshot values (quantity at time t).
+        We forward fill this value until the next update.
+        """
         ts_df = ts_df.sort_values('date')
         inv_updates = inv_updates.sort_values('date')
 
+        # Ensure join keys are string for safety
+        ts_df['productId'] = ts_df['productId'].astype(str)
+        # Assuming inventory variantId maps to productId 1:1 for this purpose
+        inv_updates['variantId'] = inv_updates['variantId'].astype(str)
+
         merged_list = []
-        for pid in ts_df['productId'].unique():
-            ts_sub = ts_df[ts_df['productId'] == pid]
-            inv_sub = inv_updates[inv_updates['productId'] == pid]
+
+        # Process by product group (inventory is per product)
+        # Note: Inventory might also be per store, but usually tracked per SKU (variantId)
+        unique_pids = ts_df['productId'].unique()
+
+        for pid in unique_pids:
+            ts_sub = ts_df[ts_df['productId'] == pid].copy()
+            inv_sub = inv_updates[inv_updates['variantId'] == pid].copy()
 
             if inv_sub.empty:
-                ts_sub['inventoryQty'] = 0
+                ts_sub['inventoryQty'] = 0.0
             else:
-                # Merge asof
+                # Merge asof: For every date in ts_sub, find the latest inventory record on or before that date
                 m = pd.merge_asof(
                     ts_sub,
                     inv_sub[['date', 'quantity']],
                     on='date',
                     direction='backward'
                 )
-                m['inventoryQty'] = m['quantity'].fillna(method='ffill').fillna(0)
+                # Fill any NaNs at the start (before first inventory record) with 0 or first known value
+                m['inventoryQty'] = m['quantity'].fillna(method='ffill').fillna(0.0)
                 m = m.drop(columns=['quantity'])
                 ts_sub = m
 
             merged_list.append(ts_sub)
+
+        if not merged_list:
+             return ts_df
 
         return pd.concat(merged_list)

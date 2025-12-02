@@ -24,6 +24,8 @@ export class StoreDto {
   followerCount?: number;
   totalRevenue?: number;
   orderCount?: number;
+  viewCount?: number;
+  conversionRate?: number;
   city?: string;
   country?: string;
 
@@ -57,6 +59,8 @@ export class StoreListDto {
   country?: string;
   logoUrl?: string;
   bannerUrl?: string;
+  viewCount?: number;
+  conversionRate?: number;
   followerCount: number;
   totalRevenue: number;
   orderCount: number;
@@ -71,6 +75,7 @@ export class StoreStatsDto {
   productCount: number;
   followerCount: number;
   totalRevenue: number;
+  conversionRate: number;
   orderCount: number;
   averageOrderValue?: number; // calculated: totalRevenue / orderCount
 }

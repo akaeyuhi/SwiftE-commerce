@@ -20,12 +20,14 @@ import { ProductVariant } from 'src/entities/store/product/variant.entity';
 import { Product } from 'src/entities/store/product/product.entity';
 import { Order } from 'src/entities/store/product/order.entity';
 import { Category } from 'src/entities/store/product/category.entity';
+import { AnalyticsModule } from 'src/modules/analytics/analytics.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Store, Order, ProductVariant, Product, Category]),
     StoreRoleModule,
     ConfigModule,
+    AnalyticsModule,
     CartModule,
     CategoriesModule,
     InventoryModule,

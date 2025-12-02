@@ -41,9 +41,6 @@ export function EditProductPage() {
   };
 
   const handleSubmit = async (data: ProductFormData, newImages: File[]) => {
-    const mainPhoto = newImages.length > 0 ? newImages[0] : undefined;
-    const otherPhotos = newImages.length > 1 ? newImages.slice(1) : [];
-
     const createVariants = data.variants
       .filter((v) => !v.id)
       .map((v) => ({ ...v, initialQuantity: v.quantity }));
@@ -60,8 +57,7 @@ export function EditProductPage() {
       ...data,
       variants: createVariants,
       updateVariants,
-      mainPhoto,
-      photos: otherPhotos,
+      photos: newImages,
     };
 
     await updateProduct.mutateAsync(

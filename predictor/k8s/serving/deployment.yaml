@@ -40,18 +40,13 @@ spec:
                 topologyKey: kubernetes.io/hostname
 
       initContainers:
-        # Wait for model files to be available
+        # This will be patched by overlays
         - name: wait-for-model
           image: busybox:1.35
           command:
             - sh
             - -c
-            - |
-              until [ -f /models/model.bin ] && [ -f /models/scaler.pkl ]; do
-                echo "Waiting for model files..."
-                sleep 5
-              done
-              echo "Model files found!"
+            - echo "Waiting for model files..."
           volumeMounts:
             - name: models
               mountPath: /models
@@ -59,7 +54,7 @@ spec:
 
       containers:
         - name: predictor
-          image: your-registry.io/predictor-serve:latest
+          image: your-registry.io/predictor-serve:latest # This will be replaced by kustomize
           imagePullPolicy: IfNotPresent
 
           ports:
@@ -68,35 +63,24 @@ spec:
               protocol: TCP
 
           env:
-            # From ConfigMap
-            - name: MODEL_TYPE
-              valueFrom:
-                configMapKeyRef:
-                  name: predictor-config
-                  key: MODEL_TYPE
-            - name: MODEL_VERSION
-              valueFrom:
-                configMapKeyRef:
-                  name: predictor-config
-                  key: MODEL_VERSION
+            # Common env vars
             - name: LOG_LEVEL
               valueFrom:
                 configMapKeyRef:
-                  name: predictor-config
+                  name: predictor-config # This will be the name of the configmap in the overlay
                   key: LOG_LEVEL
-
-            # From Secret
             - name: PREDICTOR_AUTH_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: predictor-secret
                   key: PREDICTOR_AUTH_TOKEN
-
-            # Model paths
+            # Model specific env vars will be patched in by overlays
+            - name: MODEL_TYPE
+              value: "to-be-patched"
             - name: MODEL_PATH
-              value: "/models/model.bin"
+              value: "to-be-patched"
             - name: SCALER_PATH
-              value: "/models/scaler.pkl"
+              value: "to-be-patched"
 
           volumeMounts:
             - name: models

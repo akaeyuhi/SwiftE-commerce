@@ -42,7 +42,7 @@ async function bootstrap() {
       },
     })
   );
-  app.useGlobalFilters(new HttpExceptionFilter()); // Register the global exception filter
+  app.useGlobalFilters(new HttpExceptionFilter());
   app.setGlobalPrefix('/api');
   //const seeder = app.get(SeedService);
   //await seeder.seed();

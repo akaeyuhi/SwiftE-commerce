@@ -4,6 +4,7 @@ Train machine learning model for stockout prediction
 Supports:
 - LightGBM (default, fast and accurate)
 - Keras/TensorFlow (deep learning)
+- Temporal Fusion Transformer (TFT)
 - Automatic model selection and hyperparameter tuning
 """
 from __future__ import annotations
@@ -25,6 +26,7 @@ from sklearn.metrics import (
 import joblib
 
 from .config import featureConfig, modelConfig
+from .train_tft import TFTTrainer
 
 logging.basicConfig(
     level=logging.INFO,
@@ -310,7 +312,7 @@ def main():
     )
     parser.add_argument(
         '--model',
-        choices=['lightgbm', 'tensorflow'],
+        choices=['lightgbm', 'tensorflow', 'tft'],
         default='lightgbm',
         help='Model type'
     )
@@ -327,6 +329,13 @@ def main():
     )
 
     args = parser.parse_args()
+    
+    if args.model == 'tft':
+        logger.info("Initializing TFT training.")
+        tft_trainer = TFTTrainer(data_path=args.input, model_out_path=args.out)
+        tft_trainer.train()
+        logger.info("TFT training pipeline completed successfully")
+        return
 
     # Initialize trainer
     trainer = ModelTrainer()

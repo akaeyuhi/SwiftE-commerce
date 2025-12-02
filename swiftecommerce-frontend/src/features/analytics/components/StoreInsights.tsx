@@ -90,7 +90,7 @@ export function StoreInsights({ timeRange }: { timeRange: TimePeriod }) {
                 <span className="text-sm text-foreground">Checkout Rate</span>
               </div>
               <span className="font-semibold text-foreground">
-                {(insights?.checkoutRate * 100 || 0).toFixed(2)}%
+                {((insights?.checkoutRate ?? 0) * 100 || 0).toFixed(2)}%
               </span>
             </div>
           </div>

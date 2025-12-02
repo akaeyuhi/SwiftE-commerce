@@ -222,12 +222,12 @@ export class ProductPhotoService extends BaseService<ProductPhoto> {
 
     const dbPhotos: ProductPhoto[] = [];
 
-    const markFirstAsMain = !!isMain;
+    const markFirstAsMain = !isMain;
 
     for (let i = 0; i < photos.length; i++) {
       const file = photos[i];
       const altText = file.originalname;
-      const shouldBeMain = markFirstAsMain ? i === 0 : false;
+      const shouldBeMain = markFirstAsMain ? i === 0 : isMain;
 
       const saved = await this.saveFileAndCreatePhoto(
         file,

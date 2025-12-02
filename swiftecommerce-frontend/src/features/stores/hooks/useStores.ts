@@ -5,9 +5,9 @@ import {
   StoreSearchResultDto,
   StoreStatsDto,
 } from '@/features/stores/types/store.types.ts';
-import {api, PaginatedResponse} from '@/lib/api';
+import { api, PaginatedResponse } from '@/lib/api';
 import { StoreFilters } from '@/shared/types/filters.types.ts';
-import { StoreHealthData } from '@/features/stores/types/store-health.types.ts';
+import { StoreHealthResponse } from '@/features/stores/types/store-health.types.ts';
 
 export function useStores(
   filters?: StoreFilters,
@@ -156,7 +156,7 @@ export function useTopStoresByFollowers(
 
 export function useStoreHealth(
   storeId: string,
-  options?: Omit<UseQueryOptions<StoreHealthData>, 'queryKey' | 'queryFn'>
+  options?: Omit<UseQueryOptions<StoreHealthResponse>, 'queryKey' | 'queryFn'>
 ) {
   return useQuery({
     queryKey: queryKeys.stores.health(storeId),

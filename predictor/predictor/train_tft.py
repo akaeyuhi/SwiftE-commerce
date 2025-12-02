@@ -3,7 +3,6 @@ Train Temporal Fusion Transformer (TFT) for Demand/Stockout Prediction.
 Requires: pytorch-forecasting>=1.0.0, lightning>=2.0.0, torch>=2.0.0
 """
 from __future__ import annotations
-import os
 import argparse
 import logging
 from pathlib import Path
@@ -15,10 +14,9 @@ import lightning.pytorch as pl
 from lightning.pytorch.callbacks import EarlyStopping, ModelCheckpoint
 
 from pytorch_forecasting import TimeSeriesDataSet, TemporalFusionTransformer
-from pytorch_forecasting.data import GroupNormalizer, EncoderNormalizer
-# FIX: Import NaNLabelEncoder
+from pytorch_forecasting.data import GroupNormalizer
 from pytorch_forecasting.data.encoders import NaNLabelEncoder
-from pytorch_forecasting.metrics import QuantileLoss, RMSE, MAE
+from pytorch_forecasting.metrics import QuantileLoss
 
 # Configure logging
 logging.basicConfig(
@@ -44,17 +42,38 @@ class TFTTrainer:
 
     def load_and_verify_data(self) -> pd.DataFrame:
         logger.info(f"Loading data from {self.data_path}")
-        data = pd.read_csv(self.data_path, low_memory=False)
+
+        try:
+            data = pd.read_csv(self.data_path, low_memory=False, encoding='utf-8')
+        except UnicodeDecodeError:
+            logger.warning("UTF-8 decoding failed. Retrying with 'latin-1' encoding.")
+            data = pd.read_csv(self.data_path, low_memory=False, encoding='latin-1')
 
         if 'date' in data.columns:
             data['date'] = pd.to_datetime(data['date'])
+        else:
+            raise ValueError("CSV must contain a 'date' column.")
 
+        # Ensure IDs are strings
         data['productId'] = data['productId'].astype(str)
         if 'storeId' not in data.columns:
             data['storeId'] = 'store_1'
         data['storeId'] = data['storeId'].astype(str)
 
-        # --- Data Cleaning Pipeline ---
+        data['time_idx'] = (data['date'] - data['date'].min()).dt.days
+
+        data['dayOfWeek'] = data['date'].dt.dayofweek
+        data['dayOfMonth'] = data['date'].dt.day
+        data['isWeekend'] = data['dayOfWeek'].apply(lambda x: 1.0 if x >= 5.0 else 0.0)
+
+        if 'purchases' in data.columns:
+            data['purchases'] = data['purchases'].clip(lower=0.0)
+            data['log_purchases'] = np.log1p(data['purchases'])
+
+        if 'views' in data.columns:
+            data['log_views'] = np.log1p(data['views'])
+
+        # --- Data Cleaning ---
         numeric_cols = [
             'purchases', 'views', 'revenue', 'inventoryQty',
             'log_purchases', 'log_views'
@@ -62,32 +81,11 @@ class TFTTrainer:
 
         for col in numeric_cols:
             if col in data.columns:
-                data[col] = pd.to_numeric(data[col], errors='coerce')
-
-                if data[col].isnull().any():
-                    data[col] = data[col].fillna(0.0)
-
+                data[col] = pd.to_numeric(data[col], errors='coerce').fillna(0.0)
                 if np.isinf(data[col]).any():
                     data[col] = data[col].replace([np.inf, -np.inf], 0.0)
 
-        if 'purchases' in data.columns:
-            data['purchases'] = data['purchases'].clip(lower=0.0)
-
-        # Filter out Constant/Dead Products
-        if 'purchases' in data.columns:
-            initial_len = len(data)
-            group_std = data.groupby(['productId', 'storeId'])['purchases'].transform('std')
-            group_std = group_std.fillna(0)
-            data = data[group_std > 1e-4].reset_index(drop=True)
-
-            dropped_rows = initial_len - len(data)
-            if dropped_rows > 0:
-                logger.warning(f"Dropped {dropped_rows} rows of constant/dead products.")
-
-        if 'time_idx' not in data.columns:
-            raise ValueError("Data must have 'time_idx' column for TFT.")
-
-        logger.info(f"Verified data: {len(data)} rows remaining.")
+        logger.info(f"Verified data: {len(data)} rows.")
         return data
 
     def create_datasets(self, data: pd.DataFrame):
@@ -110,7 +108,7 @@ class TFTTrainer:
 
             static_categoricals=["productId", "storeId"],
 
-            time_varying_known_reals=["time_idx", "dayOfWeek", "dayOfMonth", "isWeekend"],
+            time_varying_known_reals=["dayOfWeek", "dayOfMonth", "isWeekend"],
 
             time_varying_unknown_reals=[
                 col for col in [
@@ -123,7 +121,6 @@ class TFTTrainer:
                 ] if col in data.columns
             ],
 
-            # FIX: Handle unknown categories (new products/stores) gracefully
             categorical_encoders={
                 "productId": NaNLabelEncoder(add_nan=True),
                 "storeId": NaNLabelEncoder(add_nan=True),

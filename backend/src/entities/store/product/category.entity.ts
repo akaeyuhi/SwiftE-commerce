@@ -53,7 +53,9 @@ export class Category implements StoreOwnedEntity {
   })
   children: Category[];
 
-  @ManyToMany(() => Product, (product) => product.categories)
+  @ManyToMany(() => Product, (product) => product.categories, {
+    onDelete: 'CASCADE',
+  })
   @JoinTable({
     name: 'product_categories',
     joinColumn: { name: 'category_id', referencedColumnName: 'id' },

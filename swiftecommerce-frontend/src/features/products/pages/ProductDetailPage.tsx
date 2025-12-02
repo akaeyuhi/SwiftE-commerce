@@ -9,6 +9,7 @@ import { CustomerReviews } from '../components/details/CustomerReviews';
 import { Button } from '@/shared/components/ui/Button';
 import { useNavigate } from '@/shared/hooks/useNavigate';
 import { ProductDetails } from '@/features/products/components/details/ProductDetails.tsx';
+import { useMemo } from 'react';
 
 export function ProductDetailPage() {
   const { productId } = useParams<{
@@ -21,6 +22,16 @@ export function ProductDetailPage() {
     error,
     refetch,
   } = usePublicProduct(productId!);
+
+  const photos = useMemo(
+    () =>
+      product && product.mainPhoto && product?.mainPhoto
+        ? [product?.mainPhoto, ...product!.photos]
+        : product && product.photos
+          ? [...product!.photos]
+          : [],
+    [product]
+  );
 
   return (
     <ErrorBoundary title="Product Detail Error">
@@ -35,7 +46,7 @@ export function ProductDetailPage() {
             {product && product.variants ? (
               <>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-                  <ProductImageGallery images={product.photos || []} />
+                  <ProductImageGallery images={photos} />
                   <ProductInfo product={product} />
                 </div>
                 <ProductDescription description={product.description || ''} />

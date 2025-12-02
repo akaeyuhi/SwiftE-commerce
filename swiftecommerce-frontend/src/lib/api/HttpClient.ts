@@ -139,6 +139,7 @@ export class HttpClientImpl implements HttpClient {
             (key.toLowerCase().includes('price') ||
               key.toLowerCase().includes('total') ||
               key.toLowerCase().includes('amount') ||
+              key.toLowerCase().includes('rate') ||
               key.toLowerCase().includes('average') ||
               key.toLowerCase().includes('count') ||
               key.toLowerCase().includes('quantity') ||

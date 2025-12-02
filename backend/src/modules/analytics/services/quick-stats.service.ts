@@ -58,6 +58,7 @@ export class QuickStatsService {
         'name',
         'productCount',
         'followerCount',
+        'conversionRate',
         'orderCount',
         'totalRevenue',
       ],

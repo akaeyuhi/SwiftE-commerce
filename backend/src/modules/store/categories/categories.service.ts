@@ -30,10 +30,14 @@ export class CategoriesService extends BaseService<
     super(categoriesRepo);
   }
 
-  async paginate(pagination: PaginationParams): Promise<[Category[], number]> {
+  async paginate(
+    storeId: string,
+    pagination: PaginationParams
+  ): Promise<[Category[], number]> {
     const { limit = 10, offset = 0 } = pagination || {};
     return this.categoriesRepo.findAndCount({
       order: { name: 'ASC' },
+      where: { storeId },
       take: limit,
       skip: offset,
     });

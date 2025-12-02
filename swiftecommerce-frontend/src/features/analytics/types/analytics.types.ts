@@ -108,7 +108,8 @@ export interface ProductConversionMetrics {
 
 export interface TimeSeriesData {
   date: string;
-  revenue: number;
+  revenue?: number;
+  transactions?: number;
   orders: number;
   views: number;
 }

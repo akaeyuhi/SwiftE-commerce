@@ -77,10 +77,12 @@ export class CategoriesController extends BaseController<
 
   @Get()
   @PaginatedResponse(Category)
-  async findAll(
-    @Pagination() pagination: PaginationParams
+  async findAllByStore(
+    @Param('storeId', new ParseUUIDPipe()) storeId: string,
+    @Pagination()
+    pagination: PaginationParams
   ): Promise<[Category[], number]> {
-    return this.categoriesService.paginate(pagination);
+    return this.categoriesService.paginate(storeId, pagination);
   }
 
   /**

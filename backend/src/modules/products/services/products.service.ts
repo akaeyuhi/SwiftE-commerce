@@ -163,10 +163,13 @@ export class ProductsService extends PaginatedService<
         dto.categoryIds?.pop() ?? dto.categoryId!
       );
     }
+
+    if (mainPhoto) {
+      await this.addMainPhoto(product.id, store.id, [mainPhoto]);
+    }
+
     if (photos && photos.length > 0) {
       const savePhotos = [...photos];
-      const firstPhoto = savePhotos.shift()! ?? mainPhoto;
-      await this.addMainPhoto(product.id, store.id, [firstPhoto]);
       await this.addPhotos(product.id, store.id, savePhotos);
     }
 
@@ -188,7 +191,10 @@ export class ProductsService extends PaginatedService<
       await this.variantsService.createMultiple(dto.variants);
     }
     if (dto.updateVariants && dto.updateVariants.length) {
-      await this.variantsService.updateMultiple(dto.updateVariants);
+      await this.variantsService.updateMultiple(
+        dto.updateVariants,
+        product.storeId
+      );
     }
 
     if (dto.categoryIds && dto.categoryIds.length > 1) {
@@ -246,11 +252,18 @@ export class ProductsService extends PaginatedService<
 
     const store = await this.storeService.getEntityById(storeId);
     if (!store) throw new NotFoundException('Store not found');
+
+    if (!product.mainPhotoUrl) {
+      await this.addMainPhoto(productId, storeId, [photos[0]]);
+      photos.shift();
+    }
+
     const addPhotos = await this.photoService.addPhotos(product, store, photos);
 
     if (addPhotos) {
       product.photos = [...product.photos, ...addPhotos];
     }
+
     await this.productRepo.save(product);
     return addPhotos;
   }
@@ -456,8 +469,6 @@ export class ProductsService extends PaginatedService<
       options
     );
 
-    console.log(results);
-
     return results.map((product) => ({
       id: product.id,
       name: product.name,
@@ -606,6 +617,7 @@ export class ProductsService extends PaginatedService<
       if (!dto.productId) {
         dto.productId = product.id;
         dto.productName = product.name;
+        dto.storeId = product.storeId;
       }
     }
     return this.variantsService.createMultiple(dtos);
@@ -617,6 +629,6 @@ export class ProductsService extends PaginatedService<
   ): Promise<ProductVariant[]> {
     const product = await this.findProductWithRelations(productId);
     if (!product) throw new NotFoundException('Product not found');
-    return this.variantsService.updateMultiple(dtos);
+    return this.variantsService.updateMultiple(dtos, product.storeId);
   }
 }

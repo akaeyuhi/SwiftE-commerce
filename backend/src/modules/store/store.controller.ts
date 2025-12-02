@@ -13,6 +13,7 @@ import {
   Query,
   UploadedFiles,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/modules/authorization/guards/jwt-auth.guard';
 import { AdminGuard } from 'src/modules/authorization/guards/admin.guard';
@@ -38,6 +39,7 @@ import { PaginatedResponse } from 'src/common/decorators/paginated-response.deco
 import { UploadStoreFiles } from 'src/common/decorators/upload-store-files.decorator';
 import { RecordEvents } from 'src/common/decorators/record-event.decorator';
 import { AnalyticsEventType } from 'src/entities/infrastructure/analytics/analytics-event.entity';
+import { RecordEventInterceptor } from 'src/modules/infrastructure/interceptors/record-event/record-event.interceptor';
 
 /**
  * StoreController
@@ -51,6 +53,7 @@ import { AnalyticsEventType } from 'src/entities/infrastructure/analytics/analyt
  */
 @Controller('stores')
 @UseGuards(JwtAuthGuard, AdminGuard, StoreRolesGuard)
+@UseInterceptors(RecordEventInterceptor)
 @RecordEvents({
   findOne: {
     eventType: AnalyticsEventType.VIEW,

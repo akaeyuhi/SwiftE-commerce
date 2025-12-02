@@ -110,6 +110,7 @@ export class VariantsService extends BaseService<
 
     const variant = this.variantRepo.create({
       product: { id: dto.productId },
+      productName: dto.productName,
       sku: skuToUse,
       price: dto.price,
       attributes: dto.attributes ?? undefined,
@@ -159,6 +160,19 @@ export class VariantsService extends BaseService<
     // If explicit replacement requested, DTO can provide `replaceAttributes: true`
     if ((dto as any).replaceAttributes && dto.attributes) {
       variant.attributes = dto.attributes;
+    }
+
+    if (
+      dto.storeId &&
+      dto.quantity &&
+      dto.quantity !== variant.inventory.quantity
+    ) {
+      variant.inventory.quantity = dto.quantity;
+      await this.inventoryService.setInventory(
+        dto.storeId,
+        dto.variantId,
+        dto.quantity
+      );
     }
 
     return await this.variantRepo.save(variant);
@@ -309,10 +323,14 @@ export class VariantsService extends BaseService<
     return created;
   }
 
-  async updateMultiple(dtos: UpdateVariantDto[]): Promise<ProductVariant[]> {
+  async updateMultiple(
+    dtos: UpdateVariantDto[],
+    storeId: string
+  ): Promise<ProductVariant[]> {
     const updated = [] as ProductVariant[];
     for (const dto of dtos) {
       if (!dto.variantId) continue;
+      dto.storeId = storeId;
       const variant = await this.update(dto.variantId, dto);
       updated.push(variant);
     }

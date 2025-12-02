@@ -21,6 +21,13 @@ import { Admin } from 'src/entities/user/authentication/admin.entity';
 import { StoreRole } from 'src/entities/user/authentication/store-role.entity';
 import { StoreRoles } from 'src/common/enums/store-roles.enum';
 import { ProductPhoto } from 'src/entities/store/product/product-photo.entity';
+import { ProductDailyStats } from 'src/entities/infrastructure/analytics/product-daily-stats.entity';
+import { StoreDailyStats } from 'src/entities/infrastructure/analytics/store-daily-stats.entity';
+import {
+  AnalyticsEvent,
+  AnalyticsEventType,
+} from 'src/entities/infrastructure/analytics/analytics-event.entity';
+import { SeedingContextService } from 'src/database/subscribers/seeding-context.service';
 
 @Injectable()
 export class SeedService {
@@ -50,50 +57,82 @@ export class SeedService {
     private readonly storeRoleRepository: Repository<StoreRole>,
     @InjectRepository(ProductPhoto)
     private readonly productPhotoRepository: Repository<ProductPhoto>,
-    @InjectDataSource() private readonly dataSource: DataSource
+    @InjectRepository(ProductDailyStats)
+    private readonly productDailyStatsRepository: Repository<ProductDailyStats>,
+    @InjectRepository(StoreDailyStats)
+    private readonly storeDailyStatsRepository: Repository<StoreDailyStats>,
+    @InjectRepository(AnalyticsEvent)
+    private readonly analyticsEventRepository: Repository<AnalyticsEvent>,
+    @InjectDataSource() private readonly dataSource: DataSource,
+    private readonly seedingContext: SeedingContextService
   ) {}
 
   async seed() {
-    console.log('Starting database seed...');
+    console.log('🚀 Starting database seed...');
 
-    // Clear existing data
-    await this.clearDatabase();
+    const startTime = Date.now();
 
-    // Create users
-    const users = await this.seedUsers(20);
-    console.log(`🌱 Seeded ${users.length} users`);
+    try {
+      // Clear existing data
+      await this.clearDatabase();
 
-    // Create stores
-    const stores = await this.seedStores(users, 10);
-    console.log(`🌱 Seeded ${stores.length} stores`);
+      this.seedingContext.startSeeding();
 
-    // Create store roles
-    const storeRoles = await this.seedStoreRoles(users, stores);
-    console.log(`🌱 Seeded ${storeRoles.length} store roles`);
+      // Create users
+      const users = await this.seedUsers(30);
+      console.log(`🌱 Seeded ${users.length} users`);
 
-    // Create categories for each store
-    const categories = await this.seedCategories(stores);
-    console.log(`🌱 Seeded ${categories.length} categories`);
+      // Create stores
+      const stores = await this.seedStores(users, 10);
+      console.log(`🌱 Seeded ${stores.length} stores`);
 
-    // Create products for each store
-    const products = await this.seedProducts(stores, categories);
-    console.log(
-      `🌱 Seeded ${products.length} products with variants, inventory, and photos`
-    );
+      // Create store roles
+      const storeRoles = await this.seedStoreRoles(users, stores);
+      console.log(`🌱 Seeded ${storeRoles.length} store roles`);
 
-    // Create orders
-    const orders = await this.seedOrders(users, stores, products);
-    console.log(`🌱 Seeded ${orders.length} orders`);
+      // Create categories for each store
+      const categories = await this.seedCategories(stores);
+      console.log(`🌱 Seeded ${categories.length} categories`);
 
-    // Create reviews
-    const reviews = await this.seedReviews(users, products);
-    console.log(`🌱 Seeded ${reviews.length} reviews`);
+      // Create products for each store
+      const products = await this.seedProducts(stores, categories);
+      console.log(
+        `🌱 Seeded ${products.length} products with variants, inventory, and photos`
+      );
 
-    // Create news posts
-    const newsPosts = await this.seedNewsPosts(users, stores);
-    console.log(`🌱 Seeded ${newsPosts.length} news posts`);
+      // Create orders
+      const orders = await this.seedOrders(users, stores, products);
+      console.log(`🌱 Seeded ${orders.length} orders`);
 
-    console.log('✅ Database seeding completed successfully!');
+      // Create analytics events
+      const events = await this.seedAnalyticsEvents(orders, products, users);
+      console.log(`🌱 Seeded ${events.length} analytics events`);
+
+      // Create analytics data
+      await this.seedAnalytics(events, products, stores);
+      console.log('🌱 Seeded aggregated analytics data (daily stats)');
+
+      // Create reviews
+      const reviews = await this.seedReviews(users, products);
+      console.log(`🌱 Seeded ${reviews.length} reviews`);
+
+      // Create news posts
+      const newsPosts = await this.seedNewsPosts(users, stores);
+      console.log(`🌱 Seeded ${newsPosts.length} news posts`);
+
+      const endTime = Date.now();
+      const duration = (endTime - startTime) / 1000;
+
+      console.log(
+        `\n✅ Database seeding completed successfully in ${duration.toFixed(2)}s!`
+      );
+
+      this.seedingContext.endSeeding();
+    } catch (error) {
+      console.error('❌ Seeding failed:', error);
+      throw error;
+    } finally {
+    }
   }
 
   async clearDatabase(): Promise<void> {
@@ -116,6 +155,8 @@ export class SeedService {
 
       // Re-enable foreign key checks
       await this.dataSource.query('SET session_replication_role = DEFAULT;');
+
+      console.log('✅ Database cleared successfully');
     } catch (error) {
       console.error('❌ Error clearing database:', error.message);
       throw error;
@@ -195,6 +236,11 @@ export class SeedService {
     stores: Store[]
   ): Promise<StoreRole[]> {
     const roles: StoreRole[] = [];
+    const admin = await this.userRepository.findOne({
+      where: {
+        email: 'admin@swiftecommerce.com',
+      },
+    });
     for (const store of stores) {
       // Assign Owner
       roles.push(
@@ -207,9 +253,19 @@ export class SeedService {
         })
       );
 
+      roles.push(
+        this.storeRoleRepository.create({
+          storeId: store.id,
+          userId: admin!.id,
+          roleName: StoreRoles.ADMIN,
+          isActive: true,
+          assignedBy: store.ownerId,
+        })
+      );
+
       // Assign a store admin
       const storeAdmin = faker.helpers.arrayElement(
-        users.filter((u) => u.id !== store.ownerId)
+        users.filter((u) => u.id !== store.ownerId && u.id !== admin?.id)
       );
       roles.push(
         this.storeRoleRepository.create({
@@ -296,7 +352,7 @@ export class SeedService {
             productId: savedProduct.id,
             sku: faker.string.alphanumeric(8).toUpperCase(),
             productName: savedProduct.name,
-            price: parseFloat(faker.commerce.price()),
+            price: parseFloat(faker.commerce.price({ min: 10, max: 500 })),
             attributes: {
               color: faker.color.human(),
               size: faker.helpers.arrayElement(['S', 'M', 'L', 'XL']),
@@ -308,7 +364,7 @@ export class SeedService {
           const inventory = this.inventoryRepository.create({
             variantId: savedVariant.id,
             storeId: store.id,
-            quantity: faker.number.int({ min: 0, max: 100 }),
+            quantity: faker.number.int({ min: 10, max: 200 }),
           });
           await this.inventoryRepository.save(inventory);
           variants.push(savedVariant);
@@ -325,8 +381,11 @@ export class SeedService {
     stores: Store[],
     products: Product[]
   ): Promise<Order[]> {
+    const ninetyDaysAgo = new Date();
+    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
     const orders: Order[] = [];
-    for (let i = 0; i < 100; i++) {
+
+    for (let i = 0; i < 500; i++) {
       const user = faker.helpers.arrayElement(users);
       const store = faker.helpers.arrayElement(stores);
       const storeProducts = products.filter((p) => p.storeId === store.id);
@@ -336,11 +395,11 @@ export class SeedService {
       const orderItems: OrderItem[] = [];
       let totalAmount = 0;
 
-      for (let j = 0; j < faker.number.int({ min: 1, max: 5 }); j++) {
+      for (let j = 0; j < faker.number.int({ min: 1, max: 7 }); j++) {
         const product = faker.helpers.arrayElement(storeProducts);
         if (!product.variants || product.variants.length === 0) continue;
         const variant = faker.helpers.arrayElement(product.variants);
-        const quantity = faker.number.int({ min: 1, max: 3 });
+        const quantity = faker.number.int({ min: 1, max: 5 });
         const unitPrice = variant.price;
         const lineTotal = unitPrice * quantity;
 
@@ -359,10 +418,31 @@ export class SeedService {
 
       if (orderItems.length === 0) continue;
 
+      const statusWeights = [
+        { status: OrderStatus.SHIPPED, weight: 70 },
+        { status: OrderStatus.PENDING, weight: 15 },
+        { status: OrderStatus.PROCESSING, weight: 10 },
+        { status: OrderStatus.CANCELLED, weight: 5 },
+      ];
+
+      const totalWeight = statusWeights.reduce((sum, w) => sum + w.weight, 0);
+      const random = faker.number.int({ min: 1, max: totalWeight });
+      let cumulativeWeight = 0;
+      let selectedStatus = OrderStatus.SHIPPED;
+
+      for (const { status, weight } of statusWeights) {
+        cumulativeWeight += weight;
+        if (random <= cumulativeWeight) {
+          selectedStatus = status;
+          break;
+        }
+      }
+
       const order = this.orderRepository.create({
         userId: user.id,
         storeId: store.id,
-        status: faker.helpers.arrayElement(Object.values(OrderStatus)),
+        createdAt: faker.date.between({ from: ninetyDaysAgo, to: new Date() }),
+        status: selectedStatus,
         totalAmount,
         shipping: {
           firstName: user.firstName,
@@ -388,7 +468,7 @@ export class SeedService {
     const reviews: Review[] = [];
     const usedCombinations = new Set<string>();
 
-    for (let i = 0; i < 200; i++) {
+    for (let i = 0; i < 400; i++) {
       const user = faker.helpers.arrayElement(users);
       const product = faker.helpers.arrayElement(products);
       const key = `${user.id}-${product.id}`;
@@ -414,7 +494,6 @@ export class SeedService {
   ): Promise<NewsPost[]> {
     const newsPosts: NewsPost[] = [];
     for (const store of stores) {
-      // Find users with roles in this store
       const storeRoles = await this.storeRoleRepository.find({
         where: { storeId: store.id },
         relations: ['user'],
@@ -441,5 +520,236 @@ export class SeedService {
       }
     }
     return this.newsPostRepository.save(newsPosts);
+  }
+
+  private async seedAnalytics(
+    events: AnalyticsEvent[],
+    products: Product[],
+    stores: Store[]
+  ): Promise<void> {
+    const productStats: Record<string, Record<string, ProductDailyStats>> = {};
+    const storeStats: Record<string, Record<string, StoreDailyStats>> = {};
+
+    const ninetyDaysAgo = new Date();
+    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+
+    for (let d = 0; d < 90; d++) {
+      const date = new Date(ninetyDaysAgo);
+      date.setDate(date.getDate() + d);
+      const dateString = date.toISOString().split('T')[0];
+
+      for (const product of products) {
+        if (!productStats[product.id]) {
+          productStats[product.id] = {};
+        }
+        productStats[product.id][dateString] =
+          this.productDailyStatsRepository.create({
+            productId: product.id,
+            date: dateString,
+            views: faker.number.int({ min: 0, max: 1000 }),
+            revenue: faker.number.int({ min: 0, max: 1000 }),
+            likes: faker.number.int({ min: 0, max: 100 }),
+            addToCarts: faker.number.int({ min: 0, max: 150 }),
+            purchases: faker.number.int({ min: 0, max: 100 }),
+          });
+      }
+
+      for (const store of stores) {
+        if (!storeStats[store.id]) {
+          storeStats[store.id] = {};
+        }
+        storeStats[store.id][dateString] =
+          this.storeDailyStatsRepository.create({
+            storeId: store.id,
+            date: dateString,
+            views: 0,
+            revenue: 0,
+            likes: 0,
+            checkouts: 0,
+            addToCarts: 0,
+            purchases: 0,
+          });
+      }
+    }
+
+    for (const event of events) {
+      const dateString = (event.createdAt as Date).toISOString().split('T')[0];
+
+      if (event.productId) {
+        const pStat = productStats[event.productId]?.[dateString];
+        if (pStat) {
+          switch (event.eventType) {
+            case AnalyticsEventType.VIEW:
+              pStat.views = (pStat.views || 0) + 1;
+              break;
+            case AnalyticsEventType.ADD_TO_CART:
+              pStat.addToCarts = (pStat.addToCarts || 0) + 1;
+              break;
+            case AnalyticsEventType.LIKE:
+              pStat.likes = (pStat.likes || 0) + 1;
+              break;
+            case AnalyticsEventType.PURCHASE:
+              pStat.purchases = (pStat.purchases || 0) + 1;
+              pStat.revenue =
+                Number(pStat.revenue || 0) + Number(event.value || 0);
+              break;
+          }
+        }
+      }
+
+      if (event.storeId) {
+        const sStat = storeStats[event.storeId]?.[dateString];
+        if (sStat) {
+          switch (event.eventType) {
+            case AnalyticsEventType.VIEW:
+              sStat.views = (sStat.views || 0) + 1;
+              break;
+            case AnalyticsEventType.ADD_TO_CART:
+              sStat.addToCarts = (sStat.addToCarts || 0) + 1;
+              break;
+            case AnalyticsEventType.LIKE:
+              sStat.likes = (sStat.likes || 0) + 1;
+              break;
+            case AnalyticsEventType.PURCHASE:
+              sStat.purchases = (sStat.purchases || 0) + 1;
+              sStat.revenue =
+                Number(sStat.revenue || 0) + Number(event.value || 0);
+              break;
+            case AnalyticsEventType.CHECKOUT:
+              sStat.checkouts = (sStat.checkouts || 0) + 1;
+              break;
+          }
+        }
+      }
+    }
+
+    const allProductStats = Object.values(productStats).flatMap((daily) =>
+      Object.values(daily)
+    );
+    const allStoreStats = Object.values(storeStats).flatMap((daily) =>
+      Object.values(daily)
+    );
+
+    await this.productDailyStatsRepository.save(allProductStats, {
+      chunk: 500,
+    });
+    await this.storeDailyStatsRepository.save(allStoreStats, { chunk: 500 });
+  }
+
+  private async seedAnalyticsEvents(
+    orders: Order[],
+    products: Product[],
+    users: User[]
+  ): Promise<AnalyticsEvent[]> {
+    const events: AnalyticsEvent[] = [];
+
+    for (const order of orders) {
+      const orderTime = order.createdAt as Date;
+      const checkoutTime = new Date(orderTime.getTime() - 1000 * 60 * 2);
+
+      if (order.status !== OrderStatus.CANCELLED) {
+        events.push(
+          this.analyticsEventRepository.create({
+            storeId: order.storeId,
+            userId: order.userId,
+            eventType: AnalyticsEventType.CHECKOUT,
+            invokedOn: 'store',
+            createdAt: checkoutTime,
+          })
+        );
+      }
+
+      for (const item of order.items) {
+        if (item.product?.id) {
+          const addToCartTime = new Date(
+            checkoutTime.getTime() - 1000 * 60 * 5
+          );
+          const viewTime = new Date(addToCartTime.getTime() - 1000 * 30);
+
+          events.push(
+            this.analyticsEventRepository.create({
+              storeId: order.storeId,
+              productId: item.product.id,
+              userId: order.userId,
+              eventType: AnalyticsEventType.VIEW,
+              invokedOn: 'product',
+              createdAt: viewTime,
+            })
+          );
+
+          events.push(
+            this.analyticsEventRepository.create({
+              storeId: order.storeId,
+              productId: item.product.id,
+              userId: order.userId,
+              eventType: AnalyticsEventType.ADD_TO_CART,
+              invokedOn: 'product',
+              createdAt: addToCartTime,
+            })
+          );
+
+          if (order.status === OrderStatus.SHIPPED) {
+            events.push(
+              this.analyticsEventRepository.create({
+                storeId: order.storeId,
+                productId: item.product.id,
+                userId: order.userId,
+                eventType: AnalyticsEventType.PURCHASE,
+                invokedOn: 'product',
+                value: Number(item.lineTotal),
+                createdAt: orderTime,
+              })
+            );
+          }
+        }
+      }
+    }
+
+    for (let i = 0; i < 1500; i++) {
+      const product = faker.helpers.arrayElement(products);
+      const user = faker.helpers.arrayElement(users);
+      const eventTime = faker.date.recent({ days: 90 });
+
+      events.push(
+        this.analyticsEventRepository.create({
+          storeId: product.storeId,
+          productId: product.id,
+          userId: user.id,
+          eventType: AnalyticsEventType.VIEW,
+          invokedOn: 'product',
+          createdAt: eventTime,
+        })
+      );
+
+      if (faker.number.int({ min: 1, max: 4 }) === 1) {
+        events.push(
+          this.analyticsEventRepository.create({
+            storeId: product.storeId,
+            productId: product.id,
+            userId: user.id,
+            eventType: AnalyticsEventType.ADD_TO_CART,
+            invokedOn: 'product',
+            createdAt: new Date(eventTime.getTime() + 1000 * 30),
+          })
+        );
+      }
+    }
+
+    for (let i = 0; i < 500; i++) {
+      const product = faker.helpers.arrayElement(products);
+      const user = faker.helpers.arrayElement(users);
+      events.push(
+        this.analyticsEventRepository.create({
+          storeId: product.storeId,
+          productId: product.id,
+          userId: user.id,
+          eventType: AnalyticsEventType.LIKE,
+          invokedOn: 'product',
+          createdAt: faker.date.recent({ days: 90 }),
+        })
+      );
+    }
+
+    return this.analyticsEventRepository.save(events, { chunk: 1000 });
   }
 }

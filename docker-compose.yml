@@ -1,402 +1,117 @@
 version: '3.8'
 
+networks:
+  app_network:
+    driver: bridge
+
 services:
-  # ================================
-  # Infrastructure Services
-  # ================================
+  postgres_db:
+    image: postgres:latest
+    container_name: dev_postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: ecommerce_db
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ecommerce_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app_network
 
   redis:
     image: redis:7-alpine
-    container_name: rlt-redis
+    container_name: dev_redis
     restart: unless-stopped
     ports:
       - "6379:6379"
     volumes:
-      - redis_data:/data
-    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+      - redis_dev_data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 3
-      start_period: 5s
     networks:
-      - backend_network
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-
-  postgres_db:
-    image: postgres:latest
-    container_name: postgres_db
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-root}
-      POSTGRES_DB: ${POSTGRES_DB:-ecommerce_db}
-      POSTGRES_INITDB_ARGS: "-E UTF8 --locale=en_US.UTF-8"
-      # Performance tuning
-      POSTGRES_MAX_CONNECTIONS: 200
-      POSTGRES_SHARED_BUFFERS: 256MB
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./db/structure.sql:/docker-entrypoint-initdb.d/01-structure.sql
-      - ./db/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
-      - ./db/postgres.conf:/etc/postgresql/postgresql.conf:ro
-    ports:
-      - "${POSTGRES_PORT:-5432}:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-ecommerce_db}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-    networks:
-      - backend_network
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    container_name: pgadmin4
-    restart: unless-stopped
-    environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@admin.com}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-root}
-      PGADMIN_CONFIG_SERVER_MODE: 'False'
-      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
-    ports:
-      - "${PGADMIN_PORT:-5050}:80"
-    volumes:
-      - pgadmin_data:/var/lib/pgadmin
-      - ./config/pgadmin-servers.json:/pgadmin4/servers.json:ro
-    depends_on:
-      postgres_db:
-        condition: service_healthy
-    networks:
-      - backend_network
-    profiles:
-      - admin  # Only start with --profile admin
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "5m"
-        max-file: "2"
-
-  # ================================
-  # ML Predictor Service
-  # ================================
+      - app_network
 
   predictor:
     build:
       context: ./predictor
       dockerfile: docker/Dockerfile.serve
-      args:
-        MODEL_VERSION: ${MODEL_VERSION:-v1.0}
-    container_name: predictor
+    container_name: dev_predictor
     restart: unless-stopped
-    environment:
-      # Model configuration
-      MODEL_PATH: /models/model.bin
-      SCALER_PATH: /models/scaler.pkl
-      MODEL_TYPE: ${MODEL_TYPE:-lightgbm}
-      MODEL_VERSION: ${MODEL_VERSION:-v1.0}
-
-      # Server configuration
-      HOST: 0.0.0.0
-      PORT: 8080
-      LOG_LEVEL: ${PREDICTOR_LOG_LEVEL:-info}
-
-      # Security
-      PREDICTOR_AUTH_TOKEN: ${PREDICTOR_AUTH_TOKEN:-change-me-in-production}
-
-      # Performance
-      WORKERS: ${PREDICTOR_WORKERS:-4}
-      WORKER_CLASS: uvicorn.workers.UvicornWorker
-      TIMEOUT: 60
     ports:
-      - "${PREDICTOR_PORT:-8080}:8080"
+      - "8080:8080"
+    environment:
+      - MODEL_PATH=/app/models/model.h5
+      - SCALER_PATH=/app/models/scaler.pkl
+      - MODEL_TYPE=keras
+      - PREDICTOR_AUTH_TOKEN=dev-token
+      - LOG_LEVEL=debug
     volumes:
-      # Mount pre-trained models (read-only)
-      - ./predictor/models:/models:ro
-      # Mount source for development (optional, comment out in production)
-      # - ./predictor/predictor:/app/predictor:ro
-    healthcheck:
-      test: ["CMD", "python", "-c", "import requests; r = requests.get('http://localhost:8080/health', timeout=5); exit(0 if r.status_code == 200 else 1)"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
+      - ./predictor/predictor:/app/predictor
+      - ./predictor/models:/app/models
+    command: uvicorn predictor.serve_http:app --host 0.0.0.0 --port 8080 --reload
     networks:
-      - backend_network
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "20m"
-        max-file: "5"
-    deploy:
-      resources:
-        limits:
-          memory: 2G
-          cpus: '2.0'
-        reservations:
-          memory: 512M
-          cpus: '0.5'
-
-  # ================================
-  # Backend API Service
-  # ================================
+      - app_network
 
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-      #target: ${BUILD_TARGET:-production}
-      #args:
-        #NODE_ENV: ${NODE_ENV:-production}
-    container_name: backend
+      target: development
+    container_name: dev_backend
     restart: unless-stopped
-    env_file:
-      - .env
-    environment:
-      # Override with container service names
-      DATABASE_HOST: postgres_db
-      DATABASE_PORT: 5432
-      DATABASE_USER: ${POSTGRES_USER:-postgres}
-      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-root}
-      DATABASE_NAME: ${POSTGRES_DB:-ecommerce_db}
-      DATABASE_SYNC: ${DATABASE_SYNC:-false}
-      DATABASE_LOGGING: ${DATABASE_LOGGING:-false}
-
-      # Redis
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
-      REDIS_DB: ${REDIS_DB:-0}
-
-      # Predictor
-      PREDICTOR_URL: http://predictor:8080
-      PREDICTOR_AUTH_TOKEN: ${PREDICTOR_AUTH_TOKEN:-change-me-in-production}
-
-      # Application
-      PORT: 3000
-      API_PREFIX: ${API_PREFIX:-api}
-
-      # Security
-      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
-      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
-      REFRESH_TOKEN_COOKIE_NAME: ${REFRESH_TOKEN_COOKIE_NAME:-refreshToken}
-
-
     ports:
-      - "${BACKEND_PORT:-3000}:3000"
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_HOST=postgres_db
+      - DATABASE_PORT=5432
+      - DATABASE_USER=postgres
+      - DATABASE_PASSWORD=root
+      - DATABASE_NAME=ecommerce_db
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - PREDICTOR_URL=http://predictor:8080
+      - PREDICTOR_AUTH_TOKEN=dev-token
+      - JWT_SECRET=dev-secret
     volumes:
-      # Application logs
-      - ./logs:/app/logs
-      # Upload storage (if using local storage)
-      - ./uploads:/app/uploads
-      # Source code for development (comment out in production)
-      # - ./backend/src:/app/src:ro
+      - ./backend:/app
+      - /app/node_modules
     depends_on:
       postgres_db:
         condition: service_healthy
       redis:
         condition: service_healthy
-      predictor:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+    command: npm run start:dev
     networks:
-      - backend_network
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "50m"
-        max-file: "10"
-    deploy:
-      resources:
-        limits:
-          memory: 2G
-          cpus: '2.0'
-        reservations:
-          memory: 512M
-          cpus: '0.5'
+      - app_network
 
-#  # ================================
-#  # Frontend Service
-#  # ================================
-#
-#  frontend:
-#    build:
-#      context: ./frontend
-#      dockerfile: Dockerfile
-#      args:
-#        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3000}
-#    container_name: frontend
-#    restart: unless-stopped
-#    environment:
-#      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://backend:3000}
-#      NEXT_TELEMETRY_DISABLED: 1
-#    ports:
-#      - "${FRONTEND_PORT:-80}:80"
-#    depends_on:
-#      backend:
-#        condition: service_healthy
-#    healthcheck:
-#      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
-#      interval: 30s
-#      timeout: 10s
-#      retries: 3
-#      start_period: 20s
-#    networks:
-#      - backend_network
-#    logging:
-#      driver: "json-file"
-#      options:
-#        max-size: "20m"
-#        max-file: "5"
-#    deploy:
-#      resources:
-#        limits:
-#          memory: 1G
-#          cpus: '1.0'
-
-  # ================================
-  # ML Training Service (On-Demand)
-  # ================================
-
-  predictor-train:
+  frontend:
     build:
-      context: ./predictor
-      dockerfile: docker/Dockerfile.train
-    container_name: predictor-train
-    environment:
-      # Database connection
-      PGHOST: postgres_db
-      PGPORT: 5432
-      PGDATABASE: ${POSTGRES_DB:-ecommerce_db}
-      PGUSER: ${POSTGRES_USER:-postgres}
-      PGPASSWORD: ${POSTGRES_PASSWORD:-root}
-
-      # Training configuration
-      MODEL_TYPE: ${MODEL_TYPE:-lightgbm}
-      TEST_SIZE: 0.15
-      RANDOM_STATE: 42
-
-      # Feature configuration
-      WINDOW_7D: 7
-      WINDOW_14D: 14
-      WINDOW_30D: 30
-    volumes:
-      # Data directory
-      - ./predictor/data:/data
-      # Model output directory
-      - ./predictor/models:/models
-      # Source code for development
-      - ./predictor/predictor:/app/predictor:ro
-    depends_on:
-      postgres_db:
-        condition: service_healthy
-    networks:
-      - backend_network
-    profiles:
-      - training  # Only run with --profile training
-    command: >
-      sh -c "
-        echo '=== Starting ML Training Pipeline ===' &&
-        echo 'Step 1: Exporting features...' &&
-        python -m predictor.export_features
-          --start $${TRAIN_START_DATE:-2025-01-01}
-          --end $${TRAIN_END_DATE:-2025-10-01}
-          --out /data/features.csv
-          --batch-size 100 &&
-        echo 'Step 2: Training model...' &&
-        python -m predictor.train_model
-          --in /data/features.csv
-          --model $${MODEL_TYPE:-lightgbm}
-          --out /models/model.bin
-          --test-size 0.15 &&
-        echo '=== Training Complete ===' &&
-        echo 'Model saved to /models/model.bin' &&
-        echo 'Restart predictor service to use new model'
-      "
-
-  # ================================
-  # Monitoring (Optional)
-  # ================================
-
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: prometheus
+      context: ./swiftecommerce-frontend
+      dockerfile: Dockerfile
+      target: development
+    container_name: dev_frontend
     restart: unless-stopped
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/etc/prometheus/console_libraries'
-      - '--web.console.templates=/etc/prometheus/consoles'
     ports:
-      - "${PROMETHEUS_PORT:-9090}:9090"
+      - "5173:5173"
     volumes:
-      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - prometheus_data:/prometheus
-    networks:
-      - backend_network
-    profiles:
-      - monitoring
-
-  grafana:
-    image: grafana/grafana:latest
-    container_name: grafana
-    restart: unless-stopped
-    environment:
-      GF_SECURITY_ADMIN_USER: ${GRAFANA_USER:-admin}
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
-      GF_INSTALL_PLUGINS: grafana-clock-panel
-    ports:
-      - "${GRAFANA_PORT:-3001}:3000"
-    volumes:
-      - grafana_data:/var/lib/grafana
-      - ./config/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml:ro
-      - ./config/grafana-dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml:ro
+      - ./swiftecommerce-frontend:/app
+      - /app/node_modules
     depends_on:
-      - prometheus
+      - backend
     networks:
-      - backend_network
-    profiles:
-      - monitoring
-
-# ================================
-# Volumes
-# ================================
+      - app_network
 
 volumes:
-  postgres_data:
-    driver: local
-  redis_data:
-    driver: local
-  pgadmin_data:
-    driver: local
-  prometheus_data:
-    driver: local
-  grafana_data:
-    driver: local
-
-# ================================
-# Networks
-# ================================
-
-networks:
-  backend_network:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.20.0.0/16
+  postgres_dev_data:
+  redis_dev_data:

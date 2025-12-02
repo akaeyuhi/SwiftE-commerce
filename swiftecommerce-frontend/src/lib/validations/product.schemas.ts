@@ -4,12 +4,13 @@ export const variantSchema = z.object({
   sku: z
     .string()
     .min(1, 'SKU is required')
-    .max(50, 'SKU must be less than 50 characters'),
+    .max(50, 'SKU must be less than 50 characters')
+    .optional(),
   price: z
     .number()
     .min(0.01, 'Price must be at least $0.01')
     .max(1000000, 'Price must be less than $1,000,000'),
-  attributes: z.record(z.any()).optional(),
+  attributes: z.record(z.string(), z.any()),
   quantity: z
     .number()
     .int('Quantity must be a whole number')
@@ -28,7 +29,6 @@ export const productSchema = z.object({
     .min(1, 'Description is required')
     .min(20, 'Description must be at least 20 characters'),
   categoryIds: z.array(z.string()).min(1, 'Select at least one category'),
-  categories: z.array(z.string()).min(1, 'Select at least one category'),
   variants: z.array(variantSchema).min(1, 'At least one variant is required'),
 });
 
