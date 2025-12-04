@@ -5,39 +5,16 @@ networks:
     driver: bridge
 
 services:
-  postgres_db:
-    image: postgres:latest
-    container_name: dev_postgres
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: dev_rabbitmq
     restart: unless-stopped
     ports:
-      - "5432:5432"
+      - "5672:5672"
+      - "15672:15672"
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: root
-      POSTGRES_DB: ecommerce_db
-    volumes:
-      - postgres_dev_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d ecommerce_db"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - app_network
-
-  redis:
-    image: redis:7-alpine
-    container_name: dev_redis
-    restart: unless-stopped
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_dev_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
+      RABBITMQ_DEFAULT_USER: user
+      RABBITMQ_DEFAULT_PASS: password
     networks:
       - app_network
 
@@ -48,20 +25,25 @@ services:
       target: development
     container_name: dev_predictor
     restart: unless-stopped
-    ports:
-      - "8080:8080"
     environment:
       - MODEL_PATH=/app/models/model.h5
       - SCALER_PATH=/app/models/scaler.pkl
       - MODEL_TYPE=keras
       - PREDICTOR_AUTH_TOKEN=dev-token
       - LOG_LEVEL=debug
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=user
+      - RABBITMQ_PASS=password
+      - RABBITMQ_QUEUE=prediction_requests
     volumes:
       - ./predictor/predictor:/app/predictor
       - ./predictor/models:/app/models
-    command: uvicorn predictor.serve_http:app --host 0.0.0.0 --port 8080 --reload
+    command: predictor-serve-rabbitmq
     networks:
       - app_network
+    depends_on:
+      - rabbitmq
 
   backend:
     build:
@@ -81,8 +63,11 @@ services:
       - DATABASE_NAME=ecommerce_db
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - PREDICTOR_URL=http://predictor:8080
-      - PREDICTOR_AUTH_TOKEN=dev-token
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=user
+      - RABBITMQ_PASS=password
+      - RABBITMQ_PREDICTION_QUEUE=prediction_requests
       - JWT_SECRET=dev-secret
     volumes:
       - ./backend:/app
@@ -92,7 +77,46 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      rabbitmq:
+        condition: service_started
     command: npm run start:dev
+    networks:
+      - app_network
+
+  postgres_db:
+    image: postgres:latest
+    container_name: dev_postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: ecommerce_db
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ecommerce_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - app_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: dev_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_dev_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
     networks:
       - app_network
 

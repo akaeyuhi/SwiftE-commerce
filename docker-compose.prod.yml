@@ -95,7 +95,8 @@ services:
   predictor:
     build:
       context: ./predictor
-      dockerfile: docker/Dockerfile.serve
+      dockerfile: Dockerfile
+      target: serve
       args:
         MODEL_VERSION: ${MODEL_VERSION:-v1.0}
     container_name: predictor
@@ -279,7 +280,8 @@ services:
   predictor-train:
     build:
       context: ./predictor
-      dockerfile: docker/Dockerfile.train
+      dockerfile: Dockerfile
+      target: train
     container_name: predictor-train
     environment:
       # Database connection
@@ -300,11 +302,9 @@ services:
       WINDOW_30D: 30
     volumes:
       # Data directory
-      - ./predictor/data:/data
+      - ./predictor/data:/app/data
       # Model output directory
-      - ./predictor/models:/models
-      # Source code for development
-      - ./predictor/predictor:/app/predictor:ro
+      - ./predictor/models:/app/models
     depends_on:
       postgres_db:
         condition: service_healthy
@@ -316,19 +316,19 @@ services:
       sh -c "
         echo '=== Starting ML Training Pipeline ===' &&
         echo 'Step 1: Exporting features...' &&
-        python -m predictor.export_features
+        predictor-export
           --start $${TRAIN_START_DATE:-2025-01-01}
           --end $${TRAIN_END_DATE:-2025-10-01}
-          --out /data/features.csv
+          --out /app/data/features.csv
           --batch-size 100 &&
         echo 'Step 2: Training model...' &&
-        python -m predictor.train_model
-          --in /data/features.csv
+        predictor-train
+          --in /app/data/features.csv
           --model $${MODEL_TYPE:-lightgbm}
-          --out /models/model.bin
+          --out /app/models/model.bin
           --test-size 0.15 &&
         echo '=== Training Complete ===' &&
-        echo 'Model saved to /models/model.bin' &&
+        echo 'Model saved to /app/models/model.bin' &&
         echo 'Restart predictor service to use new model'
       "
 

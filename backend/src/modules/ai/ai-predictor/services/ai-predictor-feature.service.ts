@@ -9,7 +9,6 @@ import {
   IInventoryService,
   IVariantService,
 } from 'src/common/contracts/ai-predictor.contract';
-// FIX: Import TypeORM operator
 import { Between } from 'typeorm';
 
 // Interface for TFT History
@@ -218,7 +217,6 @@ export class AiPredictorFeatureService {
       order: { date: 'ASC' },
     });
 
-    // Generate full date range to ensure no gaps (critical for TFT)
     const dateRange = eachDayOfInterval({ start: startDate, end: endDate });
 
     return dateRange.map((date) => {

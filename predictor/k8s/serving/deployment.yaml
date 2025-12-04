@@ -56,12 +56,7 @@ spec:
         - name: predictor
           image: your-registry.io/predictor-serve:latest # This will be replaced by kustomize
           imagePullPolicy: IfNotPresent
-
-          ports:
-            - name: http
-              containerPort: 8080
-              protocol: TCP
-
+          command: ["predictor-serve-rabbitmq"]
           env:
             # Common env vars
             - name: LOG_LEVEL
@@ -69,11 +64,6 @@ spec:
                 configMapKeyRef:
                   name: predictor-config # This will be the name of the configmap in the overlay
                   key: LOG_LEVEL
-            - name: PREDICTOR_AUTH_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: predictor-secret
-                  key: PREDICTOR_AUTH_TOKEN
             # Model specific env vars will be patched in by overlays
             - name: MODEL_TYPE
               value: "to-be-patched"
@@ -81,6 +71,23 @@ spec:
               value: "to-be-patched"
             - name: SCALER_PATH
               value: "to-be-patched"
+            # RabbitMQ env vars
+            - name: RABBITMQ_HOST
+              value: "rabbitmq"
+            - name: RABBITMQ_PORT
+              value: "5672"
+            - name: RABBITMQ_USER
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-secret
+                  key: RABBITMQ_USER
+            - name: RABBITMQ_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-secret
+                  key: RABBITMQ_PASS
+            - name: RABBITMQ_QUEUE
+              value: "prediction_requests"
 
           volumeMounts:
             - name: models
@@ -94,24 +101,6 @@ spec:
             limits:
               memory: "2Gi"
               cpu: "1000m"
-
-          livenessProbe:
-            httpGet:
-              path: /health
-              port: http
-            initialDelaySeconds: 30
-            periodSeconds: 10
-            timeoutSeconds: 5
-            failureThreshold: 3
-
-          readinessProbe:
-            httpGet:
-              path: /health
-              port: http
-            initialDelaySeconds: 10
-            periodSeconds: 5
-            timeoutSeconds: 3
-            failureThreshold: 2
 
           lifecycle:
             preStop:

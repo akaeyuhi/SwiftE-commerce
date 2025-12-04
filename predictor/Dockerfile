@@ -39,10 +39,22 @@ COPY predictor/ ./predictor/
 RUN pip install -e .
 
 # ================================
+# Development Stage
+# ================================
+# This stage is for local development with hot-reloading.
+FROM builder AS development
+WORKDIR /app
+EXPOSE 8080
+# The command will be overridden in docker-compose.yml to use --reload
+CMD ["predictor-serve"]
+
+# ================================
 # Final Stage: Serve
 # ================================
 # This is the lean image for running the prediction server.
 FROM base AS serve
+ARG MODEL_VERSION=v1.0
+LABEL version="${MODEL_VERSION}"
 WORKDIR /app
 
 # Copy the installed Python packages from the builder stage
@@ -57,14 +69,8 @@ RUN useradd -m -u 1000 predictor && \
     chown -R predictor:predictor /app
 USER predictor
 
-# Healthcheck to ensure the server is running
-HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-    CMD curl -f http://localhost:8080/health || exit 1
-
-EXPOSE 8080
-
 # Use the entrypoint defined in setup.py
-CMD ["predictor-serve"]
+CMD ["predictor-serve-rabbitmq"]
 
 # ================================
 # Final Stage: Train / Export
