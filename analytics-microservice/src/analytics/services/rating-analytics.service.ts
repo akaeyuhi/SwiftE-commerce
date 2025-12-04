@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { IReviewsRepository } from 'src/common/contracts/reviews.contract';
+import { IReviewsRepository } from 'common/contracts/analytics.contract';
 
 @Injectable()
 export class RatingAnalyticsService {

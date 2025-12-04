@@ -1,5 +1,5 @@
-import { AggregationResult } from 'src/common/interfaces/infrastructure/analytics.interface';
-import { AnalyticsEventType } from 'src/entities/infrastructure/analytics/analytics-event.entity';
+import { AggregationResult } from 'common/interfaces/analytics.interface';
+import { AnalyticsEventType } from 'entities/analytics-event.entity';
 
 export interface ProductMetrics extends AggregationResult {
   views: number;

@@ -1,17 +1,17 @@
 import { Injectable } from '@nestjs/common';
+import { DateRangeOptions } from 'common/interfaces/analytics.interface';
 import { DataSource } from 'typeorm';
-import { BaseAnalyticsRepository } from 'src/common/abstracts/analytics/base.analytics.repository';
-import {
-  AnalyticsEvent,
-  AnalyticsEventType,
-} from 'src/entities/infrastructure/analytics/analytics-event.entity';
-import { DateRangeOptions } from 'src/common/interfaces/infrastructure/analytics.interface';
 import {
   EventUserJourney,
   ProductMetrics,
   StoreMetrics,
   TopProductResult,
-} from 'src/modules/analytics/types';
+} from 'src/analytics/types';
+import { BaseAnalyticsRepository } from 'common/abstracts/analytics/base.analytics.repository';
+import {
+  AnalyticsEvent,
+  AnalyticsEventType,
+} from 'entities/analytics-event.entity';
 
 /**
  * AnalyticsEventRepository

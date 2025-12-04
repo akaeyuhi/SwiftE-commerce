@@ -1,120 +1,88 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
-import { firstValueFrom, lastValueFrom, timeout } from 'rxjs';
-import { RecordEventDto } from 'src/modules/infrastructure/queues/analytics-queue/dto/record-event.dto';
-import { BaseAnalyticsService } from 'src/common/abstracts/analytics/base.analytics.service';
-import { ANALYTICS_MICROSERVICE } from 'src/modules/infrastructure/rabbitmq/rabbitmq.module';
+import { Injectable } from '@nestjs/common';
+import { EventTrackingService } from './services/event-tracking.service';
+import { QuickStatsService } from './services/quick-stats.service';
+import { ConversionAnalyticsService } from './services/conversion-analytics.service';
+import { RatingAnalyticsService } from './services/rating-analytics.service';
+import { FunnelAnalyticsService } from './services/funnel-analytics.service';
+import { ComparisonAnalyticsService } from './services/comparison-analytics.service';
+import { PerformanceAnalyticsService } from './services/performance-analytics.service';
+import { DataSyncService } from './services/data-sync.service';
+import { HealthCheckService } from './services/health-check.service';
+import { RecordEventDto } from 'dto/record-event.dto';
+import { BaseAnalyticsService } from 'common/abstracts/analytics/base.analytics.service';
+import { AnalyticsAggregationOptions } from 'src/analytics/types';
 
-export interface AnalyticsAggregationOptions {
-  from?: string;
-  to?: string;
-  storeId?: string;
-  productId?: string;
-  limit?: number;
-  includeTimeseries?: boolean;
-}
-
+/**
+ * Main Analytics Service (Orchestrator)
+ *
+ * Delegates to specialized services for different analytics domains
+ */
 @Injectable()
 export class AnalyticsService extends BaseAnalyticsService<RecordEventDto> {
-  private readonly logger = new Logger(AnalyticsService.name);
-  private readonly TIMEOUT_MS = 5000;
-
   constructor(
-    @Inject(ANALYTICS_MICROSERVICE)
-    private readonly analyticsClient: ClientProxy
+    private readonly eventTracking: EventTrackingService,
+    private readonly quickStats: QuickStatsService,
+    private readonly conversionAnalytics: ConversionAnalyticsService,
+    private readonly ratingAnalytics: RatingAnalyticsService,
+    private readonly funnelAnalytics: FunnelAnalyticsService,
+    private readonly comparisonAnalytics: ComparisonAnalyticsService,
+    private readonly performanceAnalytics: PerformanceAnalyticsService,
+    private readonly dataSync: DataSyncService,
+    private readonly healthCheckService: HealthCheckService
   ) {
     super();
   }
 
   // ===============================
-  // Event Tracking (Writes)
+  // Event Tracking (Delegation)
   // ===============================
 
   async trackEvent(event: RecordEventDto): Promise<void> {
-    // 'emit' returns a cold observable. We must subscribe to send it.
-    // lastValueFrom ensures we wait for the emission to complete (ack from broker).
-    await lastValueFrom(
-      this.analyticsClient.emit('analytics.track_event', event)
-    );
+    return this.eventTracking.trackEvent(event);
   }
 
   async recordEvent(dto: RecordEventDto) {
-    await lastValueFrom(
-      this.analyticsClient.emit('analytics.record_event', dto)
-    );
+    return this.eventTracking.recordEvent(dto);
   }
 
-  /**
-   * Refactored to satisfy BaseAnalyticsService signature.
-   * Returns an optimistic result assuming the queue accepted the message.
-   */
   async batchTrack(events: RecordEventDto[]) {
-    if (!events.length) {
-      return { success: 0, failed: 0, errors: [] };
-    }
-
-    try {
-      // 1. Send to RabbitMQ
-      await lastValueFrom(
-        this.analyticsClient.emit('analytics.batch_track', events)
-      );
-
-      // 2. Return success structure matching the abstract class
-      return {
-        success: events.length,
-        failed: 0,
-        errors: [],
-      };
-    } catch (error) {
-      this.logger.error(`Failed to batch track events: ${error.message}`);
-      // 3. Return failure structure if Broker is down
-      return {
-        success: 0,
-        failed: events.length,
-        errors: events.map((e) => ({
-          event: e,
-          error: error.message || 'Queue unavailable',
-        })),
-      };
-    }
+    return this.eventTracking.batchTrack(events);
   }
 
   // ===============================
-  // Analytics Reads (RPC / Request-Response)
+  // Quick Stats (Delegation)
   // ===============================
 
   async getProductQuickStats(productId: string) {
-    return this.sendRequest('analytics.get_product_quick_stats', { productId });
+    return this.quickStats.getProductQuickStats(productId);
   }
 
   async getStoreQuickStats(storeId: string) {
-    return this.sendRequest('analytics.get_store_quick_stats', { storeId });
+    return this.quickStats.getStoreQuickStats(storeId);
   }
 
   async getBatchProductStats(productIds: string[]) {
-    return this.sendRequest('analytics.get_batch_product_stats', {
-      productIds,
-    });
+    return this.quickStats.getBatchProductStats(productIds);
   }
+
+  // ===============================
+  // Conversion Analytics (Delegation)
+  // ===============================
 
   async computeProductConversion(
     productId: string,
     from?: string,
     to?: string
   ) {
-    return this.sendRequest('analytics.compute_product_conversion', {
+    return this.conversionAnalytics.computeProductConversion(
       productId,
       from,
-      to,
-    });
+      to
+    );
   }
 
   async computeStoreConversion(storeId: string, from?: string, to?: string) {
-    return this.sendRequest('analytics.compute_store_conversion', {
-      storeId,
-      from,
-      to,
-    });
+    return this.conversionAnalytics.computeStoreConversion(storeId, from, to);
   }
 
   async getTopProductsByConversion(
@@ -123,65 +91,60 @@ export class AnalyticsService extends BaseAnalyticsService<RecordEventDto> {
     to?: string,
     limit = 10
   ) {
-    return this.sendRequest('analytics.get_top_products_conversion', {
+    return this.conversionAnalytics.getTopProductsByConversion(
       storeId,
       from,
       to,
-      limit,
-    });
+      limit
+    );
   }
 
   async getTopProductsByConversionCached(storeId?: string, limit = 10) {
-    return this.sendRequest('analytics.get_top_products_conversion_cached', {
+    return this.conversionAnalytics.getTopProductsByConversionCached(
       storeId,
-      limit,
-    });
+      limit
+    );
   }
 
   async getTopProductsByViews(storeId?: string, limit = 10) {
-    return this.sendRequest('analytics.get_top_products_views', {
-      storeId,
-      limit,
-    });
+    return this.conversionAnalytics.getTopProductsByViews(storeId, limit);
   }
 
   async getTopStoresByRevenue(limit = 10) {
-    return this.sendRequest('analytics.get_top_stores_revenue', { limit });
+    return this.conversionAnalytics.getTopStoresByRevenue(limit);
   }
 
+  // ===============================
+  // Stats & Timeseries (Delegation)
+  // ===============================
+
   async getStoreStats(storeId: string, from?: string, to?: string) {
-    return this.sendRequest('analytics.get_store_stats', { storeId, from, to });
+    return this.conversionAnalytics.getStoreStats(storeId, from, to);
   }
 
   async getProductStats(productId: string, from?: string, to?: string) {
-    return this.sendRequest('analytics.get_product_stats', {
-      productId,
-      from,
-      to,
-    });
+    return this.conversionAnalytics.getProductStats(productId, from, to);
   }
 
   async getCategorySales(storeId: string, from?: string, to?: string) {
-    return this.sendRequest('analytics.get_category_sales', {
-      storeId,
-      from,
-      to,
-    });
+    return this.conversionAnalytics.getCategorySales(storeId, from, to);
   }
 
+  // ===============================
+  // Rating Analytics (Delegation)
+  // ===============================
+
   async recomputeProductRating(productId: string) {
-    return this.sendRequest('analytics.recompute_product_rating', {
-      productId,
-    });
+    return this.ratingAnalytics.recomputeProductRating(productId);
   }
 
   async getStoreRatingsSummary(storeId: string, from?: string, to?: string) {
-    return this.sendRequest('analytics.get_store_ratings_summary', {
-      storeId,
-      from,
-      to,
-    });
+    return this.ratingAnalytics.getStoreRatingsSummary(storeId, from, to);
   }
+
+  // ===============================
+  // Funnel & Journey Analytics (Delegation)
+  // ===============================
 
   async getFunnelAnalysis(
     storeId?: string,
@@ -189,52 +152,31 @@ export class AnalyticsService extends BaseAnalyticsService<RecordEventDto> {
     from?: string,
     to?: string
   ) {
-    return this.sendRequest('analytics.get_funnel_analysis', {
-      storeId,
-      productId,
-      from,
-      to,
-    });
+    return this.funnelAnalytics.getFunnelAnalysis(storeId, productId, from, to);
   }
 
   async getUserJourneyAnalysis(storeId?: string, from?: string, to?: string) {
-    return this.sendRequest('analytics.get_user_journey_analysis', {
-      storeId,
-      from,
-      to,
-    });
+    return this.funnelAnalytics.getUserJourneyAnalysis(storeId, from, to);
   }
 
   async getCohortAnalysis(storeId: string, from?: string, to?: string) {
-    return this.sendRequest('analytics.get_cohort_analysis', {
-      storeId,
-      from,
-      to,
-    });
+    return this.funnelAnalytics.getCohortAnalysis(storeId, from, to);
   }
 
   async getRevenueTrends(storeId?: string, from?: string, to?: string) {
-    return this.sendRequest('analytics.get_revenue_trends', {
-      storeId,
-      from,
-      to,
-    });
+    return this.funnelAnalytics.getRevenueTrends(storeId, from, to);
   }
 
+  // ===============================
+  // Comparison Analytics (Delegation)
+  // ===============================
+
   async getStoreComparison(storeIds: string[], from?: string, to?: string) {
-    return this.sendRequest('analytics.get_store_comparison', {
-      storeIds,
-      from,
-      to,
-    });
+    return this.comparisonAnalytics.getStoreComparison(storeIds, from, to);
   }
 
   async getProductComparison(productIds: string[], from?: string, to?: string) {
-    return this.sendRequest('analytics.get_product_comparison', {
-      productIds,
-      from,
-      to,
-    });
+    return this.comparisonAnalytics.getProductComparison(productIds, from, to);
   }
 
   async getPeriodComparison(
@@ -243,20 +185,20 @@ export class AnalyticsService extends BaseAnalyticsService<RecordEventDto> {
     from?: string,
     to?: string
   ) {
-    return this.sendRequest('analytics.get_period_comparison', {
+    return this.comparisonAnalytics.getPeriodComparison(
       storeId,
       productId,
       from,
-      to,
-    });
+      to
+    );
   }
 
+  // ===============================
+  // Performance Analytics (Delegation)
+  // ===============================
+
   async getTopPerformingStores(limit: number, from?: string, to?: string) {
-    return this.sendRequest('analytics.get_top_performing_stores', {
-      limit,
-      from,
-      to,
-    });
+    return this.performanceAnalytics.getTopPerformingStores(limit, from, to);
   }
 
   async getTopPerformingProducts(
@@ -265,12 +207,12 @@ export class AnalyticsService extends BaseAnalyticsService<RecordEventDto> {
     from?: string,
     to?: string
   ) {
-    return this.sendRequest('analytics.get_top_performing_products', {
+    return this.performanceAnalytics.getTopPerformingProducts(
       storeId,
       limit,
       from,
-      to,
-    });
+      to
+    );
   }
 
   async getUnderperformingAnalysis(
@@ -278,49 +220,36 @@ export class AnalyticsService extends BaseAnalyticsService<RecordEventDto> {
     from?: string,
     to?: string
   ) {
-    return this.sendRequest('analytics.get_underperforming_analysis', {
+    return this.performanceAnalytics.getUnderperformingAnalysis(
       storeId,
       from,
-      to,
-    });
-  }
-
-  async syncCachedStatsWithAnalytics(productId?: string, storeId?: string) {
-    await lastValueFrom(
-      this.analyticsClient.emit('analytics.sync_cached_stats', {
-        productId,
-        storeId,
-      })
+      to
     );
   }
 
+  // ===============================
+  // Data Sync (Delegation)
+  // ===============================
+
+  async syncCachedStatsWithAnalytics(productId?: string, storeId?: string) {
+    return this.dataSync.syncCachedStatsWithAnalytics(productId, storeId);
+  }
+
+  // ===============================
+  // Health & Monitoring (Delegation)
+  // ===============================
+
   async healthCheck() {
-    return this.sendRequest('analytics.health_check', {});
+    return this.healthCheckService.healthCheck();
   }
 
   async getStats() {
-    return this.sendRequest('analytics.get_system_stats', {});
+    return this.healthCheckService.getStats();
   }
 
   // ===============================
-  // Internal Helpers & Router
+  // Aggregation Router
   // ===============================
-
-  private async sendRequest<TResult = any, TInput = any>(
-    pattern: string,
-    payload: TInput
-  ): Promise<TResult> {
-    try {
-      return await firstValueFrom(
-        this.analyticsClient
-          .send<TResult, TInput>(pattern, payload)
-          .pipe(timeout(this.TIMEOUT_MS))
-      );
-    } catch (error) {
-      this.logger.error(`Analytics RPC failed for pattern: ${pattern}`, error);
-      throw error;
-    }
-  }
 
   protected validateAggregator(
     name: string,
@@ -389,20 +318,27 @@ export class AnalyticsService extends BaseAnalyticsService<RecordEventDto> {
     const { from, to, storeId, productId, limit = 10 } = options;
 
     switch (name) {
+      // Conversion Analytics
       case 'productConversion':
         return this.computeProductConversion(productId!, from, to);
       case 'storeConversion':
         return this.computeStoreConversion(storeId!, from, to);
       case 'topProductsByConversion':
         return this.getTopProductsByConversion(storeId!, from, to, limit);
+
+      // Stats
       case 'storeStats':
         return this.getStoreStats(storeId!, from, to);
       case 'productStats':
         return this.getProductStats(productId!, from, to);
+
+      // Ratings
       case 'productRating':
         return this.recomputeProductRating(productId!);
       case 'storeRatingsSummary':
         return this.getStoreRatingsSummary(storeId!, from, to);
+
+      // Funnel & Journey
       case 'funnelAnalysis':
         return this.getFunnelAnalysis(storeId, productId, from, to);
       case 'userJourney':
@@ -411,18 +347,23 @@ export class AnalyticsService extends BaseAnalyticsService<RecordEventDto> {
         return this.getCohortAnalysis(storeId!, from, to);
       case 'revenueTrends':
         return this.getRevenueTrends(storeId, from, to);
+
+      // Comparisons
       case 'storeComparison':
         return this.getStoreComparison([storeId!], from, to);
       case 'productComparison':
         return this.getProductComparison([productId!], from, to);
       case 'periodComparison':
         return this.getPeriodComparison(storeId, productId, from, to);
+
+      // Performance
       case 'topPerformingStores':
         return this.getTopPerformingStores(limit, from, to);
       case 'topPerformingProducts':
         return this.getTopPerformingProducts(storeId, limit, from, to);
       case 'underperformingAnalysis':
         return this.getUnderperformingAnalysis(storeId, from, to);
+
       default:
         throw new Error(`Aggregator ${name} not implemented`);
     }

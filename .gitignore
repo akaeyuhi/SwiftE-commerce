@@ -5,3 +5,4 @@ GEMINI.md
 OVERVIEW.md
 .env
 api-json.json
+/analytics-microservice/node_modules/

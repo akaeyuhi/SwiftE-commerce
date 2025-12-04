@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Product } from 'src/entities/store/product/product.entity';
-import { Store } from 'src/entities/store/store.entity';
+import { In, Repository } from 'typeorm';
 import { ProductQuickStats, StoreQuickStats } from '../types';
+import { Product } from 'entities/read-only/product.entity';
+import { Store } from 'entities/read-only/store.entity';
 
 @Injectable()
 export class QuickStatsService {
@@ -87,7 +87,7 @@ export class QuickStatsService {
     productIds: string[]
   ): Promise<ProductQuickStats[]> {
     const products = await this.productRepo.find({
-      where: productIds.map((id) => ({ id })),
+      where: { id: In(productIds) },
       select: [
         'id',
         'name',

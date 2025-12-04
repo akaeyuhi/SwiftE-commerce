@@ -137,6 +137,16 @@ services:
     networks:
       - app_network
 
+
+  analytics-service:
+    build: ./analytics-microservice
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+      - DB_HOST=postgres
+    depends_on:
+      - rabbitmq
+      - postgres
+
 volumes:
   postgres_dev_data:
   redis_dev_data:

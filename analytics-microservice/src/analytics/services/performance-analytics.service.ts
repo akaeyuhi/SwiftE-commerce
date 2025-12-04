@@ -1,14 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Store } from 'src/entities/store/store.entity';
+import { In, Repository } from 'typeorm';
 import { StoreDailyStatsRepository } from '../repositories/store-daily-stats.repository';
 import { ProductDailyStatsRepository } from '../repositories/product-daily-stats.repository';
 import { ConversionAnalyticsService } from './conversion-analytics.service';
-import {
-  StoreQuickStats,
-  TopPerformingStores,
-} from 'src/modules/analytics/types';
+import { StoreQuickStats, TopPerformingStores } from 'src/analytics/types';
+import { Store } from 'entities/read-only/store.entity';
 
 @Injectable()
 export class PerformanceAnalyticsService {
@@ -37,7 +34,7 @@ export class PerformanceAnalyticsService {
 
     const storeIds = storeStats.map((s) => s.storeId);
     const stores = await this.storeRepo.find({
-      where: storeIds.map((id) => ({ id })),
+      where: { id: In(storeIds) },
       select: ['id', 'name'],
     });
 

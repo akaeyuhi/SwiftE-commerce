@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Product } from 'src/entities/store/product/product.entity';
 import { AnalyticsEventRepository } from '../repositories/analytics-event.repository';
 import { StoreDailyStatsRepository } from '../repositories/store-daily-stats.repository';
+import { Product } from 'entities/read-only/product.entity';
 
 @Injectable()
 export class DataSyncService {
