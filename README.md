@@ -1,363 +1,97 @@
 # SwiftE-commerce
 
-## What is SwiftE-commerce?
+![SwiftE-commerce Banner](swiftecommerce-frontend/src/assets/images/logo-dark.svg)
 
-SwiftE-commerce is a comprehensive **AI-powered e-commerce platform** designed for modern retail businesses. Built with enterprise-grade architecture, it combines advanced machine learning capabilities with intelligent content generation to deliver automated inventory management, predictive analytics, and seamless user experiences.
+## 🌟 What is SwiftE-commerce?
+
+SwiftE-commerce is an enterprise-grade **AI-powered e-commerce platform** engineered for scale. It leverages a **Polyglot Microservices Architecture**, combining the strict type safety of **TypeScript (NestJS)** for core business logic with the data processing power of **Python** for Machine Learning.
+
+It features a fully decoupled design where high-latency tasks (Analytics, ML Inference) are offloaded to specialized microservices via **RabbitMQ**, ensuring a buttery-smooth user experience on the **React** frontend.
+
+## 🏗️ System Architecture
+
+The platform is organized into a monorepo with four distinct applications:
+
+| Service | Tech Stack | Responsibility |
+| :--- | :--- | :--- |
+| **Frontend** | React, Vite, Tailwind | Customer storefront & Admin dashboard |
+| **Backend (Monolith)** | NestJS, PostgreSQL | API Gateway, Auth, Product/Order Management |
+| **Analytics Service** | NestJS, TypeORM | High-volume data ingestion, aggregation & reporting |
+| **AI Engine** | Python, FastAPI | Demand forecasting & ML inference |
+
+**Infrastructure:** RabbitMQ (Event Bus), Redis (Caching/Queues), PostgreSQL (Primary DB).
 
 ## 🚀 Key Features
 
-### **Core E-commerce Functionality**
-- ✅ **User Management**: Complete authentication system with JWT tokens, role-based access control, and email verification
-- ✅ **Product Catalog**: Dynamic product management with variants, categories, and advanced search capabilities
-- ✅ **Store Management**: Multi-store support with independent inventory and analytics
-- ✅ **Shopping Cart**: Real-time cart management with user session persistence
-- ✅ **Order Processing**: End-to-end order lifecycle with status tracking, inventory deduction, and shipping management
-- ✅ **Review System**: Customer reviews with analytics and moderation capabilities
+### **Frontend Experience (React)**
+- ⚛️ **Modern Stack**: Built with **Vite**, **React 18**, and **TypeScript**.
+- 🎨 **UI Library**: Beautiful, accessible components using **Tailwind CSS** and **Shadcn UI**.
+- ⚡ **State Management**: Scalable state handling with **Redux Toolkit** and **React Query**.
+- 📱 **Responsive**: Mobile-first design for both Storefront and Admin Panel.
+- 🛍️ **Smart Cart**: Persistent cart state and optimized checkout flow.
 
-### **AI-Powered Features**
-- 🤖 **Stock Prediction**: Machine learning models predict stockouts 14 days in advance using LightGBM and TensorFlow
-- 📊 **Demand Forecasting**: Advanced analytics processing sales patterns, seasonal trends, and market data
-- 📈 **Real-time Analytics**: Comprehensive dashboards with product performance and store metrics
-- 🎯 **AI Content Generation**: Hugging Face powered text generation for product descriptions, names, and marketing content
-- 💡 **Smart Recommendations**: AI-driven product suggestions based on user behavior and purchase history
+### **Core Backend (NestJS)**
+- 🔐 **Security**: Role-Based Access Control (RBAC) with JWT & Refresh Tokens.
+- 📦 **Inventory System**: ACID-compliant order processing with optimistic locking.
+- 📨 **Event-Driven**: Async email notifications and webhooks via RabbitMQ.
+- 🧩 **Modular Design**: Domain-Driven Design (DDD) principles applied to modules.
 
-### **Advanced Architecture**
-- 🏗️ **Scalable Backend**: NestJS-based API with modular service architecture
-- ⚡ **Queue System**: Redis-based job processing for email notifications and background tasks
-- 🔐 **Enterprise Security**: Role-based authorization, data validation, and secure API endpoints
-- 📧 **Email Integration**: Automated notifications using SendGrid and Nodemailer
-- 🐳 **Docker Support**: Containerized deployment with Kubernetes configurations
+### **Analytics Microservice (NestJS)**
+- 📊 **Heavy Compute Offloading**: Calculates complex aggregations (Revenue, Conversion Rates) without blocking the main API.
+- 🐇 **RabbitMQ Consumer**: Processes `track_event` messages asynchronously.
+- 📈 **Timeseries Data**: Optimized storage patterns for daily/monthly stats.
+
+### **AI-Powered Features (Python)**
+- 🤖 **Stock Prediction**: LightGBM & TensorFlow models predict stockouts 14 days in advance.
+- 📝 **Content Generation**: Hugging Face integration for auto-generating product descriptions.
+- 🧠 **Dynamic Pricing**: (Coming Soon) ML-based price optimization.
 
 ## 🛠️ Technology Stack
 
-### **Backend (NestJS)**
-- **Framework**: NestJS with TypeScript for robust, scalable server architecture
-- **Database**: PostgreSQL with TypeORM for reliable data persistence
-- **Caching & Queues**: Redis for session management and background job processing
-- **API Documentation**: Swagger/OpenAPI with comprehensive endpoint documentation
-- **Testing**: Jest with unit, integration, and e2e testing capabilities
+### **Frontend**
+* **Framework**: React 18
+* **Build Tool**: Vite
+* **Styling**: Tailwind CSS, CSS Modules
+* **State**: Redux Toolkit, TanStack Query
+* **Forms**: React Hook Form + Zod
 
-### **AI/ML Services**
-- **Stock Predictor**: Python-based FastAPI service with LightGBM and TensorFlow models
-- **Content Generator**: Hugging Face API integration for intelligent text generation
-- **Data Processing**: Pandas, NumPy, and scikit-learn for feature engineering
-- **Model Serving**: Real-time inference with automatic model versioning
+### **Backend & Microservices**
+* **Runtime**: Node.js 18+
+* **Framework**: NestJS (Monolith & Microservice)
+* **Language**: TypeScript
+* **Transport**: RabbitMQ (AMQP), HTTP (REST)
+* **ORM**: TypeORM
+* **Validation**: class-validator, class-transformer
 
-### **Frontend (Coming Soon)**
-- **Framework**: React.js with TypeScript
-- **Styling**: Tailwind CSS and Material-UI components
-- **State Management**: Redux Toolkit for predictable state updates
-- **Build Tools**: Vite for fast development and optimized builds
-
-## 🏗️ API Architecture Overview
-
-SwiftE-commerce provides a comprehensive REST API with the following major endpoint categories:
-
-### **Authentication & User Management**
-- `POST /auth/register` - User registration with email verification
-- `POST /auth/login` - JWT-based authentication
-- `POST /auth/refresh` - Token refresh mechanism
-- `GET /users/{id}` - User profile management
-- `POST /users/{id}/stores` - Store creation by users
-
-### **Store & Product Management**
-- `GET /stores` - Multi-tenant store listing
-- `POST /stores/{storeId}/products` - Product creation with photos
-- `GET /stores/{storeId}/products/{productId}/variants` - Product variant management
-- `PATCH /stores/{storeId}/products/{productId}/variants/{id}/inventory` - Real-time inventory adjustments
-- `POST /stores/{storeId}/products/{productId}/categories` - Category assignment
-
-### **Shopping & Orders**
-- `POST /stores/{storeId}/{userId}/cart/get-or-create` - Smart cart management
-- `POST /stores/{storeId}/{userId}/cart/{cartId}/items/add` - Add items with quantity control
-- `POST /stores/{storeId}/orders/create` - Order creation with automatic inventory deduction
-- `PUT /stores/{storeId}/orders/{id}/status` - Order status management
-- `POST /stores/{storeId}/orders/{id}/cancel` - Order cancellation with inventory restoration
-
-### **Analytics & Business Intelligence**
-- `GET /analytics/stores/{storeId}` - Comprehensive store analytics with time-series data
-- `GET /analytics/stores/{storeId}/conversion` - Conversion funnel analysis
-- `GET /analytics/stores/{storeId}/products/top` - Top performing products
-- `GET /analytics/stores/{storeId}/revenue-trends` - Revenue trend analysis
-- `POST /analytics/aggregations` - Custom analytics queries
-
-### **AI-Powered Services**
-- `POST /ai/generator/names` - AI-generated product names using Hugging Face models
-- `POST /ai/generator/description` - Intelligent product descriptions
-- `POST /ai/generator/ideas` - Creative product ideas generation
-- `POST /ai/predictor/predict` - Single product demand prediction
-- `POST /ai/predictor/predict/batch` - Batch predictions for inventory optimization
-- `GET /ai/predictor/stores/{storeId}/trending` - AI-identified trending products
-
-### **Administrative Functions**
-- `GET /admin/active` - Active administrator management
-- `POST /admin/assign` - Role assignment with email confirmation
-- `DELETE /admin/inventory-notifications/cooldowns/{variantId}` - Notification management
-- `GET /email/queue/stats` - Email system monitoring
+### **Data & ML**
+* **Language**: Python 3.10+
+* **Libraries**: Pandas, NumPy, Scikit-learn
+* **Models**: LightGBM, TensorFlow
+* **Database**: PostgreSQL 15+
+* **Cache**: Redis 7+
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js 18+ and npm/yarn
-- PostgreSQL 15+
-- Redis 7+
-- Python 3.10+ (for AI predictor)
-- Hugging Face API key (for content generation)
-- Docker & Docker Compose (optional)
+- Node.js 18+ & npm
+- Python 3.10+
+- Docker & Docker Compose
 
-### Installation
+### 1. Installation
+Clone the repository and install dependencies for all services:
 
-#### 1. Clone the repository
 ```bash
-git clone https://github.com/akaeyuhi/SwiftE-commerce.git
+git clone [https://github.com/akaeyuhi/SwiftE-commerce.git](https://github.com/akaeyuhi/SwiftE-commerce.git)
 cd SwiftE-commerce
-```
 
-#### 2. Backend Setup
-```bash
-cd backend
-npm install
+# Install Backend Deps
+cd backend && npm install
 
-# Configure environment variables
-cp .env.example .env
-# Update .env with your database, Redis, and Hugging Face API credentials
+# Install Frontend Deps
+cd ../swiftecommerce-frontend && npm install
 
-# Start development server
-npm run start:dev
-```
+# Install Analytics Microservice Deps
+cd ../analytics-microservice && npm install
 
-#### 3. AI Predictor Setup
-```bash
-cd predictor
-pip install -r requirements.txt
-
-# Train initial model (optional)
-python train_model.py --in example_features.csv --model lightgbm --out model/model.bin
-
-# Start predictor service
-python serve.py
-```
-
-#### 4. Environment Configuration
-```bash
-# Required environment variables
-NODE_ENV=development
-DATABASE_HOST=localhost
-DATABASE_PORT=5432
-DATABASE_USER=postgres
-DATABASE_PASSWORD=your_password
-DATABASE_NAME=ecommerce_db
-
-REDIS_HOST=localhost
-REDIS_PORT=6379
-
-JWT_SECRET=your-secure-jwt-secret
-JWT_REFRESH_SECRET=your-refresh-secret
-
-HUGGINGFACE_API_KEY=your-huggingface-api-key
-SENDGRID_API_KEY=your-sendgrid-key
-
-PREDICTOR_URL=http://localhost:8080/predict_batch
-```
-
-### 🐳 Docker Deployment
-
-For production deployment with full orchestration:
-
-```bash
-# Start all services with Docker Compose
-docker-compose up -d
-
-# Services will be available at:
-# - Backend API: http://localhost:3000
-# - Database Admin: http://localhost:5050
-# - AI Predictor: http://localhost:8080
-# - Frontend: http://localhost:80 (when implemented)
-```
-
-## 📚 API Documentation
-
-Once running, explore the complete API documentation at:
-- **Swagger UI**: `http://localhost:3000/api`
-- **OpenAPI JSON**: `http://localhost:3000/api-json`
-
-### Key Integration Examples:
-
-#### AI Content Generation
-```bash
-curl -X POST http://localhost:3000/ai/generator/description \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
-  -d '{
-    "name": "Wireless Bluetooth Headphones",
-    "productSpec": "Over-ear, 30h battery, noise canceling",
-    "tone": "professional",
-    "storeId": "store-uuid-here"
-  }'
-```
-
-#### Stock Prediction
-```bash
-curl -X POST http://localhost:3000/ai/predictor/predict \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
-  -d '{
-    "productId": "product-uuid",
-    "storeId": "store-uuid",
-    "features": {
-      "sales_7d": 100,
-      "inventory_qty": 50,
-      "views_7d": 500
-    }
-  }'
-```
-
-#### Analytics Query
-```bash
-curl -X GET "http://localhost:3000/analytics/stores/STORE_UUID?from=2025-01-01&to=2025-12-31&includeTimeseries=true" \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN"
-```
-
-## 🧪 Testing
-
-### Backend Testing
-```bash
-cd backend
-
-# Run unit tests
-npm run test
-
-# Run integration tests  
-npm run test:integration
-
-# Run e2e tests
-npm run test:e2e
-
-# Generate coverage report
-npm run test:cov
-```
-
-### AI Model Testing
-```bash
-cd predictor
-
-# Test model training
-python train_model.py --in example_features.csv --model lightgbm --test-size 0.2
-
-# Test prediction API
-curl -X POST http://localhost:8080/predict \
-  -H "Content-Type: application/json" \
-  -d '{"features": {"sales_7d": 100, "inventory_qty": 50}}'
-```
-
-## 🚀 Deployment
-
-### Production Environment Setup
-
-1. **Environment Variables**:
-```bash
-NODE_ENV=production
-DATABASE_URL=postgresql://user:pass@localhost:5432/ecommerce
-REDIS_URL=redis://localhost:6379
-JWT_SECRET=your-secure-secret
-HUGGINGFACE_API_KEY=your-huggingface-key
-SENDGRID_API_KEY=your-sendgrid-key
-```
-
-2. **Database Migration**:
-```bash
-npm run build
-npm run start:prod
-```
-
-3. **AI Model Deployment**:
-```bash
-# Train production model with historical data
-python export_features.py --output data/production_features.csv
-python train_model.py --in data/production_features.csv --model lightgbm --out model/production_model.bin
-
-# Deploy with Docker
-docker build -t swiftecommerce-predictor -f predictor/Dockerfile .
-```
-
-## 📊 AI & Analytics Features
-
-### **Machine Learning Pipeline**
-1. **Data Export**: Automated feature extraction from PostgreSQL
-2. **Model Training**: LightGBM for structured data, TensorFlow for deep learning
-3. **Prediction Serving**: FastAPI with real-time model inference
-4. **Continuous Learning**: Automated retraining with new data
-
-### **AI Content Generation**
-- **Hugging Face Integration**: Leverages state-of-the-art language models for content creation
-- **Product Descriptions**: Automatically generate compelling product descriptions
-- **Marketing Copy**: Create engaging product names and marketing content
-- **Multi-language Support**: Generate content in multiple languages
-- **Brand Voice Consistency**: Maintain consistent tone across all generated content
-
-### **Key Predictions**
-- **Stockout Risk**: 14-day advance warning with confidence scores
-- **Demand Patterns**: Seasonal trends and market behavior analysis
-- **Inventory Optimization**: Automated reorder point calculations
-- **Customer Behavior**: Purchase prediction and recommendation systems
-
-### **Analytics Dashboard**
-- Real-time sales metrics and KPI tracking
-- Product performance analysis with drill-down capabilities
-- Store comparison and regional insights
-- Predictive analytics with actionable recommendations
-
-## 🔧 Development
-
-### **Contributing**
-1. Fork the repository
-2. Create feature branch: `git checkout -b feature/amazing-feature`
-3. Commit changes: `git commit -m 'Add amazing feature'`
-4. Push to branch: `git push origin feature/amazing-feature`
-5. Open a Pull Request
-
-### **Code Quality**
-- **Linting**: ESLint with TypeScript rules
-- **Formatting**: Prettier for consistent code style
-- **Testing**: Jest with >80% coverage requirement
-- **Type Safety**: Strict TypeScript configuration
-
-## 🛣️ Roadmap
-
-### **Phase 1: Core Platform** ✅
-- Backend API with comprehensive service architecture
-- AI-powered stock prediction system
-- Administrative dashboard and user management
-- Hugging Face content generation integration
-
-### **Phase 2: Frontend Development** 🚧
-- React-based customer storefront
-- Admin panel with analytics dashboards
-- Mobile-responsive design with PWA support
-- Real-time notifications and updates
-
-### **Phase 3: Advanced Features** 📋
-- Advanced recommendation engine with collaborative filtering
-- Multi-currency and internationalization
-- Third-party integrations (payment gateways, shipping)
-- Voice and image-based product search
-
-### **Phase 4: Enterprise Features** 🔮
-- Multi-tenant SaaS capabilities
-- Advanced ML models (customer lifetime value, churn prediction)
-- Business intelligence and reporting suite
-- Mobile applications (iOS/Android)
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🤝 Support
-
-For support and questions:
-- 💬 **GitHub Issues**: [Create an issue](https://github.com/akaeyuhi/SwiftE-commerce/issues)
-- 📖 **Documentation**: [Project Wiki](https://github.com/akaeyuhi/SwiftE-commerce/wiki)
-
----
-
-**Built with ❤️ using modern technologies and AI for the future of e-commerce**
+# Install Python Deps
+cd ../predictor && pip install -r requirements.txt
