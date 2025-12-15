@@ -343,7 +343,7 @@ export class AiLogsService extends BaseService<
     const now = Date.now();
     const cutoff = now - this.rateLimitWindow * 2;
 
-    for (const [key] of this.logRateLimit.entries()) {
+    for (const [key] of Array.from(this.logRateLimit.entries())) {
       const keyTime = parseInt(key.split(':')[1]) * this.rateLimitWindow;
       if (keyTime < cutoff) {
         this.logRateLimit.delete(key);
